@@ -57,6 +57,11 @@ export function MarkCompleteButton({
         );
       }
 
+      // Notify other pages that progress has been updated
+      localStorage.setItem("materi_progress_updated", Date.now().toString());
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("progressUpdated"));
+
       // Navigate to next sub-bab after short delay
       setTimeout(() => {
         onCompleteAction();
@@ -89,6 +94,11 @@ export function MarkCompleteButton({
 
       setIsCompleted(false);
       toast.success("Tandai selesai dibatalkan");
+
+      // Notify other pages that progress has been updated
+      localStorage.setItem("materi_progress_updated", Date.now().toString());
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("progressUpdated"));
     } catch (error: any) {
       console.error("Error unmarking:", error);
       toast.error(error.message || "Gagal update progress");

@@ -2,15 +2,22 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
+import prisma from "@/lib/prisma";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars");
+  throw new Error("Server configuration error: Missing Supabase credentials");
 }
 
-const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 export async function POST(req: Request) {
   // Check admin authentication
@@ -22,11 +29,10 @@ export async function POST(req: Request) {
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
 
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -37,7 +43,7 @@ export async function POST(req: Request) {
   // Create new guru
   try {
     const body = await req.json();
-    let { email, password: providedPassword, full_name } = body;
+    let { email, password: providedPassword, full_name, no_telepon } = body;
 
     const emailDomain =
       process.env.DEFAULT_GURU_EMAIL_DOMAIN || "guru.smksypm4.my.id";
@@ -97,44 +103,23 @@ export async function POST(req: Request) {
       throw createError || new Error("Failed to create guru user");
     }
 
-    // Check if profile already exists
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("id", created.user.id)
-      .single();
-
-    if (existingProfile) {
-      // Update existing profile instead of inserting
-      const { error: updateError } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          email,
-          full_name,
-          role: "guru",
-        })
-        .eq("id", created.user.id);
-
-      if (updateError) {
-        console.error("Error updating profile:", updateError);
-        throw updateError;
-      }
-    } else {
-      // Insert new profile
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .insert({
-          id: created.user.id,
-          email,
-          full_name,
-          role: "guru",
-        });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        throw profileError;
-      }
-    }
+    // Upsert profile using Prisma
+    await prisma.profile.upsert({
+      where: { id: created.user.id },
+      update: {
+        email,
+        full_name,
+        role: "guru",
+        phone: no_telepon || null,
+      },
+      create: {
+        id: created.user.id,
+        email,
+        full_name,
+        role: "guru",
+        phone: no_telepon || null,
+      },
+    });
 
     return NextResponse.json({
       id: created.user.id,
@@ -161,11 +146,10 @@ export async function GET(req: Request) {
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
 
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -174,15 +158,26 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("role", "guru")
-      .order("created_at", { ascending: false });
+    const guru = await prisma.profile.findMany({
+      where: { role: "guru" },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        phone: true,
+        created_at: true,
+      },
+      orderBy: { created_at: "desc" },
+    });
 
-    if (error) throw error;
-
-    return NextResponse.json({ data: data || [] });
+    return NextResponse.json(
+      { data: guru },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (err: any) {
     console.error("Error fetching guru:", err);
     return NextResponse.json(
@@ -202,11 +197,10 @@ export async function PUT(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   } catch (e) {
@@ -215,26 +209,19 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, email, full_name } = body;
+    const { id, email, full_name, password } = body;
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    // Update profiles table
-    const updates: any = { updated_at: new Date().toISOString() };
+    // Update profiles table with Prisma
+    const updates: any = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (email !== undefined) updates.email = email;
 
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .update(updates)
-      .eq("id", id);
-    if (profileError) {
-      console.error("profiles update error:", profileError);
-      return NextResponse.json(
-        { error: profileError.message },
-        { status: 500 }
-      );
-    }
+    await prisma.profile.update({
+      where: { id },
+      data: updates,
+    });
 
     // If email changed, update auth user email
     if (email !== undefined) {
@@ -243,6 +230,25 @@ export async function PUT(req: Request) {
       if (authError) {
         console.error("auth update error:", authError);
         return NextResponse.json({ error: authError.message }, { status: 500 });
+      }
+    }
+
+    // If password provided, update it
+    if (password && password.trim()) {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: "Password minimal 6 karakter" },
+          { status: 400 }
+        );
+      }
+      const { error: passwordError } =
+        await supabaseAdmin.auth.admin.updateUserById(id, { password });
+      if (passwordError) {
+        console.error("password update error:", passwordError);
+        return NextResponse.json(
+          { error: passwordError.message },
+          { status: 500 }
+        );
       }
     }
 
@@ -263,11 +269,10 @@ export async function DELETE(req: Request) {
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
 
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

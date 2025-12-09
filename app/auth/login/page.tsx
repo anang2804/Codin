@@ -68,13 +68,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <Card className="border-green-200">
           <CardHeader>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">S</span>
-              </div>
-              <span className="text-lg font-bold text-gray-900">
-                Smart Learning
-              </span>
+            <div className="flex items-center justify-center mb-4">
+              <img
+                src="/logo codin.png"
+                alt="Codin Logo"
+                className="w-56 h-auto"
+              />
             </div>
             <CardTitle className="text-2xl">Masuk</CardTitle>
             <CardDescription>
@@ -115,10 +114,6 @@ export default function LoginPage() {
                 {isLoading ? "Memproses..." : "Masuk"}
               </Button>
             </form>
-            <div className="mt-4 text-center text-sm text-gray-600">
-              Untuk pembuatan akun baru, hubungi administrator sekolah atau
-              gunakan fitur tambah siswa di halaman admin.
-            </div>
           </CardContent>
         </Card>
       </div>

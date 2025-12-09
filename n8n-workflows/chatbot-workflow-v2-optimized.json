@@ -1,0 +1,416 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "07371c62-ffc1-44a9-9043-cad5e1459df3",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [2208, 240],
+      "id": "1073ff64-4f6b-42dc-a1bc-57325fe80d9a",
+      "name": "Webhook - Terima Pertanyaan1",
+      "webhookId": "07371c62-ffc1-44a9-9043-cad5e1459df3",
+      "notes": "Terima request dari FloatingChatbot"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [1520, 720],
+      "id": "schedule-learning-reminder",
+      "name": "Schedule - Pengingat Belajar",
+      "notes": "⚡ TESTING MODE: Trigger setiap 2 menit - JANGAN LUPA UBAH BALIK!"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Query siswa yang belum selesai belajar atau belum mulai\nSELECT \n  p.id as profile_id,\n  p.full_name,\n  p.email,\n  -- Hitung materi yang belum selesai (yang sudah dimulai)\n  COALESCE(\n    (SELECT COUNT(DISTINCT mp.materi_id) \n     FROM materi_progress mp\n     WHERE mp.siswa_id = p.id AND mp.progress_percentage < 100), \n    0\n  ) as materi_progress_belum_selesai,\n  -- Hitung total materi yang available\n  (SELECT COUNT(*) FROM materi) as total_materi_available,\n  -- Hitung materi yang sudah dimulai\n  COALESCE(\n    (SELECT COUNT(DISTINCT mp.materi_id) \n     FROM materi_progress mp\n     WHERE mp.siswa_id = p.id), \n    0\n  ) as materi_sudah_dimulai,\n  COALESCE(\n    EXTRACT(DAY FROM NOW() - (SELECT MAX(last_read_at) FROM materi_progress WHERE siswa_id = p.id)), \n    999\n  ) as days_inactive\nFROM profiles p\nWHERE p.role = 'siswa'\n  AND p.email IS NOT NULL\n  -- Filter: Belum mulai ATAU ada materi belum selesai\n  AND (\n    NOT EXISTS (SELECT 1 FROM materi_progress WHERE siswa_id = p.id)\n    OR EXISTS (SELECT 1 FROM materi_progress WHERE siswa_id = p.id AND progress_percentage < 100)\n  )\nORDER BY days_inactive DESC\nLIMIT 10",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1760, 720],
+      "id": "query-inactive-students",
+      "name": "Get Siswa Tidak Aktif",
+      "credentials": {
+        "postgres": {
+          "id": "jZ1e6ydxIZ10JCZS",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Query siswa yang tidak aktif lebih dari 3 hari"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Get materi yang available untuk siswa (dengan atau tanpa progress)\nSELECT \n  m.id,\n  m.title,\n  mpl.name as mapel_name,\n  COALESCE(mp.progress_percentage, 0) as progress_percentage,\n  COALESCE(mp.completed_sub_bab, 0) as completed_sub_bab,\n  (\n    SELECT COUNT(*) \n    FROM materi_bab mb\n    LEFT JOIN materi_sub_bab msb ON mb.id = msb.bab_id\n    WHERE mb.materi_id = m.id\n  ) as total_sub_bab,\n  mp.last_read_at\nFROM materi m\nLEFT JOIN materi_progress mp ON m.id = mp.materi_id AND mp.siswa_id = '{{ $json.profile_id }}'\nLEFT JOIN mapel mpl ON m.mapel_id = mpl.id\nWHERE m.id IS NOT NULL\nORDER BY mp.last_read_at DESC NULLS LAST\nLIMIT 5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2000, 720],
+      "id": "query-student-materials",
+      "name": "Get Materi Belum Selesai",
+      "credentials": {
+        "postgres": {
+          "id": "jZ1e6ydxIZ10JCZS",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Ambil detail materi yang belum selesai per siswa"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format email body dengan data progress siswa\ntry {\n  const studentData = $('Get Siswa Tidak Aktif').item.json;\n  const materiData = $input.all();\n\n  // Validasi data siswa\n  if (!studentData || !studentData.email) {\n    console.log('ERROR: Data siswa tidak valid:', studentData);\n    return [];\n  }\n\n  const fullName = studentData.full_name || 'Siswa';\n  const daysInactive = Math.floor(studentData.days_inactive) || 0;\n  \n  // Hitung total materi yang menunggu (belum selesai + belum dimulai)\n  const materiProgressBelumSelesai = studentData.materi_progress_belum_selesai || 0;\n  const totalMateriAvailable = studentData.total_materi_available || 0;\n  const materiSudahDimulai = studentData.materi_sudah_dimulai || 0;\n  const materiBelumDimulai = totalMateriAvailable - materiSudahDimulai;\n  const materiBelumSelesai = materiProgressBelumSelesai + materiBelumDimulai;\n\n  console.log('Processing email for:', fullName, studentData.email);\n  console.log('Materi stats:', { materiProgressBelumSelesai, materiBelumDimulai, materiBelumSelesai, totalMateriAvailable });\n\nlet emailBody = `\n<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;\">\n  <div style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;\">\n    <h1 style=\"color: white; margin: 0; font-size: 28px;\">📚 Pengingat Belajar</h1>\n  </div>\n  \n  <div style=\"background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);\">\n    <p style=\"font-size: 16px; color: #374151;\">Halo <strong>${fullName}</strong>,</p>\n    \n    <p style=\"font-size: 15px; color: #6b7280; line-height: 1.6;\">\n      Kami perhatikan kamu sudah <strong>${daysInactive} hari</strong> tidak melanjutkan pembelajaran. \n      Ada <strong>${materiBelumSelesai} materi</strong> yang menunggu untuk diselesaikan! 🎯\n    </p>\n    \n    <div style=\"background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;\">\n      <h3 style=\"color: #92400e; margin-top: 0;\">💡 Materi yang Perlu Dilanjutkan:</h3>\n      <ul style=\"color: #78350f; margin: 10px 0; padding-left: 20px;\">\n`;\n\n// Tambahkan list materi\nif (materiData && materiData.length > 0) {\n  materiData.forEach((item, index) => {\n    const materi = item.json;\n    const progress = materi.progress_percentage || 0;\n    const progressBar = '█'.repeat(Math.floor(progress / 10)) + '░'.repeat(10 - Math.floor(progress / 10));\n    \n    emailBody += `\n        <li style=\"margin: 10px 0; font-size: 14px;\">\n          <strong>${materi.title}</strong> (${materi.mapel_name || 'Umum'})<br>\n          <span style=\"font-size: 13px; color: #a16207;\">\n            Progress: ${progress}% ${progressBar} (${materi.completed_sub_bab}/${materi.total_sub_bab} sub-bab)\n          </span>\n        </li>\n    `;\n  });\n} else {\n  emailBody += `\n        <li style=\"color: #78350f;\">Belum ada data materi yang dipelajari</li>\n  `;\n}\n\nemailBody += `\n      </ul>\n    </div>\n    \n    <div style=\"background: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n      <h3 style=\"color: #1e40af; margin-top: 0;\">🚀 Tips Belajar Efektif:</h3>\n      <ul style=\"color: #1e3a8a; margin: 10px 0; padding-left: 20px; font-size: 14px;\">\n        <li>Luangkan 15-30 menit setiap hari</li>\n        <li>Fokus selesaikan satu sub-bab dulu</li>\n        <li>Praktikkan langsung apa yang dipelajari</li>\n        <li>Jangan ragu bertanya di chatbot jika ada kesulitan</li>\n      </ul>\n    </div>\n    \n    <div style=\"text-align: center; margin: 30px 0;\">\n      <a href=\"${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/siswa\" \n         style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); \n                color: white; \n                padding: 15px 40px; \n                text-decoration: none; \n                border-radius: 25px; \n                font-weight: bold; \n                font-size: 16px;\n                display: inline-block;\n                box-shadow: 0 4px 6px rgba(0,0,0,0.1);\">\n        🎓 Lanjutkan Belajar Sekarang\n      </a>\n    </div>\n    \n    <div style=\"border-top: 2px solid #e5e7eb; margin-top: 30px; padding-top: 20px; text-align: center;\">\n      <p style=\"color: #9ca3af; font-size: 13px; margin: 5px 0;\">\n        Semangat belajar! Setiap langkah kecil adalah progress 💪\n      </p>\n      <p style=\"color: #d1d5db; font-size: 12px; margin: 5px 0;\">\n        Smart Learning Platform - Codin\n      </p>\n    </div>\n  </div>\n</div>\n`;\n\n  const result = {\n    to: studentData.email,\n    subject: `🔔 ${fullName}, Yuk Lanjutkan Belajar! (${materiBelumSelesai} Materi Menunggu)`,\n    html: emailBody,\n    student_name: fullName,\n    days_inactive: daysInactive\n  };\n\n  console.log('Email prepared for:', result.to);\n  return [{ json: result }];\n\n} catch (error) {\n  console.error('ERROR in Format Email Pengingat:', error.message);\n  console.error('Stack:', error.stack);\n  throw error;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2240, 720],
+      "id": "format-email-reminder",
+      "name": "Format Email Pengingat",
+      "notes": "Format HTML email dengan data personal siswa"
+    },
+    {
+      "parameters": {
+        "fromEmail": "mochananangardiansyah@gmail.com",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [2480, 720],
+      "id": "send-email-smtp",
+      "name": "Kirim Email (SMTP)",
+      "credentials": {
+        "smtp": {
+          "id": "T9PSphDqn9qc1ol4",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Kirim email via SMTP Gmail"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-progress",
+              "leftValue": "={{ $json.body.user_question }}",
+              "rightValue": "progress",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "condition-kemarin",
+              "leftValue": "={{ $json.body.user_question }}",
+              "rightValue": "kemarin",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "condition-belajar",
+              "leftValue": "={{ $json.body.user_question }}",
+              "rightValue": "belajar saya",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "condition-sejauh",
+              "leftValue": "={{ $json.body.user_question }}",
+              "rightValue": "sejauh mana",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2448, 240],
+      "id": "545001ff-f18f-43ab-b0de-39d21ec2d165",
+      "name": "Cek Pertanyaan Progress?1",
+      "notes": "Cek apakah pertanyaan tentang progress atau umum"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Query SEMUA materi dengan progress (jika ada)\nSELECT \n  m.id as materi_id,\n  m.title as materi_title,\n  m.description as materi_description,\n  mpl.name as mapel_name,\n  COALESCE(mp.progress_percentage, 0) as progress_percentage,\n  COALESCE(mp.completed_sub_bab, 0) as completed_sub_bab,\n  (\n    SELECT COUNT(*) \n    FROM materi_bab mb\n    LEFT JOIN materi_sub_bab msb ON mb.id = msb.bab_id\n    WHERE mb.materi_id = m.id\n  ) as total_sub_bab,\n  mp.last_read_at,\n  mp.completed_at,\n  m.created_at\nFROM materi m\nLEFT JOIN mapel mpl ON m.mapel_id = mpl.id\nLEFT JOIN materi_progress mp ON m.id = mp.materi_id AND mp.siswa_id = '{{ $json.body.user_id }}'\nORDER BY \n  CASE \n    WHEN mp.last_read_at IS NOT NULL THEN mp.last_read_at \n    ELSE m.created_at \n  END DESC\nLIMIT 50",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2688, 128],
+      "id": "a1f789a2-93b4-4d85-8f21-c372b1ff4a72",
+      "name": "Supabase - Get Progress Data1",
+      "credentials": {
+        "postgres": {
+          "id": "jZ1e6ydxIZ10JCZS",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Query data progress siswa dari Supabase"
+    },
+    {
+      "parameters": {
+        "jsCode": "const progressData = $input.all();\nconst userName = $('Webhook - Terima Pertanyaan1').item.json.body.user_name;\n\nif (!progressData || progressData.length === 0) {\n  return [{\n    json: {\n      progress_summary: `Belum ada data progress belajar untuk ${userName}.\\n\\nSeperti nya kamu belum memulai pembelajaran apapun. Yuk mulai belajar sekarang! 📚`,\n      has_data: false\n    }\n  }];\n}\n\nlet totalMateri = progressData.length;\nlet materiSelesai = progressData.filter(m => m.json.progress_percentage === 100).length;\nlet materiDibaca = progressData.filter(m => m.json.completed_sub_bab > 0).length;\nlet materiSedangDipelajari = progressData.filter(m => m.json.progress_percentage > 0 && m.json.progress_percentage < 100).length;\nlet materiBelumDimulai = progressData.filter(m => m.json.progress_percentage === 0 || !m.json.progress_percentage).length;\nlet totalProgress = 0;\n\nlet summary = `📊 Data Progress Belajar ${userName}\\n\\n`;\nsummary += `Ringkasan:\\n`;\nsummary += `• Total Materi: ${totalMateri}\\n`;\nsummary += `• Selesai 100%: ${materiSelesai}\\n`;\nsummary += `• Sedang Dipelajari: ${materiSedangDipelajari}\\n`;\nsummary += `• Belum Dimulai: ${materiBelumDimulai}\\n\\n`;\n\n// Detail materi yang sudah dipelajari\nsummary += `📚 Materi yang Sudah Dipelajari:\\n\\n`;\nconst materiDipelajari = progressData.filter(m => m.json.progress_percentage > 0);\n\nif (materiDipelajari.length > 0) {\n  materiDipelajari.slice(0, 10).forEach((item, index) => {\n    const data = item.json;\n    totalProgress += parseFloat(data.progress_percentage || 0);\n    \n    const statusEmoji = data.progress_percentage === 100 ? '✅' : \n                       data.progress_percentage >= 50 ? '⏳' : '🚀';\n    \n    summary += `${index + 1}. ${statusEmoji} ${data.materi_title}\\n`;\n    \n    if (data.mapel_name) {\n      summary += `   📚 Mapel: ${data.mapel_name}\\n`;\n    }\n    \n    summary += `   📊 Progress: ${data.progress_percentage}% (${data.completed_sub_bab}/${data.total_sub_bab} sub-bab)\\n`;\n    \n    if (data.last_read_at) {\n      const lastRead = new Date(data.last_read_at);\n      const diffDays = Math.floor((new Date() - lastRead) / (1000 * 60 * 60 * 24));\n      \n      if (diffDays === 0) summary += `   🕐 Terakhir: Hari ini\\n`;\n      else if (diffDays === 1) summary += `   🕐 Terakhir: Kemarin\\n`;\n      else summary += `   🕐 Terakhir: ${diffDays} hari lalu\\n`;\n    }\n    \n    summary += `\\n`;\n  });\n} else {\n  summary += `Belum ada materi yang dipelajari.\\n\\n`;\n}\n\n// List materi yang belum dipelajari\nsummary += `\\n📋 Materi yang Belum Dipelajari:\\n\\n`;\nconst materiBelum = progressData.filter(m => !m.json.progress_percentage || m.json.progress_percentage === 0);\n\nif (materiBelum.length > 0) {\n  materiBelum.forEach((item, index) => {\n    const data = item.json;\n    summary += `${index + 1}. 📖 ${data.materi_title}\\n`;\n    \n    if (data.mapel_name) {\n      summary += `   📚 Mapel: ${data.mapel_name}\\n`;\n    }\n    \n    if (data.materi_description) {\n      const desc = data.materi_description.length > 80 \n        ? data.materi_description.substring(0, 80) + '...' \n        : data.materi_description;\n      summary += `   📝 Deskripsi: ${desc}\\n`;\n    }\n    \n    summary += `   📊 Total Sub-Bab: ${data.total_sub_bab}\\n\\n`;\n  });\n} else {\n  summary += `Semua materi sudah dimulai! Lanjutkan yang sedang berjalan. 🎉\\n\\n`;\n}\n\nconst avgProgress = materiDipelajari.length > 0 \n  ? (totalProgress / materiDipelajari.length).toFixed(1) \n  : 0;\n\nreturn [{\n  json: {\n    progress_summary: summary,\n    has_data: true,\n    total_materi: totalMateri,\n    materi_selesai: materiSelesai,\n    materi_sedang: materiSedangDipelajari,\n    materi_belum: materiBelumDimulai,\n    avg_progress: parseFloat(avgProgress)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2928, 128],
+      "id": "0e61ec2c-f674-408a-aff9-8a889372bdf6",
+      "name": "Format Progress Summary1",
+      "notes": "Format data progress jadi text summary untuk AI"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ `\nKamu adalah *Asisten Pembelajaran Codin*, AI yang mendampingi siswa belajar dengan cara yang hangat, memotivasi, dan personal.\n\n=== KONTEKS DATA ===\nGunakan informasi berikut sebagai dasar analisis:\n- Ringkasan progres belajar siswa:\n${$('Format Progress Summary1').first().json.progress_summary}\n\n- Nama siswa:\n${$('Webhook - Terima Pertanyaan1').first().json.body.user_name}\n\n- Pertanyaan siswa:\n${$('Webhook - Terima Pertanyaan1').first().json.body.user_question}\n\n=== PERAN DAN GAYA RESPON ===\n1. Analisis data progress dengan bijak\n2. Berikan motivasi yang personal & spesifik\n3. Highlight pencapaian positif (sekecil apapun)\n4. Berikan rekomendasi materi yang konkret\n5. Gunakan emoji yang relevan: 📊 🎯 ✅ 🚀 💪 ⏳\n6. Format rapi dengan bullet points\n7. Tone: Hangat, supportif, seperti mentor yang peduli\n\nJawab sekarang dengan data yang ada!\n` }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [3104, 96],
+      "id": "c9c2f307-e8ef-48d5-9648-af5cf8661add",
+      "name": "Message a model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AUsbEjjFJ9CWH4sE",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      },
+      "notes": "AI analisis progress dengan motivasi personal"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-2.0-flash",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ `Kamu adalah Asisten Pembelajaran Codin - ahli dalam pemrograman, algoritma, dan ilmu komputer.\n\nReferensi Materi: ${$('Webhook - Terima Pertanyaan1').first().json.body.pdf_link || 'Tidak ada'}\n\nPertanyaan dari ${$('Webhook - Terima Pertanyaan1').first().json.body.user_name}:\n${$('Webhook - Terima Pertanyaan1').first().json.body.user_question}\n\nInstruksi:\n1. Jawab langsung & natural (JANGAN pakai \"Berdasarkan dokumen\" atau \"Menurut materi\")\n2. Jelaskan konsep dengan analogi yang mudah dipahami\n3. Gunakan **bold** untuk konsep kunci\n4. Tambahkan contoh kode jika relevan (gunakan \\`\\`\\`bahasa untuk code block)\n5. Format: [Penjelasan Konsep] → [Detail/Analogi] → [Contoh Praktis] → [Tips]\n6. Gunakan emoji yang relevan: 💡 🎯 📝 💻 ⚡\n7. Paragraf pendek dan mudah dibaca\n\nTone: Ramah, profesional, seperti guru yang sabar menjelaskan.\n\nContoh good response:\n\"**Algoritma** adalah langkah-langkah sistematis untuk menyelesaikan masalah. Analoginya seperti resep masakan...\"` }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [2880, 432],
+      "id": "10ef3463-86b3-49d4-bbf6-9d08838b9609",
+      "name": "AI - Jawab Pertanyaan Umum1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AUsbEjjFJ9CWH4sE",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      },
+      "notes": "AI jawab pertanyaan umum tentang materi"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract response dari Gemini API dengan multiple fallback\nconst input = $input.first().json;\n\n// Log untuk debugging\nconsole.log('=== GEMINI API RESPONSE ===');\nconsole.log(JSON.stringify(input, null, 2));\n\nlet aiText = \"Maaf, saya tidak dapat memproses pertanyaan Anda saat ini. Silakan coba lagi.\";\nlet extractionMethod = \"default_error\";\n\n// Try multiple possible response structures\nif (input?.candidates?.[0]?.content?.parts?.[0]?.text) {\n  // Standard Gemini API response\n  aiText = input.candidates[0].content.parts[0].text;\n  extractionMethod = \"gemini_candidates\";\n  \n} else if (input?.choices?.[0]?.message?.content) {\n  // OpenAI-style response\n  aiText = input.choices[0].message.content;\n  extractionMethod = \"openai_choices\";\n  \n} else if (input?.text) {\n  // Simple text response\n  aiText = input.text;\n  extractionMethod = \"simple_text\";\n  \n} else if (input?.response) {\n  // Generic response field\n  aiText = input.response;\n  extractionMethod = \"generic_response\";\n  \n} else if (input?.content) {\n  if (typeof input.content === 'string') {\n    aiText = input.content;\n    extractionMethod = \"content_string\";\n  } else if (input.content?.parts?.[0]?.text) {\n    aiText = input.content.parts[0].text;\n    extractionMethod = \"content_parts\";\n  }\n  \n} else if (input?.error) {\n  // Error response dari API\n  const errorMsg = input.error.message || JSON.stringify(input.error);\n  aiText = `⚠️ Maaf, terjadi error: ${errorMsg}`;\n  extractionMethod = \"api_error\";\n  \n} else if (typeof input === 'string') {\n  // Plain string response\n  aiText = input;\n  extractionMethod = \"plain_string\";\n}\n\nconsole.log('=== EXTRACTION RESULT ===');\nconsole.log('Method:', extractionMethod);\nconsole.log('Text Length:', aiText.length);\n\nreturn [{\n  json: {\n    response: aiText,\n    extraction_method: extractionMethod,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3408, 240],
+      "id": "f9b23e22-ab71-4ef7-9903-1daf3666d8a1",
+      "name": "Extract AI Response1",
+      "notes": "Extract text dari response Gemini dengan multiple fallback"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.response }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [3648, 240],
+      "id": "96bcec4d-92cf-49bf-9c63-be22f11eb370",
+      "name": "Respond to Webhook1",
+      "notes": "Kirim response kembali ke FloatingChatbot"
+    }
+  ],
+  "connections": {
+    "Webhook - Terima Pertanyaan1": {
+      "main": [
+        [
+          {
+            "node": "Cek Pertanyaan Progress?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cek Pertanyaan Progress?1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Progress Data1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI - Jawab Pertanyaan Umum1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Progress Data1": {
+      "main": [
+        [
+          {
+            "node": "Format Progress Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Progress Summary1": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Jawab Pertanyaan Umum1": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract AI Response1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule - Pengingat Belajar": {
+      "main": [
+        [
+          {
+            "node": "Get Siswa Tidak Aktif",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Siswa Tidak Aktif": {
+      "main": [
+        [
+          {
+            "node": "Get Materi Belum Selesai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Materi Belum Selesai": {
+      "main": [
+        [
+          {
+            "node": "Format Email Pengingat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Pengingat": {
+      "main": [
+        [
+          {
+            "node": "Kirim Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e1240a633135f2826e3026028e715e02da8dd9dc088cbecb83e9837ff41f154a"
+  }
+}

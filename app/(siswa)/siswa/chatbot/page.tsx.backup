@@ -1,0 +1,427 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Send, Bot, User, Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+interface Message {
+  id: string;
+  content: string;
+  sender: "user" | "bot";
+  timestamp: Date;
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+}
+
+export default function ChatbotPage() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      content: "Halo! Saya adalah asisten pembelajaran LogiCode. Ada yang bisa saya bantu?",
+      sender: "bot",
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile) {
+          setUserProfile(profile);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inputMessage.trim() || isLoading || !userProfile) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputMessage,
+      sender: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const questionText = inputMessage;
+    setInputMessage("");
+    setIsLoading(true);
+
+    try {
+      // Call N8N webhook API
+      const response = await fetch('https://n8n-2c13xchuqnsv.sumopod.my/webhook-test/07371c62-ffc1-44a9-9043-cad5e1459df3', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pdf_link: "https://docs.google.com/document/d/1fzJ1GAdicU7bmCJxn-Ugh2ETkYgtH38sTRKLLqDLMjU/edit?usp=sharing",
+          user_question: questionText,
+          user_id: userProfile.id,
+          user_name: userProfile.full_name || "User"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from chatbot');
+      }
+
+      // Try to get response as text first
+      const responseText = await response.text();
+      let botResponseText = "Maaf, saya tidak dapat memproses pertanyaan Anda saat ini.";
+      
+      // Try to parse as JSON, if fail treat as plain text
+      try {
+        const data = JSON.parse(responseText);
+        
+        // Handle different JSON response formats
+        if (Array.isArray(data) && data.length > 0) {
+          // Format: Array from Gemini
+          const firstItem = data[0];
+          if (firstItem.content?.parts?.[0]?.text) {
+            botResponseText = firstItem.content.parts[0].text;
+          }
+        } else if (data.response) {
+          // Format: { response: "..." }
+          botResponseText = data.response;
+        } else if (data.answer) {
+          // Format: { answer: "..." }
+          botResponseText = data.answer;
+        } else if (data.message) {
+          // Format: { message: "..." }
+          botResponseText = data.message;
+        } else if (data.content?.parts?.[0]?.text) {
+          // Format: Direct Gemini response
+          botResponseText = data.content.parts[0].text;
+        } else if (typeof data === 'string') {
+          // Format: Plain text wrapped in JSON
+          botResponseText = data;
+        }
+      } catch (parseError) {
+        // If JSON parse fails, treat as plain text response
+        if (responseText && responseText.trim().length > 0) {
+          botResponseText = responseText;
+        }
+      }
+
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: botResponseText,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Error calling chatbot API:', error);
+      toast.error("Gagal mendapatkan response dari chatbot");
+      
+      // Fallback to local response if API fails
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Maaf, terjadi kesalahan saat menghubungi server. Silakan coba lagi nanti.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, botResponse]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <Bot className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">LogiCode Assistant</h1>
+            </div>
+          </div>
+          {userProfile && (
+            <div className="text-sm text-gray-600">
+              {userProfile.full_name}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Area */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 animate-fadeIn ${
+                    message.sender === "user" ? "flex-row-reverse" : "flex-row"
+                  }`}
+                  style={{
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                >
+                  <Avatar
+                    className={`h-10 w-10 flex-shrink-0 transition-transform hover:scale-110 ${
+                      message.sender === "user"
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-200"
+                        : "bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-200"
+                    }`}
+                  >
+                    <AvatarFallback className="text-white">
+                      {message.sender === "user" ? (
+                        <User className="h-5 w-5" />
+                      ) : (
+                        <Bot className="h-5 w-5 animate-bounce" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div
+                    className={`flex flex-col ${
+                      message.sender === "user" ? "items-end" : "items-start"
+                    } max-w-[75%] animate-slideIn`}
+                  >
+                    <div
+                      className={`rounded-2xl px-5 py-3 transition-all duration-300 hover:shadow-md ${
+                        message.sender === "user"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200"
+                          : "bg-white border-2 border-gray-100 shadow-md hover:border-green-200 text-gray-900"
+                      }`}
+                    >
+                      {message.sender === "user" ? (
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      ) : (
+                        <div className="prose prose-sm max-w-none prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:my-2">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => (
+                                <p className="text-sm leading-relaxed mb-2 last:mb-0">
+                                  {children}
+                                </p>
+                              ),
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-gray-900">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic text-gray-800">
+                                  {children}
+                                </em>
+                              ),
+                              ul: ({ children }) => (
+                                <ul className="list-disc list-inside space-y-1 my-2 ml-2">
+                                  {children}
+                                </ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="list-decimal list-inside space-y-1 my-2 ml-2">
+                                  {children}
+                                </ol>
+                              ),
+                              li: ({ children }) => (
+                                <li className="text-sm text-gray-800 leading-relaxed">
+                                  {children}
+                                </li>
+                              ),
+                              h1: ({ children }) => (
+                                <h1 className="text-lg font-bold text-gray-900 mt-3 mb-2">
+                                  {children}
+                                </h1>
+                              ),
+                              h2: ({ children }) => (
+                                <h2 className="text-base font-bold text-gray-900 mt-3 mb-2">
+                                  {children}
+                                </h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3 className="text-sm font-bold text-gray-900 mt-2 mb-1">
+                                  {children}
+                                </h3>
+                              ),
+                              code: ({ children, className }) => {
+                                const isInline = !className;
+                                return isInline ? (
+                                  <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono text-red-600">
+                                    {children}
+                                  </code>
+                                ) : (
+                                  <code className="block bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto my-2">
+                                    {children}
+                                  </code>
+                                );
+                              },
+                              a: ({ children, href }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-gray-300 pl-3 italic text-gray-700 my-2">
+                                  {children}
+                                </blockquote>
+                              ),
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">
+                      {message.timestamp.toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="flex gap-3 animate-fadeIn">
+                  <Avatar className="h-10 w-10 bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-200">
+                    <AvatarFallback className="text-white">
+                      <Bot className="h-5 w-5 animate-pulse" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl px-6 py-3 shadow-md border-2 border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      <span className="text-xs text-gray-500 ml-2">Bot sedang mengetik...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          <form
+            onSubmit={handleSendMessage}
+            className="p-4 border-t bg-gradient-to-r from-gray-50 to-white shadow-lg"
+          >
+            <div className="flex gap-3">
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Ketik pesan Anda di sini..."
+                disabled={isLoading}
+                className="flex-1 border-2 border-gray-200 focus:border-green-500 rounded-xl px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50"
+              />
+              <Button
+                type="submit"
+                disabled={isLoading || !inputMessage.trim() || !userProfile}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 rounded-xl shadow-lg shadow-green-200 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="mt-4 p-5 bg-gradient-to-r from-blue-50 via-blue-100 to-purple-50 rounded-2xl border-2 border-blue-200 shadow-lg animate-fadeIn">
+        <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+          <span className="text-2xl">💡</span>
+          <span>Tips Menggunakan Chatbot</span>
+        </h3>
+        <ul className="text-sm text-blue-800 space-y-2">
+          <li className="flex items-start gap-2">
+            <span className="text-green-500 font-bold">✓</span>
+            <span>Tanya tentang <strong>Algoritma</strong>, <strong>Pemrograman</strong>, atau materi pembelajaran lainnya</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-green-500 font-bold">✓</span>
+            <span>Chatbot terhubung dengan <strong>dokumen materi pembelajaran</strong></span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-green-500 font-bold">✓</span>
+            <span>Response diproses oleh <strong>AI Gemini</strong> untuk jawaban yang akurat</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-green-500 font-bold">✓</span>
+            <span>Ketik pertanyaan dengan <strong>jelas dan spesifik</strong> untuk hasil terbaik</span>
+          </li>
+        </ul>
+      </div>
+
+      {userProfile && (
+        <div className="mt-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 shadow-md animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {userProfile.full_name?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <div>
+              <div className="text-xs text-gray-600">Login sebagai</div>
+              <div className="font-bold text-gray-900">{userProfile.full_name}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

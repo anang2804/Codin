@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import nodemailer from "nodemailer";
+import prisma from "@/lib/prisma";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -11,9 +12,24 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
     "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for admin siswa API"
   );
+  throw new Error("Server configuration error: Missing Supabase credentials");
 }
 
-const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+// Debug logging (remove in production)
+console.log("🔑 Supabase Admin Client Config:");
+console.log("  URL:", SUPABASE_URL);
+console.log(
+  "  Service Role Key (first 20 chars):",
+  SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "..."
+);
+console.log("  Service Role Key length:", SUPABASE_SERVICE_ROLE_KEY?.length);
+
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 // Email transporter (SMTP) - optional but required for sending password emails
 const SMTP_HOST = process.env.SMTP_HOST;
@@ -55,11 +71,10 @@ export async function POST(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   } catch (e) {
@@ -74,6 +89,7 @@ export async function POST(req: Request) {
       full_name,
       sendEmail,
       kelas,
+      no_telepon,
     } = body;
 
     // If email is not provided by admin, auto-generate one using the student's name
@@ -147,14 +163,22 @@ export async function POST(req: Request) {
       }
     } else {
       // email provided: create directly
-      const res = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: generatedPassword,
-        user_metadata: { full_name, role: "siswa" },
-        email_confirm: true,
-      });
-      created = res.data;
-      createError = res.error;
+      try {
+        const res = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: generatedPassword,
+          user_metadata: { full_name, role: "siswa" },
+          email_confirm: true,
+        });
+        created = res.data;
+        createError = res.error;
+      } catch (err: any) {
+        console.error("Supabase createUser exception:", err);
+        return NextResponse.json(
+          { error: `Failed to create user: ${err.message || "Unknown error"}` },
+          { status: 500 }
+        );
+      }
     }
 
     if (createError) {
@@ -166,14 +190,13 @@ export async function POST(req: Request) {
         /already|exists|registered/i.test(msg);
       if (isEmailExists) {
         try {
-          const { data: existingProfile } = await supabaseAdmin
-            .from("profiles")
-            .select("id")
-            .eq("email", email)
-            .maybeSingle();
-          if (existingProfile && (existingProfile as any).id) {
+          const existingProfile = await prisma.profile.findFirst({
+            where: { email },
+            select: { id: true },
+          });
+          if (existingProfile?.id) {
             return NextResponse.json(
-              { error: "email_exists", id: (existingProfile as any).id },
+              { error: "email_exists", id: existingProfile.id },
               { status: 409 }
             );
           }
@@ -197,55 +220,34 @@ export async function POST(req: Request) {
       );
     }
 
-    // Insert or update profile row (handle possible existing profile to avoid duplicate PK)
+    // Upsert profile row with Prisma
     try {
-      const { data: existing } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("id", userId);
-      if (!existing || (Array.isArray(existing) && existing.length === 0)) {
-        const { error: profileError } = await supabaseAdmin
-          .from("profiles")
-          .insert([
-            {
-              id: userId,
-              email,
-              full_name,
-              role: "siswa",
-              kelas: kelas || null,
-            },
-          ]);
-        if (profileError) {
-          console.error("insert profile error:", profileError);
-          // try to cleanup created user
-          await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
-          return NextResponse.json(
-            { error: profileError.message },
-            { status: 500 }
-          );
-        }
-      } else {
-        // Profile already exists — update fields instead of inserting
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update({
-            email,
-            full_name,
-            role: "siswa",
-            kelas: kelas || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-        if (updateError) {
-          console.error("update profile error:", updateError);
-          return NextResponse.json(
-            { error: updateError.message },
-            { status: 500 }
-          );
-        }
-      }
+      await prisma.profile.upsert({
+        where: { id: userId },
+        update: {
+          email,
+          full_name,
+          role: "siswa",
+          kelas: kelas || null,
+          phone: no_telepon || null,
+        },
+        create: {
+          id: userId,
+          email,
+          full_name,
+          role: "siswa",
+          kelas: kelas || null,
+          phone: no_telepon || null,
+        },
+      });
     } catch (err) {
-      console.error("profiles check/insert error:", err);
+      console.error("profiles upsert error:", err);
+      // try to cleanup created user
+      await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
+      return NextResponse.json(
+        { error: "Failed to create profile" },
+        { status: 500 }
+      );
       // try to cleanup created user
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
       return NextResponse.json(
@@ -361,29 +363,35 @@ export async function GET(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("role", "siswa")
-      .order("created_at", { ascending: false });
+    const siswa = await prisma.profile.findMany({
+      where: { role: "siswa" },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        kelas: true,
+        phone: true,
+        address: true,
+        created_at: true,
+      },
+      orderBy: { created_at: "desc" },
+    });
 
-    if (error) {
-      console.error("Failed to fetch siswa profiles:", error);
-      return NextResponse.json(
-        { error: error.message || "Failed" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ data });
+    return NextResponse.json(
+      { data: siswa },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -400,11 +408,10 @@ export async function PUT(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   } catch (e) {
@@ -422,32 +429,23 @@ export async function PUT(req: Request) {
       jenis_kelamin,
       no_telepon,
       alamat,
+      password,
     } = body;
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    // Update profiles table
-    const updates: any = { updated_at: new Date().toISOString() };
+    // Update profiles table with Prisma
+    const updates: any = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (email !== undefined) updates.email = email;
     if (kelas !== undefined) updates.kelas = kelas;
-    if (jurusan !== undefined) updates.jurusan = jurusan;
-    if (tanggal_lahir !== undefined) updates.tanggal_lahir = tanggal_lahir;
-    if (jenis_kelamin !== undefined) updates.jenis_kelamin = jenis_kelamin;
-    if (no_telepon !== undefined) updates.no_telepon = no_telepon;
-    if (alamat !== undefined) updates.alamat = alamat;
+    if (no_telepon !== undefined) updates.phone = no_telepon;
+    if (alamat !== undefined) updates.address = alamat;
 
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .update(updates)
-      .eq("id", id);
-    if (profileError) {
-      console.error("profiles update error:", profileError);
-      return NextResponse.json(
-        { error: profileError.message },
-        { status: 500 }
-      );
-    }
+    await prisma.profile.update({
+      where: { id },
+      data: updates,
+    });
 
     // If email changed, update auth user email
     if (email !== undefined) {
@@ -456,6 +454,25 @@ export async function PUT(req: Request) {
       if (authError) {
         console.error("auth update error:", authError);
         return NextResponse.json({ error: authError.message }, { status: 500 });
+      }
+    }
+
+    // If password provided, update it
+    if (password && password.trim()) {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: "Password minimal 6 karakter" },
+          { status: 400 }
+        );
+      }
+      const { error: passwordError } =
+        await supabaseAdmin.auth.admin.updateUserById(id, { password });
+      if (passwordError) {
+        console.error("password update error:", passwordError);
+        return NextResponse.json(
+          { error: passwordError.message },
+          { status: 500 }
+        );
       }
     }
 
@@ -475,11 +492,10 @@ export async function DELETE(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!caller)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { data: callerProfile } = await serverSupabase
-      .from("profiles")
-      .select("role")
-      .eq("id", caller.id)
-      .single();
+    const callerProfile = await prisma.profile.findUnique({
+      where: { id: caller.id },
+      select: { role: true },
+    });
     if (callerProfile?.role !== "admin")
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   } catch (e) {
@@ -492,7 +508,7 @@ export async function DELETE(req: Request) {
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    // delete user from auth
+    // delete user from auth (cascade will handle profile deletion)
     const { error: deleteAuthError } =
       await supabaseAdmin.auth.admin.deleteUser(id);
     if (deleteAuthError) {
@@ -503,8 +519,8 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // profiles entry will be deleted by cascade (auth.users -> profiles) but ensure removal
-    await supabaseAdmin.from("profiles").delete().eq("id", id);
+    // Ensure profile is deleted with Prisma
+    await prisma.profile.delete({ where: { id } }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {

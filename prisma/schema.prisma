@@ -1,0 +1,311 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// PROFILES & AUTH
+// ============================================
+
+model Profile {
+  id                   String    @id @db.Uuid
+  email                String
+  full_name            String?
+  role                 String    // 'admin', 'guru', 'siswa'
+  kelas                String?
+  phone                String?
+  address              String?
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  materi_created       Materi[]  @relation("MateriCreator")
+  mapel_guru           Mapel[]   @relation("MapelGuru")
+  bab_created          MateriProgress[]
+  sub_bab_progress     SubBabProgress[]
+  
+  @@map("profiles")
+}
+
+// ============================================
+// MATA PELAJARAN & KELAS
+// ============================================
+
+model Mapel {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  code        String   @unique
+  description String?
+  guru_id     String?  @db.Uuid
+  created_by  String   @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  guru        Profile? @relation("MapelGuru", fields: [guru_id], references: [id], onDelete: SetNull)
+  materi      Materi[]
+  
+  @@map("mapel")
+}
+
+model Kelas {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String   @unique
+  wali_kelas_id  String?  @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  @@map("kelas")
+}
+
+// ============================================
+// MATERI & PEMBELAJARAN
+// ============================================
+
+model Materi {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String?
+  thumbnail_url String?
+  mapel_id      String?     @db.Uuid
+  created_by    String      @db.Uuid
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  mapel         Mapel?      @relation(fields: [mapel_id], references: [id], onDelete: SetNull)
+  creator       Profile     @relation("MateriCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  babs          MateriBab[]
+  progress      MateriProgress[]
+  
+  @@map("materi")
+}
+
+model MateriBab {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  materi_id   String         @db.Uuid
+  title       String         @db.VarChar(255)
+  description String?
+  order_index Int            @default(0)
+  created_at  DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  materi      Materi         @relation(fields: [materi_id], references: [id], onDelete: Cascade)
+  sub_babs    MateriSubBab[]
+  
+  @@map("materi_bab")
+}
+
+model MateriSubBab {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bab_id       String           @db.Uuid
+  title        String           @db.VarChar(255)
+  content      String?
+  content_type String           @db.VarChar(20) // 'text', 'video', 'file', 'link'
+  content_url  String?
+  duration     Int?             @default(0)
+  order_index  Int              @default(0)
+  created_at   DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  bab          MateriBab        @relation(fields: [bab_id], references: [id], onDelete: Cascade)
+  progress     SubBabProgress[]
+  
+  @@map("materi_sub_bab")
+}
+
+model MateriPendukung {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  materi_id   String   @db.Uuid
+  type        String   // 'file', 'link', 'video'
+  title       String
+  description String?
+  url         String?
+  file_path   String?
+  file_name   String?
+  file_size   Int?
+  file_type   String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  
+  @@map("materi_pendukung")
+}
+
+// ============================================
+// PROGRESS TRACKING
+// ============================================
+
+model MateriProgress {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siswa_id            String   @db.Uuid
+  materi_id           String   @db.Uuid
+  completed_sub_bab   Int      @default(0)
+  total_sub_bab       Int      @default(0)
+  progress_percentage Int      @default(0)
+  last_read_at        DateTime @default(now()) @db.Timestamptz(6)
+  completed_at        DateTime? @db.Timestamptz(6)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  siswa               Profile  @relation(fields: [siswa_id], references: [id], onDelete: Cascade)
+  materi              Materi   @relation(fields: [materi_id], references: [id], onDelete: Cascade)
+  
+  @@unique([siswa_id, materi_id])
+  @@map("materi_progress")
+}
+
+model SubBabProgress {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siswa_id     String        @db.Uuid
+  sub_bab_id   String        @db.Uuid
+  completed    Boolean       @default(false)
+  completed_at DateTime?     @db.Timestamptz(6)
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  siswa        Profile       @relation(fields: [siswa_id], references: [id], onDelete: Cascade)
+  sub_bab      MateriSubBab  @relation(fields: [sub_bab_id], references: [id], onDelete: Cascade)
+  
+  @@unique([siswa_id, sub_bab_id])
+  @@map("sub_bab_progress")
+}
+
+// ============================================
+// ASESMEN & PENILAIAN
+// ============================================
+
+model Asesmen {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String
+  description     String?
+  kelas_id        String?  @db.Uuid
+  created_by      String   @db.Uuid
+  total_questions Int      @default(0)
+  passing_score   Int      @default(70)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  soal            Soal[]
+  nilai           Nilai[]
+  jawaban_siswa   JawabanSiswa[]
+  
+  @@map("asesmen")
+}
+
+model Soal {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asesmen_id     String         @db.Uuid
+  question       String
+  type           String         // 'pilihan_ganda', 'essay'
+  options        Json?
+  correct_answer String?
+  points         Int            @default(1)
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  asesmen        Asesmen        @relation(fields: [asesmen_id], references: [id], onDelete: Cascade)
+  jawaban        JawabanSiswa[]
+  
+  @@map("soal")
+}
+
+model JawabanSiswa {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asesmen_id    String   @db.Uuid
+  siswa_id      String   @db.Uuid
+  soal_id       String   @db.Uuid
+  answer        String?
+  is_correct    Boolean?
+  points_earned Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  asesmen       Asesmen  @relation(fields: [asesmen_id], references: [id], onDelete: Cascade)
+  soal          Soal     @relation(fields: [soal_id], references: [id], onDelete: Cascade)
+  
+  @@map("jawaban_siswa")
+}
+
+model Nilai {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asesmen_id   String    @db.Uuid
+  siswa_id     String    @db.Uuid
+  score        Int?
+  status       String?   // 'lulus', 'tidak_lulus'
+  submitted_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  asesmen      Asesmen   @relation(fields: [asesmen_id], references: [id], onDelete: Cascade)
+  
+  @@map("nilai")
+}
+
+// ============================================
+// PROJECT-BASED LEARNING (PJBL)
+// ============================================
+
+model Pjbl {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String?
+  kelas_id    String?         @db.Uuid
+  created_by  String          @db.Uuid
+  start_date  DateTime?       @db.Date
+  end_date    DateTime?       @db.Date
+  created_at  DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  stages      PjblStage[]
+  submissions PjblSubmission[]
+  
+  @@map("pjbl")
+}
+
+model PjblStage {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pjbl_id      String           @db.Uuid
+  stage_number Int
+  stage_name   String
+  description  String?
+  due_date     DateTime?        @db.Date
+  created_at   DateTime         @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  pjbl         Pjbl             @relation(fields: [pjbl_id], references: [id], onDelete: Cascade)
+  submissions  PjblSubmission[]
+  
+  @@map("pjbl_stages")
+}
+
+model PjblSubmission {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pjbl_id         String    @db.Uuid
+  siswa_id        String    @db.Uuid
+  stage_id        String    @db.Uuid
+  submission_text String?
+  file_url        String?
+  status          String?   // 'draft', 'submitted', 'reviewed'
+  feedback        String?
+  score           Int?
+  submitted_at    DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  pjbl            Pjbl      @relation(fields: [pjbl_id], references: [id], onDelete: Cascade)
+  stage           PjblStage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  
+  @@map("pjbl_submissions")
+}

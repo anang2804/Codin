@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,143 +12,57 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Users, Plus, Edit, Trash2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-
-interface Kelas {
-  id: string;
-  name: string;
-  wali_kelas_id: string | null;
-  wali_kelas?: { full_name: string; email?: string };
-  created_at: string;
-}
-
-interface GuruOption {
-  id: string;
-  full_name: string;
-  email: string;
-}
+import {
+  useKelas,
+  useCreateKelas,
+  useUpdateKelas,
+  useDeleteKelas,
+} from "@/lib/hooks/use-kelas";
+import { useGuru } from "@/lib/hooks/use-guru";
 
 export default function AdminKelasPage() {
-  const [kelas, setKelas] = useState<Kelas[]>([]);
-  const [guruOptions, setGuruOptions] = useState<GuruOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: kelas, isLoading: loading } = useKelas();
+  const { data: guruOptions } = useGuru();
+  const createKelas = useCreateKelas();
+  const updateKelas = useUpdateKelas();
+  const deleteKelas = useDeleteKelas();
+
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     id: "",
     name: "",
-    wali_kelas_id: "",
   });
   const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    fetchKelas();
-    fetchGuru();
-  }, []);
-
-  const fetchKelas = async () => {
-    setLoading(true);
-
-    try {
-      // Fetch kelas data
-      const kelasResponse = await fetch("/api/admin/kelas");
-      const kelasResult = await kelasResponse.json();
-
-      if (!kelasResult.data) {
-        throw new Error("Failed to fetch kelas");
-      }
-
-      console.log("✅ Kelas data fetched:", kelasResult.data);
-      setKelas(kelasResult.data);
-    } catch (error) {
-      console.error("❌ Error fetching kelas:", error);
-      toast.error("Gagal memuat data kelas");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchGuru = async () => {
-    try {
-      const response = await fetch("/api/admin/guru");
-      const result = await response.json();
-
-      if (result.data) {
-        setGuruOptions(result.data);
-      }
-    } catch (error) {
-      console.error("Error fetching guru:", error);
-      toast.error("Gagal memuat data guru");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditing) {
-      await handleUpdateKelas();
-    } else {
-      await handleAddKelas();
-    }
-  };
-
-  const handleAddKelas = async () => {
     try {
-      const response = await fetch("/api/admin/kelas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          wali_kelas_id: formData.wali_kelas_id || null,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to add kelas");
-      }
-
-      // Refresh the entire kelas list to get updated wali kelas info
-      await fetchKelas();
-
-      setFormData({ id: "", name: "", wali_kelas_id: "" });
-      setShowForm(false);
-      toast.success("Kelas berhasil ditambahkan");
-    } catch (error: any) {
-      console.error("Error adding kelas:", error);
-      toast.error(error.message || "Gagal menambahkan kelas");
-    }
-  };
-
-  const handleUpdateKelas = async () => {
-    try {
-      const response = await fetch("/api/admin/kelas", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      if (isEditing) {
+        await updateKelas.mutateAsync({
           id: formData.id,
           name: formData.name,
-          wali_kelas_id: formData.wali_kelas_id || null,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update kelas");
+        });
+        toast.success("Kelas berhasil diupdate");
+      } else {
+        await createKelas.mutateAsync({
+          name: formData.name,
+        });
+        toast.success("Kelas berhasil ditambahkan");
       }
 
-      // Refresh the entire kelas list to get updated wali kelas info
-      await fetchKelas();
-
-      setFormData({ id: "", name: "", wali_kelas_id: "" });
+      setFormData({
+        id: "",
+        name: "",
+      });
       setShowForm(false);
       setIsEditing(false);
-      toast.success("Kelas berhasil diupdate");
     } catch (error: any) {
-      console.error("Error updating kelas:", error);
-      toast.error(error.message || "Gagal mengupdate kelas");
+      toast.error(
+        error.message ||
+          `Gagal ${isEditing ? "mengupdate" : "menambahkan"} kelas`
+      );
     }
   };
 
@@ -156,36 +70,27 @@ export default function AdminKelasPage() {
     if (!confirm("Apakah Anda yakin ingin menghapus kelas ini?")) return;
 
     try {
-      const response = await fetch(`/api/admin/kelas?id=${id}`, {
-        method: "DELETE",
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to delete kelas");
-      }
-
-      setKelas(kelas.filter((k) => k.id !== id));
+      await deleteKelas.mutateAsync(id);
       toast.success("Kelas berhasil dihapus");
     } catch (error: any) {
-      console.error("Error deleting kelas:", error);
       toast.error(error.message || "Gagal menghapus kelas");
     }
   };
 
-  const openEditForm = (kelasItem: Kelas) => {
+  const openEditForm = (kelasItem: any) => {
     setFormData({
       id: kelasItem.id,
       name: kelasItem.name,
-      wali_kelas_id: kelasItem.wali_kelas_id || "",
     });
     setIsEditing(true);
     setShowForm(true);
   };
 
   const openAddForm = () => {
-    setFormData({ id: "", name: "", wali_kelas_id: "" });
+    setFormData({
+      id: "",
+      name: "",
+    });
     setIsEditing(false);
     setShowForm(true);
   };
@@ -226,25 +131,6 @@ export default function AdminKelasPage() {
                 className="border-green-200"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wali Kelas
-              </label>
-              <select
-                value={formData.wali_kelas_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, wali_kelas_id: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-green-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Pilih Wali Kelas (Opsional)</option>
-                {guruOptions.map((guru) => (
-                  <option key={guru.id} value={guru.id}>
-                    {guru.full_name} ({guru.email})
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="flex gap-3">
               <Button type="submit" className="bg-green-600 hover:bg-green-700">
                 {isEditing ? "Update" : "Simpan"}
@@ -270,7 +156,7 @@ export default function AdminKelasPage() {
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat kelas...</p>
         </div>
-      ) : kelas.length === 0 ? (
+      ) : !kelas || kelas.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
           <Users size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600">
@@ -290,14 +176,6 @@ export default function AdminKelasPage() {
                     {k.name}
                   </h3>
                   <div className="flex gap-4 text-sm text-gray-500">
-                    <span>
-                      Wali Kelas:{" "}
-                      <span className="font-medium text-gray-700">
-                        {k.wali_kelas?.full_name ||
-                          k.wali_kelas?.email ||
-                          "Belum ditentukan"}
-                      </span>
-                    </span>
                     <span>
                       Dibuat:{" "}
                       {new Date(k.created_at).toLocaleDateString("id-ID")}

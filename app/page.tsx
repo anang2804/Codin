@@ -44,16 +44,14 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-white via-emerald-50 to-emerald-100">
       <div className="max-w-5xl mx-auto px-6 pt-6 pb-16">
         {/* Header */}
-        <header className="sticky top-2 z-40 bg-white/60 backdrop-blur-sm rounded-xl px-8 py-4 mb-2">
+        <header className="sticky top-2 z-40 bg-white/60 backdrop-blur-sm rounded-xl px-6 py-4 mb-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
-                SL
-              </div>
-              <div>
-                <div className="font-bold text-lg">Smart</div>
-                <div className="text-xs text-gray-500">Learning Platform</div>
-              </div>
+            <div className="flex items-center">
+              <img
+                src="/logo codin.png"
+                alt="Codin Logo"
+                className="h-24 w-auto -ml-2"
+              />
             </div>
             <nav className="hidden sm:flex items-center gap-6">
               <Link
@@ -218,7 +216,7 @@ export default function LandingPage() {
               SL
             </div>
             <div>
-              <div className="font-semibold">Smart Learning Platform</div>
+              <div className="font-semibold">Codin</div>
               <div className="text-xs text-gray-500">© 2025</div>
             </div>
           </div>

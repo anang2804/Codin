@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import prisma from "@/lib/prisma";
 
 // Mark sub_bab as complete/incomplete (untuk siswa)
 export async function POST(req: Request) {
@@ -23,57 +24,123 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upsert sub_bab_progress (insert or update)
-    // The trigger will automatically recalculate materi_progress
-    const { data, error } = await supabase
-      .from("sub_bab_progress")
-      .upsert(
-        {
+    // Ensure database connection
+    await prisma.$connect();
+
+    // Upsert sub_bab_progress with Prisma
+    const progress = await prisma.subBabProgress.upsert({
+      where: {
+        siswa_id_sub_bab_id: {
           siswa_id: user.id,
           sub_bab_id: sub_bab_id,
-          completed: completed,
         },
-        {
-          onConflict: "siswa_id,sub_bab_id",
-        }
-      )
-      .select()
-      .single();
+      },
+      update: {
+        completed,
+      },
+      create: {
+        siswa_id: user.id,
+        sub_bab_id,
+        completed,
+      },
+    });
 
-    if (error) {
-      console.error("Error updating sub_bab progress:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // Get updated materi progress
-    const { data: subBabData } = await supabase
-      .from("materi_sub_bab")
-      .select("bab_id, materi_bab!inner(materi_id)")
-      .eq("id", sub_bab_id)
-      .single();
+    // Get materi_id from sub_bab via bab
+    const subBab = await prisma.materiSubBab.findUnique({
+      where: { id: sub_bab_id },
+      include: {
+        bab: {
+          select: { materi_id: true },
+        },
+      },
+    });
 
     let materiProgress = null;
-    if (subBabData) {
-      const materiId = (subBabData as any).materi_bab.materi_id;
-      const { data: progressData } = await supabase
-        .from("materi_progress")
-        .select("*")
-        .eq("siswa_id", user.id)
-        .eq("materi_id", materiId)
-        .single();
+    if (subBab?.bab) {
+      const materiId = subBab.bab.materi_id;
 
-      materiProgress = progressData;
+      // Count total sub_bab in this materi
+      const totalSubBabs = await prisma.materiSubBab.count({
+        where: {
+          bab: {
+            materi_id: materiId,
+          },
+        },
+      });
+
+      // Count completed sub_bab by this user
+      const completedSubBabs = await prisma.subBabProgress.count({
+        where: {
+          siswa_id: user.id,
+          completed: true,
+          sub_bab: {
+            bab: {
+              materi_id: materiId,
+            },
+          },
+        },
+      });
+
+      // Calculate progress percentage
+      const progressPercentage =
+        totalSubBabs > 0
+          ? Math.round((completedSubBabs / totalSubBabs) * 100)
+          : 0;
+
+      // Upsert materi_progress
+      materiProgress = await prisma.materiProgress.upsert({
+        where: {
+          siswa_id_materi_id: {
+            siswa_id: user.id,
+            materi_id: materiId,
+          },
+        },
+        update: {
+          completed_sub_bab: completedSubBabs,
+          total_sub_bab: totalSubBabs,
+          progress_percentage: progressPercentage,
+          last_read_at: new Date(),
+          completed_at: progressPercentage === 100 ? new Date() : null,
+        },
+        create: {
+          siswa_id: user.id,
+          materi_id: materiId,
+          completed_sub_bab: completedSubBabs,
+          total_sub_bab: totalSubBabs,
+          progress_percentage: progressPercentage,
+          last_read_at: new Date(),
+          completed_at: progressPercentage === 100 ? new Date() : null,
+        },
+      });
     }
 
     return NextResponse.json({
       ok: true,
-      sub_bab_progress: data,
+      sub_bab_progress: progress,
       materi_progress: materiProgress,
     });
   } catch (error: any) {
     console.error("Error in update progress API:", error);
+
+    // Disconnect and reconnect on error
+    try {
+      await prisma.$disconnect();
+      await prisma.$connect();
+    } catch (reconnectError) {
+      console.error("Failed to reconnect:", reconnectError);
+    }
+
+    // Provide user-friendly error message
+    let errorMessage = "Gagal menyimpan progress";
+    if (
+      error.message?.includes("database") ||
+      error.message?.includes("connect")
+    ) {
+      errorMessage = "Koneksi database terputus. Silakan coba lagi.";
+    }
+
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: errorMessage, details: error.message },
       { status: 500 }
     );
   }
@@ -97,88 +164,72 @@ export async function GET(req: Request) {
 
     if (subBabId) {
       // Get progress for specific sub_bab
-      const { data, error } = await supabase
-        .from("sub_bab_progress")
-        .select("*")
-        .eq("siswa_id", user.id)
-        .eq("sub_bab_id", subBabId)
-        .maybeSingle();
+      const progress = await prisma.subBabProgress.findUnique({
+        where: {
+          siswa_id_sub_bab_id: {
+            siswa_id: user.id,
+            sub_bab_id: subBabId,
+          },
+        },
+      });
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Error fetching sub_bab progress:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ data: data || { completed: false } });
+      return NextResponse.json({ data: progress || { completed: false } });
     } else if (materiId) {
       // Get progress for specific materi + all sub_bab progress
-      const { data: materiProgress, error: materiError } = await supabase
-        .from("materi_progress")
-        .select("*")
-        .eq("siswa_id", user.id)
-        .eq("materi_id", materiId)
-        .maybeSingle();
-
-      if (materiError && materiError.code !== "PGRST116") {
-        console.error("Error fetching materi progress:", materiError);
-        return NextResponse.json(
-          { error: materiError.message },
-          { status: 500 }
-        );
-      }
+      const materiProgress = await prisma.materiProgress.findUnique({
+        where: {
+          siswa_id_materi_id: {
+            siswa_id: user.id,
+            materi_id: materiId,
+          },
+        },
+      });
 
       // Get all sub_bab progress for this materi
-      const { data: subBabProgress, error: subBabError } = await supabase
-        .from("sub_bab_progress")
-        .select(
-          `
-          *,
-          materi_sub_bab!inner(
-            id,
-            bab_id,
-            materi_bab!inner(
-              materi_id
-            )
-          )
-        `
-        )
-        .eq("siswa_id", user.id);
-
-      if (subBabError) {
-        console.error("Error fetching sub_bab progress:", subBabError);
-      }
-
-      // Filter to only this materi
-      const filteredSubBab = (subBabProgress || []).filter((sbp: any) => {
-        return sbp.materi_sub_bab?.materi_bab?.materi_id === materiId;
+      const subBabProgress = await prisma.subBabProgress.findMany({
+        where: {
+          siswa_id: user.id,
+          sub_bab: {
+            bab: {
+              materi_id: materiId,
+            },
+          },
+        },
+        include: {
+          sub_bab: {
+            select: {
+              id: true,
+              bab_id: true,
+              bab: {
+                select: {
+                  materi_id: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       return NextResponse.json({
         materi_progress: materiProgress || null,
-        sub_bab_progress: filteredSubBab || [],
+        sub_bab_progress: subBabProgress || [],
       });
     } else {
       // Get all progress for this user
-      const { data, error } = await supabase
-        .from("materi_progress")
-        .select(
-          `
-          *,
-          materi:materi_id (
-            id,
-            title
-          )
-        `
-        )
-        .eq("siswa_id", user.id)
-        .order("last_read_at", { ascending: false });
+      const progress = await prisma.materiProgress.findMany({
+        where: { siswa_id: user.id },
+        include: {
+          materi: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: { last_read_at: "desc" },
+      });
 
-      if (error) {
-        console.error("Error fetching progress:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ data: data || [] });
+      return NextResponse.json({ data: progress });
     }
   } catch (error: any) {
     console.error("Error in get progress API:", error);

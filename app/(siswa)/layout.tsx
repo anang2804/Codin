@@ -1,45 +1,50 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Sidebar } from "@/components/sidebar"
-import { createClient } from "@/lib/supabase/client"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/sidebar";
+import { FloatingChatbot } from "@/components/FloatingChatbot";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SiswaLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const router = useRouter()
-  const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient()
+      const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/auth/login")
-        return
+        router.push("/auth/login");
+        return;
       }
 
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
       if (profile?.role !== "siswa") {
-        router.push("/auth/login")
-        return
+        router.push("/auth/login");
+        return;
       }
 
-      setMounted(true)
-      setLoading(false)
-    }
+      setMounted(true);
+      setLoading(false);
+    };
 
-    checkAuth()
-  }, [router])
+    checkAuth();
+  }, [router]);
 
   if (loading) {
     return (
@@ -49,10 +54,10 @@ export default function SiswaLayout({
           <p className="text-gray-600">Memuat...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!mounted) return null
+  if (!mounted) return null;
 
   return (
     <div className="flex">
@@ -60,6 +65,7 @@ export default function SiswaLayout({
       <main className="flex-1 md:ml-64 bg-gray-50 min-h-screen">
         <div className="p-4 md:p-8">{children}</div>
       </main>
+      <FloatingChatbot />
     </div>
-  )
+  );
 }

@@ -1,29 +1,30 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
+import type React from "react";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { ReactQueryProvider } from "@/components/providers/react-query-provider";
+import "./globals.css";
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const _geist = Geist({ subsets: ["latin"] });
+const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Smart Learning Platform",
+  title: "Codin",
   description: "Platform pembelajaran cerdas untuk guru, siswa, dan admin",
   generator: "v0.app",
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="id">
       <body className={`font-sans antialiased`}>
-        {children}
+        <ReactQueryProvider>{children}</ReactQueryProvider>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

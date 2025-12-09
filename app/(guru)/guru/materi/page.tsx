@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,190 +18,138 @@ import {
   Plus,
   Edit,
   Trash2,
-  FileText,
-  Link as LinkIcon,
-  Video,
-  Upload,
-  Download,
-  Paperclip,
-  ExternalLink,
+  Eye,
+  Search,
+  Image as ImageIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
-interface Materi {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-  mapel_id: string | null;
-  kelas_id: string | null;
-  created_at: string;
-  created_by: string;
-}
-
-interface MateriPendukung {
-  id: string;
-  materi_id: string;
-  type: "file" | "link" | "video";
-  title: string;
-  description: string | null;
-  url: string | null;
-  file_path: string | null;
-  file_name: string | null;
-  file_size: number | null;
-  file_type: string | null;
-  created_at: string;
-}
+import { toast } from "sonner";
+import Link from "next/link";
+import { useMapel } from "@/lib/hooks/use-mapel";
+import {
+  useMateri,
+  useCreateMateri,
+  useUpdateMateri,
+  useDeleteMateri,
+  type Materi,
+} from "@/lib/hooks/use-materi";
 
 export default function GuruMateriPage() {
-  const [materi, setMateri] = useState<Materi[]>([]);
-  const [mapelList, setMapelList] = useState<any[]>([]);
-  const [kelasList, setKelasList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // React Query hooks
+  const { data: mapelList = [], isLoading: mapelLoading } = useMapel();
+  const { data: materi = [], isLoading: materiLoading } = useMateri();
+  const createMateri = useCreateMateri();
+  const updateMateri = useUpdateMateri();
+  const deleteMateri = useDeleteMateri();
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMapel, setSelectedMapel] = useState<string>("all");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    content: "",
     mapel_id: "",
-    kelas_id: "",
+    thumbnail_url: "",
   });
-
-  // State untuk konten materi
-  const [contentType, setContentType] = useState<
-    "text" | "file" | "link" | "video"
-  >("text");
-  const [contentFile, setContentFile] = useState<File | null>(null);
-  const [uploadingContent, setUploadingContent] = useState(false);
-
-  const [selectedMateri, setSelectedMateri] = useState<string | null>(null);
-  const [materiPendukung, setMateriPendukung] = useState<MateriPendukung[]>([]);
-  const [showPendukungDialog, setShowPendukungDialog] = useState(false);
-  const [pendukungType, setPendukungType] = useState<"file" | "link" | "video">(
-    "file"
-  );
-  const [pendukungForm, setPendukungForm] = useState({
-    title: "",
-    description: "",
-    url: "",
-  });
-  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const supabase = createClient();
+  const loading = mapelLoading || materiLoading;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Memoize filtered data untuk menghindari infinite loop
+  const filteredMateri = useMemo(() => {
+    let filtered = [...materi];
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: materiData } = await supabase
-        .from("materi")
-        .select("*")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false });
-
-      setMateri(materiData || []);
-
-      const { data: mapelData } = await supabase
-        .from("mata_pelajaran")
-        .select("*")
-        .order("nama");
-      setMapelList(mapelData || []);
-
-      const { data: kelasData } = await supabase
-        .from("kelas")
-        .select("*")
-        .order("nama");
-      setKelasList(kelasData || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      alert("Gagal memuat data");
-    } finally {
-      setLoading(false);
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (m) =>
+          m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  };
 
-  const fetchMateriPendukung = async (materiId: string) => {
+    // Filter by mapel
+    if (selectedMapel !== "all") {
+      filtered = filtered.filter((m) => m.mapel_id === selectedMapel);
+    }
+
+    return filtered;
+  }, [materi, searchTerm, selectedMapel]);
+
+  const handleThumbnailUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+
     try {
-      const { data } = await supabase
-        .from("materi_pendukung")
-        .select("*")
-        .eq("materi_id", materiId)
-        .order("created_at", { ascending: false });
+      setUploadingThumbnail(true);
 
-      setMateriPendukung(data || []);
+      // Convert image to base64 as fallback (no storage bucket needed)
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData({ ...formData, thumbnail_url: base64String });
+        toast.success("Thumbnail berhasil diunggah");
+        setUploadingThumbnail(false);
+      };
+      reader.onerror = () => {
+        toast.error("Gagal membaca file");
+        setUploadingThumbnail(false);
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
-      console.error("Error fetching materi pendukung:", error);
+      console.error("Error uploading thumbnail:", error);
+      toast.error("Gagal mengunggah thumbnail");
+      setUploadingThumbnail(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+
+    if (!formData.title.trim()) {
+      toast.error("Judul materi wajib diisi");
+      return;
+    }
+
+    if (!formData.mapel_id) {
+      toast.error("Mata pelajaran wajib dipilih");
+      return;
+    }
 
     try {
-      let contentValue = formData.content;
-
-      // Upload content file jika ada
-      if (contentType === "file" && contentFile) {
-        setUploadingContent(true);
-        const fileExt = contentFile.name.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/content/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("materi-files")
-          .upload(filePath, contentFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("materi-files")
-          .getPublicUrl(filePath);
-        contentValue = urlData.publicUrl;
-        setUploadingContent(false);
-      }
-
       if (editingId) {
-        const { error } = await supabase
-          .from("materi")
-          .update({
-            title: formData.title,
-            description: formData.description,
-            content: contentValue,
-            mapel_id: formData.mapel_id || null,
-            kelas_id: formData.kelas_id || null,
-          })
-          .eq("id", editingId);
-
-        if (error) throw error;
-        alert("Materi berhasil diperbarui");
-      } else {
-        const { error } = await supabase.from("materi").insert({
+        await updateMateri.mutateAsync({
+          id: editingId,
+          mapel_id: formData.mapel_id,
           title: formData.title,
-          description: formData.description,
-          content: contentValue,
-          mapel_id: formData.mapel_id || null,
-          kelas_id: formData.kelas_id || null,
-          created_by: user.id,
+          description: formData.description || undefined,
+          thumbnail_url: formData.thumbnail_url || undefined,
         });
-
-        if (error) throw error;
-        alert("Materi berhasil ditambahkan");
+        toast.success("Materi berhasil diperbarui");
+      } else {
+        await createMateri.mutateAsync({
+          mapel_id: formData.mapel_id,
+          title: formData.title,
+          description: formData.description || undefined,
+          thumbnail_url: formData.thumbnail_url || undefined,
+        });
+        toast.success("Materi berhasil ditambahkan");
       }
 
       setShowForm(false);
@@ -210,253 +157,244 @@ export default function GuruMateriPage() {
       setFormData({
         title: "",
         description: "",
-        content: "",
         mapel_id: "",
-        kelas_id: "",
+        thumbnail_url: "",
       });
-      setContentType("text");
-      setContentFile(null);
-      fetchData();
     } catch (error: any) {
       console.error("Error saving materi:", error);
-      alert(`Gagal menyimpan materi: ${error.message}`);
+      toast.error(error.message || "Gagal menyimpan materi");
     }
   };
 
   const handleEdit = (m: Materi) => {
-    setEditingId(m.id);
     setFormData({
       title: m.title,
       description: m.description || "",
-      content: m.content || "",
       mapel_id: m.mapel_id || "",
-      kelas_id: m.kelas_id || "",
+      thumbnail_url: m.thumbnail_url || "",
     });
-
-    // Deteksi tipe konten
-    if (m.content && m.content.startsWith("http")) {
-      if (
-        m.content.includes("youtube.com") ||
-        m.content.includes("youtu.be") ||
-        m.content.includes("vimeo.com")
-      ) {
-        setContentType("video");
-      } else if (
-        m.content.includes(".pdf") ||
-        m.content.includes(".doc") ||
-        m.content.includes(".ppt")
-      ) {
-        setContentType("file");
-      } else {
-        setContentType("link");
-      }
-    } else {
-      setContentType("text");
-    }
-
+    setEditingId(m.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Hapus materi ini? Semua file pendukung juga akan dihapus."))
+    if (
+      !confirm(
+        "Yakin ingin menghapus materi ini? Semua bab dan sub-bab juga akan terhapus."
+      )
+    ) {
       return;
+    }
 
     try {
-      const { error } = await supabase.from("materi").delete().eq("id", id);
-      if (error) throw error;
-      alert("Materi berhasil dihapus");
-      fetchData();
+      await deleteMateri.mutateAsync(id);
+      toast.success("Materi berhasil dihapus");
     } catch (error: any) {
       console.error("Error deleting materi:", error);
-      alert(`Gagal menghapus materi: ${error.message}`);
+      toast.error(error.message || "Gagal menghapus materi");
     }
   };
 
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    materiId: string
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 50 * 1024 * 1024) {
-      alert("Ukuran file maksimal 50MB");
-      return;
-    }
-
-    try {
-      setUploadingFile(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${materiId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("materi-files")
-        .upload(filePath, file, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("materi-files")
-        .getPublicUrl(filePath);
-
-      const { error: dbError } = await supabase
-        .from("materi_pendukung")
-        .insert({
-          materi_id: materiId,
-          type: "file",
-          title: file.name,
-          description: null,
-          url: urlData.publicUrl,
-          file_path: filePath,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          created_by: user.id,
-        });
-
-      if (dbError) throw dbError;
-      alert("File berhasil diunggah");
-      fetchMateriPendukung(materiId);
-    } catch (error: any) {
-      console.error("Error uploading file:", error);
-      alert(`Gagal mengunggah file: ${error.message}`);
-    } finally {
-      setUploadingFile(false);
-    }
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setFormData({
+      title: "",
+      description: "",
+      mapel_id: "",
+      thumbnail_url: "",
+    });
   };
 
-  const handleAddLink = async (materiId: string) => {
-    if (!pendukungForm.url || !pendukungForm.title) {
-      alert("Judul dan URL harus diisi");
-      return;
-    }
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase.from("materi_pendukung").insert({
-        materi_id: materiId,
-        type: pendukungType,
-        title: pendukungForm.title,
-        description: pendukungForm.description || null,
-        url: pendukungForm.url,
-        created_by: user.id,
-      });
-
-      if (error) throw error;
-      alert(
-        `${pendukungType === "video" ? "Video" : "Link"} berhasil ditambahkan`
-      );
-      fetchMateriPendukung(materiId);
-      setPendukungForm({ title: "", description: "", url: "" });
-      setPendukungType("file");
-    } catch (error: any) {
-      console.error("Error adding link:", error);
-      alert(`Gagal menambahkan: ${error.message}`);
-    }
-  };
-
-  const handleDeletePendukung = async (pendukung: MateriPendukung) => {
-    if (!confirm("Hapus file/link ini?")) return;
-
-    try {
-      if (pendukung.type === "file" && pendukung.file_path) {
-        await supabase.storage
-          .from("materi-files")
-          .remove([pendukung.file_path]);
-      }
-
-      const { error } = await supabase
-        .from("materi_pendukung")
-        .delete()
-        .eq("id", pendukung.id);
-      if (error) throw error;
-      alert("Berhasil dihapus");
-      fetchMateriPendukung(pendukung.materi_id);
-    } catch (error: any) {
-      console.error("Error deleting:", error);
-      alert(`Gagal menghapus: ${error.message}`);
-    }
-  };
-
-  const openPendukungDialog = (materiId: string) => {
-    setSelectedMateri(materiId);
-    fetchMateriPendukung(materiId);
-    setShowPendukungDialog(true);
-  };
-
-  const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return "0 B";
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-  };
-
-  const getFileIcon = (fileType: string | null) => {
-    if (!fileType) return <FileText className="text-gray-500" size={20} />;
-    if (fileType.includes("pdf"))
-      return <FileText className="text-red-500" size={20} />;
-    if (fileType.includes("word") || fileType.includes("document"))
-      return <FileText className="text-blue-500" size={20} />;
-    if (fileType.includes("presentation"))
-      return <FileText className="text-orange-500" size={20} />;
-    if (fileType.includes("image"))
-      return <FileText className="text-green-500" size={20} />;
-    return <FileText className="text-gray-500" size={20} />;
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Kelola Materi Pembelajaran
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Buat, edit, dan kelola materi pembelajaran beserta file pendukung
-          </p>
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <BookOpen className="text-green-600" size={36} />
+              Kelola Materi Pembelajaran
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Buat dan kelola materi pembelajaran dengan bab dan sub-bab
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Plus size={20} className="mr-2" />
+            Tambah Materi Baru
+          </Button>
         </div>
-        <Button
-          onClick={() => {
-            setShowForm(true);
-            setEditingId(null);
-            setFormData({
-              title: "",
-              description: "",
-              content: "",
-              mapel_id: "",
-              kelas_id: "",
-            });
-          }}
-          className="bg-green-600 hover:bg-green-700 gap-2"
-        >
-          <Plus size={20} />
-          Tambah Materi
-        </Button>
+
+        {/* Search and Filter */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <Input
+              placeholder="Cari materi..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div>
+            <select
+              value={selectedMapel}
+              onChange={(e) => setSelectedMapel(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="all">Semua Mata Pelajaran</option>
+              {Array.isArray(mapelList) &&
+                mapelList.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {showForm && (
-        <Card className="p-6 border-green-100 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingId ? "Edit Materi" : "Tambah Materi Baru"}
-            </h3>
+      {/* Materi List */}
+      {filteredMateri.length === 0 ? (
+        <Card className="p-12 text-center border-2 border-dashed border-gray-300">
+          <BookOpen size={64} className="mx-auto text-gray-400 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            {searchTerm || selectedMapel !== "all"
+              ? "Tidak ada materi yang ditemukan"
+              : "Belum ada materi"}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {searchTerm || selectedMapel !== "all"
+              ? "Coba ubah filter pencarian"
+              : "Mulai buat materi pembelajaran pertama Anda"}
+          </p>
+          {!searchTerm && selectedMapel === "all" && (
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Plus size={20} className="mr-2" />
+              Tambah Materi
+            </Button>
+          )}
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMateri.map((m) => (
+            <Card
+              key={m.id}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              {/* Thumbnail */}
+              <div className="relative h-48 bg-gradient-to-br from-green-100 to-green-200">
+                {m.thumbnail_url ? (
+                  <img
+                    src={m.thumbnail_url}
+                    alt={m.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <BookOpen size={64} className="text-green-600 opacity-50" />
+                  </div>
+                )}
+              </div>
 
+              {/* Content */}
+              <div className="p-4">
+                <div className="mb-3">
+                  {m.mapel && (
+                    <span className="inline-block px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full mb-2">
+                      {m.mapel.name}
+                    </span>
+                  )}
+                  <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                    {m.title}
+                  </h3>
+                  {m.description && (
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                      {m.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-xs text-gray-400 mb-4">
+                  Dibuat: {new Date(m.created_at).toLocaleDateString("id-ID")}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Link href={`/guru/materi/${m.id}`} className="flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                    >
+                      <Eye size={16} className="mr-2" />
+                      Kelola Bab
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(m)}
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Edit size={16} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDelete(m.id)}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Form Dialog */}
+      <Dialog open={showForm} onOpenChange={resetForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Edit Materi" : "Tambah Materi Baru"}
+            </DialogTitle>
+            <DialogDescription>
+              Lengkapi informasi dasar materi. Anda bisa menambahkan bab dan
+              sub-bab setelah materi dibuat.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="title">Judul Materi *</Label>
+              <Label htmlFor="title">
+                Judul Materi <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="title"
-                type="text"
-                placeholder="Contoh: Pengenalan Algoritma Pemrograman"
+                placeholder="Contoh: Pengenalan Pemrograman Python"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
@@ -466,44 +404,24 @@ export default function GuruMateriPage() {
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="mapel">Mata Pelajaran</Label>
-                <select
-                  id="mapel"
-                  value={formData.mapel_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mapel_id: e.target.value })
-                  }
-                  className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Pilih Mata Pelajaran</option>
-                  {mapelList.map((m) => (
+            <div>
+              <Label htmlFor="mapel">Mata Pelajaran</Label>
+              <select
+                id="mapel"
+                value={formData.mapel_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, mapel_id: e.target.value })
+                }
+                className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Pilih Mata Pelajaran (Opsional)</option>
+                {Array.isArray(mapelList) &&
+                  mapelList.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.nama}
+                      {m.name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="kelas">Kelas</Label>
-                <select
-                  id="kelas"
-                  value={formData.kelas_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kelas_id: e.target.value })
-                  }
-                  className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Pilih Kelas</option>
-                  {kelasList.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              </select>
             </div>
 
             <div>
@@ -521,530 +439,77 @@ export default function GuruMateriPage() {
             </div>
 
             <div>
-              <Label>Tipe Konten Materi *</Label>
-              <div className="grid grid-cols-4 gap-3 mt-2">
-                <Button
-                  type="button"
-                  variant={contentType === "text" ? "default" : "outline"}
-                  onClick={() => setContentType("text")}
-                  className={contentType === "text" ? "bg-green-600" : ""}
-                >
-                  <FileText size={16} className="mr-2" />
-                  Teks
-                </Button>
-                <Button
-                  type="button"
-                  variant={contentType === "file" ? "default" : "outline"}
-                  onClick={() => setContentType("file")}
-                  className={contentType === "file" ? "bg-blue-600" : ""}
-                >
-                  <Upload size={16} className="mr-2" />
-                  File
-                </Button>
-                <Button
-                  type="button"
-                  variant={contentType === "link" ? "default" : "outline"}
-                  onClick={() => setContentType("link")}
-                  className={contentType === "link" ? "bg-purple-600" : ""}
-                >
-                  <LinkIcon size={16} className="mr-2" />
-                  Link
-                </Button>
-                <Button
-                  type="button"
-                  variant={contentType === "video" ? "default" : "outline"}
-                  onClick={() => setContentType("video")}
-                  className={contentType === "video" ? "bg-red-600" : ""}
-                >
-                  <Video size={16} className="mr-2" />
-                  Video
-                </Button>
+              <Label htmlFor="thumbnail">Thumbnail/Sampul</Label>
+              <div className="mt-2">
+                {formData.thumbnail_url ? (
+                  <div className="relative">
+                    <img
+                      src={formData.thumbnail_url}
+                      alt="Thumbnail"
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        setFormData({ ...formData, thumbnail_url: "" })
+                      }
+                      className="absolute top-2 right-2"
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                    <ImageIcon
+                      className="mx-auto text-gray-400 mb-2"
+                      size={32}
+                    />
+                    <label
+                      htmlFor="thumbnail-upload"
+                      className="cursor-pointer"
+                    >
+                      <span className="text-sm text-blue-600 hover:underline">
+                        {uploadingThumbnail
+                          ? "Mengunggah..."
+                          : "Klik untuk upload gambar"}
+                      </span>
+                      <input
+                        id="thumbnail-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleThumbnailUpload}
+                        disabled={uploadingThumbnail}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PNG, JPG maksimal 5MB
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="content">Konten Materi *</Label>
-
-              {contentType === "text" && (
-                <Textarea
-                  id="content"
-                  placeholder="Tulis konten materi pembelajaran di sini..."
-                  value={formData.content}
-                  onChange={(e) =>
-                    setFormData({ ...formData, content: e.target.value })
-                  }
-                  required
-                  className="border-green-200 mt-2"
-                  rows={8}
-                />
-              )}
-
-              {contentType === "file" && (
-                <div className="mt-2">
-                  <div className="border-2 border-dashed border-green-200 rounded-lg p-6 text-center hover:border-green-400 transition">
-                    <Upload className="mx-auto text-green-600 mb-2" size={32} />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Upload file materi (PDF, DOCX, PPTX, ZIP)
-                    </p>
-                    <p className="text-xs text-gray-400 mb-3">Maksimal 50MB</p>
-                    <Input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
-                      onChange={(e) =>
-                        setContentFile(e.target.files?.[0] || null)
-                      }
-                      required
-                      className="cursor-pointer"
-                    />
-                    {contentFile && (
-                      <p className="text-sm text-green-600 mt-2">
-                        ✓ {contentFile.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {contentType === "link" && (
-                <Input
-                  id="content"
-                  type="url"
-                  placeholder="https://contoh.com/materi"
-                  value={formData.content}
-                  onChange={(e) =>
-                    setFormData({ ...formData, content: e.target.value })
-                  }
-                  required
-                  className="border-green-200 mt-2"
-                />
-              )}
-
-              {contentType === "video" && (
-                <div className="mt-2 space-y-2">
-                  <Input
-                    id="content"
-                    type="url"
-                    placeholder="https://youtube.com/watch?v=... atau https://vimeo.com/..."
-                    value={formData.content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content: e.target.value })
-                    }
-                    required
-                    className="border-green-200"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Masukkan URL video dari YouTube, Vimeo, atau platform video
-                    lainnya
-                  </p>
-                </div>
-              )}
-
-              {uploadingContent && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900 mb-2">
-                    Mengunggah file konten...
-                  </p>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full w-1/2 animate-pulse" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                {editingId ? "Perbarui Materi" : "Simpan Materi"}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={uploadingThumbnail}
+              >
+                {editingId ? "Perbarui" : "Simpan"} Materi
               </Button>
               <Button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingId(null);
-                  setFormData({
-                    title: "",
-                    description: "",
-                    content: "",
-                    mapel_id: "",
-                    kelas_id: "",
-                  });
-                }}
                 variant="outline"
-                className="border-green-200"
+                onClick={resetForm}
+                disabled={uploadingThumbnail}
               >
                 Batal
               </Button>
             </div>
           </form>
-        </Card>
-      )}
-
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat materi...</p>
-        </div>
-      ) : materi.length === 0 ? (
-        <Card className="p-12 text-center border-green-100">
-          <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">
-            Belum ada materi. Tambahkan materi baru untuk memulai.
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {materi.map((m) => (
-            <Card
-              key={m.id}
-              className="p-6 border-green-100 hover:shadow-lg transition"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900">{m.title}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{m.description}</p>
-                  <p className="text-gray-400 text-xs mt-2">
-                    Dibuat:{" "}
-                    {new Date(m.created_at).toLocaleDateString("id-ID", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => openPendukungDialog(m.id)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Paperclip size={16} className="mr-1" />
-                    File Pendukung
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleEdit(m)}
-                    variant="outline"
-                    className="border-yellow-400 text-yellow-600 hover:bg-yellow-50"
-                  >
-                    <Edit size={16} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleDelete(m.id)}
-                    variant="outline"
-                    className="border-red-400 text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                {m.content && m.content.startsWith("http") ? (
-                  <div className="space-y-2">
-                    {m.content.includes("youtube.com") ||
-                    m.content.includes("youtu.be") ? (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                          <Video size={16} className="text-red-600" />
-                          Video YouTube:
-                        </p>
-                        <a
-                          href={m.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-2"
-                        >
-                          {m.content}
-                          <ExternalLink size={14} />
-                        </a>
-                      </div>
-                    ) : m.content.includes("vimeo.com") ? (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                          <Video size={16} className="text-blue-600" />
-                          Video Vimeo:
-                        </p>
-                        <a
-                          href={m.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-2"
-                        >
-                          {m.content}
-                          <ExternalLink size={14} />
-                        </a>
-                      </div>
-                    ) : m.content.includes(".pdf") ||
-                      m.content.includes(".doc") ||
-                      m.content.includes(".ppt") ? (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                          <FileText size={16} className="text-red-600" />
-                          File Materi:
-                        </p>
-                        <a
-                          href={m.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        >
-                          <Download size={16} />
-                          Download File
-                        </a>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                          <LinkIcon size={16} className="text-green-600" />
-                          Link Eksternal:
-                        </p>
-                        <a
-                          href={m.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-2"
-                        >
-                          {m.content}
-                          <ExternalLink size={14} />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="prose max-w-none text-gray-700">
-                    <p className="whitespace-pre-wrap">{m.content}</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Dialog open={showPendukungDialog} onOpenChange={setShowPendukungDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>File Pendukung Pembelajaran</DialogTitle>
-            <DialogDescription>
-              Tambahkan file, link, atau video untuk melengkapi materi
-              pembelajaran
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <Card className="p-4 border-blue-200 hover:bg-blue-50 transition cursor-pointer">
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <div className="text-center">
-                    <Upload className="mx-auto text-blue-600 mb-2" size={32} />
-                    <h4 className="font-semibold text-blue-900">Upload File</h4>
-                    <p className="text-xs text-gray-600 mt-1">
-                      PDF, DOCX, PPTX (max 50MB)
-                    </p>
-                  </div>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) =>
-                      selectedMateri && handleFileUpload(e, selectedMateri)
-                    }
-                    disabled={uploadingFile}
-                  />
-                </label>
-              </Card>
-
-              <Card
-                className="p-4 border-green-200 hover:bg-green-50 transition cursor-pointer"
-                onClick={() => setPendukungType("link")}
-              >
-                <div className="text-center">
-                  <LinkIcon className="mx-auto text-green-600 mb-2" size={32} />
-                  <h4 className="font-semibold text-green-900">Tambah Link</h4>
-                  <p className="text-xs text-gray-600 mt-1">Tautan eksternal</p>
-                </div>
-              </Card>
-
-              <Card
-                className="p-4 border-red-200 hover:bg-red-50 transition cursor-pointer"
-                onClick={() => setPendukungType("video")}
-              >
-                <div className="text-center">
-                  <Video className="mx-auto text-red-600 mb-2" size={32} />
-                  <h4 className="font-semibold text-red-900">Tambah Video</h4>
-                  <p className="text-xs text-gray-600 mt-1">
-                    YouTube, Vimeo, dll
-                  </p>
-                </div>
-              </Card>
-            </div>
-
-            {(pendukungType === "link" || pendukungType === "video") && (
-              <Card className="p-4 border-gray-200">
-                <h4 className="font-semibold mb-3">
-                  Tambah {pendukungType === "video" ? "Video" : "Link"}
-                </h4>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Judul *</Label>
-                    <Input
-                      placeholder={`Judul ${
-                        pendukungType === "video" ? "video" : "link"
-                      }`}
-                      value={pendukungForm.title}
-                      onChange={(e) =>
-                        setPendukungForm({
-                          ...pendukungForm,
-                          title: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>URL *</Label>
-                    <Input
-                      placeholder="https://..."
-                      value={pendukungForm.url}
-                      onChange={(e) =>
-                        setPendukungForm({
-                          ...pendukungForm,
-                          url: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Deskripsi</Label>
-                    <Textarea
-                      placeholder="Opsional"
-                      value={pendukungForm.description}
-                      onChange={(e) =>
-                        setPendukungForm({
-                          ...pendukungForm,
-                          description: e.target.value,
-                        })
-                      }
-                      rows={2}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() =>
-                        selectedMateri && handleAddLink(selectedMateri)
-                      }
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Tambah
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setPendukungType("file");
-                        setPendukungForm({
-                          title: "",
-                          description: "",
-                          url: "",
-                        });
-                      }}
-                      variant="outline"
-                    >
-                      Batal
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {uploadingFile && (
-              <Card className="p-4 border-blue-200">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      Mengunggah file...
-                    </p>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                      <div className="bg-blue-600 h-2 rounded-full w-1/2 animate-pulse" />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                File Pendukung yang Tersedia
-              </h4>
-              {materiPendukung.length === 0 ? (
-                <Card className="p-8 text-center border-gray-200">
-                  <Paperclip size={32} className="mx-auto text-gray-400 mb-2" />
-                  <p className="text-gray-500 text-sm">
-                    Belum ada file pendukung
-                  </p>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {materiPendukung.map((p) => (
-                    <Card
-                      key={p.id}
-                      className="p-4 border-gray-200 hover:border-green-300 transition"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div>
-                            {p.type === "file" && getFileIcon(p.file_type)}
-                            {p.type === "link" && (
-                              <LinkIcon className="text-green-600" size={20} />
-                            )}
-                            {p.type === "video" && (
-                              <Video className="text-red-600" size={20} />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">
-                              {p.title}
-                            </p>
-                            {p.description && (
-                              <p className="text-xs text-gray-600">
-                                {p.description}
-                              </p>
-                            )}
-                            {p.file_size && (
-                              <p className="text-xs text-gray-500">
-                                {formatFileSize(p.file_size)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          {p.url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(p.url!, "_blank")}
-                              className="border-blue-300 text-blue-600"
-                            >
-                              {p.type === "file" ? (
-                                <Download size={16} />
-                              ) : (
-                                <ExternalLink size={16} />
-                              )}
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeletePendukung(p)}
-                            className="border-red-300 text-red-600"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

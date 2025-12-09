@@ -63,6 +63,11 @@ export default function SiswaMateriPage() {
       }
     };
 
+    // Listen for custom progress update event
+    const handleProgressUpdate = () => {
+      fetchMateri();
+    };
+
     // Refresh when page becomes visible (user comes back from detail page)
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -72,10 +77,14 @@ export default function SiswaMateriPage() {
     // Listen for storage events (cross-tab/page communication)
     window.addEventListener("storage", handleStorageChange);
 
+    // Listen for custom event (same-page communication)
+    window.addEventListener("progressUpdated", handleProgressUpdate);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", fetchMateri);
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
     };
   }, []);
 

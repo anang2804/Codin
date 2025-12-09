@@ -15,6 +15,7 @@ import {
   X,
   UserCog,
   UserCircle,
+  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -50,11 +51,6 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Kelas", href: "/admin/kelas", icon: Users },
       { label: "Guru", href: "/admin/guru", icon: Users },
       { label: "Siswa", href: "/admin/siswa", icon: Users },
-      { label: "Manajemen Akun", href: "/admin/akun", icon: UserCog },
-      { label: "Materi", href: "/admin/materi", icon: BookOpen },
-      { label: "Asesmen", href: "/admin/asesmen", icon: ClipboardList },
-      { label: "PjBL", href: "/admin/pjbl", icon: Target },
-      { label: "Nilai", href: "/admin/nilai", icon: BarChart3 },
     ],
   };
 
@@ -82,11 +78,8 @@ export function Sidebar({ role }: SidebarProps) {
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold">S</span>
-          </div>
-          <span className="font-bold text-gray-900">Smart</span>
+        <div className="flex items-center justify-center mb-8">
+          <img src="/logo codin.png" alt="Codin Logo" className="w-48 h-auto" />
         </div>
 
         <nav className="space-y-2 flex-1 overflow-y-auto">

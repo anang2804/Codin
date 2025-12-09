@@ -1,29 +1,19 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars");
-}
-
-const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import prisma from "@/lib/prisma";
 
 async function checkAdminAuth() {
-  const serverSupabase = await createServerClient();
+  const serverSupabase = await createClient();
   const {
     data: { user: caller },
   } = await serverSupabase.auth.getUser();
 
   if (!caller) throw new Error("Unauthorized");
 
-  const { data: callerProfile } = await serverSupabase
-    .from("profiles")
-    .select("role")
-    .eq("id", caller.id)
-    .single();
+  const callerProfile = await prisma.profile.findUnique({
+    where: { id: caller.id },
+    select: { role: true },
+  });
 
   if (callerProfile?.role !== "admin") throw new Error("Forbidden");
 
@@ -34,31 +24,24 @@ export async function GET(req: Request) {
   try {
     await checkAdminAuth();
 
-    // Fetch kelas with service role (bypass RLS)
-    const { data: kelasData, error: kelasError } = await supabaseAdmin
-      .from("kelas")
-      .select("*")
-      .order("name", { ascending: true });
+    const kelas = await prisma.kelas.findMany({
+      select: {
+        id: true,
+        name: true,
+        wali_kelas_id: true,
+        created_at: true,
+      },
+      orderBy: { name: "asc" },
+    });
 
-    if (kelasError) throw kelasError;
-
-    // Fetch wali kelas info for each kelas
-    const kelasWithWali = await Promise.all(
-      (kelasData || []).map(async (k) => {
-        if (k.wali_kelas_id) {
-          const { data: waliKelas } = await supabaseAdmin
-            .from("profiles")
-            .select("full_name, email")
-            .eq("id", k.wali_kelas_id)
-            .maybeSingle();
-
-          return { ...k, wali_kelas: waliKelas };
-        }
-        return k;
-      })
+    return NextResponse.json(
+      { data: kelas },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
+        },
+      }
     );
-
-    return NextResponse.json({ data: kelasWithWali || [] });
   } catch (err: any) {
     console.error("Error fetching kelas:", err);
     const status =
@@ -85,18 +68,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("kelas")
-      .insert({
+    const newKelas = await prisma.kelas.create({
+      data: {
         name,
         wali_kelas_id: wali_kelas_id || null,
-      })
-      .select()
-      .single();
+      },
+    });
 
-    if (error) throw error;
-
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: newKelas });
   } catch (err: any) {
     console.error("Error creating kelas:", err);
     const status =
@@ -126,19 +105,15 @@ export async function PUT(req: Request) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("kelas")
-      .update({
+    const updatedKelas = await prisma.kelas.update({
+      where: { id },
+      data: {
         name,
         wali_kelas_id: wali_kelas_id || null,
-      })
-      .eq("id", id)
-      .select()
-      .single();
+      },
+    });
 
-    if (error) throw error;
-
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: updatedKelas });
   } catch (err: any) {
     console.error("Error updating kelas:", err);
     const status =
@@ -165,9 +140,9 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin.from("kelas").delete().eq("id", id);
-
-    if (error) throw error;
+    await prisma.kelas.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

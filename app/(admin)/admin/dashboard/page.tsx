@@ -86,12 +86,6 @@ export default function AdminDashboard() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Admin</h1>
-        <Link href="/admin/mapel">
-          <Button className="bg-green-600 hover:bg-green-700 gap-2">
-            <Plus size={20} />
-            Tambah Mapel
-          </Button>
-        </Link>
       </div>
 
       {loading ? (
@@ -101,7 +95,7 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((stat) => {
               const Icon = stat.icon;
               return (
@@ -118,64 +112,6 @@ export default function AdminDashboard() {
                 </Card>
               );
             })}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Manajemen Sistem
-              </h2>
-              <div className="space-y-3">
-                <Link href="/admin/mapel">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <BookOpen size={20} className="mr-2" />
-                    Kelola Mata Pelajaran
-                  </Button>
-                </Link>
-                <Link href="/admin/kelas">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <Layers size={20} className="mr-2" />
-                    Kelola Kelas
-                  </Button>
-                </Link>
-                <Link href="/admin/guru">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <Users size={20} className="mr-2" />
-                    Kelola Guru
-                  </Button>
-                </Link>
-                <Link href="/admin/siswa">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <Users size={20} className="mr-2" />
-                    Kelola Siswa
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Informasi Admin
-              </h2>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>✓ Kelola semua mata pelajaran di sistem</p>
-                <p>✓ Kelola kelas dan penugasan guru</p>
-                <p>✓ Kelola data guru dan siswa</p>
-                <p>✓ Monitor semua aktivitas pembelajaran</p>
-              </div>
-            </Card>
           </div>
         </>
       )}
