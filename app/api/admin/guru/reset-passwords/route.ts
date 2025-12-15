@@ -3,16 +3,20 @@ import { randomBytes } from "crypto";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error(
-    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for reset-passwords API"
-  );
-}
+const getAdminClient = () => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for reset-passwords API"
+    );
+    return null;
+  }
 
-const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+};
 
 export async function POST(req: Request) {
   // ensure caller is admin
@@ -39,6 +43,14 @@ export async function POST(req: Request) {
     const { ids } = body as { ids?: string[] };
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: "ids required" }, { status: 400 });
+    }
+
+    const supabaseAdmin = getAdminClient();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Server credentials not configured" },
+        { status: 500 }
+      );
     }
 
     const results: Array<{
