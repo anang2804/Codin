@@ -5,31 +5,34 @@ import { randomBytes } from "crypto";
 import nodemailer from "nodemailer";
 import prisma from "@/lib/prisma";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error(
-    "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for admin siswa API"
+const getAdminClient = () => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for admin siswa API"
+    );
+    return null;
+  }
+
+  // Debug logging (remove in production)
+  console.log("🔑 Supabase Admin Client Config:");
+  console.log("  URL:", SUPABASE_URL);
+  console.log(
+    "  Service Role Key (first 20 chars):",
+    SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "..."
   );
-  throw new Error("Server configuration error: Missing Supabase credentials");
-}
+  console.log("  Service Role Key length:", SUPABASE_SERVICE_ROLE_KEY?.length);
 
-// Debug logging (remove in production)
-console.log("🔑 Supabase Admin Client Config:");
-console.log("  URL:", SUPABASE_URL);
-console.log(
-  "  Service Role Key (first 20 chars):",
-  SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "..."
-);
-console.log("  Service Role Key length:", SUPABASE_SERVICE_ROLE_KEY?.length);
-
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
 
 // Email transporter (SMTP) - optional but required for sending password emails
 const SMTP_HOST = process.env.SMTP_HOST;
@@ -63,6 +66,14 @@ if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
 }
 
 export async function POST(req: Request) {
+  const supabaseAdmin = getAdminClient();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Server credentials not configured" },
+      { status: 500 }
+    );
+  }
+
   // check that caller is authenticated admin
   try {
     const serverSupabase = await createServerClient();
@@ -399,6 +410,14 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const supabaseAdmin = getAdminClient();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Server credentials not configured" },
+      { status: 500 }
+    );
+  }
+
   // Update profile (and optionally email)
   // ensure caller is admin
   try {
@@ -484,6 +503,14 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const supabaseAdmin = getAdminClient();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Server credentials not configured" },
+      { status: 500 }
+    );
+  }
+
   // ensure caller is admin
   try {
     const serverSupabase = await createServerClient();
