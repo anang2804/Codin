@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const type = (formData.get("type") as string) || "general";
@@ -24,6 +23,12 @@ export async function POST(request: NextRequest) {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/zip",
       "application/x-rar-compressed",
+      "video/mp4",
+      "video/mpeg",
+      "video/quicktime",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -33,38 +38,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validasi ukuran file (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validasi ukuran file (max 50MB untuk Supabase free tier)
+    if (file.size > 50 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Ukuran file maksimal 10MB" },
+        { error: "Ukuran file maksimal 50MB" },
         { status: 400 }
       );
     }
 
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(7);
+    const fileExt = file.name.split(".").pop();
+    const originalName = file.name
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9]/g, "_");
+    const filename = `${timestamp}_${randomStr}_${originalName}.${fileExt}`;
+
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}_${originalName}`;
+    // Upload to Supabase Storage
+    // Path format: type/filename
+    const storagePath = `${type}/${filename}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("learning-materials") // nama bucket di Supabase
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-    // Create upload directory if not exists
-    const uploadDir = join(process.cwd(), "public", "uploads", type);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return NextResponse.json(
+        { error: `Upload gagal: ${uploadError.message}` },
+        { status: 500 }
+      );
     }
 
-    // Save file
-    const filepath = join(uploadDir, filename);
-    await writeFile(filepath, buffer);
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from("learning-materials")
+      .getPublicUrl(storagePath);
 
-    // Return public URL
-    const url = `/uploads/${type}/${filename}`;
+    const publicUrl = urlData.publicUrl;
 
     return NextResponse.json({
       success: true,
-      url,
+      url: publicUrl,
+      path: storagePath, // simpan juga path untuk keperluan delete
       filename: file.name,
       size: file.size,
       type: file.type,
