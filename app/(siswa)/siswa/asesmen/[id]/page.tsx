@@ -69,17 +69,29 @@ export default function SiswaAsesmenDetailPage({
     if (!user) return;
 
     try {
-      // Check if already completed
-      const { data: nilaiData } = await supabase
-        .from("nilai")
-        .select("score")
+      // Check if there are existing answers (not nilai)
+      const { data: jawabanData } = await supabase
+        .from("jawaban_siswa")
+        .select("id")
         .eq("asesmen_id", id)
         .eq("siswa_id", user.id)
-        .single();
+        .limit(1);
 
-      if (nilaiData) {
+      if (jawabanData && jawabanData.length > 0) {
+        // Get latest nilai
+        const { data: nilaiData } = await supabase
+          .from("nilai")
+          .select("score")
+          .eq("asesmen_id", id)
+          .eq("siswa_id", user.id)
+          .order("completed_at", { ascending: false })
+          .limit(1)
+          .single();
+
         alert(
-          "Anda sudah mengerjakan asesmen ini. Nilai Anda: " + nilaiData.score
+          "Anda sudah mengerjakan asesmen ini. Nilai terakhir: " +
+            (nilaiData?.score || 0) +
+            ". Hubungi guru untuk membuka ulang."
         );
         router.push("/siswa/asesmen");
         return;

@@ -65,20 +65,50 @@ export default function SiswaAsesmenPage() {
                     mapelData = data;
                   }
 
-                  // Check if siswa has completed this asesmen
-                  const { data: nilaiData } = await supabase
-                    .from("nilai")
-                    .select("score, completed_at")
-                    .eq("asesmen_id", a.id)
-                    .eq("siswa_id", user.id)
-                    .single();
+                  // Check if siswa has submitted answers
+                  const { data: jawabanData, error: jawabanError } =
+                    await supabase
+                      .from("jawaban_siswa")
+                      .select("id")
+                      .eq("asesmen_id", a.id)
+                      .eq("siswa_id", user.id)
+                      .limit(1);
+
+                  if (jawabanError) {
+                    console.error("Error checking jawaban:", jawabanError);
+                  }
+
+                  console.log(`Asesmen ${a.title} - Jawaban:`, jawabanData);
+
+                  const isCompleted = jawabanData && jawabanData.length > 0;
+
+                  // Get latest nilai
+                  let nilaiData = null;
+                  if (isCompleted) {
+                    const { data } = await supabase
+                      .from("nilai")
+                      .select("score, completed_at")
+                      .eq("asesmen_id", a.id)
+                      .eq("siswa_id", user.id)
+                      .order("completed_at", { ascending: false })
+                      .limit(1)
+                      .single();
+                    nilaiData = data;
+                  }
+
+                  console.log(
+                    `Asesmen ${a.title} - isCompleted:`,
+                    isCompleted,
+                    "Nilai:",
+                    nilaiData
+                  );
 
                   return {
                     ...a,
                     soal_count: count || 0,
                     mapel: mapelData,
                     nilai: nilaiData,
-                    is_completed: !!nilaiData,
+                    is_completed: isCompleted,
                   };
                 })
               );
