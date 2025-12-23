@@ -1,39 +1,84 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card } from "@/components/ui/card"
-import { BarChart3 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BarChart3, Eye } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 export default function GuruNilaiPage() {
-  const [nilai, setNilai] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [asesmen, setAsesmen] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNilai = async () => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    fetchAsesmen();
+  }, []);
 
-      if (!user) return
+  const fetchAsesmen = async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      try {
-        const { data } = await supabase
-          .from("nilai")
-          .select("*, asesmen(title), profiles(full_name)")
-          .order("created_at", { ascending: false })
+    if (!user) return;
 
-        setNilai(data || [])
-      } catch (error) {
-        console.error("Error fetching nilai:", error)
-      } finally {
-        setLoading(false)
+    try {
+      // Fetch asesmen created by this guru
+      const { data: asesmenData } = await supabase
+        .from("asesmen")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false });
+
+      // Get details for each asesmen
+      if (asesmenData) {
+        const asesmenWithDetails = await Promise.all(
+          asesmenData.map(async (a) => {
+            // Get kelas
+            let kelasData = null;
+            if (a.kelas_id) {
+              const { data } = await supabase
+                .from("kelas")
+                .select("id, name")
+                .eq("id", a.kelas_id)
+                .single();
+              kelasData = data;
+            }
+
+            // Get mapel
+            let mapelData = null;
+            if (a.mapel_id) {
+              const { data } = await supabase
+                .from("mapel")
+                .select("id, name")
+                .eq("id", a.mapel_id)
+                .single();
+              mapelData = data;
+            }
+
+            // Get nilai count
+            const { count } = await supabase
+              .from("nilai")
+              .select("*", { count: "exact", head: true })
+              .eq("asesmen_id", a.id);
+
+            return {
+              ...a,
+              kelas: kelasData,
+              mapel: mapelData,
+              nilai_count: count || 0,
+            };
+          })
+        );
+        setAsesmen(asesmenWithDetails);
       }
+    } catch (error) {
+      console.error("Error fetching asesmen:", error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchNilai()
-  }, [])
+  };
 
   return (
     <div>
@@ -42,51 +87,54 @@ export default function GuruNilaiPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat nilai...</p>
+          <p className="text-gray-600">Memuat asesmen...</p>
         </div>
-      ) : nilai.length === 0 ? (
+      ) : asesmen.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
           <BarChart3 size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">Belum ada nilai yang dicatat.</p>
+          <p className="text-gray-600">Belum ada asesmen.</p>
+          <Link href="/guru/asesmen">
+            <Button className="mt-4 bg-green-600 hover:bg-green-700">
+              Buat Asesmen
+            </Button>
+          </Link>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-green-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Siswa</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Asesmen</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Nilai</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Tanggal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {nilai.map((n) => (
-                <tr key={n.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
-                  <td className="py-3 px-4 text-gray-900">{n.profiles?.full_name || "N/A"}</td>
-                  <td className="py-3 px-4 text-gray-600">{n.asesmen?.title || "N/A"}</td>
-                  <td className="py-3 px-4">
-                    <span className="font-bold text-green-600">{n.score}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        n.status === "lulus" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {n.status === "lulus" ? "Lulus" : "Tidak Lulus"}
+        <div className="grid gap-4">
+          {asesmen.map((a) => (
+            <Card key={a.id} className="p-6 border-green-100">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900">{a.title}</h3>
+                  <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                    <span>
+                      <span className="text-gray-500">Mata Pelajaran:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {a.mapel?.name || "-"}
+                      </span>
                     </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-500 text-sm">
-                    {new Date(n.created_at).toLocaleDateString("id-ID")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <span>
+                      <span className="text-gray-500">Kelas:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {a.kelas?.name || "-"}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                    <span>📊 {a.nilai_count} siswa telah mengerjakan</span>
+                  </div>
+                </div>
+                <Link href={`/guru/nilai/${a.id}`}>
+                  <Button className="bg-green-600 hover:bg-green-700 gap-2">
+                    <Eye size={16} />
+                    Lihat Nilai
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
     </div>
-  )
+  );
 }
