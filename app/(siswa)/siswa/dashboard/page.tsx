@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ClipboardList, Target } from "lucide-react";
+import {
+  BookOpen,
+  ClipboardList,
+  Target,
+  Microscope,
+  User,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -14,6 +20,7 @@ export default function SiswaDashboard() {
     totalAsesmen: 0,
     totalPjbl: 0,
   });
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +33,15 @@ export default function SiswaDashboard() {
       if (!user) return;
 
       try {
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        setProfile(profileData);
+
         const [kelasRes, materiRes, asesmenRes, pjblRes] = await Promise.all([
           supabase
             .from("kelas_siswa")
@@ -52,9 +68,28 @@ export default function SiswaDashboard() {
     fetchStats();
   }, []);
 
+  const getGreeting = () => {
+    if (!profile) return "Halo";
+    const name = profile.full_name || "Siswa";
+    return `Halo, ${name}`;
+  };
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Siswa</h1>
+      {/* Header dengan greeting dan foto profil */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{getGreeting()}</h1>
+          <p className="text-gray-600 mt-1">
+            Selamat datang di Dashboard Siswa
+          </p>
+        </div>
+        <Link href="/siswa/profile">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-md">
+            <User size={32} className="text-green-400" />
+          </div>
+        </Link>
+      </div>
 
       {loading ? (
         <div className="text-center py-12">
@@ -63,7 +98,7 @@ export default function SiswaDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
             <Card className="p-6 border-green-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Kelas Saya</h3>
@@ -108,54 +143,18 @@ export default function SiswaDashboard() {
                 </Button>
               </Link>
             </Card>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Akses Cepat
-              </h2>
-              <div className="space-y-3">
-                <Link href="/siswa/materi">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <BookOpen size={20} className="mr-2" />
-                    Akses Materi
-                  </Button>
-                </Link>
-                <Link href="/siswa/asesmen">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <ClipboardList size={20} className="mr-2" />
-                    Ikuti Asesmen
-                  </Button>
-                </Link>
-                <Link href="/siswa/pjbl">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <Target size={20} className="mr-2" />
-                    Kerjakan PjBL
-                  </Button>
-                </Link>
+            <Card className="p-6 border-purple-100 bg-gradient-to-br from-purple-50 to-blue-50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Simulasi</h3>
+                <Microscope className="text-purple-600" size={24} />
               </div>
-            </Card>
-
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Informasi
-              </h2>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>✓ Akses materi pembelajaran dari guru</p>
-                <p>✓ Ikuti asesmen online dan lihat nilai</p>
-                <p>✓ Kerjakan proyek pembelajaran berbasis masalah</p>
-                <p>✓ Pantau progress pembelajaran Anda</p>
-              </div>
+              <p className="text-3xl font-bold text-purple-600 mb-4">20+</p>
+              <Link href="/siswa/simulasi">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  Jelajahi
+                </Button>
+              </Link>
             </Card>
           </div>
         </>

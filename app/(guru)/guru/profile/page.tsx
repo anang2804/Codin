@@ -1,18 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { User, Lock, Mail, Phone, MapPin } from "lucide-react";
+import {
+  User,
+  Lock,
+  Mail,
+  Calendar,
+  Phone,
+  MapPin,
+  Camera,
+  ShieldCheck,
+  Zap,
+  ChevronRight,
+  Save,
+  Briefcase,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 
 interface Profile {
   id: string;
   email: string;
   full_name: string;
+  jenis_kelamin?: string;
   no_telepon?: string;
   alamat?: string;
 }
@@ -79,6 +91,7 @@ export default function GuruProfilePage() {
         .from("profiles")
         .update({
           full_name: formData.full_name,
+          jenis_kelamin: formData.jenis_kelamin,
           no_telepon: formData.no_telepon,
           alamat: formData.alamat,
         })
@@ -142,217 +155,280 @@ export default function GuruProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat profil...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-8 h-8 border-2 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Profil tidak ditemukan</p>
-      </div>
-    );
-  }
+  if (!profile) return null;
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Profil Saya</h1>
-        <p className="text-gray-600 mt-1">
-          Kelola informasi profil dan password Anda
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#FAFAFA] text-slate-900 font-sans pb-20">
+      <nav className="max-w-4xl mx-auto flex items-center justify-end p-6 mb-4">
+        <button
+          onClick={() => {
+            if (editMode) setFormData({ ...profile });
+            setEditMode(!editMode);
+          }}
+          className={`px-5 py-2 rounded-xl font-bold text-xs tracking-wide transition-all ${
+            editMode
+              ? "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              : "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+          }`}
+        >
+          {editMode ? "BATAL" : "EDIT PROFIL"}
+        </button>
+      </nav>
 
-      {/* Profile Info Card */}
-      <Card className="p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <User className="text-green-600" size={32} />
+      <div className="max-w-4xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10">
+        <div className="md:col-span-4 flex flex-col items-center">
+          <div className="relative group mb-6">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border border-slate-200 bg-white p-1">
+              <div className="w-full h-full rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center">
+                <User size={60} className="text-emerald-200" />
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold">{profile.full_name}</h2>
-              <p className="text-sm text-gray-500">{profile.email}</p>
-              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded mt-1 inline-block">
-                Guru
-              </span>
-            </div>
+            <button className="absolute bottom-1 right-1 p-2.5 bg-white border border-slate-200 text-slate-600 rounded-full shadow-sm hover:text-emerald-600 transition-colors">
+              <Camera size={16} />
+            </button>
           </div>
-          <Button
-            onClick={() => {
-              if (editMode) {
-                setFormData(profile);
-                setEditMode(false);
-              } else {
-                setEditMode(true);
-              }
-            }}
-            variant={editMode ? "outline" : "default"}
-          >
-            {editMode ? "Batal" : "Edit Profil"}
-          </Button>
-        </div>
 
-        {editMode ? (
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="full_name">Nama Lengkap *</Label>
-                <Input
-                  id="full_name"
-                  value={formData.full_name || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, full_name: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={profile.email}
-                  disabled
-                  className="bg-gray-50"
-                />
-              </div>
-              <div>
-                <Label htmlFor="no_telepon">No. Telepon</Label>
-                <Input
-                  id="no_telepon"
-                  value={formData.no_telepon || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, no_telepon: e.target.value })
-                  }
-                  placeholder="08xxx"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="alamat">Alamat</Label>
-                <Input
-                  id="alamat"
-                  value={formData.alamat || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, alamat: e.target.value })
-                  }
-                  placeholder="Alamat lengkap"
-                />
-              </div>
-            </div>
-            <Button
-              onClick={handleSaveProfile}
-              disabled={saving}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {saving ? "Menyimpan..." : "Simpan Perubahan"}
-            </Button>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-start gap-3">
-              <Mail className="text-gray-400 mt-1" size={18} />
-              <div>
-                <p className="text-gray-500">Email</p>
-                <p className="font-medium">{profile.email}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Phone className="text-gray-400 mt-1" size={18} />
-              <div>
-                <p className="text-gray-500">No. Telepon</p>
-                <p className="font-medium">{profile.no_telepon || "-"}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 md:col-span-2">
-              <MapPin className="text-gray-400 mt-1" size={18} />
-              <div>
-                <p className="text-gray-500">Alamat</p>
-                <p className="font-medium">{profile.alamat || "-"}</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Password Change Card */}
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Lock className="text-gray-600" size={24} />
-          <div>
-            <h2 className="text-lg font-semibold">Ubah Password</h2>
-            <p className="text-sm text-gray-600">
-              Ganti password untuk keamanan akun Anda
+          <div className="text-center space-y-1">
+            <h1 className="text-xl font-bold text-slate-800">
+              {profile.full_name}
+            </h1>
+            <p className="text-sm text-slate-400 font-medium">
+              {profile.email}
             </p>
           </div>
+
+          <div className="w-full mt-10 p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                <Briefcase size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Role
+                </p>
+                <p className="text-sm font-bold text-slate-700">
+                  Guru / Pengajar
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {!showPasswordForm ? (
-          <Button onClick={() => setShowPasswordForm(true)} variant="outline">
-            Ubah Password
-          </Button>
-        ) : (
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div>
-              <Label htmlFor="new_password">Password Baru *</Label>
-              <Input
-                id="new_password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimal 8 karakter"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="confirm_password">
-                Konfirmasi Password Baru *
-              </Label>
-              <Input
-                id="confirm_password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password baru"
-                required
-              />
+        <div className="md:col-span-8 space-y-8">
+          <div className="bg-white rounded-3xl p-8 md:p-10 border border-slate-100 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
+              {editMode ? "Ubah Data Diri" : "Informasi Personal"}
+            </h3>
+
+            {editMode ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <InputMinimal
+                    label="Nama Lengkap"
+                    value={formData.full_name || ""}
+                    onChange={(v) => setFormData({ ...formData, full_name: v })}
+                  />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Jenis Kelamin
+                    </label>
+                    <select
+                      className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm appearance-none"
+                      value={formData.jenis_kelamin || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jenis_kelamin: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Pilih</option>
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Perempuan</option>
+                    </select>
+                  </div>
+                  <InputMinimal
+                    label="No Telepon"
+                    value={formData.no_telepon || ""}
+                    onChange={(v) =>
+                      setFormData({ ...formData, no_telepon: v })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    Alamat
+                  </label>
+                  <textarea
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm resize-none"
+                    rows={3}
+                    value={formData.alamat || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, alamat: e.target.value })
+                    }
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all disabled:opacity-50"
+                >
+                  {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10">
+                <ItemStatic
+                  label="Jenis Kelamin"
+                  value={
+                    profile.jenis_kelamin === "L"
+                      ? "Laki-laki"
+                      : profile.jenis_kelamin === "P"
+                      ? "Perempuan"
+                      : "-"
+                  }
+                />
+                <ItemStatic label="No Telepon" value={profile.no_telepon} />
+                <ItemStatic
+                  label="Alamat Domisili"
+                  value={profile.alamat}
+                  fullWidth
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-slate-50 text-slate-400 rounded-lg">
+                <Lock size={16} />
+              </div>
+              <h4 className="text-sm font-bold text-slate-800 tracking-tight">
+                Pengaturan Keamanan
+              </h4>
             </div>
 
-            {passwordError && (
-              <p className="text-sm text-red-500">{passwordError}</p>
-            )}
             {passwordSuccess && (
-              <p className="text-sm text-green-600">{passwordSuccess}</p>
+              <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 size={14} /> {passwordSuccess}
+              </div>
             )}
 
-            <div className="flex gap-3">
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-green-600 hover:bg-green-700"
+            {!showPasswordForm ? (
+              <button
+                onClick={() => setShowPasswordForm(true)}
+                className="group w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-emerald-50 transition-all"
               >
-                {saving ? "Memproses..." : "Simpan Password Baru"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowPasswordForm(false);
-                  setNewPassword("");
-                  setConfirmPassword("");
-                  setPasswordError("");
-                  setPasswordSuccess("");
-                }}
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        )}
-      </Card>
+                <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700">
+                  Ubah Kata Sandi Akun
+                </span>
+                <ChevronRight
+                  size={14}
+                  className="text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all"
+                />
+              </button>
+            ) : (
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input
+                    type="password"
+                    placeholder="Password baru"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm font-medium"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Konfirmasi password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm font-medium"
+                  />
+                </div>
+                {passwordError && (
+                  <p className="text-[10px] font-bold text-red-500 ml-1">
+                    {passwordError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest"
+                  >
+                    {saving ? "..." : "Update"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordError("");
+                    }}
+                    className="px-6 text-slate-400 font-bold text-[10px] uppercase hover:text-slate-600"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemStatic({
+  label,
+  value,
+  fullWidth,
+}: {
+  label: string;
+  value?: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={`${fullWidth ? "sm:col-span-2" : ""}`}>
+      <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1.5 block">
+        {label}
+      </label>
+      <p className="text-sm font-bold text-slate-700 leading-relaxed border-b border-slate-50 pb-2">
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
+function InputMinimal({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+        {label}
+      </label>
+      <input
+        type={type}
+        className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

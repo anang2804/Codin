@@ -16,6 +16,7 @@ import {
   UserCog,
   UserCircle,
   MessageCircle,
+  Microscope,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -36,14 +37,13 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Kelola Asesmen", href: "/guru/asesmen", icon: ClipboardList },
       { label: "Kelola PjBL", href: "/guru/pjbl", icon: Target },
       { label: "Kelola Nilai", href: "/guru/nilai", icon: BarChart3 },
-      { label: "Profil Saya", href: "/guru/profile", icon: UserCircle },
     ],
     siswa: [
       { label: "Dashboard", href: "/siswa/dashboard", icon: LayoutDashboard },
       { label: "Akses Materi", href: "/siswa/materi", icon: BookOpen },
       { label: "Akses Asesmen", href: "/siswa/asesmen", icon: ClipboardList },
       { label: "Akses PjBL", href: "/siswa/pjbl", icon: Target },
-      { label: "Profil Saya", href: "/siswa/profile", icon: UserCircle },
+      { label: "Simulasi", href: "/siswa/simulasi", icon: Microscope },
     ],
     admin: [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -90,10 +90,10 @@ export function Sidebar({ role }: SidebarProps) {
               <Link key={item.href} href={item.href}>
                 <button
                   onClick={() => setOpen(false)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     isActive
                       ? "bg-green-100 text-green-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 hover:bg-green-50 hover:text-green-600"
                   }`}
                 >
                   <Icon size={20} />
@@ -105,13 +105,13 @@ export function Sidebar({ role }: SidebarProps) {
         </nav>
 
         <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
             <Settings size={20} />
             <span>Pengaturan</span>
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200"
           >
             <LogOut size={20} />
             <span>Keluar</span>
