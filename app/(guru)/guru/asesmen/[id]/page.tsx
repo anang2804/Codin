@@ -317,18 +317,18 @@ export default function AsesmenDetailPage({
 
       {/* Form Add/Edit Soal */}
       {showForm && (
-        <Card className="p-6 mb-6 border-green-100">
-          <h3 className="text-lg font-bold mb-4">
+        <Card className="p-4 mb-4 border-green-100">
+          <h3 className="text-base font-bold mb-3">
             {editingSoal ? "Edit Soal" : "Tambah Soal Baru"}
           </h3>
-          <form onSubmit={handleSubmitSoal} className="space-y-4">
+          <form onSubmit={handleSubmitSoal} className="space-y-3">
             {/* Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tipe Soal *
               </label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 value={formData.type}
                 onChange={(e) =>
                   setFormData({
@@ -344,12 +344,12 @@ export default function AsesmenDetailPage({
 
             {/* Question */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Soal *
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                rows={3}
                 placeholder="Masukkan pertanyaan soal"
                 value={formData.question}
                 onChange={(e) =>
@@ -361,7 +361,7 @@ export default function AsesmenDetailPage({
 
             {/* File Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Lampiran (opsional)
               </label>
               <div className="flex items-center gap-2">
@@ -395,9 +395,9 @@ export default function AsesmenDetailPage({
             {/* Options (only for pilihan_ganda) */}
             {formData.type === "pilihan_ganda" && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Opsi A *
                     </label>
                     <Input
@@ -406,10 +406,11 @@ export default function AsesmenDetailPage({
                         setFormData({ ...formData, optionA: e.target.value })
                       }
                       required
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Opsi B *
                     </label>
                     <Input
@@ -418,10 +419,11 @@ export default function AsesmenDetailPage({
                         setFormData({ ...formData, optionB: e.target.value })
                       }
                       required
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Opsi C *
                     </label>
                     <Input
@@ -430,10 +432,11 @@ export default function AsesmenDetailPage({
                         setFormData({ ...formData, optionC: e.target.value })
                       }
                       required
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Opsi D *
                     </label>
                     <Input
@@ -442,17 +445,18 @@ export default function AsesmenDetailPage({
                         setFormData({ ...formData, optionD: e.target.value })
                       }
                       required
+                      className="text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Correct Answer */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Kunci Jawaban *
                   </label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     value={formData.correct_answer}
                     onChange={(e) =>
                       setFormData({
@@ -474,7 +478,7 @@ export default function AsesmenDetailPage({
 
             {/* Points */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Poin
               </label>
               <Input
@@ -484,11 +488,12 @@ export default function AsesmenDetailPage({
                   setFormData({ ...formData, points: parseInt(e.target.value) })
                 }
                 min={1}
+                className="text-sm"
               />
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 pt-1">
               <Button
                 type="submit"
                 className="bg-green-600 hover:bg-green-700"
