@@ -99,8 +99,8 @@ export default function LandingPage() {
               Platform Pembelajaran Modern
             </h1>
             <p className="text-lg text-gray-600 max-w-xl mb-6">
-              Kelola materi, asesmen, dan proyek dengan antarmuka yang
-              sederhana, cepat, dan fokus pada pembelajaran.
+              Kelola materi, kuis, dan proyek dengan antarmuka yang sederhana,
+              cepat, dan fokus pada pembelajaran.
             </p>
             <div className="flex gap-4">
               <Link href="/auth/login">

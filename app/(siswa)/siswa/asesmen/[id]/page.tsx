@@ -89,7 +89,7 @@ export default function SiswaAsesmenDetailPage({
           .single();
 
         alert(
-          "Anda sudah mengerjakan asesmen ini. Nilai terakhir: " +
+          "Anda sudah mengerjakan kuis ini. Nilai terakhir: " +
             (nilaiData?.score || 0) +
             ". Hubungi guru untuk membuka ulang."
         );
@@ -256,7 +256,7 @@ export default function SiswaAsesmenDetailPage({
     return (
       <div className="max-w-3xl mx-auto">
         <Card className="p-12 text-center">
-          <p className="text-gray-600">Belum ada soal untuk asesmen ini.</p>
+          <p className="text-gray-600">Belum ada soal untuk kuis ini.</p>
           <Link href="/siswa/asesmen">
             <Button className="mt-4 bg-green-600 hover:bg-green-700">
               Kembali

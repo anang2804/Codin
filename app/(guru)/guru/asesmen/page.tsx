@@ -160,9 +160,7 @@ export default function GuruAsesmenPage() {
 
   const handleDeleteAsesmen = async (asesmenId: string) => {
     if (
-      !confirm(
-        "Yakin ingin menghapus asesmen ini? Semua soal akan ikut terhapus."
-      )
+      !confirm("Yakin ingin menghapus kuis ini? Semua soal akan ikut terhapus.")
     )
       return;
 
@@ -192,23 +190,23 @@ export default function GuruAsesmenPage() {
 
       // Update state only after successful delete
       setAsesmen(asesmen.filter((a) => a.id !== asesmenId));
-      alert("Asesmen berhasil dihapus");
+      alert("Kuis berhasil dihapus");
     } catch (error: any) {
       console.error("Error deleting asesmen:", error);
-      alert(`Gagal menghapus asesmen: ${error.message || "Unknown error"}`);
+      alert(`Gagal menghapus kuis: ${error.message || "Unknown error"}`);
     }
   };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Kelola Asesmen</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Kelola Kuis</h1>
         <Button
           onClick={() => setShowForm(!showForm)}
           className="bg-green-600 hover:bg-green-700 gap-2"
         >
           <Plus size={20} />
-          Tambah Asesmen
+          Tambah Kuis
         </Button>
       </div>
 
@@ -217,11 +215,11 @@ export default function GuruAsesmenPage() {
           <form onSubmit={handleAddAsesmen} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Judul Asesmen
+                Judul Kuis
               </label>
               <Input
                 type="text"
-                placeholder="Masukkan judul asesmen"
+                placeholder="Masukkan judul kuis"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
@@ -236,7 +234,7 @@ export default function GuruAsesmenPage() {
               </label>
               <Input
                 type="text"
-                placeholder="Masukkan deskripsi asesmen"
+                placeholder="Masukkan deskripsi kuis"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
@@ -339,13 +337,13 @@ export default function GuruAsesmenPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat asesmen...</p>
+          <p className="text-gray-600">Memuat kuis...</p>
         </div>
       ) : asesmen.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
           <ClipboardList size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600">
-            Belum ada asesmen. Tambahkan asesmen baru untuk memulai.
+            Belum ada kuis. Tambahkan kuis baru untuk memulai.
           </p>
         </Card>
       ) : (

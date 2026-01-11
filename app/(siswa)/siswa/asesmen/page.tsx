@@ -128,18 +128,18 @@ export default function SiswaAsesmenPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Akses Asesmen</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Akses Kuis</h1>
 
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat asesmen...</p>
+          <p className="text-gray-600">Memuat kuis...</p>
         </div>
       ) : asesmen.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
           <ClipboardList size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600">
-            Belum ada asesmen tersedia untuk kelas Anda.
+            Belum ada kuis tersedia untuk kelas Anda.
           </p>
         </Card>
       ) : (
