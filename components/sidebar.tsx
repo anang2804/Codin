@@ -34,7 +34,7 @@ export function Sidebar({ role }: SidebarProps) {
     guru: [
       { label: "Dashboard", href: "/guru/dashboard", icon: LayoutDashboard },
       { label: "Kelola Materi", href: "/guru/materi", icon: BookOpen },
-      { label: "Kelola Asesmen", href: "/guru/asesmen", icon: ClipboardList },
+      { label: "Kelola Kuis", href: "/guru/asesmen", icon: ClipboardList },
       { label: "Kelola Nilai", href: "/guru/nilai", icon: BarChart3 },
       {
         label: "Progress Simulasi",
@@ -45,7 +45,7 @@ export function Sidebar({ role }: SidebarProps) {
     siswa: [
       { label: "Dashboard", href: "/siswa/dashboard", icon: LayoutDashboard },
       { label: "Akses Materi", href: "/siswa/materi", icon: BookOpen },
-      { label: "Akses Asesmen", href: "/siswa/asesmen", icon: ClipboardList },
+      { label: "Akses Kuis", href: "/siswa/asesmen", icon: ClipboardList },
       { label: "Simulasi", href: "/siswa/simulasi", icon: Microscope },
     ],
     admin: [
