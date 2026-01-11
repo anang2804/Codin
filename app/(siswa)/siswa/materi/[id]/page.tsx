@@ -412,23 +412,27 @@ export default function SiswaMateriDetailPage() {
 
               {/* File/Document Content - Display as iframe or embed */}
               {selectedSubBab.content_type === "file" && (
-                <Card className="p-0 mb-6 shadow-sm overflow-hidden">
+                <Card className="p-0 mb-6 shadow-sm overflow-hidden relative">
+                  <div 
+                    className="absolute inset-0 z-10" 
+                    style={{ pointerEvents: 'none' }}
+                  />
                   {selectedSubBab.content_url.startsWith("data:") ? (
                     <div className="w-full h-[calc(100vh-250px)] bg-gray-50 overflow-hidden">
                       <iframe
                         src={selectedSubBab.content_url}
-                        className="w-full h-full border-0 pointer-events-none"
+                        className="w-full h-full border-0"
                         title={selectedSubBab.title}
-                        scrolling="no"
+                        style={{ overflow: 'hidden', pointerEvents: 'none' }}
                       />
                     </div>
                   ) : (
                     <div className="w-full h-[calc(100vh-250px)] bg-gray-50 overflow-hidden">
                       <iframe
                         src={selectedSubBab.content_url}
-                        className="w-full h-full border-0 pointer-events-none"
+                        className="w-full h-full border-0"
                         title={selectedSubBab.title}
-                        scrolling="no"
+                        style={{ overflow: 'hidden', pointerEvents: 'none' }}
                       />
                     </div>
                   )}
