@@ -414,19 +414,21 @@ export default function SiswaMateriDetailPage() {
               {selectedSubBab.content_type === "file" && (
                 <Card className="p-0 mb-6 shadow-sm overflow-hidden">
                   {selectedSubBab.content_url.startsWith("data:") ? (
-                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
+                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50 overflow-hidden">
                       <iframe
                         src={selectedSubBab.content_url}
-                        className="w-full h-full border-0"
+                        className="w-full h-full border-0 pointer-events-none"
                         title={selectedSubBab.title}
+                        scrolling="no"
                       />
                     </div>
                   ) : (
-                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
+                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50 overflow-hidden">
                       <iframe
                         src={selectedSubBab.content_url}
-                        className="w-full h-full border-0"
+                        className="w-full h-full border-0 pointer-events-none"
                         title={selectedSubBab.title}
+                        scrolling="no"
                       />
                     </div>
                   )}
