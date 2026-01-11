@@ -182,7 +182,7 @@ export default function SiswaAsesmenDetailPage({
 
         totalPoints += soal.points;
 
-        let isCorrect = false;
+        let isCorrect: boolean | null = false;
         let pointsEarned = 0;
 
         if (soal.type === "pilihan_ganda") {
