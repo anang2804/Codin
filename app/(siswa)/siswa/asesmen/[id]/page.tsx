@@ -282,7 +282,9 @@ export default function SiswaAsesmenDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">{asesmen?.title}</h1>
+            <h1 className="text-lg font-bold text-gray-900">
+              {asesmen?.title}
+            </h1>
             <p className="text-xs text-gray-600">{asesmen?.description}</p>
           </div>
         </div>
@@ -300,7 +302,9 @@ export default function SiswaAsesmenDetailPage({
         <Card className="p-3 border-green-100 flex-shrink-0 w-20 overflow-y-auto">
           <div className="flex flex-col gap-2">
             {soals.map((soal, index) => {
-              const answered = jawaban.find((j) => j.soal_id === soal.id)?.answer;
+              const answered = jawaban.find(
+                (j) => j.soal_id === soal.id
+              )?.answer;
               return (
                 <button
                   key={soal.id}
