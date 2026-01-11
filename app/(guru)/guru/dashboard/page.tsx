@@ -25,7 +25,6 @@ export default function GuruDashboard() {
     totalKelas: 0,
     totalMateri: 0,
     totalAsesmen: 0,
-    totalPjbl: 0,
   });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +48,7 @@ export default function GuruDashboard() {
 
         setProfile(profileData);
 
-        const [kelasRes, materiRes, asesmenRes, pjblRes] = await Promise.all([
+        const [kelasRes, materiRes, asesmenRes] = await Promise.all([
           supabase
             .from("kelas")
             .select("*", { count: "exact" })
@@ -60,10 +59,6 @@ export default function GuruDashboard() {
             .eq("created_by", user.id),
           supabase
             .from("asesmen")
-            .select("*", { count: "exact" })
-            .eq("created_by", user.id),
-          supabase
-            .from("pjbl")
             .select("*", { count: "exact" })
             .eq("created_by", user.id),
         ]);
@@ -79,7 +74,6 @@ export default function GuruDashboard() {
           totalKelas: kelasRes.count || 0,
           totalMateri: materiRes.count || 0,
           totalAsesmen: asesmenRes.count || 0,
-          totalPjbl: pjblRes.count || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -115,12 +109,6 @@ export default function GuruDashboard() {
       value: stats.totalAsesmen,
       icon: ClipboardList,
       color: "bg-yellow-100 text-yellow-600",
-    },
-    {
-      label: "Total PjBL",
-      value: stats.totalPjbl,
-      icon: Target,
-      color: "bg-red-100 text-red-600",
     },
   ];
 
@@ -167,7 +155,7 @@ export default function GuruDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {statCards.map((stat) => {
               const Icon = stat.icon;
               return (
@@ -184,55 +172,6 @@ export default function GuruDashboard() {
                 </Card>
               );
             })}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Akses Cepat
-              </h2>
-              <div className="space-y-3">
-                <Link href="/guru/materi">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <BookOpen size={20} className="mr-2" />
-                    Kelola Materi
-                  </Button>
-                </Link>
-                <Link href="/guru/asesmen">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <ClipboardList size={20} className="mr-2" />
-                    Kelola Asesmen
-                  </Button>
-                </Link>
-                <Link href="/guru/pjbl">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-green-200 text-green-600 hover:bg-green-50 bg-transparent"
-                  >
-                    <Target size={20} className="mr-2" />
-                    Kelola PjBL
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-
-            <Card className="p-6 border-green-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Informasi
-              </h2>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>✓ Kelola materi pembelajaran untuk kelas Anda</p>
-                <p>✓ Buat dan kelola asesmen online</p>
-                <p>✓ Pantau proyek pembelajaran berbasis masalah</p>
-                <p>✓ Lihat nilai dan progress siswa</p>
-              </div>
-            </Card>
           </div>
         </>
       )}
