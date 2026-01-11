@@ -4,7 +4,6 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import { FloatingChatbot } from "@/components/FloatingChatbot";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SiswaLayout({
@@ -65,7 +64,6 @@ export default function SiswaLayout({
       <main className="flex-1 md:ml-64 bg-gray-50 min-h-screen">
         <div className="p-4 md:p-8">{children}</div>
       </main>
-      <FloatingChatbot />
     </div>
   );
 }

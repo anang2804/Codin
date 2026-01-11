@@ -58,6 +58,7 @@ export function useCreateMateri() {
   return useMutation({
     mutationFn: async (data: {
       mapel_id: string;
+      kelas_id?: string;
       title: string;
       description?: string;
       thumbnail_url?: string;
@@ -86,6 +87,7 @@ export function useUpdateMateri() {
     }: {
       id: string;
       mapel_id: string;
+      kelas_id?: string;
       title: string;
       description?: string;
       thumbnail_url?: string;

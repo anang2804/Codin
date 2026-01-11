@@ -75,6 +75,7 @@ model Materi {
   title         String
   description   String?
   thumbnail_url String?
+  kelas_id      String?     @db.Uuid
   mapel_id      String?     @db.Uuid
   created_by    String      @db.Uuid
   created_at    DateTime    @default(now()) @db.Timestamptz(6)
@@ -182,6 +183,49 @@ model SubBabProgress {
 }
 
 // ============================================
+// SIMULASI
+// ============================================
+
+model Simulasi {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  category    String
+  description String?
+  thumbnail   String?
+  url         String
+  tags        Json?
+  difficulty  String             // 'easy', 'medium', 'hard'
+  is_local    Boolean            @default(false)
+  featured    Boolean            @default(false)
+  stage       Int                @default(1)  // Tahap 1-5
+  created_at  DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  progress    SimulasiProgress[]
+  
+  @@map("simulasi")
+}
+
+model SimulasiProgress {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  siswa_id        String    @db.Uuid
+  simulasi_id     String    @db.Uuid
+  current_stage   Int       @default(1)  // Stage yang sedang dibuka (1-5)
+  completed       Boolean   @default(false)
+  completed_at    DateTime? @db.Timestamptz(6)
+  last_accessed   DateTime  @default(now()) @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  simulasi        Simulasi  @relation(fields: [simulasi_id], references: [id], onDelete: Cascade)
+  
+  @@unique([siswa_id, simulasi_id])
+  @@map("simulasi_progress")
+}
+
+// ============================================
 // ASESMEN & PENILAIAN
 // ============================================
 
@@ -255,62 +299,4 @@ model Nilai {
   asesmen      Asesmen   @relation(fields: [asesmen_id], references: [id], onDelete: Cascade)
   
   @@map("nilai")
-}
-
-// ============================================
-// PROJECT-BASED LEARNING (PJBL)
-// ============================================
-
-model Pjbl {
-  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title       String
-  description String?
-  kelas_id    String?         @db.Uuid
-  created_by  String          @db.Uuid
-  start_date  DateTime?       @db.Date
-  end_date    DateTime?       @db.Date
-  created_at  DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
-  
-  // Relations
-  stages      PjblStage[]
-  submissions PjblSubmission[]
-  
-  @@map("pjbl")
-}
-
-model PjblStage {
-  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pjbl_id      String           @db.Uuid
-  stage_number Int
-  stage_name   String
-  description  String?
-  due_date     DateTime?        @db.Date
-  created_at   DateTime         @default(now()) @db.Timestamptz(6)
-  
-  // Relations
-  pjbl         Pjbl             @relation(fields: [pjbl_id], references: [id], onDelete: Cascade)
-  submissions  PjblSubmission[]
-  
-  @@map("pjbl_stages")
-}
-
-model PjblSubmission {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pjbl_id         String    @db.Uuid
-  siswa_id        String    @db.Uuid
-  stage_id        String    @db.Uuid
-  submission_text String?
-  file_url        String?
-  status          String?   // 'draft', 'submitted', 'reviewed'
-  feedback        String?
-  score           Int?
-  submitted_at    DateTime? @db.Timestamptz(6)
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-  
-  // Relations
-  pjbl            Pjbl      @relation(fields: [pjbl_id], references: [id], onDelete: Cascade)
-  stage           PjblStage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
-  
-  @@map("pjbl_submissions")
 }

@@ -104,6 +104,13 @@ export default function SiswaMateriPage() {
     }
 
     try {
+      // Get siswa profile to check kelas
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("kelas")
+        .eq("id", user.id)
+        .single();
+
       // Fetch materi data
       const { data: materiData, error: materiError } = await supabase
         .from("materi")

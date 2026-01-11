@@ -135,42 +135,45 @@ export default function SiswaDashboard() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-slate-50">
       {/* Header dengan greeting dan foto profil */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{getGreeting()}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {getGreeting()}
+          </h1>
           <p className="text-gray-600 mt-1">
             Selamat datang di Dashboard Siswa
           </p>
           {profile?.kelas && (
-            <p className="text-sm text-gray-500 mt-1">
-              Kelas:{" "}
-              <span className="font-semibold text-green-600">
-                {profile.kelas}
-              </span>
-            </p>
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+              <span>📚</span>
+              <span>Kelas: {profile.kelas}</span>
+            </div>
           )}
         </div>
         <Link href="/siswa/profile">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-md">
-            <User size={32} className="text-green-400" />
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center cursor-pointer hover:bg-green-200 transition-colors">
+            <User size={28} className="text-green-600" />
           </div>
         </Link>
       </div>
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat data...</p>
         </div>
       ) : (
         <>
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6 border-green-100">
+            {/* Card Materi */}
+            <Card className="p-6 hover:shadow-md transition-shadow bg-white">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Materi</h3>
-                <BookOpen className="text-green-600" size={24} />
+                <h3 className="text-lg font-semibold text-gray-900">Materi</h3>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BookOpen className="text-green-600" size={24} />
+                </div>
               </div>
               <p className="text-3xl font-bold text-green-600 mb-4">
                 {stats.totalMateri}
@@ -182,10 +185,13 @@ export default function SiswaDashboard() {
               </Link>
             </Card>
 
-            <Card className="p-6 border-green-100">
+            {/* Card Asesmen */}
+            <Card className="p-6 hover:shadow-md transition-shadow bg-white">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Asesmen</h3>
-                <ClipboardList className="text-green-600" size={24} />
+                <h3 className="text-lg font-semibold text-gray-900">Asesmen</h3>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <ClipboardList className="text-green-600" size={24} />
+                </div>
               </div>
               <p className="text-3xl font-bold text-green-600 mb-4">
                 {stats.totalAsesmen}
@@ -197,12 +203,17 @@ export default function SiswaDashboard() {
               </Link>
             </Card>
 
-            <Card className="p-6 border-green-100">
+            {/* Card Simulasi */}
+            <Card className="p-6 hover:shadow-md transition-shadow bg-white">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Simulasi</h3>
-                <Microscope className="text-green-600" size={24} />
+                <h3 className="text-lg font-semibold text-gray-900">Simulasi</h3>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Microscope className="text-green-600" size={24} />
+                </div>
               </div>
-              <p className="text-3xl font-bold text-green-600 mb-4">3</p>
+              <p className="text-3xl font-bold text-green-600 mb-4">
+                3
+              </p>
               <Link href="/siswa/simulasi">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
                   Jelajahi
@@ -215,19 +226,21 @@ export default function SiswaDashboard() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Materi Terbaru */}
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-4">
                 <BookOpen className="text-green-600" size={24} />
-                Materi Terbaru
-              </h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Materi Terbaru
+                </h2>
+              </div>
               <div className="space-y-4">
                 {recentMateri.length > 0 ? (
                   recentMateri.map((materi) => (
                     <Card
                       key={materi.id}
-                      className="p-5 border-green-100 hover:shadow-md transition-shadow"
+                      className="p-5 bg-white hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
+                        <div className="p-2 bg-green-100 rounded-lg shrink-0">
                           <FileText className="text-green-600" size={20} />
                         </div>
                         <div className="flex-1">
@@ -238,7 +251,7 @@ export default function SiswaDashboard() {
                             {materi.description ||
                               "Deskripsi materi belum tersedia"}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
                             <Calendar size={14} />
                             <span>
                               Diupload:{" "}
@@ -276,10 +289,12 @@ export default function SiswaDashboard() {
 
             {/* Tugas Terbaru */}
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-4">
                 <ClipboardList className="text-green-600" size={24} />
-                Tugas Terbaru
-              </h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Tugas Terbaru
+                </h2>
+              </div>
               <div className="space-y-4">
                 {recentAsesmen.length > 0 ? (
                   recentAsesmen.map((asesmen) => {
@@ -292,45 +307,57 @@ export default function SiswaDashboard() {
                     return (
                       <Card
                         key={asesmen.id}
-                        className="p-5 border-green-100 hover:shadow-md transition-shadow"
+                        className="group p-6 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-blue-50/30"
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-green-100 rounded-lg">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                             <ClipboardList
-                              className="text-green-600"
-                              size={20}
+                              className="text-white"
+                              size={24}
                             />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 mb-1">
+                            <h3 className="font-bold text-gray-900 mb-3 text-lg group-hover:text-blue-700 transition-colors">
                               {asesmen.title || "Tugas"}
                             </h3>
-                            <p className="text-sm text-gray-600 mb-2">
-                              {asesmen.total_questions || "0"} Soal •{" "}
-                              {asesmen.duration || "0"} Menit • Nilai:{" "}
-                              {nilaiData
-                                ? nilaiData.nilai
-                                : asesmen.passing_score || "-"}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs mb-3">
-                              {isCompleted ? (
-                                <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                                  ● Selesai
-                                </span>
-                              ) : (
-                                <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-                                  ● Belum Selesai
-                                </span>
-                              )}
+                            <div className="grid grid-cols-2 gap-3 mb-4">\n                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">Soal</p>
+                                <p className="font-bold text-gray-900">{asesmen.total_questions || "-"}</p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">Waktu</p>
+                                <p className="font-bold text-gray-900">
+                                  {asesmen.duration ? `${asesmen.duration} Menit` : "-"}
+                                </p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">Nilai</p>
+                                <p className="font-bold text-blue-600">
+                                  {nilaiData ? nilaiData.nilai : asesmen.passing_score || "-"}
+                                </p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-xs text-gray-500 mb-1">Status</p>
+                                {isCompleted ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-xs font-bold shadow-md">
+                                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                    Selesai
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-xs font-bold shadow-md">
+                                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                    Belum
+                                  </span>
+                                )}\n                              </div>
                             </div>
                             <Link href={`/siswa/asesmen/${asesmen.id}`}>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full text-green-600 border-green-600 hover:bg-green-50"
+                                className="w-full border-2 border-blue-600 text-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-600 hover:text-white hover:border-transparent transition-all duration-300 font-semibold shadow-sm hover:shadow-md"
                               >
                                 Detail Tugas{" "}
-                                <ArrowRight size={16} className="ml-1" />
+                                <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
                               </Button>
                             </Link>
                           </div>

@@ -35,14 +35,17 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Dashboard", href: "/guru/dashboard", icon: LayoutDashboard },
       { label: "Kelola Materi", href: "/guru/materi", icon: BookOpen },
       { label: "Kelola Asesmen", href: "/guru/asesmen", icon: ClipboardList },
-      { label: "Kelola PjBL", href: "/guru/pjbl", icon: Target },
       { label: "Kelola Nilai", href: "/guru/nilai", icon: BarChart3 },
+      {
+        label: "Progress Simulasi",
+        href: "/guru/simulasi-progress",
+        icon: Microscope,
+      },
     ],
     siswa: [
       { label: "Dashboard", href: "/siswa/dashboard", icon: LayoutDashboard },
       { label: "Akses Materi", href: "/siswa/materi", icon: BookOpen },
       { label: "Akses Asesmen", href: "/siswa/asesmen", icon: ClipboardList },
-      { label: "Akses PjBL", href: "/siswa/pjbl", icon: Target },
       { label: "Simulasi", href: "/siswa/simulasi", icon: Microscope },
     ],
     admin: [

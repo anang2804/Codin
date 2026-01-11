@@ -46,16 +46,35 @@ export default function GuruMateriPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMapel, setSelectedMapel] = useState<string>("all");
+  const [kelasList, setKelasList] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     mapel_id: "",
+    kelas_id: "",
     thumbnail_url: "",
   });
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const supabase = createClient();
   const loading = mapelLoading || materiLoading;
+
+  // Fetch kelas list
+  useEffect(() => {
+    const fetchKelas = async () => {
+      const { data, error } = await supabase
+        .from("kelas")
+        .select("*")
+        .order("name");
+      if (data) {
+        setKelasList(data);
+      }
+      if (error) {
+        console.error("Error fetching kelas:", error);
+      }
+    };
+    fetchKelas();
+  }, []);
 
   // Memoize filtered data untuk menghindari infinite loop
   const filteredMateri = useMemo(() => {
@@ -137,6 +156,7 @@ export default function GuruMateriPage() {
         await updateMateri.mutateAsync({
           id: editingId,
           mapel_id: formData.mapel_id,
+          kelas_id: formData.kelas_id || undefined,
           title: formData.title,
           description: formData.description || undefined,
           thumbnail_url: formData.thumbnail_url || undefined,
@@ -145,6 +165,7 @@ export default function GuruMateriPage() {
       } else {
         await createMateri.mutateAsync({
           mapel_id: formData.mapel_id,
+          kelas_id: formData.kelas_id || undefined,
           title: formData.title,
           description: formData.description || undefined,
           thumbnail_url: formData.thumbnail_url || undefined,
@@ -158,6 +179,7 @@ export default function GuruMateriPage() {
         title: "",
         description: "",
         mapel_id: "",
+        kelas_id: "",
         thumbnail_url: "",
       });
     } catch (error: any) {
@@ -171,6 +193,7 @@ export default function GuruMateriPage() {
       title: m.title,
       description: m.description || "",
       mapel_id: m.mapel_id || "",
+      kelas_id: (m as any).kelas_id || "",
       thumbnail_url: m.thumbnail_url || "",
     });
     setEditingId(m.id);
@@ -202,6 +225,7 @@ export default function GuruMateriPage() {
       title: "",
       description: "",
       mapel_id: "",
+      kelas_id: "",
       thumbnail_url: "",
     });
   };
@@ -422,6 +446,30 @@ export default function GuruMateriPage() {
                     </option>
                   ))}
               </select>
+            </div>
+
+            <div>
+              <Label htmlFor="kelas">Kelas</Label>
+              <select
+                id="kelas"
+                value={formData.kelas_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, kelas_id: e.target.value })
+                }
+                className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Semua Kelas (Opsional)</option>
+                {Array.isArray(kelasList) &&
+                  kelasList.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
+                  ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Pilih kelas tertentu jika materi hanya untuk kelas tersebut.
+                Kosongkan jika untuk semua kelas.
+              </p>
             </div>
 
             <div>
