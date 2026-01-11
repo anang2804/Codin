@@ -271,16 +271,22 @@ export default function SiswaAsesmenDetailPage({
   const currentJawaban = jawaban.find((j) => j.soal_id === currentSoal.id);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <Link href="/siswa/asesmen">
-          <Button variant="outline" size="sm">
-            <ArrowLeft size={16} className="mr-2" />
-            Kembali
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2 text-lg font-semibold text-gray-700">
+    <div className="h-screen flex flex-col p-4 max-w-7xl mx-auto">
+      {/* Header - Compact */}
+      <div className="flex justify-between items-center mb-3 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/siswa/asesmen">
+            <Button variant="outline" size="sm">
+              <ArrowLeft size={16} className="mr-2" />
+              Kembali
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">{asesmen?.title}</h1>
+            <p className="text-xs text-gray-600">{asesmen?.description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-lg font-semibold text-gray-700 bg-white px-4 py-2 rounded-lg border">
           <Clock size={20} />
           <span className={timeLeft < 300 ? "text-red-600" : ""}>
             {formatTime(timeLeft)}
@@ -288,132 +294,138 @@ export default function SiswaAsesmenDetailPage({
         </div>
       </div>
 
-      {/* Asesmen Info */}
-      <Card className="p-6 mb-6 border-green-100">
-        <h1 className="text-2xl font-bold text-gray-900">{asesmen?.title}</h1>
-        <p className="text-gray-600 mt-2">{asesmen?.description}</p>
-      </Card>
-
-      {/* Question Number Navigation */}
-      <Card className="p-4 mb-6 border-green-100">
-        <div className="flex flex-wrap gap-2">
-          {soals.map((soal, index) => {
-            const answered = jawaban.find((j) => j.soal_id === soal.id)?.answer;
-            return (
-              <button
-                key={soal.id}
-                onClick={() => setCurrentSoalIndex(index)}
-                className={`w-10 h-10 rounded-lg font-medium transition ${
-                  index === currentSoalIndex
-                    ? "bg-green-600 text-white"
-                    : answered
-                    ? "bg-green-100 text-green-700 border border-green-300"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {index + 1}
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Current Question */}
-      <Card className="p-6 mb-6 border-green-100">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-bold text-gray-900">
-            Soal {currentSoalIndex + 1} dari {soals.length}
-          </h2>
-          <span className="text-sm text-gray-500">
-            {currentSoal.points} poin
-          </span>
-        </div>
-
-        <p className="text-gray-800 mb-4 whitespace-pre-wrap">
-          {currentSoal.question}
-        </p>
-
-        {currentSoal.file_url && (
-          <div className="mb-4">
-            <a
-              href={currentSoal.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-green-600 hover:text-green-700 underline text-sm"
-            >
-              📎 Lihat Lampiran
-            </a>
+      {/* Main Content - Single Screen Layout */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Left Side - Question Numbers */}
+        <Card className="p-3 border-green-100 flex-shrink-0 w-20 overflow-y-auto">
+          <div className="flex flex-col gap-2">
+            {soals.map((soal, index) => {
+              const answered = jawaban.find((j) => j.soal_id === soal.id)?.answer;
+              return (
+                <button
+                  key={soal.id}
+                  onClick={() => setCurrentSoalIndex(index)}
+                  className={`w-12 h-12 rounded-lg font-medium transition text-sm ${
+                    index === currentSoalIndex
+                      ? "bg-green-600 text-white"
+                      : answered
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </Card>
 
-        {/* Answer Options */}
-        <div className="space-y-3">
-          {currentSoal.type === "pilihan_ganda" && currentSoal.options ? (
-            Object.entries(currentSoal.options).map(([key, value]) => (
-              <label
-                key={key}
-                className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition ${
-                  currentJawaban?.answer === key
-                    ? "border-green-600 bg-green-50"
-                    : "border-gray-200 hover:border-green-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`soal-${currentSoal.id}`}
-                  value={key}
-                  checked={currentJawaban?.answer === key}
+        {/* Right Side - Question and Answers */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <Card className="p-4 border-green-100 flex-1 flex flex-col">
+            {/* Question Header */}
+            <div className="flex justify-between items-start mb-3 flex-shrink-0">
+              <h2 className="text-base font-bold text-gray-900">
+                Soal {currentSoalIndex + 1} dari {soals.length}
+              </h2>
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {currentSoal.points} poin
+              </span>
+            </div>
+
+            {/* Question Text */}
+            <div className="mb-3 flex-shrink-0">
+              <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                {currentSoal.question}
+              </p>
+
+              {currentSoal.file_url && (
+                <div className="mt-2">
+                  <a
+                    href={currentSoal.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 hover:text-green-700 underline text-xs"
+                  >
+                    📎 Lihat Lampiran
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Answer Options - Scrollable if needed */}
+            <div className="flex-1 overflow-y-auto space-y-2 mb-3">
+              {currentSoal.type === "pilihan_ganda" && currentSoal.options ? (
+                Object.entries(currentSoal.options).map(([key, value]) => (
+                  <label
+                    key={key}
+                    className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition ${
+                      currentJawaban?.answer === key
+                        ? "border-green-600 bg-green-50"
+                        : "border-gray-200 hover:border-green-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`soal-${currentSoal.id}`}
+                      value={key}
+                      checked={currentJawaban?.answer === key}
+                      onChange={(e) =>
+                        handleAnswerChange(currentSoal.id, e.target.value)
+                      }
+                      className="mt-1 mr-3 flex-shrink-0"
+                    />
+                    <span className="flex-1 text-sm">
+                      <span className="font-medium">{key}.</span> {value}
+                    </span>
+                  </label>
+                ))
+              ) : (
+                <textarea
+                  value={currentJawaban?.answer || ""}
                   onChange={(e) =>
                     handleAnswerChange(currentSoal.id, e.target.value)
                   }
-                  className="mt-1 mr-3"
+                  placeholder="Tulis jawaban Anda di sini..."
+                  className="w-full h-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-600 focus:outline-none text-sm resize-none"
                 />
-                <span className="flex-1">
-                  <span className="font-medium">{key}.</span> {value}
-                </span>
-              </label>
-            ))
-          ) : (
-            <textarea
-              value={currentJawaban?.answer || ""}
-              onChange={(e) =>
-                handleAnswerChange(currentSoal.id, e.target.value)
-              }
-              placeholder="Tulis jawaban Anda di sini..."
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-600 focus:outline-none min-h-[150px]"
-            />
-          )}
+              )}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between flex-shrink-0 pt-2 border-t">
+              <Button
+                onClick={handlePrevious}
+                disabled={currentSoalIndex === 0}
+                variant="outline"
+                size="sm"
+                className="border-green-200"
+              >
+                Sebelumnya
+              </Button>
+
+              {currentSoalIndex === soals.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 gap-2"
+                >
+                  <CheckCircle size={16} />
+                  {submitting ? "Mengirim..." : "Selanjutnya"}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Selanjutnya
+                </Button>
+              )}
+            </div>
+          </Card>
         </div>
-      </Card>
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <Button
-          onClick={handlePrevious}
-          disabled={currentSoalIndex === 0}
-          variant="outline"
-          className="border-green-200"
-        >
-          Sebelumnya
-        </Button>
-
-        {currentSoalIndex === soals.length - 1 ? (
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="bg-green-600 hover:bg-green-700 gap-2"
-          >
-            <CheckCircle size={16} />
-            {submitting ? "Mengirim..." : "Kirim Jawaban"}
-          </Button>
-        ) : (
-          <Button
-            onClick={handleNext}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Selanjutnya
-          </Button>
-        )}
       </div>
     </div>
   );
