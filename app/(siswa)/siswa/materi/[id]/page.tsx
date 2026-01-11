@@ -45,6 +45,7 @@ interface SubBab {
   id: string;
   bab_id: string;
   title: string;
+  description?: string;
   content: string | null;
   content_type: "text" | "video" | "file" | "link";
   content_url: string | null;
@@ -363,6 +364,11 @@ export default function SiswaMateriDetailPage() {
               {selectedSubBab.title}
             </h2>
           </div>
+          {selectedSubBab.description && (
+            <p className="text-gray-600 text-sm mt-2 pl-7">
+              {selectedSubBab.description}
+            </p>
+          )}
         </div>
 
         {/* Content */}

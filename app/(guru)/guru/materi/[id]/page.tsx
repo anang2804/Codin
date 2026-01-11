@@ -48,11 +48,13 @@ interface SubBab {
   id: string;
   bab_id: string;
   title: string;
-  content?: string;
+  description?: string | null;
+  content?: string | null;
   content_type: "text" | "video" | "file" | "link";
-  content_url?: string;
-  duration?: number;
+  content_url?: string | null;
+  duration?: number | null;
   order_index: number;
+  created_at?: string;
 }
 
 export default function GuruMateriDetailPage() {
@@ -83,10 +85,9 @@ export default function GuruMateriDetailPage() {
 
   const [subBabForm, setSubBabForm] = useState({
     title: "",
-    content: "",
+    description: "",
     content_type: "text" as "text" | "video" | "file" | "link",
     content_url: "",
-    duration: 0,
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -187,19 +188,17 @@ export default function GuruMateriDetailPage() {
     if (subBab) {
       setSubBabForm({
         title: subBab.title,
-        content: subBab.content || "",
+        description: subBab.description || "",
         content_type: subBab.content_type,
         content_url: subBab.content_url || "",
-        duration: subBab.duration || 0,
       });
       setEditingSubBabId(subBab.id);
     } else {
       setSubBabForm({
         title: "",
-        content: "",
+        description: "",
         content_type: "text",
         content_url: "",
-        duration: 0,
       });
       setEditingSubBabId(null);
     }
@@ -255,8 +254,7 @@ export default function GuruMateriDetailPage() {
           id: editingSubBabId,
           bab_id: selectedBabId,
           title: subBabForm.title,
-          content:
-            subBabForm.content_type === "text" ? subBabForm.content : undefined,
+          description: subBabForm.description,
           content_type: subBabForm.content_type,
           content_url: subBabForm.content_type !== "text" ? fileUrl : undefined,
         });
@@ -265,8 +263,7 @@ export default function GuruMateriDetailPage() {
         await createSubBab.mutateAsync({
           bab_id: selectedBabId,
           title: subBabForm.title,
-          content:
-            subBabForm.content_type === "text" ? subBabForm.content : undefined,
+          description: subBabForm.description,
           content_type: subBabForm.content_type,
           content_url: subBabForm.content_type !== "text" ? fileUrl : undefined,
         });
@@ -276,10 +273,9 @@ export default function GuruMateriDetailPage() {
       setShowSubBabDialog(false);
       setSubBabForm({
         title: "",
-        content: "",
+        description: "",
         content_type: "text",
         content_url: "",
-        duration: 0,
       });
       setEditingSubBabId(null);
       setSelectedBabId(null);
@@ -622,7 +618,7 @@ export default function GuruMateriDetailPage() {
 
       {/* Sub-Bab Dialog */}
       <Dialog open={showSubBabDialog} onOpenChange={setShowSubBabDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>
               {editingSubBabId ? "Edit Sub-Bab" : "Tambah Sub-Bab Baru"}
@@ -680,21 +676,7 @@ export default function GuruMateriDetailPage() {
               </div>
             </div>
 
-            {subBabForm.content_type === "text" ? (
-              <div>
-                <Label htmlFor="content">Konten Materi</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Tulis konten materi di sini..."
-                  value={subBabForm.content}
-                  onChange={(e) =>
-                    setSubBabForm({ ...subBabForm, content: e.target.value })
-                  }
-                  rows={10}
-                  className="font-mono"
-                />
-              </div>
-            ) : subBabForm.content_type === "file" ? (
+            {subBabForm.content_type === "file" ? (
               <div>
                 <Label htmlFor="file-upload">Upload File</Label>
                 <Input
@@ -705,7 +687,6 @@ export default function GuruMateriDetailPage() {
                     const file = e.target.files?.[0];
                     if (file) {
                       setSelectedFile(file);
-                      // Set filename as content_url temporarily until uploaded
                       setSubBabForm({
                         ...subBabForm,
                         content_url: file.name,
@@ -715,13 +696,13 @@ export default function GuruMateriDetailPage() {
                   className="cursor-pointer"
                 />
                 {selectedFile && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2 break-all">
                     File dipilih: {selectedFile.name} (
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
                 {subBabForm.content_url && !selectedFile && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2 break-all">
                     File saat ini: {subBabForm.content_url}
                   </p>
                 )}
@@ -746,24 +727,24 @@ export default function GuruMateriDetailPage() {
                       content_url: e.target.value,
                     })
                   }
+                  className="break-all"
                 />
               </div>
             )}
 
             <div>
-              <Label htmlFor="duration">Durasi (menit, opsional)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="0"
-                placeholder="0"
-                value={subBabForm.duration || ""}
+              <Label htmlFor="description">Deskripsi Singkat</Label>
+              <Textarea
+                id="description"
+                placeholder="Penjelasan singkat tentang sub-bab ini..."
+                value={subBabForm.description}
                 onChange={(e) =>
                   setSubBabForm({
                     ...subBabForm,
-                    duration: parseInt(e.target.value) || 0,
+                    description: e.target.value,
                   })
                 }
+                rows={3}
               />
             </div>
 

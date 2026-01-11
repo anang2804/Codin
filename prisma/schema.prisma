@@ -110,6 +110,7 @@ model MateriSubBab {
   id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   bab_id       String           @db.Uuid
   title        String           @db.VarChar(255)
+  description  String?
   content      String?
   content_type String           @db.VarChar(20) // 'text', 'video', 'file', 'link'
   content_url  String?

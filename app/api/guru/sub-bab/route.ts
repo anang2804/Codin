@@ -70,8 +70,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { bab_id, title, content, content_type, content_url, duration } =
-      body;
+    const {
+      bab_id,
+      title,
+      content,
+      content_type,
+      content_url,
+      duration,
+      description,
+    } = body;
 
     if (!bab_id || !title || !content_type) {
       return NextResponse.json(
@@ -103,6 +110,7 @@ export async function POST(request: NextRequest) {
       data: {
         bab_id,
         title,
+        description,
         content: content_type === "text" ? content : null,
         content_type,
         content_url: content_type !== "text" ? content_url : null,
@@ -134,7 +142,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, content, content_type, content_url, duration } = body;
+    const {
+      id,
+      title,
+      content,
+      content_type,
+      content_url,
+      duration,
+      description,
+    } = body;
 
     if (!id || !title || !content_type) {
       return NextResponse.json(
@@ -162,6 +178,7 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         title,
+        description,
         content: content_type === "text" ? content : null,
         content_type,
         content_url: content_type !== "text" ? content_url : null,
