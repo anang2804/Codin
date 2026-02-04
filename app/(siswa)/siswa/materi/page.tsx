@@ -331,7 +331,10 @@ export default function SiswaMateriPage() {
                   defaultValue="overview"
                   className="w-full flex-1 flex flex-col"
                 >
-                  <TabsList className="grid w-full grid-cols-2 h-8 mb-2">
+                  <TabsList
+                    className="grid w-full grid-cols-2 h-8 mb-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <TabsTrigger value="overview" className="text-xs py-1">
                       Overview
                     </TabsTrigger>
