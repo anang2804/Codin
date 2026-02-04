@@ -127,7 +127,7 @@ export default function SiswaMateriDetailPage() {
 
       // Fetch progress data from API
       const progressResponse = await fetch(
-        `/api/siswa/materi-progress?materi_id=${params.id}`
+        `/api/siswa/materi-progress?materi_id=${params.id}`,
       );
       const progressData = await progressResponse.json();
 
@@ -135,7 +135,7 @@ export default function SiswaMateriDetailPage() {
       const completedSubBabIds = new Set(
         (progressData.sub_bab_progress || [])
           .filter((p: any) => p.completed)
-          .map((p: any) => p.sub_bab_id)
+          .map((p: any) => p.sub_bab_id),
       );
 
       // Fetch sub babs for each bab
@@ -145,7 +145,7 @@ export default function SiswaMateriDetailPage() {
             .from("materi_sub_bab")
             .select("*")
             .eq("bab_id", bab.id)
-            .order("order_index", { ascending: true })
+            .order("order_index", { ascending: true }),
         );
 
         const results = await Promise.all(subBabPromises);
@@ -212,7 +212,7 @@ export default function SiswaMateriDetailPage() {
     if (!selectedSubBab) return null;
     const allSubBabs = getAllSubBabsInOrder();
     const currentIndex = allSubBabs.findIndex(
-      (sb) => sb.id === selectedSubBab.id
+      (sb) => sb.id === selectedSubBab.id,
     );
     if (currentIndex >= 0 && currentIndex < allSubBabs.length - 1) {
       return allSubBabs[currentIndex + 1];
@@ -225,7 +225,7 @@ export default function SiswaMateriDetailPage() {
     if (!selectedSubBab) return null;
     const allSubBabs = getAllSubBabsInOrder();
     const currentIndex = allSubBabs.findIndex(
-      (sb) => sb.id === selectedSubBab.id
+      (sb) => sb.id === selectedSubBab.id,
     );
     if (currentIndex > 0) {
       return allSubBabs[currentIndex - 1];
@@ -259,7 +259,7 @@ export default function SiswaMateriDetailPage() {
         const newSubBabs = { ...prev };
         Object.keys(newSubBabs).forEach((babId) => {
           newSubBabs[babId] = newSubBabs[babId].map((sb) =>
-            sb.id === selectedSubBab.id ? { ...sb, completed: true } : sb
+            sb.id === selectedSubBab.id ? { ...sb, completed: true } : sb,
           );
         });
         return newSubBabs;
@@ -278,7 +278,7 @@ export default function SiswaMateriDetailPage() {
           data.materi_progress;
         toast.info(
           `Progress: ${completed_sub_bab}/${total_sub_bab} sub-bab (${progress_percentage}%)`,
-          { duration: 3000 }
+          { duration: 3000 },
         );
       }
 
@@ -289,7 +289,7 @@ export default function SiswaMateriDetailPage() {
           setSelectedSubBab(nextSubBab);
           // Auto-expand the bab that contains the next sub-bab
           const nextBabId = Object.keys(subBabs).find((babId) =>
-            subBabs[babId].some((sb) => sb.id === nextSubBab.id)
+            subBabs[babId].some((sb) => sb.id === nextSubBab.id),
           );
           if (nextBabId) {
             setExpandedBabs((prev) => new Set([...prev, nextBabId]));
@@ -316,7 +316,7 @@ export default function SiswaMateriDetailPage() {
       setSelectedSubBab(prevSubBab);
       // Auto-expand the bab that contains the previous sub-bab
       const prevBabId = Object.keys(subBabs).find((babId) =>
-        subBabs[babId].some((sb) => sb.id === prevSubBab.id)
+        subBabs[babId].some((sb) => sb.id === prevSubBab.id),
       );
       if (prevBabId) {
         setExpandedBabs((prev) => new Set([...prev, prevBabId]));
@@ -344,7 +344,7 @@ export default function SiswaMateriDetailPage() {
     }
 
     return (
-      <div className="p-8">
+      <div className="p-8 pb-32">
         {/* Sub-Bab Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
@@ -467,27 +467,47 @@ export default function SiswaMateriDetailPage() {
           )}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="px-8 pb-8">
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={() => {
-                handleNavigatePrevious();
-              }}
-            >
-              ← Sebelumnya
-            </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                handleMarkCompleteAndNext();
-              }}
-            >
-              {getNextSubBab()
-                ? "Tandai Selesai & Lanjut →"
-                : "Tandai Selesai ✓"}
-            </Button>
+        {/* Navigation Buttons - Sticky at bottom */}
+        <div className="sticky bottom-0 left-0 right-0 pt-6 pb-4 bg-gradient-to-t from-gray-50 via-gray-50/95 to-transparent">
+          <div className="max-w-5xl mx-auto px-8">
+            <div className="flex items-center justify-between gap-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  handleNavigatePrevious();
+                }}
+                disabled={!getPreviousSubBab()}
+                className="min-w-[140px] border-gray-300 bg-white hover:bg-gray-50 rounded-lg shadow-sm"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Sebelumnya
+              </Button>
+              <Button
+                size="lg"
+                className="min-w-[200px] bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all rounded-lg"
+                onClick={() => {
+                  handleMarkCompleteAndNext();
+                }}
+              >
+                {selectedSubBab?.completed ? (
+                  <>
+                    <CheckCircle size={16} className="mr-2" />
+                    Sudah Selesai
+                  </>
+                ) : getNextSubBab() ? (
+                  <>
+                    Tandai Selesai & Lanjut
+                    <ChevronRight size={16} className="ml-2" />
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={16} className="mr-2" />
+                    Tandai Selesai
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -513,11 +533,11 @@ export default function SiswaMateriDetailPage() {
   // Calculate total progress
   const totalSubBabs = Object.values(subBabs).reduce(
     (acc, subs) => acc + subs.length,
-    0
+    0,
   );
   const completedSubBabs = Object.values(subBabs).reduce(
     (acc, subs) => acc + subs.filter((sb) => sb.completed).length,
-    0
+    0,
   );
   const progressPercentage =
     totalSubBabs > 0 ? Math.round((completedSubBabs / totalSubBabs) * 100) : 0;
@@ -535,7 +555,7 @@ export default function SiswaMateriDetailPage() {
                 // Trigger refresh on list page
                 localStorage.setItem(
                   "materi_progress_updated",
-                  Date.now().toString()
+                  Date.now().toString(),
                 );
                 router.push("/siswa/materi");
               }}
