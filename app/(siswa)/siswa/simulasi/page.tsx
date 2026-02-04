@@ -10,37 +10,34 @@ export default function SiswaSimulasiPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <Microscope className="text-green-600" size={32} />
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+            <Microscope className="text-green-600" size={28} />
             Simulasi
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Simulasi interaktif untuk memahami algoritma dan pemrograman
           </p>
         </div>
       </div>
 
       {/* Grid Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Card 1: Bayar Bakso */}
-        <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-green-100 hover:border-green-300">
-          <div className="h-40 bg-gradient-to-br from-emerald-50 via-green-100 to-yellow-50 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10">
-              <div className="text-8xl">🍜</div>
-            </div>
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              <div className="text-5xl animate-pulse">💰</div>
+        <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+          <div className="h-36 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-5xl">💰</div>
               <div className="flex gap-1">
-                <div className="w-6 h-6 border-2 border-emerald-400 rounded-full bg-emerald-50"></div>
-                <div className="w-6 h-6 border-2 border-green-400 rounded bg-green-50"></div>
+                <div className="w-5 h-5 border-2 border-green-500 rounded-full bg-white"></div>
+                <div className="w-5 h-5 border-2 border-green-500 rounded bg-white"></div>
               </div>
             </div>
           </div>
-          <div className="p-4 flex flex-col">
-            <h3 className="font-semibold text-gray-800 mb-2">
+          <div className="p-4">
+            <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
               🎯 Membayar Bakso
             </h3>
-            <p className="text-sm text-gray-600 mb-3 min-h-[48px]">
+            <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
               Lengkapi pseudocode pembayaran bakso dan lihat bagaimana struktur
               IF-ELSE menentukan kembalian atau pesan kesalahan.
             </p>
@@ -48,7 +45,7 @@ export default function SiswaSimulasiPage() {
               onClick={() =>
                 (window.location.href = "/siswa/simulasi/bayar-bakso")
               }
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
             >
               Mulai Simulasi
             </Button>
@@ -56,25 +53,22 @@ export default function SiswaSimulasiPage() {
         </Card>
 
         {/* Card 2: Poin Bakso */}
-        <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-green-100 hover:border-green-300">
-          <div className="h-40 bg-gradient-to-br from-emerald-50 via-green-100 to-teal-50 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10">
-              <div className="text-8xl">🎁</div>
-            </div>
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              <div className="text-5xl animate-bounce">⭐</div>
+        <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+          <div className="h-36 bg-gradient-to-br from-yellow-100 to-orange-200 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-5xl">⭐</div>
               <div className="flex gap-1">
-                <div className="w-6 h-6 border-2 border-emerald-400 rounded-full bg-emerald-50"></div>
-                <div className="w-6 h-6 border-2 border-green-400 rounded-full bg-green-50"></div>
-                <div className="w-6 h-6 border-2 border-teal-400 rounded-full bg-teal-50"></div>
+                <div className="w-5 h-5 border-2 border-orange-500 rounded-full bg-white"></div>
+                <div className="w-5 h-5 border-2 border-orange-500 rounded-full bg-white"></div>
+                <div className="w-5 h-5 border-2 border-orange-500 rounded-full bg-white"></div>
               </div>
             </div>
           </div>
-          <div className="p-4 flex flex-col">
-            <h3 className="font-semibold text-gray-800 mb-2">
+          <div className="p-4">
+            <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
               🎯 Sistem Poin Bakso Gratis
             </h3>
-            <p className="text-sm text-gray-600 mb-3 min-h-[48px]">
+            <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
               Simulasikan sistem poin pelanggan dan amati bagaimana perubahan
               nilai poin dan kondisi IF-ELSE menentukan pemberian kupon.
             </p>
@@ -82,7 +76,7 @@ export default function SiswaSimulasiPage() {
               onClick={() =>
                 (window.location.href = "/siswa/simulasi/poin-bakso")
               }
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
             >
               Mulai Simulasi
             </Button>
@@ -90,25 +84,22 @@ export default function SiswaSimulasiPage() {
         </Card>
 
         {/* Card 3: Luas Segitiga */}
-        <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-green-100 hover:border-green-300">
-          <div className="h-40 bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10">
-              <div className="text-8xl">📐</div>
-            </div>
-            <div className="relative z-10 flex flex-col items-center gap-2">
+        <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+          <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
               <div className="text-5xl">🔺</div>
               <div className="flex gap-1">
-                <div className="w-6 h-6 border-2 border-emerald-400 rounded-full bg-emerald-50"></div>
-                <div className="w-6 h-6 border-2 border-cyan-400 rounded-full bg-cyan-50"></div>
-                <div className="w-6 h-6 border-2 border-blue-400 rounded-full bg-blue-50"></div>
+                <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
+                <div className="w-5 h-5 border-2 border-cyan-500 rounded-full bg-white"></div>
+                <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
               </div>
             </div>
           </div>
-          <div className="p-4 flex flex-col">
-            <h3 className="font-semibold text-gray-800 mb-2">
+          <div className="p-4">
+            <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
               🎯 Luas Tanah Pak Algor
             </h3>
-            <p className="text-sm text-gray-600 mb-3 min-h-[48px]">
+            <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
               Pilih bentuk tanah (segitiga, persegi, lingkaran) dan susun
               ekspresi untuk menghitung luasnya.
             </p>
@@ -116,7 +107,7 @@ export default function SiswaSimulasiPage() {
               onClick={() =>
                 (window.location.href = "/siswa/simulasi/luas-segitiga")
               }
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
             >
               Mulai Simulasi
             </Button>
@@ -124,28 +115,28 @@ export default function SiswaSimulasiPage() {
         </Card>
 
         {/* Card Placeholder */}
-        {[3, 4, 5, 6, 7, 8].map((index) => (
+        {[4, 5, 6].map((index) => (
           <Card
             key={index}
-            className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-green-100 hover:border-green-300"
+            className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all"
           >
-            <div className="h-40 bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center relative">
+            <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <div className="text-center">
-                <Plus className="text-gray-300 mx-auto mb-2" size={48} />
-                <p className="text-gray-400 text-sm font-medium">
+                <Plus className="text-gray-400 mx-auto mb-2" size={40} />
+                <p className="text-gray-500 text-xs font-medium">
                   Simulasi #{index}
                 </p>
               </div>
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-2">
+              <h3 className="font-bold text-gray-900 mb-2 text-base">
                 Judul Simulasi
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3">
                 Deskripsi singkat simulasi akan ditampilkan di sini...
               </p>
-              <Button className="w-full bg-green-600 hover:bg-green-700">
-                Mulai Simulasi
+              <Button disabled className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm">
+                Segera Hadir
               </Button>
             </div>
           </Card>
