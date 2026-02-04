@@ -106,9 +106,7 @@ export default function SiswaLayout({
           </div>
         )}
 
-        <div className="p-4 md:p-8 pt-0">
-          {children}
-        </div>
+        <div className="p-4 md:p-8 pt-0">{children}</div>
       </main>
     </div>
   );
