@@ -20,7 +20,8 @@ export default function SiswaLayout({
   const [profile, setProfile] = useState<any>(null);
 
   // Check if current page should hide header
-  const hideHeader = pathname?.includes('/asesmen/') && pathname !== '/siswa/asesmen';
+  const hideHeader =
+    pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen";
 
   useEffect(() => {
     const checkAuth = async () => {
