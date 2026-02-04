@@ -77,9 +77,9 @@ export default function SiswaLayout({
     <div className="flex">
       <Sidebar role="siswa" />
       <main className="flex-1 md:ml-64 bg-gray-50 min-h-screen">
-        <div className="p-4 md:p-8">
-          {/* Header dengan greeting dan foto profil - Hide di halaman detail kuis */}
-          {!hideHeader && (
+        {/* Header dengan greeting dan foto profil - Sticky */}
+        {!hideHeader && (
+          <div className="sticky top-0 z-30 bg-gray-50 pt-4 md:pt-8 px-4 md:px-8">
             <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -103,8 +103,10 @@ export default function SiswaLayout({
                 </div>
               </Link>
             </div>
-          )}
+          </div>
+        )}
 
+        <div className="p-4 md:p-8 pt-0">
           {children}
         </div>
       </main>
