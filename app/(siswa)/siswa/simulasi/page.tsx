@@ -135,7 +135,10 @@ export default function SiswaSimulasiPage() {
               <p className="text-xs text-gray-600 mb-4 line-clamp-3">
                 Deskripsi singkat simulasi akan ditampilkan di sini...
               </p>
-              <Button disabled className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm">
+              <Button
+                disabled
+                className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm"
+              >
                 Segera Hadir
               </Button>
             </div>
