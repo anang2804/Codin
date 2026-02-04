@@ -682,10 +682,12 @@ export default function SiswaMateriDetailPage() {
                           <button
                             key={subBab.id}
                             onClick={() => handleSelectSubBab(subBab)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-lg border transition ${
+                            className={`w-full flex items-center gap-3 p-3 rounded-lg border transition relative ${
                               selectedSubBab?.id === subBab.id
-                                ? "bg-green-100 border-green-400"
-                                : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50"
+                                ? "bg-green-50 border-green-400 border-l-4 border-l-green-600"
+                                : subBab.completed
+                                  ? "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-green-500"
+                                  : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-gray-200"
                             }`}
                           >
                             <div className="flex-shrink-0">

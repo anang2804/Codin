@@ -88,15 +88,16 @@ export function Sidebar({ role }: SidebarProps) {
         <nav className="space-y-2 flex-1 overflow-y-auto">
           {items.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link key={item.href} href={item.href}>
                 <button
                   onClick={() => setOpen(false)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
                     isActive
-                      ? "bg-green-100 text-green-700 font-medium"
-                      : "text-gray-600 hover:bg-green-50 hover:text-green-600"
+                      ? "bg-green-100 text-green-700 font-medium border-l-4 border-l-green-600"
+                      : "text-gray-600 hover:bg-green-50 hover:text-green-600 border-l-4 border-l-transparent"
                   }`}
                 >
                   <Icon size={20} />
