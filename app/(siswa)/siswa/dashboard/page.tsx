@@ -136,29 +136,6 @@ export default function SiswaDashboard() {
 
   return (
     <div>
-      {/* Header dengan greeting dan foto profil */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{getGreeting()}</h1>
-          <p className="text-gray-600 mt-1">
-            Selamat datang di Dashboard Siswa
-          </p>
-          {profile?.kelas && (
-            <p className="text-sm text-gray-500 mt-1">
-              Kelas:{" "}
-              <span className="font-semibold text-green-600">
-                {profile.kelas}
-              </span>
-            </p>
-          )}
-        </div>
-        <Link href="/siswa/profile">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-md">
-            <User size={32} className="text-green-400" />
-          </div>
-        </Link>
-      </div>
-
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -248,7 +225,7 @@ export default function SiswaDashboard() {
                                   day: "2-digit",
                                   month: "2-digit",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </span>
                           </div>

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { createClient } from "@/lib/supabase/client";
+import { User } from "lucide-react";
+import Link from "next/link";
 
 export default function SiswaLayout({
   children,
@@ -14,6 +16,7 @@ export default function SiswaLayout({
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -27,23 +30,30 @@ export default function SiswaLayout({
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("role")
+        .select("*")
         .eq("id", user.id)
         .single();
 
-      if (profile?.role !== "siswa") {
+      if (profileData?.role !== "siswa") {
         router.push("/auth/login");
         return;
       }
 
+      setProfile(profileData);
       setMounted(true);
       setLoading(false);
     };
 
     checkAuth();
   }, [router]);
+
+  const getGreeting = () => {
+    if (!profile) return "Halo";
+    const name = profile.full_name || "Siswa";
+    return `Halo, ${name}`;
+  };
 
   if (loading) {
     return (
@@ -62,7 +72,34 @@ export default function SiswaLayout({
     <div className="flex">
       <Sidebar role="siswa" />
       <main className="flex-1 md:ml-64 bg-gray-50 min-h-screen">
-        <div className="p-4 md:p-8">{children}</div>
+        <div className="p-4 md:p-8">
+          {/* Header dengan greeting dan foto profil */}
+          <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {getGreeting()}
+              </h1>
+              <p className="text-sm text-gray-600 mt-0.5">
+                Selamat datang di Dashboard Siswa
+              </p>
+              {profile?.kelas && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Kelas:{" "}
+                  <span className="font-semibold text-green-600">
+                    {profile.kelas}
+                  </span>
+                </p>
+              )}
+            </div>
+            <Link href="/siswa/profile">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                <User size={28} className="text-green-600" />
+              </div>
+            </Link>
+          </div>
+
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -3,7 +3,19 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Play, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  ClipboardList,
+  Play,
+  CheckCircle,
+  Clock,
+  FileText,
+  Award,
+  BookOpen,
+  Calendar,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -100,7 +112,7 @@ export default function SiswaAsesmenPage() {
                     `Asesmen ${a.title} - isCompleted:`,
                     isCompleted,
                     "Nilai:",
-                    nilaiData
+                    nilaiData,
                   );
 
                   return {
@@ -110,7 +122,7 @@ export default function SiswaAsesmenPage() {
                     nilai: nilaiData,
                     is_completed: isCompleted,
                   };
-                })
+                }),
               );
               setAsesmen(asesmenWithDetails);
             }
@@ -127,8 +139,19 @@ export default function SiswaAsesmenPage() {
   }, []);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Akses Kuis</h1>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <ClipboardList className="text-green-600" size={28} />
+            Akses Kuis
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Kerjakan kuis untuk menguji pemahaman materi
+          </p>
+        </div>
+      </div>
 
       {loading ? (
         <div className="text-center py-12">
@@ -143,48 +166,91 @@ export default function SiswaAsesmenPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {asesmen.map((a) => (
             <Card
               key={a.id}
-              className="p-6 border-green-100 hover:shadow-lg transition"
+              className="overflow-hidden border-gray-200 hover:shadow-md transition-all"
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900">{a.title}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{a.description}</p>
-                  <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                    <span>
-                      <span className="text-gray-500">Mata Pelajaran:</span>{" "}
-                      <span className="font-medium text-gray-900">
-                        {a.mapel?.name || "-"}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                    <span>📝 {a.soal_count} soal</span>
-                    <span>✓ Nilai minimum: {a.passing_score}</span>
-                    {a.duration && <span>⏱️ {a.duration} menit</span>}
-                  </div>
-                  {a.is_completed && (
-                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                      <CheckCircle size={16} />
-                      Selesai - Nilai: {a.nilai?.score || 0}
-                    </div>
+              {/* Header */}
+              <div className="px-4 py-3 border-b bg-gradient-to-r from-green-50 to-green-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <ClipboardList className="text-green-600" size={16} />
+                  <span className="font-medium text-gray-700 text-xs">
+                    Kuis
+                  </span>
+                </div>
+                <h2 className="text-sm font-bold text-gray-900 line-clamp-2">
+                  {a.title}
+                </h2>
+              </div>
+
+              {/* Content */}
+              <div className="p-3 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Soal</span>
+                  <span className="font-semibold text-gray-900">
+                    {a.soal_count}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Mapel</span>
+                  <span className="font-semibold text-gray-900 text-right truncate ml-2">
+                    {a.mapel?.name || "Umum"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Waktu</span>
+                  <span className="font-semibold text-gray-900">
+                    {a.duration ? `${a.duration} Menit` : "Bebas"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Nilai Min</span>
+                  <span className="font-semibold text-gray-900">
+                    {a.passing_score}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-gray-600">Status</span>
+                  {a.is_completed ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs px-2 py-0">
+                      Selesai
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 text-xs px-2 py-0">
+                      Tersedia
+                    </Badge>
                   )}
                 </div>
+                {a.is_completed && a.nilai && (
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-gray-600 font-medium">Nilai</span>
+                    <span className="font-bold text-green-600 text-base">
+                      {a.nilai.score}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Button */}
+              <div className="p-3 pt-0">
                 {a.is_completed ? (
                   <Button
                     disabled
-                    className="bg-gray-300 text-gray-600 cursor-not-allowed"
+                    size="sm"
+                    className="w-full bg-gray-200 text-gray-600 cursor-not-allowed h-8 text-xs"
                   >
                     Sudah Dikerjakan
                   </Button>
                 ) : (
-                  <Link href={`/siswa/asesmen/${a.id}`}>
-                    <Button className="bg-green-600 hover:bg-green-700 gap-2">
-                      <Play size={16} />
-                      Mulai
+                  <Link href={`/siswa/asesmen/${a.id}`} className="block">
+                    <Button
+                      size="sm"
+                      className="w-full bg-green-600 hover:bg-green-700 gap-2 h-8 text-xs"
+                    >
+                      Detail Kuis
+                      <Play size={14} />
                     </Button>
                   </Link>
                 )}
