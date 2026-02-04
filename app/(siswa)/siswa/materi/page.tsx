@@ -126,7 +126,7 @@ export default function SiswaMateriPage() {
         (progressData.data || []).map((p: any) => [
           p.materi_id,
           p.progress_percentage,
-        ])
+        ]),
       );
 
       // Fetch related data separately
@@ -183,7 +183,7 @@ export default function SiswaMateriPage() {
         (m) =>
           m.title?.toLowerCase().includes(term) ||
           m.description?.toLowerCase().includes(term) ||
-          m.mapel?.name?.toLowerCase().includes(term)
+          m.mapel?.name?.toLowerCase().includes(term),
       );
     }
 
@@ -202,25 +202,25 @@ export default function SiswaMateriPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Materi Pembelajaran
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-0.5">
             Akses semua materi pembelajaran yang tersedia
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <BookOpen className="text-green-600" size={32} />
-          <span className="text-2xl font-bold text-green-600">
+          <BookOpen className="text-green-600" size={24} />
+          <span className="text-xl font-bold text-green-600">
             {filteredMateri.length}
           </span>
         </div>
       </div>
 
       {/* Filter Section */}
-      <Card className="p-4 mb-6">
+      <Card className="p-3 mb-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="relative">
             <Search
@@ -271,15 +271,15 @@ export default function SiswaMateriPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
           {filteredMateri.map((m) => (
             <Card
               key={m.id}
-              className="overflow-hidden border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              className="overflow-hidden border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col max-h-[400px]"
               onClick={() => handleViewMateri(m.id)}
             >
               {/* Thumbnail */}
-              <div className="relative h-48 bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden">
+              <div className="relative h-28 bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden flex-shrink-0">
                 {m.thumbnail_url ? (
                   <img
                     src={m.thumbnail_url}
@@ -288,9 +288,9 @@ export default function SiswaMateriPage() {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-white text-center p-6">
-                      <BookOpen size={48} className="mx-auto mb-2 opacity-80" />
-                      <h3 className="text-xl font-bold line-clamp-2">
+                    <div className="text-white text-center p-3">
+                      <BookOpen size={32} className="mx-auto mb-1 opacity-80" />
+                      <h3 className="text-sm font-bold line-clamp-1">
                         {m.title}
                       </h3>
                     </div>
@@ -305,14 +305,14 @@ export default function SiswaMateriPage() {
               </div>
 
               {/* Content */}
-              <div className="p-5">
-                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+              <div className="p-4 flex-1 flex flex-col overflow-hidden">
+                <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-1">
                   {m.title}
                 </h3>
 
                 {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm mb-1">
+                <div className="mb-3">
+                  <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-gray-600 font-medium">Progress</span>
                     <span className="font-bold text-gray-900">
                       {m.progress || 0}%
@@ -327,33 +327,39 @@ export default function SiswaMateriPage() {
                 </div>
 
                 {/* Tabs */}
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-9">
-                    <TabsTrigger value="overview" className="text-xs">
+                <Tabs
+                  defaultValue="overview"
+                  className="w-full flex-1 flex flex-col"
+                >
+                  <TabsList className="grid w-full grid-cols-2 h-8 mb-2">
+                    <TabsTrigger value="overview" className="text-xs py-1">
                       Overview
                     </TabsTrigger>
-                    <TabsTrigger value="learn" className="text-xs">
+                    <TabsTrigger value="learn" className="text-xs py-1">
                       Lanjut Belajar
                     </TabsTrigger>
                   </TabsList>
-                  <TabsContent value="overview" className="mt-3">
-                    <div className="space-y-2 text-sm">
+                  <TabsContent
+                    value="overview"
+                    className="mt-0 flex-1 overflow-hidden"
+                  >
+                    <div className="space-y-1.5 text-xs">
                       {m.mapel && (
                         <div className="flex items-center gap-2 text-gray-600">
-                          <BookOpen size={14} />
+                          <BookOpen size={12} />
                           <span className="line-clamp-1">{m.mapel.name}</span>
                         </div>
                       )}
                       {m.profiles && (
                         <div className="flex items-center gap-2 text-gray-600">
-                          <User size={14} />
+                          <User size={12} />
                           <span className="line-clamp-1">
                             {m.profiles.full_name}
                           </span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar size={14} />
+                        <Calendar size={12} />
                         <span>
                           {new Date(m.created_at).toLocaleDateString("id-ID", {
                             day: "numeric",
@@ -364,16 +370,16 @@ export default function SiswaMateriPage() {
                       </div>
                     </div>
                   </TabsContent>
-                  <TabsContent value="learn" className="mt-3">
+                  <TabsContent value="learn" className="mt-0">
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      className="w-full bg-green-600 hover:bg-green-700 h-8 text-xs"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewMateri(m.id);
                       }}
                     >
-                      <Play size={16} className="mr-2" />
+                      <Play size={14} className="mr-1" />
                       Mulai Belajar
                     </Button>
                   </TabsContent>
