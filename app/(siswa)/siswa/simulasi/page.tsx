@@ -47,8 +47,8 @@ export default function SiswaSimulasiPage() {
                 🎯 Membayar Bakso
               </h3>
               <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Lengkapi pseudocode pembayaran bakso dan lihat bagaimana struktur
-                IF-ELSE menentukan kembalian atau pesan kesalahan.
+                Lengkapi pseudocode pembayaran bakso dan lihat bagaimana
+                struktur IF-ELSE menentukan kembalian atau pesan kesalahan.
               </p>
               <Button
                 onClick={() =>
@@ -97,9 +97,7 @@ export default function SiswaSimulasiPage() {
             <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <div className="text-center">
                 <Plus className="text-gray-400 mx-auto mb-2" size={40} />
-                <p className="text-gray-500 text-xs font-medium">
-                  Simulasi #3
-                </p>
+                <p className="text-gray-500 text-xs font-medium">Simulasi #3</p>
               </div>
             </div>
             <div className="p-4">
