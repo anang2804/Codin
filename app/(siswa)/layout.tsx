@@ -21,7 +21,8 @@ export default function SiswaLayout({
 
   // Check if current page should hide header
   const hideHeader =
-    pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen";
+    (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
+    (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
 
   useEffect(() => {
     const checkAuth = async () => {

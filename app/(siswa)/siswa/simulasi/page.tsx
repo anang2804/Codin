@@ -118,40 +118,79 @@ export default function SiswaSimulasiPage() {
         </div>
       </div>
 
-      {/* Kategori 2: Operasi Matematika */}
+      {/* Kategori 2: Diagram Alir */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-          <h2 className="text-lg font-bold text-gray-800">
-            Operasi Matematika
-          </h2>
+          <h2 className="text-lg font-bold text-gray-800">Diagram Alir</h2>
           <span className="text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded-full">
             3 Simulasi
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 3: Luas Segitiga */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+          {/* Card 1: Traffic Logic */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
             <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🔺</div>
+                <div className="text-5xl">🚦</div>
                 <div className="flex gap-1">
                   <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-cyan-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-cyan-500 rounded bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-blue-500 rotate-45 bg-white"></div>
                 </div>
               </div>
             </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Luas Tanah Pak Algor
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Pilih bentuk tanah (segitiga, persegi, lingkaran) dan susun
-                ekspresi untuk menghitung luasnya.
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                  🎯 Logika Lalu Lintas
+                </h3>
+                <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                  MUDAH
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+                Susun diagram alir untuk mengatur lampu lalu lintas dengan
+                benar.
               </p>
               <Button
                 onClick={() =>
-                  (window.location.href = "/siswa/simulasi/luas-segitiga")
+                  (window.location.href = "/siswa/simulasi/traffic-logic")
+                }
+                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
+              >
+                Mulai Simulasi
+              </Button>
+            </div>
+          </Card>
+
+          {/* Card 2: Traffic Debug */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
+            <div className="h-36 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-5xl">🚦</div>
+                <div className="flex gap-1">
+                  <div className="w-5 h-5 border-2 border-amber-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-orange-500 rounded bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-amber-500 rotate-45 bg-white"></div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                  🎯 Transisi Lampu Bertahap
+                </h3>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  SEDANG
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+                Susun diagram alir untuk mengatur perubahan lampu dari Merah →
+                Kuning → Hijau secara berurutan.
+              </p>
+              <Button
+                onClick={() =>
+                  (window.location.href = "/siswa/simulasi/traffic-debug")
                 }
                 className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
               >
@@ -161,7 +200,7 @@ export default function SiswaSimulasiPage() {
           </Card>
 
           {/* Placeholder */}
-          {[1, 2].map((index) => (
+          {[1].map((index) => (
             <Card
               key={index}
               className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all"
