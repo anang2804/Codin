@@ -270,25 +270,25 @@ export default function TrafficDebugPage() {
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => !isFixed && handleDrop(e, slotData.id)}
-        className={`relative ${customWidth} h-[42px] rounded-xl flex items-center transition-all border-2 shrink-0
+        className={`relative ${customWidth} h-[40px] rounded-lg flex items-center transition-all border shrink-0
           ${
             isPlaced
               ? "bg-white border-white shadow-md"
               : "bg-slate-200/30 border-dashed border-slate-300"
           }
           ${
-            isCurrent ? "ring-4 ring-blue-500/30 border-blue-400 shadow-lg" : ""
+            isCurrent ? "ring-2 ring-blue-500/30 border-blue-400 shadow-lg" : ""
           }
           ${isError ? "ring-red-500/50 border-red-500 bg-red-50" : ""}
         `}
       >
         {isPlaced ? (
-          <div className="flex items-center gap-1.5 w-full px-2 h-full overflow-hidden">
+          <div className="flex items-center gap-2 w-full px-2.5 h-full overflow-hidden">
             <div
-              className={`${workspace[slotData.id].shape} ${workspace[slotData.id].color} scale-[0.6] shrink-0 shadow-sm`}
+              className={`${workspace[slotData.id].shape} ${workspace[slotData.id].color} scale-[0.38] shrink-0 shadow-sm`}
             ></div>
             <span
-              className={`text-[8px] font-black uppercase leading-tight truncate flex-1 min-w-0 ${
+              className={`text-[9px] font-black uppercase leading-tight truncate flex-1 min-w-0 ${
                 isError ? "text-red-700" : "text-slate-700"
               }`}
             >
@@ -304,8 +304,8 @@ export default function TrafficDebugPage() {
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-center w-full px-1 text-center opacity-40 overflow-hidden">
-            <span className="text-[7px] font-bold uppercase italic truncate">
+          <div className="flex items-center justify-center w-full px-1.5 text-center opacity-40 overflow-hidden">
+            <span className="text-[8px] font-bold uppercase italic truncate">
               {slotData.placeholder}
             </span>
           </div>
@@ -317,44 +317,44 @@ export default function TrafficDebugPage() {
   return (
     <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 overflow-hidden font-sans text-sm">
       {/* Header */}
-      <header className="bg-white border-b px-4 py-2 flex justify-between items-center shadow-sm z-30 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="bg-white border-b px-3 py-1.5 flex justify-between items-center shadow-sm z-30 shrink-0">
+        <div className="flex items-center gap-2">
           <Link
             href="/siswa/simulasi"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <ArrowLeft size={20} className="text-gray-600" />
+            <ArrowLeft size={16} className="text-gray-600" />
           </Link>
-          <div className="bg-amber-500 p-1.5 rounded-lg text-white shadow-sm">
-            <Zap size={20} fill="currentColor" />
+          <div className="bg-amber-500 p-1 rounded-lg text-white shadow-sm">
+            <Zap size={16} fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-[#1e293b] uppercase leading-none italic">
+            <h1 className="text-sm font-black tracking-tight text-[#1e293b] uppercase leading-none italic">
               Transisi Lampu Bertahap
             </h1>
-            <span className="text-[10px] text-amber-600 font-bold tracking-widest uppercase italic">
+            <span className="text-[8px] text-amber-600 font-bold tracking-widest uppercase italic">
               Sedang
             </span>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
           >
-            <RotateCcw size={14} /> RESET
+            <RotateCcw size={12} /> RESET
           </button>
           <button
             onClick={runSimulation}
             disabled={isSimulating && simulationStatus !== "error"}
-            className={`flex items-center gap-2 px-8 py-2.5 text-xs font-black text-white rounded-lg transition-all shadow-lg ${
+            className={`flex items-center gap-1 px-4 py-1 text-[10px] font-black text-white rounded-lg transition-all shadow-lg ${
               isSimulating && simulationStatus !== "error"
                 ? "bg-slate-300"
                 : "bg-amber-500 hover:bg-amber-600 active:scale-95"
             }`}
           >
-            <Play size={14} fill="currentColor" /> JALANKAN
+            <Play size={12} fill="currentColor" /> JALANKAN
           </button>
           <MarkCompletedButton simulasiSlug="traffic-debug" />
         </div>
@@ -362,21 +362,21 @@ export default function TrafficDebugPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
-        <aside className="w-56 border-r bg-white flex flex-col z-20 shrink-0 shadow-sm">
-          <div className="p-3 border-b bg-slate-50/50 overflow-y-auto max-h-[35%]">
-            <h2 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Info size={12} className="text-blue-500" /> KOMPONEN
+        <aside className="w-44 border-r bg-white flex flex-col z-20 shrink-0 shadow-sm">
+          <div className="p-2 border-b bg-slate-50/50 overflow-y-auto max-h-[30%]">
+            <h2 className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Info size={10} className="text-blue-500" /> KOMPONEN
             </h2>
-            <div className="space-y-2 text-justify">
-              <p className="text-[9px] text-slate-600 leading-relaxed font-medium">
+            <div className="space-y-1.5 text-justify">
+              <p className="text-[10px] text-slate-600 leading-snug font-medium">
                 Diagram alir (flowchart) adalah gambar yang menunjukkan urutan
                 langkah dan keputusan dalam suatu sistem. Pada lampu lalu
                 lintas, flowchart membantu kita memahami bagaimana sistem
                 membaca warna lampu, memproses perubahan, lalu menentukan
                 hasilnya secara berurutan.
               </p>
-              <div className="bg-blue-50 p-2 rounded-xl border border-blue-100 shadow-sm">
-                <p className="text-[9px] text-blue-800 font-bold leading-snug italic">
+              <div className="bg-blue-50 p-1.5 rounded-lg border border-blue-100 shadow-sm">
+                <p className="text-[10px] text-blue-800 font-bold leading-tight italic">
                   Tugas: Buatlah diagram alir yang menunjukkan bagaimana lampu
                   lalu lintas dapat berubah dari Merah → Kuning → Hijau secara
                   bertahap (dengan proses tunggu 2 detik sebelum menjadi hijau).
@@ -385,8 +385,8 @@ export default function TrafficDebugPage() {
             </div>
           </div>
 
-          <div className="p-3 overflow-y-auto flex-1">
-            <h2 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-center">
+          <div className="p-2 overflow-y-auto flex-1">
+            <h2 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 text-center">
               BANK SIMBOL
             </h2>
             <div className="grid grid-cols-1 gap-1.5">
@@ -397,16 +397,16 @@ export default function TrafficDebugPage() {
                     key={key}
                     draggable={!isSimulating}
                     onDragStart={(e) => handleDragStart(e, key)}
-                    className={`flex flex-col items-center p-1.5 bg-white border-2 border-slate-100 rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-amber-400 group ${
+                    className={`flex flex-col items-center p-1 bg-white border border-slate-100 rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-amber-400 group ${
                       isSimulating && simulationStatus !== "error"
                         ? "opacity-50 grayscale"
                         : ""
                     }`}
                   >
                     <div
-                      className={`${data.shape} ${data.color} mb-1 shadow-sm group-hover:scale-105 transition-transform`}
+                      className={`${data.shape} ${data.color} mb-0.5 shadow-sm group-hover:scale-105 transition-transform scale-75`}
                     ></div>
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">
                       {data.label}
                     </span>
                   </div>
@@ -416,7 +416,7 @@ export default function TrafficDebugPage() {
         </aside>
 
         {/* PANEL TENGAH */}
-        <section className="flex-1 bg-[#f1f5f9]/40 relative overflow-y-auto p-4 flex flex-col items-center z-10 border-r shadow-inner">
+        <section className="flex-1 bg-[#f1f5f9]/40 relative overflow-hidden p-2 flex flex-col items-center z-10 border-r shadow-inner">
           <div
             className="absolute inset-0 opacity-[0.1] pointer-events-none"
             style={{
@@ -425,17 +425,17 @@ export default function TrafficDebugPage() {
             }}
           ></div>
 
-          <div className="w-full max-w-[380px] flex flex-col items-center py-2">
+          <div className="w-full max-w-[380px] flex flex-col items-center scale-[0.8] origin-top">
             {FLOW_MAP.header.map((step, idx) => (
               <React.Fragment key={step.id}>
-                <div className="mb-0.5">{renderSlot(step, "w-full")}</div>
-                <ArrowDown className="text-slate-300 mb-0.5" size={12} />
+                <div className="">{renderSlot(step, "w-full")}</div>
+                <ArrowDown className="text-slate-300 my-1" size={16} />
               </React.Fragment>
             ))}
 
-            <div className="flex w-full gap-3 items-start px-1 mt-0.5">
+            <div className="flex w-full gap-4 items-start px-1 mt-1.5">
               <div className="flex-1 flex flex-col items-center">
-                <div className="flex items-center w-full mb-0.5">
+                <div className="flex items-center w-full mb-1">
                   <div className="h-[2px] bg-slate-200 flex-1"></div>
                   <span className="px-2 text-[9px] font-black text-slate-400 uppercase">
                     YA
@@ -443,50 +443,48 @@ export default function TrafficDebugPage() {
                 </div>
                 {FLOW_MAP.pathYa.map((step, idx) => (
                   <React.Fragment key={step.id}>
-                    <div className="w-full mb-0.5">
-                      {renderSlot(step, "w-full")}
-                    </div>
+                    <div className="w-full">{renderSlot(step, "w-full")}</div>
                     {idx < FLOW_MAP.pathYa.length - 1 && (
-                      <ArrowDown className="text-slate-200 mb-0.5" size={12} />
+                      <ArrowDown className="text-slate-200 my-1" size={14} />
                     )}
                   </React.Fragment>
                 ))}
               </div>
               <div className="flex-1 flex flex-col items-center">
-                <div className="flex items-center w-full mb-0.5">
+                <div className="flex items-center w-full mb-1">
                   <span className="px-2 text-[9px] font-black text-slate-400 uppercase">
                     TIDAK
                   </span>
                   <div className="h-[2px] bg-slate-200 flex-1"></div>
                 </div>
-                <div className="w-full mb-0.5">
+                <div className="w-full">
                   {renderSlot(FLOW_MAP.pathTidak[0], "w-full")}
                 </div>
-                <div className="flex-1 h-[95px] w-full flex items-center justify-center opacity-5">
+                <div className="flex-1 h-[110px] w-full flex items-center justify-center opacity-5">
                   <div className="h-full w-[2px] bg-slate-500 border-dashed border-l-2"></div>
                 </div>
               </div>
             </div>
 
-            <div className="flex w-full justify-around mt-0.5 opacity-20">
-              <ArrowDown size={14} className="text-slate-500" />
-              <ArrowDown size={14} className="text-slate-500" />
+            <div className="flex w-full justify-around mt-1 opacity-20">
+              <ArrowDown size={16} className="text-slate-500" />
+              <ArrowDown size={16} className="text-slate-500" />
             </div>
-            <div className="w-full mt-0.5">
+            <div className="w-full mt-1">
               {renderSlot(FLOW_MAP.footer[0], "w-full")}
             </div>
           </div>
         </section>
 
         {/* PANEL KANAN: HARDWARE SIMULATOR */}
-        <aside className="w-80 bg-white flex flex-col z-20 shrink-0 shadow-2xl border-l">
-          <div className="p-3 border-b bg-slate-50 flex items-center justify-between px-6 shrink-0">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
+        <aside className="w-[440px] bg-white flex flex-col z-20 shrink-0 shadow-2xl border-l">
+          <div className="p-2 border-b bg-slate-50 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">
               Hardware Status
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <div
-                className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)] 
+                className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)] 
                 ${
                   hardwareBroken
                     ? "bg-red-600 animate-ping"
@@ -498,7 +496,7 @@ export default function TrafficDebugPage() {
                 }`}
               ></div>
               <span
-                className={`text-[10px] font-black uppercase tracking-tighter ${
+                className={`text-[8px] font-black uppercase tracking-tighter ${
                   hardwareBroken ? "text-red-600" : ""
                 }`}
               >
@@ -691,11 +689,11 @@ export default function TrafficDebugPage() {
                 )}
               </div>
               <div className="flex flex-col min-w-0 text-left">
-                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 tracking-tighter">
+                <h3 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">
                   Laporan Logika
                 </h3>
                 <p
-                  className={`text-[10px] font-bold leading-tight ${
+                  className={`text-[9px] font-bold leading-tight ${
                     simulationStatus === "success"
                       ? "text-green-900"
                       : simulationStatus === "error"
@@ -712,8 +710,8 @@ export default function TrafficDebugPage() {
         </aside>
       </main>
 
-      <footer className="bg-white border-t px-6 py-1 text-[9px] font-bold text-slate-300 flex justify-between items-center shrink-0 uppercase tracking-widest opacity-60 italic">
-        <div className="flex gap-4 items-center font-black text-slate-400">
+      <footer className="bg-white border-t px-3 py-0.5 text-[7px] font-bold text-slate-300 flex justify-between items-center shrink-0 uppercase tracking-widest opacity-60 italic">
+        <div className="flex gap-2 items-center font-black text-slate-400">
           <span>STABLE ENGINE v6.1s</span>
           <span className="text-slate-200">|</span>
           <span>HARDWARE MALFUNCTION SIMULATION</span>

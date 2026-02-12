@@ -199,36 +199,42 @@ export default function SiswaSimulasiPage() {
             </div>
           </Card>
 
-          {/* Placeholder */}
-          {[1].map((index) => (
-            <Card
-              key={index}
-              className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all"
-            >
-              <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                  <Plus className="text-gray-400 mx-auto mb-2" size={40} />
-                  <p className="text-gray-500 text-xs font-medium">
-                    Simulasi #{index + 1}
-                  </p>
+          {/* Card 3: Traffic Expert */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
+            <div className="h-36 bg-gradient-to-br from-red-100 to-pink-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-5xl">🚦</div>
+                <div className="flex gap-1">
+                  <div className="w-5 h-5 border-2 border-red-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-pink-500 rounded bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-red-500 rotate-45 bg-white"></div>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 mb-2 text-base">
-                  Judul Simulasi
+            </div>
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                  🎯 Prioritas Tiga Kendaraan
                 </h3>
-                <p className="text-xs text-gray-600 mb-4 line-clamp-3">
-                  Deskripsi singkat simulasi akan ditampilkan di sini...
-                </p>
-                <Button
-                  disabled
-                  className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm"
-                >
-                  Segera Hadir
-                </Button>
+                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                  SULIT
+                </span>
               </div>
-            </Card>
-          ))}
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+                Susun diagram alir bercabang kompleks untuk mengatur 3 kendaraan
+                dengan sistem prioritas: ambulans → lampu lalu lintas →
+                kendaraan biasa.
+              </p>
+              <Button
+                onClick={() =>
+                  (window.location.href = "/siswa/simulasi/traffic-expert")
+                }
+                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
+              >
+                Mulai Simulasi
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
 

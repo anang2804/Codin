@@ -1,8 +1,18 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+// Lazy load devtools hanya saat development
+const ReactQueryDevtools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(() =>
+        import("@tanstack/react-query-devtools").then((mod) => ({
+          default: mod.ReactQueryDevtools,
+        }))
+      )
+    : () => null;
 
 export function ReactQueryProvider({
   children,
@@ -14,11 +24,11 @@ export function ReactQueryProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // Data fresh selama 5 menit (lebih lama)
-            gcTime: 10 * 60 * 1000, // Cache disimpan 10 menit
-            refetchOnWindowFocus: false, // Tidak refetch saat switch tab
-            refetchOnMount: false, // Tidak refetch saat component mount jika masih fresh
-            retry: 2, // Retry 2x jika gagal
+            staleTime: 5 * 60 * 1000,
+            gcTime: 10 * 60 * 1000,
+            refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            retry: 2,
             retryDelay: (attemptIndex) =>
               Math.min(1000 * 2 ** attemptIndex, 30000),
           },
@@ -27,6 +37,9 @@ export function ReactQueryProvider({
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
