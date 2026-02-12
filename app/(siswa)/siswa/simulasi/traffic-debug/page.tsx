@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Play,
   RotateCcw,
@@ -91,6 +91,7 @@ const FLOW_MAP = {
 };
 
 export default function TrafficDebugPage() {
+  const router = useRouter();
   const [workspace, setWorkspace] = useState<Record<string, any>>({
     step_start: { ...SYMBOL_TYPES.TERMINATOR, label: "START" },
     step_input: { ...SYMBOL_TYPES.IO, label: "INPUT: WARNA_LAMPU" },
@@ -319,12 +320,12 @@ export default function TrafficDebugPage() {
       {/* Header */}
       <header className="bg-white border-b px-3 py-1.5 flex justify-between items-center shadow-sm z-30 shrink-0">
         <div className="flex items-center gap-2">
-          <Link
-            href="/siswa/simulasi"
+          <button
+            onClick={() => router.back()}
             className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft size={16} className="text-gray-600" />
-          </Link>
+          </button>
           <div className="bg-amber-500 p-1 rounded-lg text-white shadow-sm">
             <Zap size={16} fill="currentColor" />
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Play,
   RotateCcw,
@@ -83,6 +83,7 @@ const HARD_STRUCTURE = {
 };
 
 export default function TrafficExpertPage() {
+  const router = useRouter();
   const [workspace, setWorkspace] = useState<Record<string, any>>({});
   const [lightColor, setLightColor] = useState("red");
   const [ambulanceActive, setAmbulanceActive] = useState(false);
@@ -381,12 +382,12 @@ export default function TrafficExpertPage() {
       {/* Header Panel */}
       <header className="bg-white border-b px-3 py-1.5 flex justify-between items-center shadow-sm z-30 shrink-0">
         <div className="flex items-center gap-2">
-          <Link
-            href="/siswa/simulasi"
+          <button
+            onClick={() => router.back()}
             className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft size={16} className="text-gray-600" />
-          </Link>
+          </button>
           <div className="bg-red-600 p-1 rounded-lg text-white shadow-lg">
             <ShieldAlert size={16} className="animate-pulse" />
           </div>
