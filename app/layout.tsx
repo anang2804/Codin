@@ -5,12 +5,12 @@ import { Analytics } from "@vercel/analytics/next";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import "./globals.css";
 
-const _geist = Geist({ 
+const _geist = Geist({
   subsets: ["latin"],
   display: "swap", // Faster font loading
   preload: true,
 });
-const _geistMono = Geist_Mono({ 
+const _geistMono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
   preload: true,

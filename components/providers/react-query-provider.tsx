@@ -10,7 +10,7 @@ const ReactQueryDevtools =
     ? dynamic(() =>
         import("@tanstack/react-query-devtools").then((mod) => ({
           default: mod.ReactQueryDevtools,
-        }))
+        })),
       )
     : () => null;
 
@@ -33,7 +33,7 @@ export function ReactQueryProvider({
               Math.min(1000 * 2 ** attemptIndex, 30000),
           },
         },
-      })
+      }),
   );
 
   return (
