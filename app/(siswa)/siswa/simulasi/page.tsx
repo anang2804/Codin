@@ -307,26 +307,33 @@ export default function SiswaSimulasiPage() {
             </div>
           </Card>
 
-          {/* Placeholder */}
+          {/* Card 3: Parkir Otomatis */}
           <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <div className="text-center">
-                <Plus className="text-gray-400 mx-auto mb-2" size={40} />
-                <p className="text-gray-500 text-xs font-medium">Simulasi #3</p>
+            <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-5xl">🚗</div>
+                <div className="flex gap-1">
+                  <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-cyan-500 rounded bg-white"></div>
+                </div>
               </div>
             </div>
             <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base">
-                Judul Simulasi
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Sistem Parkir Otomatis
               </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3">
-                Deskripsi singkat simulasi akan ditampilkan di sini...
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                Lengkapi pseudocode sistem parkir dengan sensor dan kondisi
+                IF-ELSE untuk menentukan apakah kendaraan boleh masuk atau
+                parkiran penuh.
               </p>
               <Button
-                disabled
-                className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm"
+                onClick={() =>
+                  (window.location.href = "/siswa/simulasi/parkir-otomatis")
+                }
+                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
               >
-                Segera Hadir
+                Mulai Simulasi
               </Button>
             </div>
           </Card>
