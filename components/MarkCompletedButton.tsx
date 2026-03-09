@@ -21,7 +21,7 @@ export default function MarkCompletedButton({
   const checkCompleted = async () => {
     try {
       const response = await fetch(
-        `/api/siswa/simulasi/check-completed?simulasi_slug=${simulasiSlug}`
+        `/api/siswa/simulasi/check-completed?simulasi_slug=${simulasiSlug}`,
       );
       const data = await response.json();
       setIsCompleted(data.completed || false);
@@ -75,8 +75,8 @@ export default function MarkCompletedButton({
         isCompleted
           ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300 cursor-default"
           : isLoading
-          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-          : "bg-white text-emerald-600 border-2 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 active:scale-95"
+            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+            : "bg-white text-emerald-600 border-2 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 active:scale-95"
       }`}
     >
       {isLoading ? (

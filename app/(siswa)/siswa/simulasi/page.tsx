@@ -30,7 +30,7 @@ export default function SiswaSimulasiPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Card 1: Traffic Logic */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
             <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <div className="text-5xl">🚦</div>
@@ -41,16 +41,11 @@ export default function SiswaSimulasiPage() {
                 </div>
               </div>
             </div>
-            <div className="p-4 flex flex-col flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                  🎯 Logika Lalu Lintas
-                </h3>
-                <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                  MUDAH
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Logika Lalu Lintas
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
                 Susun diagram alir untuk mengatur lampu lalu lintas dengan
                 benar.
               </p>
@@ -66,7 +61,7 @@ export default function SiswaSimulasiPage() {
           </Card>
 
           {/* Card 2: Traffic Debug */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
             <div className="h-36 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <div className="text-5xl">🚦</div>
@@ -77,16 +72,11 @@ export default function SiswaSimulasiPage() {
                 </div>
               </div>
             </div>
-            <div className="p-4 flex flex-col flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                  🎯 Transisi Lampu Bertahap
-                </h3>
-                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                  SEDANG
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Transisi Lampu Bertahap
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
                 Susun diagram alir untuk mengatur perubahan lampu dari Merah →
                 Kuning → Hijau secara berurutan.
               </p>
@@ -102,7 +92,7 @@ export default function SiswaSimulasiPage() {
           </Card>
 
           {/* Card 3: Traffic Expert */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all flex flex-col h-full">
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
             <div className="h-36 bg-gradient-to-br from-red-100 to-pink-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <div className="text-5xl">🚦</div>
@@ -113,16 +103,11 @@ export default function SiswaSimulasiPage() {
                 </div>
               </div>
             </div>
-            <div className="p-4 flex flex-col flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                  🎯 Prioritas Tiga Kendaraan
-                </h3>
-                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                  SULIT
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed flex-grow">
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Prioritas Tiga Kendaraan
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
                 Susun diagram alir bercabang kompleks untuk mengatur 3 kendaraan
                 dengan sistem prioritas: ambulans → lampu lalu lintas →
                 kendaraan biasa.

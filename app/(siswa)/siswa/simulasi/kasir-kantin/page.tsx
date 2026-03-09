@@ -14,7 +14,8 @@ import {
   Flag,
   Calculator,
   Printer,
-  Edit3,
+  Monitor,
+  Utensils,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,36 +32,48 @@ const EXPECTED_SOLUTION = [
 
 const INITIAL_TEMPLATE = [
   "start",
-  "______ harga_makanan",
-  "______ harga_minuman",
-  "______ = harga_makanan + harga_minuman",
-  "______ hasil",
+  "input harga_makanan",
+  "input harga_minuman",
+  "hasil = harga_makanan + harga_minuman",
+  "print hasil",
   "end",
 ];
 
 const COMMAND_DETAILS = {
   START: {
-    title: "START / END",
-    desc: "Menandai awal dan akhir dari sebuah alur program kasir kantin.",
+    title: "START",
+    desc: "Menandai titik awal algoritma. Program akan mulai membaca instruksi dari baris ini.",
     icon: <Flag className="text-emerald-500" size={20} />,
     color: "bg-emerald-50 border-emerald-100",
   },
-  LOGIC: {
-    title: "INPUT & PRINT",
-    desc: "Gunakan INPUT untuk membaca harga. PRINT untuk menampilkan total harga.",
-    icon: <Database className="text-blue-500" size={20} />,
-    color: "bg-blue-50 border-blue-100",
+  INPUT: {
+    title: "INPUT",
+    desc: "Digunakan untuk mengambil data dari luar (seperti harga barang) untuk disimpan di memori.",
+    icon: <Database className="text-teal-500" size={20} />,
+    color: "bg-teal-50 border-teal-100",
   },
   PROCESS: {
-    title: "PROCESS (=)",
-    desc: "Operasi perhitungan untuk menjumlahkan harga makanan dan minuman.",
-    icon: <Calculator className="text-amber-500" size={20} />,
-    color: "bg-amber-100 border-amber-200",
+    title: "PROCESS",
+    desc: "Tahap pengolahan data, misalnya menjumlahkan harga makanan dan minuman menjadi total.",
+    icon: <Calculator className="text-green-600" size={20} />,
+    color: "bg-green-50 border-green-100",
+  },
+  OUTPUT: {
+    title: "OUTPUT / PRINT",
+    desc: "Menampilkan hasil akhir ke layar atau mencetak bukti transaksi seperti struk belanja.",
+    icon: <Printer className="text-emerald-600" size={20} />,
+    color: "bg-emerald-50 border-emerald-100",
+  },
+  END: {
+    title: "END",
+    desc: "Menandakan bahwa semua proses telah selesai dan sistem berhenti bekerja.",
+    icon: <CheckCircle2 className="text-emerald-700" size={20} />,
+    color: "bg-emerald-100 border-emerald-200",
   },
   DEFAULT: {
-    title: "READY TO TYPE",
-    desc: "Lengkapi bagian ______ pada editor untuk menyelesaikan misi kasir kantin.",
-    icon: <Edit3 className="text-slate-400" size={20} />,
+    title: "WORKSPACE",
+    desc: "Klik baris editor untuk mulai mengetik. Gunakan panduan teks abu-abu di layar.",
+    icon: <Monitor className="text-slate-400" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
 };
@@ -79,6 +92,7 @@ type SimulationState = {
   isCalculating: boolean;
   receiptPrinted: boolean;
   totalPrice: number;
+  status: string;
 };
 
 // ================== KOMPONEN UTAMA ==================
@@ -99,6 +113,7 @@ export default function SimulasiKasirKantin() {
     isCalculating: false,
     receiptPrinted: false,
     totalPrice: 0,
+    status: "Sistem Standby",
   });
 
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -114,12 +129,12 @@ export default function SimulasiKasirKantin() {
   const currentDesc = (() => {
     if (activeLine === -1) return COMMAND_DETAILS.DEFAULT;
     const line = linesArray[activeLine]?.toLowerCase() || "";
-    if (line.includes("start") || line.includes("end"))
-      return COMMAND_DETAILS.START;
-    if (line.includes("input") || line.includes("print"))
-      return COMMAND_DETAILS.LOGIC;
+    if (line.includes("start")) return COMMAND_DETAILS.START;
+    if (line.includes("input")) return COMMAND_DETAILS.INPUT;
     if (line.includes("=") || line.includes("+"))
       return COMMAND_DETAILS.PROCESS;
+    if (line.includes("print")) return COMMAND_DETAILS.OUTPUT;
+    if (line.includes("end")) return COMMAND_DETAILS.END;
     return COMMAND_DETAILS.DEFAULT;
   })();
 
@@ -153,6 +168,7 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      status: "Sistem Standby",
     });
     simDataRef.current = {
       food: null,
@@ -160,6 +176,7 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      status: "Sistem Standby",
     };
   };
 
@@ -249,6 +266,7 @@ export default function SimulasiKasirKantin() {
     // Eksekusi berdasarkan baris
     switch (step) {
       case 0: // start
+        updateSimData({ status: "Memulai Alur" });
         addLog("✅ Algoritma dimulai...");
         break;
 
@@ -260,7 +278,7 @@ export default function SimulasiKasirKantin() {
         ];
         const randomFood =
           foodItems[Math.floor(Math.random() * foodItems.length)];
-        updateSimData({ food: randomFood });
+        updateSimData({ food: randomFood, status: "Input Makanan" });
         addLog(
           `🍽️ Input harga makanan: ${randomFood.name} - Rp ${randomFood.price.toLocaleString("id-ID")}`,
         );
@@ -274,14 +292,14 @@ export default function SimulasiKasirKantin() {
         ];
         const randomDrink =
           drinkItems[Math.floor(Math.random() * drinkItems.length)];
-        updateSimData({ drink: randomDrink });
+        updateSimData({ drink: randomDrink, status: "Input Minuman" });
         addLog(
           `🥤 Input harga minuman: ${randomDrink.name} - Rp ${randomDrink.price.toLocaleString("id-ID")}`,
         );
         break;
 
       case 3: // hasil = harga_makanan + harga_minuman
-        updateSimData({ isCalculating: true });
+        updateSimData({ isCalculating: true, status: "Menghitung Total..." });
         addLog("🧮 Menghitung total harga...");
         await new Promise((resolve) => setTimeout(resolve, 800));
         const total =
@@ -290,12 +308,13 @@ export default function SimulasiKasirKantin() {
         updateSimData({
           isCalculating: false,
           totalPrice: total,
+          status: "Kalkulasi Selesai",
         });
         addLog(`💰 Hasil: Rp ${total.toLocaleString("id-ID")}`);
         break;
 
       case 4: // print hasil
-        updateSimData({ receiptPrinted: true });
+        updateSimData({ receiptPrinted: true, status: "Mencetak Struk" });
         addLog("🧾 Mencetak struk pembayaran...");
         addLog(
           `📋 Total yang harus dibayar: Rp ${simDataRef.current.totalPrice.toLocaleString("id-ID")}`,
@@ -303,6 +322,7 @@ export default function SimulasiKasirKantin() {
         break;
 
       case 5: // end
+        updateSimData({ status: "Selesai" });
         addLog("✅ Algoritma selesai dijalankan.");
         break;
     }
@@ -323,6 +343,7 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      status: "Menjalankan...",
     };
     setSimState({
       food: null,
@@ -330,6 +351,7 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      status: "Menjalankan...",
     });
 
     addLog("🚀 Memulai eksekusi algoritma...");
@@ -356,17 +378,24 @@ export default function SimulasiKasirKantin() {
       const uChar = userLine[i];
       const tChar = templateLine[i];
       if (uChar !== undefined) {
+        const isMatch = tChar !== undefined && uChar === tChar;
         elements.push(
-          <span key={i} className="text-slate-900 font-bold">
-            {uChar}
-          </span>,
+          isMatch ? (
+            <span key={i} className="text-slate-900 font-bold">
+              {uChar}
+            </span>
+          ) : (
+            <span
+              key={i}
+              className="text-rose-600 font-black bg-rose-50 underline decoration-rose-200"
+            >
+              {uChar}
+            </span>
+          ),
         );
       } else if (tChar !== undefined) {
         elements.push(
-          <span
-            key={i}
-            className="text-slate-300 select-none italic font-medium"
-          >
+          <span key={i} className="text-slate-200 italic font-light">
             {tChar}
           </span>,
         );
@@ -470,13 +499,13 @@ export default function SimulasiKasirKantin() {
 
           <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
             <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
-              <span>Status Fokus</span>
+              <span>Info Baris</span>
               <Activity size={10} />
             </div>
             <p className="text-[10px] font-bold text-slate-500 italic leading-tight">
               {activeLine !== -1
-                ? `Menganalisis baris ke-${activeLine + 1}`
-                : "Editor siap digunakan"}
+                ? `Sedang fokus di baris ${activeLine + 1}`
+                : "Klik editor untuk mulai"}
             </p>
           </div>
         </aside>
@@ -498,9 +527,10 @@ export default function SimulasiKasirKantin() {
                   </h2>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed max-w-4xl font-medium">
-                  Mesin kasir kantin mengalami error dan tidak bisa menghitung
-                  total harga. Tulis algoritma pseudocode untuk menghitung total
-                  harga makanan dan minuman pelanggan di mesin kasir kantin.
+                  Mesin kasir di kantin sekolah tidak dapat menghitung total
+                  belanja pelanggan. Tulis algoritma <strong>pseudocode</strong>{" "}
+                  untuk membantu kasir menghitung total harga makanan dan
+                  minuman.
                 </p>
               </div>
             </div>
@@ -515,7 +545,7 @@ export default function SimulasiKasirKantin() {
                     className={`w-2 h-2 rounded-full ${isRunning ? "bg-rose-500 animate-pulse" : errorLine !== -1 ? "bg-red-500 shadow-[0_0_5px_red]" : "bg-emerald-500"}`}
                   ></div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
-                    CASHIER_SYSTEM.ALGO
+                    main.algo
                   </span>
                 </div>
                 <div
@@ -600,191 +630,183 @@ export default function SimulasiKasirKantin() {
               </div>
             </section>
 
-            {/* PANEL KANAN - SIMULASI HARDWARE */}
-            <section className="w-96 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden shrink-0">
-              <div className="px-5 py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#22c55e]"></div>
-                  <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest">
-                    Hardware Preview
-                  </span>
-                </div>
-              </div>
-
-              {/* Area Simulasi */}
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 h-[420px] overflow-hidden relative flex flex-col items-center justify-center gap-6">
-                {/* Mesin Kasir */}
-                <div className="relative">
-                  {/* Monitor Kasir */}
-                  <div className="w-72 h-48 bg-slate-700 rounded-2xl border-4 border-slate-600 shadow-2xl relative overflow-hidden">
-                    {/* Screen */}
-                    <div className="absolute inset-2 bg-gradient-to-br from-emerald-900 to-slate-900 rounded-lg flex flex-col p-4 font-mono text-xs">
-                      <div className="text-emerald-400 mb-3 text-center font-bold border-b border-emerald-700 pb-2">
-                        === KASIR KANTIN ===
-                      </div>
-
-                      <AnimatePresence mode="wait">
-                        {!simState.food && !simState.drink && (
-                          <motion.div
-                            key="idle"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="text-slate-500 text-center my-auto"
-                          >
-                            Menunggu input...
-                          </motion.div>
-                        )}
-
-                        {(simState.food || simState.drink) && (
-                          <motion.div
-                            key="items"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-2"
-                          >
-                            {simState.food && (
-                              <div className="flex justify-between text-emerald-300">
-                                <span>
-                                  {simState.food.emoji} {simState.food.name}
-                                </span>
-                                <span>
-                                  Rp{" "}
-                                  {simState.food.price.toLocaleString("id-ID")}
-                                </span>
-                              </div>
-                            )}
-                            {simState.drink && (
-                              <div className="flex justify-between text-emerald-300">
-                                <span>
-                                  {simState.drink.emoji} {simState.drink.name}
-                                </span>
-                                <span>
-                                  Rp{" "}
-                                  {simState.drink.price.toLocaleString("id-ID")}
-                                </span>
-                              </div>
-                            )}
-
-                            {simState.isCalculating && (
-                              <div className="text-amber-400 text-center mt-4 animate-pulse">
-                                Menghitung...
-                              </div>
-                            )}
-
-                            {simState.totalPrice > 0 &&
-                              !simState.isCalculating && (
-                                <motion.div
-                                  initial={{ scale: 0.8, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  className="mt-4 pt-3 border-t border-emerald-700"
-                                >
-                                  <div className="flex justify-between text-emerald-400 font-bold text-sm">
-                                    <span>TOTAL:</span>
-                                    <span>
-                                      Rp{" "}
-                                      {simState.totalPrice.toLocaleString(
-                                        "id-ID",
-                                      )}
-                                    </span>
-                                  </div>
-                                </motion.div>
-                              )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Stand */}
-                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-16 h-3 bg-slate-600 rounded-b-lg"></div>
+            {/* PANEL KANAN - HARDWARE VISUALIZATION */}
+            <aside className="w-[380px] bg-[#020617] rounded-3xl flex flex-col shrink-0 overflow-hidden shadow-2xl border border-slate-800 relative">
+              <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+                    <Activity size={14} />
                   </div>
-
-                  {/* Receipt Printer */}
-                  {simState.receiptPrinted && (
-                    <motion.div
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-48"
-                    >
-                      <div className="bg-white text-slate-900 p-3 rounded-lg shadow-xl font-mono text-[9px] border-t-4 border-dashed border-slate-400">
-                        <div className="text-center font-bold mb-1">
-                          STRUK PEMBAYARAN
-                        </div>
-                        <div className="border-t border-dashed border-slate-300 my-1"></div>
-                        {simState.food && (
-                          <div className="flex justify-between">
-                            <span>{simState.food.name}</span>
-                            <span>
-                              Rp {simState.food.price.toLocaleString("id-ID")}
-                            </span>
-                          </div>
-                        )}
-                        {simState.drink && (
-                          <div className="flex justify-between">
-                            <span>{simState.drink.name}</span>
-                            <span>
-                              Rp {simState.drink.price.toLocaleString("id-ID")}
-                            </span>
-                          </div>
-                        )}
-                        <div className="border-t border-dashed border-slate-300 my-1"></div>
-                        <div className="flex justify-between font-bold">
-                          <span>TOTAL</span>
-                          <span>
-                            Rp {simState.totalPrice.toLocaleString("id-ID")}
-                          </span>
-                        </div>
-                        <div className="text-center mt-2 text-slate-500">
-                          Terima kasih!
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Emoji Makanan & Minuman */}
-                <div className="flex gap-8 mt-8">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">
-                      {simState.food ? simState.food.emoji : "🍽️"}
-                    </div>
-                    <div className="text-[10px] text-slate-400 font-bold">
-                      {simState.food ? simState.food.name : "Makanan"}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">
-                      {simState.drink ? simState.drink.emoji : "🥤"}
-                    </div>
-                    <div className="text-[10px] text-slate-400 font-bold">
-                      {simState.drink ? simState.drink.name : "Minuman"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Logic Log */}
-              <div className="border-t border-slate-700 flex flex-col overflow-hidden h-44">
-                <div className="px-5 py-2 bg-slate-900 border-b border-slate-700 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full border border-slate-500"></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    LOGIC LOG
-                  </span>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Hardware Visualization
+                  </h2>
                 </div>
                 <div
-                  className={`flex-1 p-4 overflow-y-auto text-[11px] font-mono space-y-1 ${
-                    errorLine !== -1
-                      ? "bg-red-50 text-red-700"
-                      : "bg-slate-900 text-emerald-400"
-                  }`}
+                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${isRunning ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}
                 >
-                  {logicLog.map((log, index) => (
-                    <div key={index}>{log}</div>
-                  ))}
-                  <div ref={logEndRef}></div>
+                  {isRunning ? "Active" : "Idle"}
                 </div>
               </div>
-            </section>
+
+              <div className="h-[420px] p-6 flex flex-col items-center justify-center relative overflow-hidden bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)]">
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none flex items-center justify-center">
+                  <Utensils size={360} className="text-white rotate-12" />
+                </div>
+
+                <div className="relative w-full max-w-sm aspect-square flex flex-col items-center justify-center scale-95">
+                  {/* Cashier Table */}
+                  <div className="absolute bottom-10 w-full h-28 bg-slate-800 rounded-t-[40px] border-x-4 border-t-4 border-slate-700 shadow-2xl z-0" />
+
+                  {/* Moving Tray */}
+                  <motion.div
+                    animate={{
+                      scale: activeLine >= 1 && activeLine <= 2 ? 1.05 : 1,
+                      y: activeLine >= 1 && activeLine <= 2 ? -5 : 0,
+                    }}
+                    className="absolute bottom-28 w-56 h-6 bg-slate-700 rounded-full flex items-center justify-center border-b-4 border-slate-900 shadow-xl z-10"
+                  />
+
+                  {/* Interactive Food/Drink Icons */}
+                  <div className="absolute bottom-32 flex gap-10 z-20">
+                    <AnimatePresence>
+                      {simState.food && (
+                        <motion.div
+                          key="food"
+                          initial={{
+                            opacity: 0,
+                            y: -150,
+                            scale: 0.5,
+                            rotate: -20,
+                          }}
+                          animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                          className="filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]"
+                        >
+                          <span className="text-7xl">
+                            {simState.food.emoji}
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                      {simState.drink && (
+                        <motion.div
+                          key="drink"
+                          initial={{
+                            opacity: 0,
+                            y: -150,
+                            scale: 0.5,
+                            rotate: 20,
+                          }}
+                          animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                          className="filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]"
+                        >
+                          <span className="text-7xl">
+                            {simState.drink.emoji}
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* POS / Receipt Machine */}
+                  <div className="absolute -right-2 bottom-32 w-20 h-20 bg-slate-900 rounded-xl border-2 border-slate-700 shadow-2xl z-30 flex flex-col items-center">
+                    <div className="w-full h-2 bg-emerald-500/20 rounded-t-xl overflow-hidden">
+                      <div
+                        className={`w-full h-full bg-emerald-400 ${isRunning ? "animate-pulse" : ""}`}
+                      />
+                    </div>
+                    <AnimatePresence>
+                      {simState.receiptPrinted && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 100, opacity: 1 }}
+                          className="absolute top-2 left-2 right-2 bg-white rounded-sm shadow-xl p-2 flex flex-col gap-1 overflow-hidden z-40 border-t-2 border-dashed border-slate-200"
+                        >
+                          <div className="text-[5px] text-emerald-800 font-black border-b border-slate-100 pb-0.5 mb-1 uppercase text-center tracking-tighter">
+                            Receipt #001
+                          </div>
+                          <div className="flex justify-between text-[4px] text-slate-500 font-bold uppercase tracking-tighter">
+                            <span>Items</span>
+                            <span>Price</span>
+                          </div>
+                          {simState.food && (
+                            <div className="flex justify-between text-[4px] text-slate-800 font-bold">
+                              <span>Food</span>
+                              <span>
+                                {Math.round(simState.food.price / 1000)}k
+                              </span>
+                            </div>
+                          )}
+                          {simState.drink && (
+                            <div className="flex justify-between text-[4px] text-slate-800 font-bold">
+                              <span>Drink</span>
+                              <span>
+                                {Math.round(simState.drink.price / 1000)}k
+                              </span>
+                            </div>
+                          )}
+                          <div className="mt-auto pt-1 border-t border-dashed border-slate-300 flex justify-between text-[6px] text-black font-black uppercase">
+                            <span>Total</span>
+                            <span>
+                              {Math.round(simState.totalPrice / 1000)}k
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Display Results */}
+                  {simState.totalPrice > 0 && !simState.isCalculating && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute bottom-12 bg-white border-2 border-emerald-500 px-6 py-2 rounded-2xl text-emerald-600 font-mono text-lg font-black shadow-lg shadow-emerald-500/20 z-40"
+                    >
+                      Rp {simState.totalPrice.toLocaleString("id-ID")}
+                    </motion.div>
+                  )}
+
+                  {/* Status Bubble */}
+                  <AnimatePresence>
+                    {simState.isCalculating && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute -top-10 bg-emerald-600 text-white px-4 py-2 rounded-full text-[9px] font-black flex items-center gap-2 shadow-xl border border-emerald-500 uppercase"
+                      >
+                        <Calculator size={12} className="animate-spin" />{" "}
+                        Calculating...
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* LOG BAR */}
+              <div className="p-4 bg-black/40 border-t border-slate-800 flex items-center gap-4 shrink-0 px-6">
+                <div className="flex items-center gap-2 shrink-0">
+                  <CheckCircle2
+                    size={12}
+                    className={
+                      simState.receiptPrinted
+                        ? "text-emerald-500"
+                        : "text-slate-600"
+                    }
+                  />
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                    Logic Log:
+                  </span>
+                </div>
+                <div className="text-[10px] font-mono text-emerald-400 truncate font-bold uppercase tracking-tight">
+                  {simState.status}
+                </div>
+                {isRunning && (
+                  <div className="w-1 h-3 bg-emerald-500 animate-pulse ml-auto" />
+                )}
+              </div>
+            </aside>
           </div>
         </div>
       </main>
