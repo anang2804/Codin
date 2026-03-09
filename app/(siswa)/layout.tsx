@@ -19,8 +19,12 @@ export default function SiswaLayout({
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
 
-  // Check if current page should hide header
+  // Check if current page should hide header and sidebar
   const hideHeader =
+    (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
+    (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
+
+  const hideSidebar =
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
     (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
 
@@ -76,8 +80,10 @@ export default function SiswaLayout({
 
   return (
     <div className="flex">
-      <Sidebar role="siswa" />
-      <main className="flex-1 md:ml-64 bg-gray-50 min-h-screen">
+      {!hideSidebar && <Sidebar role="siswa" />}
+      <main
+        className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-gray-50" : ""} min-h-screen`}
+      >
         {/* Header dengan greeting dan foto profil - Sticky */}
         {!hideHeader && (
           <div className="sticky top-0 z-30 bg-gray-50 pt-4 md:pt-8 px-4 md:px-8">
@@ -107,7 +113,7 @@ export default function SiswaLayout({
           </div>
         )}
 
-        <div className="p-4 md:p-8 pt-0">{children}</div>
+        <div className={!hideSidebar ? "p-4 md:p-8 pt-0" : ""}>{children}</div>
       </main>
     </div>
   );

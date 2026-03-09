@@ -404,17 +404,17 @@ export default function TrafficExpertPage() {
         <div className="flex gap-2">
           <button
             onClick={resetSim}
-            className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-1 px-3 py-2 text-[10px] font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={12} /> RESET
           </button>
           <button
             onClick={runSimulation}
             disabled={isSimulating && !hardwareBroken}
-            className={`flex items-center gap-1 px-4 py-1 text-[10px] font-black text-white rounded-lg transition-all shadow-lg ${
+            className={`flex items-center gap-1 px-4 py-2 text-[10px] font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
               isSimulating && !hardwareBroken
-                ? "bg-slate-300"
-                : "bg-red-600 hover:bg-red-700 active:scale-95"
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
             <Play size={12} fill="currentColor" /> JALANKAN

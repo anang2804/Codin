@@ -156,17 +156,17 @@ export default function BayarBaksoSimulation() {
             <MarkCompletedButton simulasiSlug="bayar-bakso" />
             <button
               onClick={reset}
-              className="px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 flex items-center gap-1.5"
             >
               <RotateCcw size={14} /> Reset
             </button>
             <button
               onClick={runSimulation}
               disabled={isRunning}
-              className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+              className={`px-5 py-2.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
                 isRunning
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
+                  ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                  : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
               }`}
             >
               <Play size={14} fill="currentColor" /> Jalankan

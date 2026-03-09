@@ -238,47 +238,98 @@ export default function SiswaSimulasiPage() {
         </div>
       </div>
 
-      {/* Kategori 3: Struktur Perulangan */}
+      {/* Kategori 3: Pseudocode */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
-          <h2 className="text-lg font-bold text-gray-800">
-            Struktur Perulangan (Loop)
-          </h2>
+          <h2 className="text-lg font-bold text-gray-800">Pseudocode</h2>
           <span className="text-xs text-gray-500 bg-purple-50 px-2 py-1 rounded-full">
             3 Simulasi
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Placeholder */}
-          {[1, 2, 3].map((index) => (
-            <Card
-              key={index}
-              className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all"
-            >
-              <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                  <Plus className="text-gray-400 mx-auto mb-2" size={40} />
-                  <p className="text-gray-500 text-xs font-medium">
-                    Simulasi #{index}
-                  </p>
+          {/* Card 1: Kasir Kantin */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+            <div className="h-36 bg-gradient-to-br from-emerald-100 to-teal-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-5xl">🍛</div>
+                <div className="flex gap-1">
+                  <div className="w-5 h-5 border-2 border-emerald-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-teal-500 rounded bg-white"></div>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 mb-2 text-base">
-                  Judul Simulasi
-                </h3>
-                <p className="text-xs text-gray-600 mb-4 line-clamp-3">
-                  Deskripsi singkat simulasi akan ditampilkan di sini...
-                </p>
-                <Button
-                  disabled
-                  className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm"
-                >
-                  Segera Hadir
-                </Button>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Perbaiki Mesin Kasir Kantin
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                Tulis algoritma pseudocode untuk menghitung total harga makanan
+                dan minuman pelanggan di mesin kasir kantin.
+              </p>
+              <Button
+                onClick={() =>
+                  (window.location.href = "/siswa/simulasi/kasir-kantin")
+                }
+                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
+              >
+                Mulai Simulasi
+              </Button>
+            </div>
+          </Card>
+
+          {/* Card 2: Pintu Otomatis */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+            <div className="h-36 bg-gradient-to-br from-indigo-100 to-purple-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-5xl">🚪</div>
+                <div className="flex gap-1">
+                  <div className="w-5 h-5 border-2 border-indigo-500 rounded-full bg-white"></div>
+                  <div className="w-5 h-5 border-2 border-purple-500 rounded bg-white"></div>
+                </div>
               </div>
-            </Card>
-          ))}
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
+                🎯 Koneksi Sensor & Pintu
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                Lengkapi pseudocode pintu otomatis dengan perintah INPUT dan
+                PRINT agar pintu bekerja sesuai deteksi sensor infrared.
+              </p>
+              <Button
+                onClick={() =>
+                  (window.location.href = "/siswa/simulasi/pintu-otomatis")
+                }
+                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
+              >
+                Mulai Simulasi
+              </Button>
+            </div>
+          </Card>
+
+          {/* Placeholder */}
+          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
+            <div className="h-36 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <div className="text-center">
+                <Plus className="text-gray-400 mx-auto mb-2" size={40} />
+                <p className="text-gray-500 text-xs font-medium">Simulasi #3</p>
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 mb-2 text-base">
+                Judul Simulasi
+              </h3>
+              <p className="text-xs text-gray-600 mb-4 line-clamp-3">
+                Deskripsi singkat simulasi akan ditampilkan di sini...
+              </p>
+              <Button
+                disabled
+                className="w-full bg-gray-300 text-gray-600 cursor-not-allowed h-9 text-sm"
+              >
+                Segera Hadir
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
