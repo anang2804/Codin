@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Play,
@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Zap,
   Lightbulb,
+  Activity,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkCompletedButton from "@/components/MarkCompletedButton";
@@ -63,12 +64,6 @@ const FLOWCHART_STRUCTURE = {
     placeholder: "INPUT: WARNA LAMPU",
     width: "w-56",
   },
-  process: {
-    id: "s3",
-    group: "process",
-    placeholder: "PROSES: BACA SENSOR",
-    width: "w-56",
-  },
   decision: {
     id: "s4",
     group: "decision",
@@ -78,13 +73,13 @@ const FLOWCHART_STRUCTURE = {
   branchYa: {
     id: "s5a",
     group: "io",
-    placeholder: "OUTPUT: LAMPU = HIJAU",
+    placeholder: "OUTPUT: KENDARAAN BERHENTI",
     width: "w-full",
   },
   branchTidak: {
     id: "s5b",
     group: "io",
-    placeholder: "OUTPUT: LAMPU TETAP",
+    placeholder: "OUTPUT: KENDARAAN MELAJU",
     width: "w-full",
   },
   end: { id: "s6", group: "terminator", placeholder: "END", width: "w-56" },
@@ -99,16 +94,28 @@ export default function TrafficLogicPage() {
   const [simulationStatus, setSimulationStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
   const [draggedType, setDraggedType] = useState<string | null>(null);
+  const [logMessages, setLogMessages] = useState<string[]>([
+    "Susun flowchart kamu, lalu tekan Jalankan untuk mencoba.",
+  ]);
+  const [lightPhase, setLightPhase] = useState<"red" | "yellow" | "green">(
+    "red",
+  );
+  const logEndRef = useRef<HTMLDivElement>(null);
+  const simRunIdRef = useRef<number>(0);
 
   const [carAPosition, setCarAPosition] = useState(2);
   const [isHardLocked, setIsHardLocked] = useState(true);
   const [hardwareBroken, setHardwareBroken] = useState(false);
 
+  const addLog = (msg: string) => {
+    setLogMessages((prev) => [...prev, msg]);
+    setTimeout(
+      () => logEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+      50,
+    );
+  };
+
   const handleDragStart = (e: React.DragEvent, typeKey: string) => {
-    if (isSimulating) {
-      e.preventDefault();
-      return;
-    }
     setDraggedType(typeKey);
   };
 
@@ -122,25 +129,46 @@ export default function TrafficLogicPage() {
 
     const symbolInfo = SYMBOL_TYPES[draggedType as keyof typeof SYMBOL_TYPES];
 
-    // Allow any symbol to be placed without validation
     setWorkspace({
       ...workspace,
       [slotId]: { ...symbolInfo },
     });
     setFeedback("");
     setDraggedType(null);
+    // Reset simulasi agar bisa langsung jalankan ulang
+    simRunIdRef.current += 1;
+    setIsSimulating(false);
+    setActiveStep(null);
+    setSimulationStatus("idle");
+    setHardwareBroken(false);
+    setCarAPosition(2);
+    setIsHardLocked(true);
+    setLightColor("red");
+    setLightPhase("red");
+    setLogMessages(["Simbol diubah. Tekan Jalankan untuk mencoba lagi."]);
   };
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
   const removeSymbol = (slotId: string) => {
-    if (isSimulating) return;
     const newWorkspace = { ...workspace };
     delete newWorkspace[slotId];
     setWorkspace(newWorkspace);
+    // Reset simulasi agar bisa langsung jalankan ulang
+    simRunIdRef.current += 1;
+    setIsSimulating(false);
+    setActiveStep(null);
+    setSimulationStatus("idle");
+    setHardwareBroken(false);
+    setCarAPosition(2);
+    setIsHardLocked(true);
+    setLightColor("red");
+    setLightPhase("red");
+    setLogMessages(["Simbol dihapus. Susun kembali flowchart kamu ya."]);
   };
 
   const resetSim = () => {
+    simRunIdRef.current += 1;
     setIsSimulating(false);
     setActiveStep(null);
     setSimulationStatus("idle");
@@ -148,13 +176,22 @@ export default function TrafficLogicPage() {
     setCarAPosition(2);
     setIsHardLocked(true);
     setLightColor("red");
+    setLightPhase("red");
     setHardwareBroken(false);
+    setLogMessages([
+      "Susun flowchart kamu, lalu tekan Jalankan untuk mencoba.",
+    ]);
   };
 
   const triggerExplosion = (msg: string) => {
     setHardwareBroken(true);
     setSimulationStatus("error");
-    setFeedback(`💥 KRITIS: ${msg}`);
+    setFeedback("Hmm... ada langkah yang perlu diperiksa.");
+    addLog("Hmm... sepertinya ada yang perlu diperiksa.");
+    addLog("Sistem mencoba membaca alur flowchart,");
+    addLog("tetapi simbol yang digunakan di posisi ini belum sesuai.");
+    addLog(msg);
+    addLog("Coba periksa kembali simbol yang kamu gunakan ya.");
   };
 
   const checkStepValidity = (stepId: string, expectedGroup: string) => {
@@ -165,13 +202,13 @@ export default function TrafficLogicPage() {
       let explanation = "";
 
       if (expectedGroup === "terminator") {
-        explanation = `Posisi ini membutuhkan simbol START/END (bulat hijau) karena menandai awal atau akhir alur. Simbol ${placed.label} tidak bisa digunakan di sini.`;
+        explanation = `Di posisi ini, kamu perlu meletakkan simbol Start/End (bentuk lonjong hijau) ya. Simbol "${placed.label}" tidak bisa digunakan di sini.`;
       } else if (expectedGroup === "io") {
-        explanation = `Posisi ini membutuhkan simbol INPUT/OUTPUT (jajaran genjang biru) untuk menerima data atau menampilkan hasil. Simbol ${placed.label} tidak cocok untuk proses input/output.`;
+        explanation = `Di posisi ini dibutuhkan simbol Input/Output (jajaran genjang biru). Simbol "${placed.label}" belum tepat untuk langkah ini.`;
       } else if (expectedGroup === "process") {
-        explanation = `Posisi ini membutuhkan simbol PROSES (kotak orange) untuk melakukan aksi atau perhitungan. Simbol ${placed.label} bukan untuk proses eksekusi.`;
+        explanation = `Posisi ini memerlukan simbol Proses (kotak oranye). Simbol "${placed.label}" biasanya digunakan untuk tujuan yang berbeda.`;
       } else if (expectedGroup === "decision") {
-        explanation = `Posisi ini membutuhkan simbol KEPUTUSAN (belah ketupat kuning) untuk membuat pilihan Ya/Tidak. Simbol ${placed.label} tidak bisa digunakan untuk percabangan logika.`;
+        explanation = `Di sini kamu perlu simbol Keputusan (belah ketupat kuning) karena ada pilihan Ya/Tidak. Simbol "${placed.label}" belum cocok untuk posisi ini.`;
       }
 
       return {
@@ -187,86 +224,101 @@ export default function TrafficLogicPage() {
     const filledSlots = Object.keys(workspace).length;
 
     if (filledSlots < totalSlots) {
-      setFeedback("⚠️ Alur belum lengkap! Isi semua kotak kerangka di kanvas.");
+      setLogMessages([
+        "Algoritma belum lengkap.",
+        "Sistem masih menunggu langkah berikutnya sebelum simulasi dapat dijalankan.",
+        "Lengkapi flowchart terlebih dahulu ya.",
+      ]);
+      setFeedback(
+        "Flowchart belum lengkap. Isi semua kotak yang masih kosong dulu ya.",
+      );
       return;
     }
 
     resetSim();
     setIsSimulating(true);
     setSimulationStatus("running");
-    setFeedback("Menjalankan sistem...");
+    const runId = simRunIdRef.current;
+    setLogMessages([
+      "Baik, kita mulai menjalankan algoritmanya.",
+      "Sistem sedang membaca alur flowchart...",
+    ]);
 
-    // Validate from top to bottom: START
     setActiveStep("s1");
     await new Promise((r) => setTimeout(r, 600));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Oke, titik awal ditemukan.");
     const checkStart = checkStepValidity("s1", "terminator");
     if (!checkStart.valid) {
-      triggerExplosion(checkStart.error || "Terjadi kesalahan pada START!");
+      triggerExplosion(checkStart.error || "");
       return;
     }
 
-    // INPUT
     setActiveStep("s2");
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 700));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Sistem membaca warna lampu lalu lintas.");
     const checkInput = checkStepValidity("s2", "io");
     if (!checkInput.valid) {
-      triggerExplosion(checkInput.error || "Terjadi kesalahan pada INPUT!");
+      triggerExplosion(checkInput.error || "");
       return;
     }
 
-    // PROCESS
-    setActiveStep("s3");
-    await new Promise((r) => setTimeout(r, 600));
-    const checkProcess = checkStepValidity("s3", "process");
-    if (!checkProcess.valid) {
-      triggerExplosion(checkProcess.error || "Terjadi kesalahan pada PROSES!");
-      return;
-    }
-
-    // DECISION
     setActiveStep("s4");
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 700));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Sekarang sistem memeriksa kondisi warna lampu.");
     const checkDecision = checkStepValidity("s4", "decision");
     if (!checkDecision.valid) {
-      triggerExplosion(
-        checkDecision.error || "Terjadi kesalahan pada KEPUTUSAN!",
-      );
+      triggerExplosion(checkDecision.error || "");
       return;
     }
 
-    // Branch YA (Output)
     setActiveStep("s5a");
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 700));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Lampu merah terdeteksi.");
+    addLog("Kendaraan harus berhenti terlebih dahulu.");
     const checkBranchYa = checkStepValidity("s5a", "io");
     if (!checkBranchYa.valid) {
-      triggerExplosion(
-        checkBranchYa.error || "Terjadi kesalahan pada jalur YA!",
-      );
+      triggerExplosion(checkBranchYa.error || "");
       return;
     }
 
-    // END
     setActiveStep("s6");
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 700));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Algoritma mencapai titik akhir.");
     const checkEnd = checkStepValidity("s6", "terminator");
     if (!checkEnd.valid) {
-      triggerExplosion(checkEnd.error || "Terjadi kesalahan pada END!");
+      triggerExplosion(checkEnd.error || "");
       return;
     }
 
-    executeVisualSim();
+    executeVisualSim(runId);
   };
 
-  const executeVisualSim = () => {
-    setLightColor("green");
-    setIsHardLocked(false);
+  const executeVisualSim = (runId: number) => {
+    setLightPhase("yellow");
+    addLog("Lampu kuning menyala, kendaraan bersiap berhenti.");
     setTimeout(() => {
-      setCarAPosition(140);
-      setSimulationStatus("success");
-      setFeedback("✅ LOGIKA BERHASIL! Lampu berubah Hijau, Mobil A melaju.");
-    }, 300);
-
-    setTimeout(() => setActiveStep(null), 1500);
+      if (simRunIdRef.current !== runId) return;
+      setLightPhase("green");
+      setLightColor("green");
+      setIsHardLocked(false);
+      addLog("Lampu tidak berwarna merah.");
+      addLog("Kendaraan dapat melaju melewati persimpangan.");
+      setTimeout(() => {
+        if (simRunIdRef.current !== runId) return;
+        setCarAPosition(140);
+        setSimulationStatus("success");
+        setFeedback("Simulasi berhasil! Flowchart kamu sudah benar.");
+        addLog("Simulasi selesai dijalankan.");
+      }, 400);
+      setTimeout(() => {
+        if (simRunIdRef.current === runId) setActiveStep(null);
+      }, 1500);
+    }, 1200);
   };
 
   const renderSlot = (slotData: any) => {
@@ -277,7 +329,7 @@ export default function TrafficLogicPage() {
       <div
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, slotData.id, slotData.group)}
-        className={`relative ${slotData.width} h-12 rounded-2xl flex items-center transition-all border-2 shrink-0
+        className={`relative ${slotData.width} h-9 rounded-xl flex items-center transition-all border-2 shrink-0
           ${
             workspace[slotData.id]
               ? "bg-white border-slate-200 shadow-md"
@@ -305,15 +357,13 @@ export default function TrafficLogicPage() {
             >
               {slotData.placeholder}
             </span>
-            {!isSimulating && (
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => removeSymbol(slotData.id)}
-                className="ml-auto shrink-0 text-slate-300 hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={13} />
-              </button>
-            )}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => removeSymbol(slotData.id)}
+              className="ml-auto shrink-0 text-slate-300 hover:text-red-400 transition-colors"
+            >
+              <Trash2 size={13} />
+            </button>
           </motion.div>
         ) : (
           <div className="flex items-center justify-center w-full pointer-events-none px-3 text-center overflow-hidden">
@@ -329,21 +379,21 @@ export default function TrafficLogicPage() {
   return (
     <div className="flex flex-col h-screen bg-[#fafbfc] overflow-hidden font-sans text-sm">
       {/* Header */}
-      <header className="px-8 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <header className="px-8 py-2 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
           <div className="w-px h-6 bg-slate-200"></div>
-          <div className="bg-green-600 p-2 rounded-xl text-white shadow-green-100 shadow-lg">
-            <CheckCircle2 size={20} />
+          <div className="bg-green-600 p-1.5 rounded-xl text-white shadow-green-100 shadow-lg">
+            <CheckCircle2 size={16} />
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic leading-none">
+              <h1 className="text-base font-black tracking-tighter text-slate-800 uppercase italic leading-none">
                 Logika Lalu Lintas
               </h1>
             </div>
@@ -356,7 +406,7 @@ export default function TrafficLogicPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -364,7 +414,7 @@ export default function TrafficLogicPage() {
           <button
             onClick={runSimulation}
             disabled={isSimulating}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
               isSimulating
                 ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
@@ -377,43 +427,101 @@ export default function TrafficLogicPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
-        <aside className="w-64 border-r bg-white flex flex-col z-20 shrink-0 overflow-y-auto">
+        <aside className="w-60 border-r bg-white flex flex-col z-20 shrink-0 overflow-y-auto">
           {/* Deskripsi */}
-          <div className="p-5 border-b flex flex-col gap-4">
+          <div className="p-3 border-b flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Info size={16} className="text-blue-500/60" />
+              <Info size={14} className="text-blue-500/60" />
               <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                 Deskripsi Tugas
               </h2>
             </div>
-            <div className="p-4 rounded-2xl border bg-blue-50 border-blue-100 shadow-sm">
-              <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+            <div className="p-3 rounded-xl border bg-blue-50 border-blue-100 shadow-sm">
+              <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
                 Diagram alir (flowchart) adalah gambar yang menunjukkan urutan
                 langkah dan keputusan dalam suatu sistem. Setiap langkah
-                digambarkan dengan simbol yang berbeda.
+                digambarkan menggunakan simbol yang berbeda.
               </p>
             </div>
           </div>
 
-          {/* Bank Simbol */}
-          <div className="p-5 flex flex-col gap-3 flex-1">
+          {/* Fungsi Simbol */}
+          <div className="p-3 border-b flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <HelpCircle size={16} className="text-slate-400/60" />
+              <Zap size={14} className="text-amber-500/70" />
+              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Fungsi Simbol
+              </h2>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {/* Start / End */}
+              <div className="flex items-start gap-2.5 p-2 bg-green-50 border border-green-100 rounded-xl">
+                <div className="shrink-0 mt-0.5 w-7 h-3.5 rounded-full bg-green-500 border-2 border-green-600 shadow-sm" />
+                <div>
+                  <p className="text-[10px] font-black text-green-700 uppercase tracking-tight leading-none mb-0.5">
+                    Start / End
+                  </p>
+                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                    Menandai awal atau akhir dari sebuah algoritma.
+                  </p>
+                </div>
+              </div>
+              {/* Input / Output */}
+              <div className="flex items-start gap-2.5 p-2 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="shrink-0 mt-0.5 w-6 h-4 bg-blue-500 rounded-none transform skew-x-12 shadow-sm" />
+                <div>
+                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-tight leading-none mb-0.5">
+                    Input / Output
+                  </p>
+                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                    Menerima data masukan atau menampilkan informasi.
+                  </p>
+                </div>
+              </div>
+              {/* Proses */}
+              <div className="flex items-start gap-2.5 p-2 bg-orange-50 border border-orange-100 rounded-xl">
+                <div className="shrink-0 mt-0.5 w-6 h-4 bg-orange-500 border-2 border-orange-600 shadow-sm" />
+                <div>
+                  <p className="text-[10px] font-black text-orange-700 uppercase tracking-tight leading-none mb-0.5">
+                    Proses
+                  </p>
+                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                    Melakukan langkah pengolahan data dalam algoritma.
+                  </p>
+                </div>
+              </div>
+              {/* Keputusan */}
+              <div className="flex items-start gap-2.5 p-2 bg-amber-50 border border-amber-100 rounded-xl">
+                <div className="shrink-0 mt-1 w-4 h-4 bg-amber-500 rotate-45 shadow-sm" />
+                <div>
+                  <p className="text-[10px] font-black text-amber-700 uppercase tracking-tight leading-none mb-0.5">
+                    Keputusan
+                  </p>
+                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                    Menentukan kondisi dengan dua hasil:{" "}
+                    <span className="font-bold text-blue-600">YA</span> atau{" "}
+                    <span className="font-bold text-slate-600">TIDAK</span>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bank Simbol */}
+          <div className="p-3 flex flex-col gap-2 flex-1">
+            <div className="flex items-center gap-2">
+              <HelpCircle size={14} className="text-slate-400/60" />
               <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                 Bank Simbol
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {Object.entries(SYMBOL_TYPES).map(([key, data]) => (
                 <div
                   key={key}
-                  draggable={!isSimulating}
+                  draggable
                   onDragStart={(e) => handleDragStart(e, key)}
-                  className={`flex flex-col items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md group ${
-                    isSimulating
-                      ? "opacity-50 grayscale cursor-not-allowed"
-                      : ""
-                  }`}
+                  className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-200 rounded-xl transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md group"
                 >
                   <div
                     className={`${data.shape} ${data.color} shadow-sm group-hover:scale-110 transition-transform`}
@@ -429,9 +537,9 @@ export default function TrafficLogicPage() {
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* MISI BANNER */}
-          <section className="px-6 pt-5 pb-3 shrink-0">
+          <section className="px-6 pt-4 pb-3 shrink-0">
             <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
-              <div className="bg-white p-2.5 rounded-xl shadow-sm text-emerald-600">
+              <div className="bg-white p-2.5 rounded-xl shadow-sm text-emerald-600 shrink-0">
                 <Lightbulb size={24} className="animate-pulse" />
               </div>
               <div className="flex-1">
@@ -444,9 +552,9 @@ export default function TrafficLogicPage() {
                   </h2>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
-                  Buatlah diagram alir yang menunjukkan bagaimana sistem membaca
-                  warna lampu lalu lintas dan menentukan apakah lampu berubah
-                  menjadi hijau sehingga kendaraan bisa melaju.
+                  Susun diagram alir yang menunjukkan bagaimana sistem membaca
+                  warna lampu lalu lintas dan menentukan apakah kendaraan harus
+                  berhenti atau dapat melaju.
                 </p>
               </div>
             </div>
@@ -454,7 +562,7 @@ export default function TrafficLogicPage() {
 
           <div className="flex-1 flex overflow-hidden">
             {/* PANEL TENGAH: WORKSPACE */}
-            <section className="flex-1 bg-slate-50 relative overflow-auto flex flex-col items-center justify-start py-10 z-10 border-r">
+            <section className="flex-1 bg-slate-50 relative overflow-auto flex flex-col items-center justify-start py-4 z-10 border-r">
               <div
                 className="absolute inset-0 opacity-[0.06] pointer-events-none"
                 style={{
@@ -464,22 +572,19 @@ export default function TrafficLogicPage() {
                 }}
               ></div>
 
-              <div className="relative flex flex-col items-center gap-2">
+              <div className="relative flex flex-col items-center gap-1">
                 <div>{renderSlot(FLOWCHART_STRUCTURE.start)}</div>
-                <ArrowDown className="text-slate-300" size={18} />
+                <ArrowDown className="text-slate-300" size={14} />
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.input)}</div>
-                <ArrowDown className="text-slate-300" size={18} />
-
-                <div>{renderSlot(FLOWCHART_STRUCTURE.process)}</div>
-                <ArrowDown className="text-slate-300" size={18} />
+                <ArrowDown className="text-slate-300" size={14} />
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.decision)}</div>
 
                 {/* Cabang Ya / Tidak */}
-                <div className="flex w-full gap-6 relative items-start mt-2">
+                <div className="flex w-full gap-4 relative items-start mt-1">
                   <div className="flex-1 flex flex-col items-center min-w-0">
-                    <div className="flex items-center w-full mb-2">
+                    <div className="flex items-center w-full mb-1.5">
                       <div className="h-[2px] bg-slate-300 flex-1"></div>
                       <span className="px-2 text-[10px] font-black text-blue-500 uppercase">
                         Ya
@@ -491,7 +596,7 @@ export default function TrafficLogicPage() {
                   </div>
 
                   <div className="flex-1 flex flex-col items-center min-w-0">
-                    <div className="flex items-center w-full mb-2">
+                    <div className="flex items-center w-full mb-1.5">
                       <span className="px-2 text-[10px] font-black text-slate-400 uppercase">
                         Tidak
                       </span>
@@ -503,9 +608,9 @@ export default function TrafficLogicPage() {
                   </div>
                 </div>
 
-                <div className="flex w-full justify-around mt-1">
-                  <ArrowDown size={18} className="text-slate-300" />
-                  <ArrowDown size={18} className="text-slate-300" />
+                <div className="flex w-full justify-around mt-0.5">
+                  <ArrowDown size={14} className="text-slate-300" />
+                  <ArrowDown size={14} className="text-slate-300" />
                 </div>
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.end)}</div>
@@ -513,40 +618,95 @@ export default function TrafficLogicPage() {
             </section>
 
             {/* PANEL KANAN: SIMULATOR VISUAL */}
-            <aside className="w-[440px] bg-white flex flex-col z-20 shrink-0 shadow-2xl border-l">
-              <div className="p-2 border-b bg-slate-50 flex items-center justify-between px-3 shrink-0">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">
-                  Simulation View
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)] ${
-                      hardwareBroken
-                        ? "bg-red-600 animate-ping"
-                        : lightColor === "red"
-                          ? "bg-red-500 animate-pulse"
-                          : "bg-green-500"
-                    }`}
-                  ></div>
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-tighter ${
-                      hardwareBroken ? "text-red-600" : ""
-                    }`}
-                  >
-                    {hardwareBroken
-                      ? "SYSTEM ERROR"
-                      : lightColor === "red"
-                        ? "STOP"
-                        : "GO"}
+            <aside className="w-[400px] bg-[#020617] flex flex-col z-20 shrink-0 border-l border-slate-800">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+                    <Activity size={14} />
+                  </div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Simulation Preview
                   </span>
+                </div>
+                <div
+                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${
+                    isSimulating
+                      ? "bg-emerald-600 text-white"
+                      : hardwareBroken
+                        ? "bg-red-600 text-white"
+                        : "bg-slate-700 text-slate-400"
+                  }`}
+                >
+                  {isSimulating ? "Active" : hardwareBroken ? "Error" : "Idle"}
                 </div>
               </div>
 
-              <div className="flex-1 bg-[#1a0f1a] relative overflow-hidden flex items-center justify-center shadow-inner">
-                <div className="absolute w-56 h-full bg-[#241724] border-x-4 border-slate-900/40 shadow-inner"></div>
-                <div className="absolute h-56 w-full bg-[#241724] border-y-4 border-slate-900/40 shadow-inner"></div>
+              {/* Simulation Area */}
+              <div className="flex-1 bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)] relative overflow-hidden flex items-center justify-center">
+                {/* Road horizontal */}
+                <div
+                  className="absolute w-full h-24 bg-[#1e293b] border-y-4 border-slate-900/60"
+                  style={{ top: "50%", transform: "translateY(-50%)" }}
+                >
+                  {/* Road dashes */}
+                  <div className="absolute top-1/2 -translate-y-1/2 w-full flex gap-6 px-6">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-1.5 w-8 bg-slate-500/40 rounded-full shrink-0"
+                      />
+                    ))}
+                  </div>
+                </div>
 
-                {/* Efek Ledakan / Kerusakan */}
+                {/* Traffic Light */}
+                <div
+                  className="absolute left-[30%] z-30"
+                  style={{ top: "calc(50% - 120px)" }}
+                >
+                  <div
+                    className={`bg-[#0a050a] px-2 py-2 rounded-2xl border-2 shadow-2xl flex flex-col gap-1.5 items-center transition-all ${
+                      hardwareBroken
+                        ? "border-red-500 rotate-6"
+                        : "border-slate-700"
+                    }`}
+                  >
+                    {/* Red */}
+                    <div
+                      className={`w-6 h-6 rounded-full transition-all duration-500 ${
+                        hardwareBroken
+                          ? "bg-red-900 animate-ping"
+                          : lightPhase === "red"
+                            ? "bg-red-500 shadow-[0_0_16px_#ef4444]"
+                            : "bg-red-950/30"
+                      }`}
+                    />
+                    {/* Yellow */}
+                    <div
+                      className={`w-6 h-6 rounded-full transition-all duration-500 ${
+                        hardwareBroken
+                          ? "bg-amber-900"
+                          : lightPhase === "yellow"
+                            ? "bg-amber-400 shadow-[0_0_16px_#fbbf24]"
+                            : "bg-amber-950/30"
+                      }`}
+                    />
+                    {/* Green */}
+                    <div
+                      className={`w-6 h-6 rounded-full transition-all duration-500 ${
+                        hardwareBroken
+                          ? "bg-green-900"
+                          : lightPhase === "green"
+                            ? "bg-emerald-400 shadow-[0_0_16px_#34d399]"
+                            : "bg-green-950/30"
+                      }`}
+                    />
+                  </div>
+                  <div className="w-2 h-12 bg-slate-700 mx-auto rounded-b-lg" />
+                </div>
+
+                {/* Explosion */}
                 <AnimatePresence>
                   {hardwareBroken && (
                     <motion.div
@@ -571,41 +731,7 @@ export default function TrafficLogicPage() {
                   )}
                 </AnimatePresence>
 
-                <div className="absolute left-[18%] top-[20%] z-40">
-                  <div
-                    className={`bg-[#0a050a] p-2 rounded-2xl border-2 border-slate-800 shadow-2xl flex flex-col gap-2 scale-110 transition-all ${
-                      hardwareBroken
-                        ? "rotate-12 translate-x-2 border-red-500"
-                        : ""
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full transition-all duration-300 ${
-                        hardwareBroken
-                          ? "bg-red-900 animate-ping"
-                          : lightColor === "red"
-                            ? "bg-red-500 shadow-[0_0_15px_#ef4444]"
-                            : "bg-red-950/20"
-                      }`}
-                    ></div>
-                    <div
-                      className={`w-4 h-4 rounded-full mx-auto ${
-                        hardwareBroken ? "bg-amber-900" : "bg-amber-950/20"
-                      }`}
-                    ></div>
-                    <div
-                      className={`w-5 h-5 rounded-full transition-all duration-300 ${
-                        hardwareBroken
-                          ? "bg-green-900"
-                          : lightColor === "green"
-                            ? "bg-[#10b981] shadow-[0_0_15px_#10b981]"
-                            : "bg-green-950/20"
-                      }`}
-                    ></div>
-                  </div>
-                  <div className="w-2 h-16 bg-gradient-to-b from-slate-800 to-slate-900 mx-auto -mt-1 rounded-b-xl opacity-40"></div>
-                </div>
-
+                {/* Car */}
                 <motion.div
                   animate={{ left: `${carAPosition}%` }}
                   initial={{ left: "2%" }}
@@ -614,90 +740,80 @@ export default function TrafficLogicPage() {
                     ease: "easeInOut",
                   }}
                   className="absolute z-30 flex flex-col items-start gap-1"
+                  style={{ top: "calc(50% - 16px)" }}
                 >
-                  <div className="bg-[#3b82f6] px-3 py-0.5 rounded shadow-2xl border border-blue-400/50 ml-2">
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+                  <div className="bg-[#3b82f6] px-2 py-0.5 rounded shadow-xl border border-blue-400/50 ml-2 mb-0.5">
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">
                       Mobil A
                     </span>
                   </div>
-                  <div className="w-24 h-12 bg-[#3b82f6] rounded-2xl shadow-2xl relative flex items-center justify-start border-b-[6px] border-[#1d4ed8]">
-                    <div className="w-8 h-8 bg-[#93c5fd] rounded-xl ml-auto mr-2 opacity-40 shadow-inner"></div>
-                    <div className="absolute -bottom-2.5 left-4 w-6 h-6 bg-slate-950 rounded-full border-[4px] border-slate-900 shadow-xl"></div>
-                    <div className="absolute -bottom-2.5 right-4 w-6 h-6 bg-slate-950 rounded-full border-[4px] border-slate-900 shadow-xl"></div>
+                  <div className="w-20 h-10 bg-[#3b82f6] rounded-xl shadow-2xl relative flex items-center justify-end border-b-[5px] border-[#1d4ed8]">
+                    <div className="w-7 h-6 bg-[#93c5fd] rounded-lg mr-2 opacity-40 shadow-inner" />
+                    <div className="absolute -bottom-2 left-3 w-5 h-5 bg-slate-950 rounded-full border-[3px] border-slate-900 shadow-xl" />
+                    <div className="absolute -bottom-2 right-3 w-5 h-5 bg-slate-950 rounded-full border-[3px] border-slate-900 shadow-xl" />
                   </div>
                 </motion.div>
-
-                <div className="absolute left-[50%] -translate-x-1/2 w-12 h-full z-20 pointer-events-none">
-                  <AnimatePresence>
-                    {lightColor === "red" && (
-                      <motion.div
-                        key="traffic-active"
-                        initial={{ top: "-35%", opacity: 0 }}
-                        animate={{ top: "135%", opacity: 1 }}
-                        transition={{
-                          duration: 2.2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                        className="absolute w-12 h-20 bg-[#525252] rounded-2xl shadow-2xl border-r-[8px] border-[#404040] flex flex-col items-center justify-end pb-3"
-                      >
-                        <div className="w-8 h-6 bg-[#f8fafc]/10 rounded-lg border border-white/5"></div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
               </div>
 
-              <div
-                className={`p-3 border-t h-20 flex flex-col justify-center transition-colors duration-500 shrink-0 ${
-                  simulationStatus === "success"
-                    ? "bg-green-50/80 border-green-100"
-                    : simulationStatus === "error"
-                      ? "bg-red-50"
-                      : "bg-white"
-                }`}
-              >
-                <div className="flex items-center gap-2 px-2">
+              {/* Logic Log */}
+              <div className="h-28 border-t border-slate-800 flex flex-col shrink-0">
+                <div className="px-5 py-2 bg-slate-900/60 border-b border-slate-800 flex items-center gap-2">
                   <div
-                    className={`shrink-0 p-1.5 rounded-xl shadow-sm ${
+                    className={`w-1.5 h-1.5 rounded-full ${
                       simulationStatus === "success"
-                        ? "bg-white text-green-600 shadow-md"
+                        ? "bg-emerald-500"
                         : simulationStatus === "error"
-                          ? "bg-white text-red-500 shadow-md"
-                          : "bg-slate-50 text-slate-300"
+                          ? "bg-red-500 animate-ping"
+                          : isSimulating
+                            ? "bg-blue-400 animate-pulse"
+                            : "border border-slate-600"
                     }`}
-                  >
-                    {simulationStatus === "success" ? (
-                      <CheckCircle2 size={20} />
-                    ) : simulationStatus === "error" ? (
-                      <Zap size={20} />
-                    ) : (
-                      <HelpCircle size={20} />
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 text-left">
-                    <h3 className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 tracking-tighter">
-                      Laporan Logika
-                    </h3>
-                    <p
-                      className={`text-[9px] font-bold leading-tight ${
-                        simulationStatus === "success"
-                          ? "text-green-900"
-                          : simulationStatus === "error"
-                            ? "text-red-900"
-                            : "text-slate-600"
-                      }`}
-                    >
-                      {feedback ||
-                        "Lengkapi flowchart dengan menarik simbol ke dalam kotak teks yang sesuai."}
-                    </p>
-                  </div>
+                  />
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                    Laporan Logika
+                  </span>
+                </div>
+                <div
+                  className={`flex-1 p-4 overflow-y-auto text-[10px] font-mono space-y-1 ${
+                    simulationStatus === "error"
+                      ? "bg-red-950/30 text-red-300"
+                      : "bg-black/30 text-emerald-400"
+                  }`}
+                >
+                  {logMessages.map((msg, i) => (
+                    <div key={i} className="leading-relaxed">
+                      {msg}
+                    </div>
+                  ))}
+                  <div ref={logEndRef} />
                 </div>
               </div>
             </aside>
           </div>
         </div>
       </main>
+
+      {/* FOOTER */}
+      <footer className="px-8 py-3 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 text-[10px]">
+        <div className="flex items-center gap-3 text-slate-500">
+          <span className="font-black uppercase tracking-widest">
+            STATUS SISTEM
+          </span>
+          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="font-medium italic">
+            Workspace siap menerima flowchart
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-slate-400 font-medium">
+            MODE: DRAG & DROP FLOWCHART
+          </span>
+          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="font-black text-emerald-600 uppercase tracking-wide italic">
+            CODIN • INTERACTIVE ALGORITHM LEARNING
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
