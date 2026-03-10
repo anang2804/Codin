@@ -2,21 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  BookOpen,
-  Users,
-  ClipboardList,
-  Target,
-  Plus,
-  User,
-} from "lucide-react";
+import { BookOpen, Users, ClipboardList, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 interface Profile {
   full_name: string;
   jenis_kelamin?: string;
+  avatar_url?: string;
 }
 
 export default function GuruDashboard() {
@@ -42,20 +35,16 @@ export default function GuruDashboard() {
         // Fetch profile
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name, jenis_kelamin")
+          .select("full_name, jenis_kelamin, avatar_url")
           .eq("id", user.id)
           .single();
 
         setProfile(profileData);
 
-        const [kelasRes, materiRes, asesmenRes] = await Promise.all([
-          supabase
-            .from("kelas")
-            .select("*", { count: "exact" })
-            .eq("guru_id", user.id),
+        const [materiRes, asesmenRes] = await Promise.all([
           supabase
             .from("materi")
-            .select("*", { count: "exact" })
+            .select("kelas_id", { count: "exact" })
             .eq("created_by", user.id),
           supabase
             .from("asesmen")
@@ -63,15 +52,38 @@ export default function GuruDashboard() {
             .eq("created_by", user.id),
         ]);
 
-        // Count total students
-        const { count: totalSiswa } = await supabase
-          .from("kelas_siswa")
-          .select("*", { count: "exact" })
-          .in("kelas_id", kelasRes.data?.map((k) => k.id) || []);
+        // Collect distinct kelas_id from guru's materi
+        const kelasIdSet = new Set<string>(
+          (materiRes.data ?? []).map((m: any) => m.kelas_id).filter(Boolean),
+        );
+        const kelasIds = [...kelasIdSet];
+
+        let totalKelas = 0;
+        let totalSiswa = 0;
+
+        if (kelasIds.length > 0) {
+          // Get kelas names for those IDs
+          const { data: kelasData } = await supabase
+            .from("kelas")
+            .select("name")
+            .in("id", kelasIds);
+
+          const kelasNames = (kelasData ?? []).map((k: any) => k.name);
+          totalKelas = kelasNames.length;
+
+          // Count students whose kelas matches any of those names
+          const { count: siswaCount } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("role", "siswa")
+            .in("kelas", kelasNames);
+
+          totalSiswa = siswaCount || 0;
+        }
 
         setStats({
-          totalSiswa: totalSiswa || 0,
-          totalKelas: kelasRes.count || 0,
+          totalSiswa,
+          totalKelas,
           totalMateri: materiRes.count || 0,
           totalAsesmen: asesmenRes.count || 0,
         });
@@ -90,25 +102,25 @@ export default function GuruDashboard() {
       label: "Total Siswa",
       value: stats.totalSiswa,
       icon: Users,
-      color: "bg-green-100 text-green-600",
+      description: "Siswa terdaftar di kelas",
     },
     {
       label: "Total Kelas",
       value: stats.totalKelas,
       icon: Users,
-      color: "bg-blue-100 text-blue-600",
+      description: "Kelas aktif dikelola",
     },
     {
       label: "Total Materi",
       value: stats.totalMateri,
       icon: BookOpen,
-      color: "bg-purple-100 text-purple-600",
+      description: "Konten pembelajaran",
     },
     {
       label: "Total Asesmen",
       value: stats.totalAsesmen,
       icon: ClipboardList,
-      color: "bg-yellow-100 text-yellow-600",
+      description: "Ujian telah dibuat",
     },
   ];
 
@@ -118,35 +130,41 @@ export default function GuruDashboard() {
       profile.jenis_kelamin === "L"
         ? "Pak"
         : profile.jenis_kelamin === "P"
-        ? "Bu"
-        : "";
-    return `Halo, ${title} ${profile.full_name}`;
+          ? "Bu"
+          : "";
+    const name = profile.full_name
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+    return `Halo, ${title} ${name} 👋`;
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex justify-between items-center mb-7">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">
             {getGreeting()}
           </h1>
-          <p className="text-gray-600">Selamat datang di Dashboard Guru</p>
+          <p className="text-sm text-gray-400">
+            Selamat datang di Dashboard Guru
+          </p>
         </div>
-        <Link href="/guru/profile">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-md">
-            <User size={32} className="text-green-400" />
+        <Link href="/guru/profile" className="mr-6 shrink-0">
+          <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-gray-100 hover:ring-gray-300 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 bg-gray-50">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={26} className="text-gray-400" />
+            )}
           </div>
         </Link>
       </div>
-
-      <div className="flex justify-end mb-6">
-        <Link href="/guru/materi">
-          <Button className="bg-green-600 hover:bg-green-700 gap-2">
-            <Plus size={20} />
-            Tambah Materi
-          </Button>
-        </Link>
-      </div>
+      <div className="border-b border-gray-100 mb-8" />
 
       {loading ? (
         <div className="text-center py-12">
@@ -155,17 +173,18 @@ export default function GuruDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((stat) => {
               const Icon = stat.icon;
               return (
-                <Card key={stat.label} className="p-6 border-green-100">
-                  <div
-                    className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center mb-4`}
-                  >
-                    <Icon size={24} />
+                <Card
+                  key={stat.label}
+                  className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mb-4">
+                    <Icon size={22} />
                   </div>
-                  <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
+                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
                   <p className="text-3xl font-bold text-gray-900">
                     {stat.value}
                   </p>

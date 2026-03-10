@@ -76,15 +76,21 @@ export function Sidebar({ role }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-6 transition-transform duration-300 z-40 flex flex-col ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 shadow-sm p-6 transition-transform duration-300 z-40 flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex items-center justify-center mb-6">
-          <img src="/logo codin.png" alt="Codin Logo" className="w-24 h-auto" />
+        <div className="flex items-center justify-center mb-8 pt-2">
+          <div className="relative">
+            <img
+              src="/logo codin.png"
+              alt="Codin Logo"
+              className="w-24 h-auto"
+            />
+          </div>
         </div>
 
-        <nav className="space-y-2 flex-1 overflow-y-auto">
+        <nav className="space-y-1 flex-1 overflow-y-auto">
           {items.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -93,27 +99,27 @@ export function Sidebar({ role }: SidebarProps) {
               <Link key={item.href} href={item.href}>
                 <button
                   onClick={() => setOpen(false)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-150 ${
                     isActive
-                      ? "bg-green-100 text-green-700 font-medium border-l-4 border-l-green-600"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-l-4 border-l-transparent"
+                      ? "bg-green-600 text-white font-semibold"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                   }`}
                 >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
+                  <Icon size={19} className="shrink-0" />
+                  <span className="text-sm">{item.label}</span>
                 </button>
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
+        <div className="border-t border-gray-100 pt-4 mt-4 space-y-1">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
           >
-            <LogOut size={20} />
-            <span>Keluar</span>
+            <LogOut size={19} className="shrink-0" />
+            <span className="text-sm">Keluar</span>
           </button>
         </div>
       </aside>

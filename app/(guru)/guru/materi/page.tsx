@@ -21,6 +21,7 @@ import {
   Eye,
   Search,
   Image as ImageIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -55,6 +56,9 @@ export default function GuruMateriPage() {
     thumbnail_url: "",
   });
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const supabase = createClient();
   const loading = mapelLoading || materiLoading;
@@ -85,7 +89,7 @@ export default function GuruMateriPage() {
       filtered = filtered.filter(
         (m) =>
           m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          m.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          m.description?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -98,7 +102,7 @@ export default function GuruMateriPage() {
   }, [materi, searchTerm, selectedMapel]);
 
   const handleThumbnailUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -151,7 +155,13 @@ export default function GuruMateriPage() {
       return;
     }
 
+    if (!formData.kelas_id) {
+      toast.error("Kelas wajib dipilih");
+      return;
+    }
+
     try {
+      setIsSaving(true);
       if (editingId) {
         await updateMateri.mutateAsync({
           id: editingId,
@@ -185,6 +195,8 @@ export default function GuruMateriPage() {
     } catch (error: any) {
       console.error("Error saving materi:", error);
       toast.error(error.message || "Gagal menyimpan materi");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -200,21 +212,22 @@ export default function GuruMateriPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        "Yakin ingin menghapus materi ini? Semua bab dan sub-bab juga akan terhapus."
-      )
-    ) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await deleteMateri.mutateAsync(id);
+      setIsDeleting(true);
+      await deleteMateri.mutateAsync(deleteTargetId);
       toast.success("Materi berhasil dihapus");
+      setDeleteTargetId(null);
     } catch (error: any) {
       console.error("Error deleting materi:", error);
       toast.error(error.message || "Gagal menghapus materi");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -245,54 +258,52 @@ export default function GuruMateriPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <BookOpen className="text-green-600" size={36} />
-              Kelola Materi Pembelajaran
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+              <BookOpen className="text-green-600" size={22} />
+              Kelola Materi
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-sm text-gray-400 mt-1">
               Buat dan kelola materi pembelajaran dengan bab dan sub-bab
             </p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-200"
           >
-            <Plus size={20} className="mr-2" />
-            Tambah Materi Baru
+            <Plus size={16} className="mr-2" />
+            Tambah Materi
           </Button>
         </div>
 
         {/* Search and Filter */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="relative">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={16}
             />
             <Input
               placeholder="Cari materi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-9 border-gray-200 focus:border-green-400"
             />
           </div>
-          <div>
-            <select
-              value={selectedMapel}
-              onChange={(e) => setSelectedMapel(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">Semua Mata Pelajaran</option>
-              {Array.isArray(mapelList) &&
-                mapelList.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-            </select>
-          </div>
+          <select
+            value={selectedMapel}
+            onChange={(e) => setSelectedMapel(e.target.value)}
+            className="h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 min-w-[200px]"
+          >
+            <option value="all">Semua Mata Pelajaran</option>
+            {Array.isArray(mapelList) &&
+              mapelList.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+          </select>
         </div>
       </div>
 
@@ -325,19 +336,19 @@ export default function GuruMateriPage() {
           {filteredMateri.map((m) => (
             <Card
               key={m.id}
-              className="overflow-hidden hover:shadow-lg transition-shadow"
+              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
             >
               {/* Thumbnail */}
-              <div className="relative h-48 bg-gradient-to-br from-green-100 to-green-200">
+              <div className="relative h-40 bg-gradient-to-br from-green-50 to-green-100 overflow-hidden">
                 {m.thumbnail_url ? (
                   <img
                     src={m.thumbnail_url}
                     alt={m.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.03]"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <BookOpen size={64} className="text-green-600 opacity-50" />
+                    <BookOpen size={48} className="text-green-500 opacity-40" />
                   </div>
                 )}
               </div>
@@ -346,22 +357,26 @@ export default function GuruMateriPage() {
               <div className="p-4">
                 <div className="mb-3">
                   {m.mapel && (
-                    <span className="inline-block px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full mb-2">
+                    <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded-full mb-2">
                       {m.mapel.name}
                     </span>
                   )}
-                  <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                  <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
                     {m.title}
                   </h3>
                   {m.description && (
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                       {m.description}
                     </p>
                   )}
                 </div>
 
                 <div className="text-xs text-gray-400 mb-4">
-                  Dibuat: {new Date(m.created_at).toLocaleDateString("id-ID")}
+                  {new Date(m.created_at).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </div>
 
                 {/* Actions */}
@@ -369,9 +384,9 @@ export default function GuruMateriPage() {
                   <Link href={`/guru/materi/${m.id}`} className="flex-1">
                     <Button
                       variant="outline"
-                      className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                      className="w-full border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.02] transition-all duration-200"
                     >
-                      <Eye size={16} className="mr-2" />
+                      <Eye size={14} className="mr-1.5" />
                       Kelola Bab
                     </Button>
                   </Link>
@@ -379,17 +394,17 @@ export default function GuruMateriPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleEdit(m)}
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                    className="border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.02] transition-all duration-200"
                   >
-                    <Edit size={16} />
+                    <Edit size={14} />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(m.id)}
-                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.02] transition-all duration-200"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </Button>
                 </div>
               </div>
@@ -400,21 +415,25 @@ export default function GuruMateriPage() {
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={resetForm}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-2xl animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
               {editingId ? "Edit Materi" : "Tambah Materi Baru"}
             </DialogTitle>
-            <DialogDescription>
-              Lengkapi informasi dasar materi. Anda bisa menambahkan bab dan
-              sub-bab setelah materi dibuat.
+            <DialogDescription className="text-sm text-gray-400">
+              Lengkapi informasi dasar materi. Bab dan sub-bab dapat ditambahkan
+              setelah materi dibuat.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="title">
-                Judul Materi <span className="text-red-500">*</span>
+          <form onSubmit={handleSubmit} className="space-y-5 pt-1">
+            {/* Judul */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="title"
+                className="text-sm font-medium text-gray-700"
+              >
+                Judul Materi <span className="text-red-400">*</span>
               </Label>
               <Input
                 id="title"
@@ -424,140 +443,253 @@ export default function GuruMateriPage() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 required
-                className="border-green-200"
+                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
               />
             </div>
 
-            <div>
-              <Label htmlFor="mapel">Mata Pelajaran</Label>
-              <select
-                id="mapel"
-                value={formData.mapel_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, mapel_id: e.target.value })
-                }
-                className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Pilih Mata Pelajaran (Opsional)</option>
-                {Array.isArray(mapelList) &&
-                  mapelList.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-              </select>
+            {/* Mapel & Kelas - side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="mapel"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Mata Pelajaran <span className="text-red-400">*</span>
+                </Label>
+                <select
+                  id="mapel"
+                  value={formData.mapel_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mapel_id: e.target.value })
+                  }
+                  className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 transition-colors duration-200"
+                >
+                  <option value="">Pilih Mata Pelajaran</option>
+                  {Array.isArray(mapelList) &&
+                    mapelList.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="kelas"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Kelas <span className="text-red-400">*</span>
+                </Label>
+                <select
+                  id="kelas"
+                  value={formData.kelas_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kelas_id: e.target.value })
+                  }
+                  className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 transition-colors duration-200"
+                >
+                  <option value="">Pilih Kelas</option>
+                  {Array.isArray(kelasList) &&
+                    kelasList.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {k.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="kelas">Kelas</Label>
-              <select
-                id="kelas"
-                value={formData.kelas_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, kelas_id: e.target.value })
-                }
-                className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm"
+            {/* Deskripsi */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="description"
+                className="text-sm font-medium text-gray-700"
               >
-                <option value="">Semua Kelas (Opsional)</option>
-                {Array.isArray(kelasList) &&
-                  kelasList.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.name}
-                    </option>
-                  ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Pilih kelas tertentu jika materi hanya untuk kelas tersebut.
-                Kosongkan jika untuk semua kelas.
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Deskripsi Singkat</Label>
+                Deskripsi Singkat
+              </Label>
               <Textarea
                 id="description"
-                placeholder="Ringkasan materi yang akan disampaikan"
+                placeholder="Ringkasan singkat tentang materi ini..."
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="border-green-200"
+                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
                 rows={3}
               />
             </div>
 
-            <div>
-              <Label htmlFor="thumbnail">Thumbnail/Sampul</Label>
-              <div className="mt-2">
+            {/* Thumbnail */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">
+                Thumbnail / Sampul
+              </Label>
+              <div className="mt-1">
                 {formData.thumbnail_url ? (
-                  <div className="relative">
+                  <div className="relative rounded-lg overflow-hidden animate-in fade-in-0 duration-300">
                     <img
                       src={formData.thumbnail_url}
                       alt="Thumbnail"
-                      className="w-full h-48 object-cover rounded-md"
+                      className="w-full h-44 object-cover"
                     />
-                    <Button
+                    <button
                       type="button"
-                      size="sm"
-                      variant="destructive"
                       onClick={() =>
                         setFormData({ ...formData, thumbnail_url: "" })
                       }
-                      className="absolute top-2 right-2"
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white text-xs px-2.5 py-1 rounded-full transition-colors duration-150"
                     >
                       Hapus
-                    </Button>
+                    </button>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                  <label
+                    htmlFor="thumbnail-upload"
+                    className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50/50 transition-all duration-200"
+                  >
                     <ImageIcon
-                      className="mx-auto text-gray-400 mb-2"
-                      size={32}
+                      className="text-gray-300 group-hover:text-green-500 mb-2 transition-colors duration-200"
+                      size={28}
                     />
-                    <label
-                      htmlFor="thumbnail-upload"
-                      className="cursor-pointer"
-                    >
-                      <span className="text-sm text-blue-600 hover:underline">
-                        {uploadingThumbnail
-                          ? "Mengunggah..."
-                          : "Klik untuk upload gambar"}
-                      </span>
-                      <input
-                        id="thumbnail-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleThumbnailUpload}
-                        disabled={uploadingThumbnail}
-                      />
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      PNG, JPG maksimal 5MB
-                    </p>
-                  </div>
+                    <span className="text-sm text-gray-400 group-hover:text-green-600 transition-colors duration-200">
+                      {uploadingThumbnail
+                        ? "Mengunggah..."
+                        : "Klik untuk upload gambar"}
+                    </span>
+                    <span className="text-xs text-gray-300 mt-1">
+                      PNG, JPG maks. 5MB
+                    </span>
+                    <input
+                      id="thumbnail-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleThumbnailUpload}
+                      disabled={uploadingThumbnail}
+                    />
+                  </label>
                 )}
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
               <Button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                disabled={uploadingThumbnail}
+                className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
+                disabled={uploadingThumbnail || isSaving}
               >
-                {editingId ? "Perbarui" : "Simpan"} Materi
+                {isSaving ? (
+                  <>
+                    <svg
+                      className="animate-spin mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                    Menyimpan...
+                  </>
+                ) : editingId ? (
+                  "Perbarui Materi"
+                ) : (
+                  "Simpan Materi"
+                )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={resetForm}
                 disabled={uploadingThumbnail}
+                className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:scale-[1.02] transition-all duration-150"
               >
                 Batal
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTargetId(null);
+        }}
+      >
+        <DialogContent className="max-w-sm animate-in fade-in-0 zoom-in-95 duration-200 p-7">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+              <AlertTriangle size={26} className="text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              Hapus Materi
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed mb-6">
+              Apakah kamu yakin ingin menghapus materi ini? Semua bab dan
+              sub-bab juga akan terhapus. Tindakan ini tidak dapat dibatalkan.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50"
+              onClick={() => setDeleteTargetId(null)}
+              disabled={isDeleting}
+            >
+              Batal
+            </Button>
+            <Button
+              className="flex-1 bg-red-600 hover:bg-red-700 transition-all duration-150 disabled:opacity-70"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <svg
+                    className="animate-spin mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={15} className="mr-1.5" />
+                  Hapus Materi
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

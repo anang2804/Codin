@@ -162,7 +162,7 @@ export default function GuruMateriDetailPage() {
   const handleDeleteBab = async (babId: string) => {
     if (
       !confirm(
-        "Yakin ingin menghapus bab ini? Semua sub-bab di dalamnya juga akan terhapus."
+        "Yakin ingin menghapus bab ini? Semua sub-bab di dalamnya juga akan terhapus.",
       )
     ) {
       return;
@@ -348,36 +348,38 @@ export default function GuruMateriDetailPage() {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <Button
           variant="outline"
           onClick={() => router.push("/guru/materi")}
-          className="mb-4"
+          className="mb-5 border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
         >
-          <ArrowLeft size={16} className="mr-2" />
+          <ArrowLeft size={15} className="mr-2" />
           Kembali
         </Button>
 
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <BookOpen className="text-green-600" size={36} />
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+              <BookOpen className="text-green-600 shrink-0" size={22} />
               {materi.title}
             </h1>
             {materi.mapel && (
-              <span className="inline-block px-3 py-1 text-sm font-semibold text-green-700 bg-green-100 rounded-full mt-2">
+              <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded-full mt-2">
                 {materi.mapel.name}
               </span>
             )}
             {materi.description && (
-              <p className="text-gray-600 mt-3">{materi.description}</p>
+              <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+                {materi.description}
+              </p>
             )}
           </div>
           <Button
             onClick={() => openBabDialog()}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 shrink-0"
           >
-            <Plus size={20} className="mr-2" />
+            <Plus size={16} className="mr-2" />
             Tambah Bab
           </Button>
         </div>
@@ -385,86 +387,87 @@ export default function GuruMateriDetailPage() {
 
       {/* Babs List */}
       {!Array.isArray(babs) || babs.length === 0 ? (
-        <Card className="p-12 text-center border-2 border-dashed border-gray-300">
-          <BookOpen size={64} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+        <Card className="p-12 text-center border border-dashed border-gray-200">
+          <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-base font-semibold text-gray-700 mb-1">
             Belum ada bab
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-sm text-gray-400 mb-5">
             Mulai buat bab pertama untuk materi ini
           </p>
           <Button
             onClick={() => openBabDialog()}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150"
           >
-            <Plus size={20} className="mr-2" />
+            <Plus size={16} className="mr-2" />
             Tambah Bab
           </Button>
         </Card>
       ) : (
         <div className="space-y-4">
           {babs.map((bab, index) => (
-            <Card key={bab.id} className="overflow-hidden">
+            <Card
+              key={bab.id}
+              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+            >
               {/* Bab Header */}
-              <div className="bg-gradient-to-r from-green-50 to-green-100 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+              <div className="bg-gray-50/80 px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <button
+                      type="button"
                       onClick={() => toggleBab(bab.id)}
-                      className="p-0 h-auto"
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 shrink-0"
                     >
                       {expandedBabs.has(bab.id) ? (
-                        <ChevronDown size={20} />
+                        <ChevronDown size={18} />
                       ) : (
-                        <ChevronRight size={20} />
+                        <ChevronRight size={18} />
                       )}
-                    </Button>
-                    <GripVertical size={20} className="text-gray-400" />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900">
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
                         Bab {index + 1}: {bab.title}
                       </h3>
                       {bab.description && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
                           {bab.description}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-400 mt-0.5">
                         {(bab.sub_babs || []).length} Sub-bab
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => openSubBabDialog(bab.id)}
-                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.05] transition-all duration-150 h-8 px-2.5 text-xs"
                     >
-                      <Plus size={16} className="mr-1" />
+                      <Plus size={14} className="mr-1" />
                       Sub-bab
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => openBabDialog(bab)}
-                      className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                      className="border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
                     >
-                      <Edit size={16} />
+                      <Edit size={15} />
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleDeleteBab(bab.id)}
                       disabled={deleteBab.isPending}
-                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
                     >
                       {deleteBab.isPending ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2 size={15} className="animate-spin" />
                       ) : (
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       )}
                     </Button>
                   </div>
@@ -473,21 +476,21 @@ export default function GuruMateriDetailPage() {
 
               {/* Sub-babs */}
               {expandedBabs.has(bab.id) && (
-                <div className="p-4 bg-white">
+                <div className="px-5 py-4 bg-white border-t border-gray-100">
                   {!bab.sub_babs || bab.sub_babs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-6 text-gray-400">
                       <FileText
-                        size={48}
-                        className="mx-auto mb-3 text-gray-400"
+                        size={32}
+                        className="mx-auto mb-2 text-gray-300"
                       />
                       <p className="text-sm">Belum ada sub-bab</p>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openSubBabDialog(bab.id)}
-                        className="mt-3 border-green-300 text-green-700"
+                        className="mt-3 border-green-200 text-green-700 hover:bg-green-50 text-xs"
                       >
-                        <Plus size={16} className="mr-1" />
+                        <Plus size={14} className="mr-1" />
                         Tambah Sub-bab
                       </Button>
                     </div>
@@ -496,30 +499,29 @@ export default function GuruMateriDetailPage() {
                       {(bab.sub_babs || []).map((subBab, subIndex: number) => (
                         <div
                           key={subBab.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                          className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
                         >
-                          <div className="flex items-center gap-3 flex-1">
-                            <GripVertical size={16} className="text-gray-400" />
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="text-gray-400 shrink-0">
                               {getContentTypeIcon(subBab.content_type)}
-                              <span className="font-medium text-gray-900">
-                                {subIndex + 1}. {subBab.title}
-                              </span>
                             </div>
+                            <span className="text-sm font-medium text-gray-800 truncate">
+                              {subIndex + 1}. {subBab.title}
+                            </span>
                             {subBab.duration && subBab.duration > 0 && (
-                              <span className="text-xs text-gray-500">
-                                ({subBab.duration} menit)
+                              <span className="text-xs text-gray-400 shrink-0">
+                                {subBab.duration} mnt
                               </span>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1 shrink-0">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => openSubBabDialog(bab.id, subBab)}
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 p-0 hover:bg-blue-50 hover:scale-[1.05] transition-all duration-150"
                             >
-                              <Edit size={14} className="text-blue-600" />
+                              <Edit size={14} className="text-blue-500" />
                             </Button>
                             <Button
                               size="sm"
@@ -528,15 +530,15 @@ export default function GuruMateriDetailPage() {
                                 handleDeleteSubBab(subBab.id, bab.id)
                               }
                               disabled={deleteSubBab.isPending}
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 p-0 hover:bg-red-50 hover:scale-[1.05] transition-all duration-150"
                             >
                               {deleteSubBab.isPending ? (
                                 <Loader2
                                   size={14}
-                                  className="text-red-600 animate-spin"
+                                  className="text-red-500 animate-spin"
                                 />
                               ) : (
-                                <Trash2 size={14} className="text-red-600" />
+                                <Trash2 size={14} className="text-red-400" />
                               )}
                             </Button>
                           </div>
@@ -553,20 +555,23 @@ export default function GuruMateriDetailPage() {
 
       {/* Bab Dialog */}
       <Dialog open={showBabDialog} onOpenChange={setShowBabDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="pb-1">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
               {editingBabId ? "Edit Bab" : "Tambah Bab Baru"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm text-gray-400">
               Bab adalah bagian utama dari materi pembelajaran
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveBab} className="space-y-4">
-            <div>
-              <Label htmlFor="bab-title">
-                Judul Bab <span className="text-red-500">*</span>
+          <form onSubmit={handleSaveBab} className="space-y-5 pt-1">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="bab-title"
+                className="text-sm font-medium text-gray-700"
+              >
+                Judul Bab <span className="text-red-400">*</span>
               </Label>
               <Input
                 id="bab-title"
@@ -576,11 +581,18 @@ export default function GuruMateriDetailPage() {
                   setBabForm({ ...babForm, title: e.target.value })
                 }
                 required
+                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
               />
             </div>
 
-            <div>
-              <Label htmlFor="bab-description">Deskripsi (Opsional)</Label>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="bab-description"
+                className="text-sm font-medium text-gray-700"
+              >
+                Deskripsi{" "}
+                <span className="text-gray-400 font-normal">(Opsional)</span>
+              </Label>
               <Textarea
                 id="bab-description"
                 placeholder="Penjelasan singkat tentang bab ini"
@@ -589,25 +601,27 @@ export default function GuruMateriDetailPage() {
                   setBabForm({ ...babForm, description: e.target.value })
                 }
                 rows={3}
+                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
               />
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-1">
               <Button
                 type="submit"
                 disabled={createBab.isPending || updateBab.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:scale-100"
               >
                 {(createBab.isPending || updateBab.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {editingBabId ? "Perbarui" : "Simpan"} Bab
+                {editingBabId ? "Perbarui Bab" : "Simpan Bab"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowBabDialog(false)}
                 disabled={createBab.isPending || updateBab.isPending}
+                className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
               >
                 Batal
               </Button>
@@ -766,8 +780,8 @@ export default function GuruMateriDetailPage() {
                 {isUploading
                   ? "Mengupload file..."
                   : editingSubBabId
-                  ? "Perbarui Sub-Bab"
-                  : "Simpan Sub-Bab"}
+                    ? "Perbarui Sub-Bab"
+                    : "Simpan Sub-Bab"}
               </Button>
               <Button
                 type="button"

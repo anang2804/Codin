@@ -1,23 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
   User,
   Lock,
-  Mail,
-  Calendar,
-  Phone,
-  MapPin,
   Camera,
-  ShieldCheck,
-  Zap,
   ChevronRight,
-  Save,
   Briefcase,
-  X,
   CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 interface Profile {
@@ -27,6 +20,7 @@ interface Profile {
   jenis_kelamin?: string;
   no_telepon?: string;
   alamat?: string;
+  avatar_url?: string;
 }
 
 export default function GuruProfilePage() {
@@ -34,10 +28,85 @@ export default function GuruProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Form states
   const [formData, setFormData] = useState<Partial<Profile>>({});
+
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      showToast(
+        "Format gambar tidak didukung (gunakan JPG, PNG, atau WebP)",
+        "error",
+      );
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Ukuran foto maksimal 5MB", "error");
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const supabase = createClient();
+
+      const ext = file.name.split(".").pop();
+      const path = `avatars/${profile.id}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("learning-materials")
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Gagal upload ke storage");
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("learning-materials")
+        .getPublicUrl(path);
+
+      const avatar_url = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        throw new Error(updateError.message || "Gagal menyimpan URL foto");
+      }
+
+      setProfile({ ...profile, avatar_url });
+      showToast("Foto profil berhasil diperbarui");
+    } catch (err: any) {
+      const message = err?.message || "Gagal mengupload foto";
+      console.error("Avatar upload error:", message);
+      showToast(message, "error");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   // Password change states
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -74,7 +143,7 @@ export default function GuruProfilePage() {
       setFormData(data);
     } catch (error: any) {
       console.error("Error loading profile:", error);
-      alert("Gagal memuat profil");
+      showToast("Gagal memuat profil", "error");
     } finally {
       setLoading(false);
     }
@@ -101,10 +170,10 @@ export default function GuruProfilePage() {
 
       setProfile({ ...profile, ...formData });
       setEditMode(false);
-      alert("Profil berhasil diperbarui");
+      showToast("Profil berhasil diperbarui");
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert("Gagal memperbarui profil");
+      showToast("Gagal memperbarui profil", "error");
     } finally {
       setSaving(false);
     }
@@ -164,82 +233,124 @@ export default function GuruProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-slate-900 font-sans pb-20">
-      <nav className="max-w-4xl mx-auto flex items-center justify-end p-6 mb-4">
-        <button
-          onClick={() => {
-            if (editMode) setFormData({ ...profile });
-            setEditMode(!editMode);
-          }}
-          className={`px-5 py-2 rounded-xl font-bold text-xs tracking-wide transition-all ${
-            editMode
-              ? "bg-slate-100 text-slate-500 hover:bg-slate-200"
-              : "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
-          }`}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-start gap-3 bg-white border-l-4 ${
+            toast.type === "success" ? "border-green-500" : "border-red-400"
+          } rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-xs animate-in slide-in-from-right-4 fade-in duration-300`}
         >
-          {editMode ? "BATAL" : "EDIT PROFIL"}
-        </button>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10">
-        <div className="md:col-span-4 flex flex-col items-center">
-          <div className="relative group mb-6">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border border-slate-200 bg-white p-1">
-              <div className="w-full h-full rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center">
-                <User size={60} className="text-emerald-200" />
-              </div>
-            </div>
-            <button className="absolute bottom-1 right-1 p-2.5 bg-white border border-slate-200 text-slate-600 rounded-full shadow-sm hover:text-emerald-600 transition-colors">
-              <Camera size={16} />
-            </button>
-          </div>
-
-          <div className="text-center space-y-1">
-            <h1 className="text-xl font-bold text-slate-800">
-              {profile.full_name}
-            </h1>
-            <p className="text-sm text-slate-400 font-medium">
-              {profile.email}
+          {toast.type === "success" ? (
+            <CheckCircle2
+              size={18}
+              className="text-green-500 mt-0.5 shrink-0"
+            />
+          ) : (
+            <XCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
+          )}
+          <div>
+            <p className="text-sm font-semibold text-gray-800">
+              {toast.type === "success" ? "Berhasil" : "Gagal"}
             </p>
+            <p className="text-xs text-gray-400 mt-0.5">{toast.message}</p>
           </div>
+        </div>
+      )}
 
-          <div className="w-full mt-10 p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <Briefcase size={16} />
+      <div className="max-w-5xl mx-auto px-6 pt-8 flex flex-col md:flex-row gap-6 items-start">
+        {/* ── Left: Profile Card ── */}
+        <div className="w-full md:w-[300px] shrink-0">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-8 flex flex-col items-center text-center">
+            {/* Avatar */}
+            <div className="relative group mb-5">
+              <div className="w-24 h-24 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User size={40} className="text-green-300" />
+                )}
               </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                  Role
-                </p>
-                <p className="text-sm font-bold text-slate-700">
-                  Guru / Pengajar
-                </p>
-              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:border-green-300 hover:text-green-600 text-gray-400 transition-colors duration-200 disabled:opacity-50"
+              >
+                {uploadingAvatar ? (
+                  <div className="w-3 h-3 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin" />
+                ) : (
+                  <Camera size={13} />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
             </div>
+
+            {/* Name & email */}
+            <h2 className="text-base font-semibold text-gray-900 leading-tight">
+              {profile.full_name}
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">{profile.email}</p>
+
+            {/* Role badge */}
+            <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-green-50 border border-green-100 text-green-700 text-[11px] font-semibold rounded-full">
+              <Briefcase size={11} />
+              Guru / Pengajar
+            </span>
           </div>
         </div>
 
-        <div className="md:col-span-8 space-y-8">
-          <div className="bg-white rounded-3xl p-8 md:p-10 border border-slate-100 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
-              {editMode ? "Ubah Data Diri" : "Informasi Personal"}
-            </h3>
+        {/* ── Right: Detail Cards ── */}
+        <div className="flex-1 space-y-5 min-w-0">
+          {/* Personal Info Card */}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
+                  Akun
+                </p>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  {editMode ? "Ubah Data Diri" : "Informasi Personal"}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  if (editMode) setFormData({ ...profile });
+                  setEditMode(!editMode);
+                }}
+                className={`px-4 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
+                  editMode
+                    ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    : "bg-green-600 text-white hover:bg-green-700"
+                }`}
+              >
+                {editMode ? "Batal" : "Edit Profil"}
+              </button>
+            </div>
 
             {editMode ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <InputMinimal
                     label="Nama Lengkap"
                     value={formData.full_name || ""}
                     onChange={(v) => setFormData({ ...formData, full_name: v })}
                   />
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
                       Jenis Kelamin
                     </label>
                     <select
-                      className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm appearance-none"
+                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm text-gray-700 transition-all appearance-none"
                       value={formData.jenis_kelamin || ""}
                       onChange={(e) =>
                         setFormData({
@@ -261,13 +372,12 @@ export default function GuruProfilePage() {
                     }
                   />
                 </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
                     Alamat
                   </label>
                   <textarea
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm resize-none"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm text-gray-700 transition-all resize-none"
                     rows={3}
                     value={formData.alamat || ""}
                     onChange={(e) =>
@@ -275,25 +385,26 @@ export default function GuruProfilePage() {
                     }
                   />
                 </div>
-
                 <button
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all disabled:opacity-50"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
                 >
                   {saving ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                <ItemStatic label="Nama Lengkap" value={profile.full_name} />
+                <ItemStatic label="Email" value={profile.email} />
                 <ItemStatic
                   label="Jenis Kelamin"
                   value={
                     profile.jenis_kelamin === "L"
                       ? "Laki-laki"
                       : profile.jenis_kelamin === "P"
-                      ? "Perempuan"
-                      : "-"
+                        ? "Perempuan"
+                        : "-"
                   }
                 />
                 <ItemStatic label="No Telepon" value={profile.no_telepon} />
@@ -306,18 +417,24 @@ export default function GuruProfilePage() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-slate-50 text-slate-400 rounded-lg">
-                <Lock size={16} />
+          {/* Security Card */}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                <Lock size={15} className="text-gray-400" />
               </div>
-              <h4 className="text-sm font-bold text-slate-800 tracking-tight">
-                Pengaturan Keamanan
-              </h4>
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+                  Keamanan
+                </p>
+                <h4 className="text-sm font-semibold text-gray-800">
+                  Pengaturan Keamanan
+                </h4>
+              </div>
             </div>
 
             {passwordSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold flex items-center gap-2">
+              <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-xl text-xs font-semibold flex items-center gap-2">
                 <CheckCircle2 size={14} /> {passwordSuccess}
               </div>
             )}
@@ -325,14 +442,14 @@ export default function GuruProfilePage() {
             {!showPasswordForm ? (
               <button
                 onClick={() => setShowPasswordForm(true)}
-                className="group w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-emerald-50 transition-all"
+                className="group w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-green-50 hover:border-green-100 transition-all duration-200"
               >
-                <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700">
+                <span className="text-sm font-medium text-gray-600 group-hover:text-green-700">
                   Ubah Kata Sandi Akun
                 </span>
                 <ChevronRight
-                  size={14}
-                  className="text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all"
+                  size={15}
+                  className="text-gray-300 group-hover:text-green-500 group-hover:translate-x-0.5 transition-all"
                 />
               </button>
             ) : (
@@ -343,28 +460,26 @@ export default function GuruProfilePage() {
                     placeholder="Password baru"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm font-medium"
+                    className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm"
                   />
                   <input
                     type="password"
                     placeholder="Konfirmasi password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm font-medium"
+                    className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm"
                   />
                 </div>
                 {passwordError && (
-                  <p className="text-[10px] font-bold text-red-500 ml-1">
-                    {passwordError}
-                  </p>
+                  <p className="text-xs text-red-500">{passwordError}</p>
                 )}
                 <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
                   >
-                    {saving ? "..." : "Update"}
+                    {saving ? "Menyimpan..." : "Update Password"}
                   </button>
                   <button
                     type="button"
@@ -372,7 +487,7 @@ export default function GuruProfilePage() {
                       setShowPasswordForm(false);
                       setPasswordError("");
                     }}
-                    className="px-6 text-slate-400 font-bold text-[10px] uppercase hover:text-slate-600"
+                    className="px-5 text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
                   >
                     Batal
                   </button>
@@ -396,13 +511,11 @@ function ItemStatic({
   fullWidth?: boolean;
 }) {
   return (
-    <div className={`${fullWidth ? "sm:col-span-2" : ""}`}>
-      <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1.5 block">
+    <div className={fullWidth ? "sm:col-span-2" : ""}>
+      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
         {label}
-      </label>
-      <p className="text-sm font-bold text-slate-700 leading-relaxed border-b border-slate-50 pb-2">
-        {value || "-"}
       </p>
+      <p className="text-sm font-medium text-gray-800">{value || "-"}</p>
     </div>
   );
 }
@@ -420,12 +533,12 @@ function InputMinimal({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
         {label}
       </label>
       <input
         type={type}
-        className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm"
+        className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:bg-white text-sm text-gray-700 transition-all"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
