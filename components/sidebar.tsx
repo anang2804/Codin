@@ -9,7 +9,6 @@ import {
   Target,
   BarChart3,
   Users,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -77,12 +76,12 @@ export function Sidebar({ role }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-green-100 p-6 transition-transform duration-300 z-40 flex flex-col ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-6 transition-transform duration-300 z-40 flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex items-center justify-center mb-8">
-          <img src="/logo codin.png" alt="Codin Logo" className="w-48 h-auto" />
+        <div className="flex items-center justify-center mb-6">
+          <img src="/logo codin.png" alt="Codin Logo" className="w-24 h-auto" />
         </div>
 
         <nav className="space-y-2 flex-1 overflow-y-auto">
@@ -97,7 +96,7 @@ export function Sidebar({ role }: SidebarProps) {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
                     isActive
                       ? "bg-green-100 text-green-700 font-medium border-l-4 border-l-green-600"
-                      : "text-gray-600 hover:bg-green-50 hover:text-green-600 border-l-4 border-l-transparent"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-l-4 border-l-transparent"
                   }`}
                 >
                   <Icon size={20} />
@@ -109,10 +108,6 @@ export function Sidebar({ role }: SidebarProps) {
         </nav>
 
         <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200">
-            <Settings size={20} />
-            <span>Pengaturan</span>
-          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200"

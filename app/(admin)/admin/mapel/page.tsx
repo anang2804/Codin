@@ -124,7 +124,7 @@ export default function AdminMapelPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-2xl font-semibold text-gray-900">
           Kelola Mata Pelajaran
         </h1>
         <Button
@@ -143,89 +143,109 @@ export default function AdminMapelPage() {
       </div>
 
       {showForm && (
-        <Card className="p-6 border-green-100 mb-8">
-          <h2 className="text-lg font-semibold mb-4">
-            {editingId ? "Edit Mata Pelajaran" : "Tambah Mata Pelajaran Baru"}
-          </h2>
-          <form onSubmit={handleAddMapel} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nama Mata Pelajaran
-              </label>
-              <Input
-                type="text"
-                placeholder="Contoh: Matematika"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                required
-                className="border-green-200"
-              />
+        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingId
+                  ? "Edit Mata Pelajaran"
+                  : "Tambah Mata Pelajaran Baru"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {editingId
+                  ? "Perbarui informasi mata pelajaran yang sudah ada."
+                  : "Isi detail mata pelajaran yang ingin ditambahkan."}
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kode Mapel
-              </label>
-              <Input
-                type="text"
-                placeholder="Contoh: MTK"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value })
-                }
-                required
-                className="border-green-200"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Deskripsi
-              </label>
-              <Input
-                type="text"
-                placeholder="Deskripsi mata pelajaran"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="border-green-200"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Guru Pengampu
-              </label>
-              <select
-                value={formData.guru_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, guru_id: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-green-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Pilih Guru (Opsional)</option>
-                {guruList?.map((guru) => (
-                  <option key={guru.id} value={guru.id}>
-                    {guru.full_name || guru.email}
+            <form onSubmit={handleAddMapel} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nama Mata Pelajaran <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Contoh: Matematika"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                  className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Kode Mapel <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Contoh: MTK"
+                  value={formData.code}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
+                  required
+                  className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Deskripsi
+                  <span className="ml-1 text-xs font-normal text-gray-400">
+                    (opsional)
+                  </span>
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Deskripsi mata pelajaran"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Guru Pengampu <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.guru_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, guru_id: e.target.value })
+                  }
+                  required
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                >
+                  <option value="" disabled>
+                    Pilih Guru
                   </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-3">
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                {editingId ? "Update" : "Simpan"}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCancelForm}
-                variant="outline"
-                className="border-green-200"
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        </Card>
+                  {guruList?.map((guru) => (
+                    <option key={guru.id} value={guru.id}>
+                      {guru.full_name || guru.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 rounded-lg transition"
+                >
+                  {editingId ? "Update" : "Simpan"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCancelForm}
+                  variant="outline"
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"
+                >
+                  Batal
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
       )}
 
       {loading ? (
@@ -234,7 +254,7 @@ export default function AdminMapelPage() {
           <p className="text-gray-600">Memuat mata pelajaran...</p>
         </div>
       ) : !mapel || mapel.length === 0 ? (
-        <Card className="p-12 text-center border-green-100">
+        <Card className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
           <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600">
             Belum ada mata pelajaran. Tambahkan mata pelajaran baru untuk
@@ -242,49 +262,57 @@ export default function AdminMapelPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {Array.isArray(mapel) &&
             mapel.map((m) => (
-              <Card key={m.id} className="p-6 border-green-100">
+              <Card
+                key={m.id}
+                className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+              >
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {m.name}
-                      </h3>
-                      <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-                        {m.code}
-                      </span>
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <BookOpen size={18} />
                     </div>
-                    {m.description && (
-                      <p className="text-gray-600 text-sm mt-2">
-                        {m.description}
-                      </p>
-                    )}
-                    {m.guru && (
-                      <p className="text-gray-500 text-sm mt-1">
-                        <span className="font-medium">Guru:</span>{" "}
-                        {m.guru.full_name || m.guru.email}
-                      </p>
-                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {m.name}
+                        </h3>
+                        <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
+                          {m.code}
+                        </span>
+                      </div>
+                      {m.description && (
+                        <p className="text-gray-500 text-sm mt-1">
+                          {m.description}
+                        </p>
+                      )}
+                      {m.guru && (
+                        <p className="text-gray-400 text-xs mt-1">
+                          <span className="font-medium text-gray-500">
+                            Guru:
+                          </span>{" "}
+                          {m.guru.full_name || m.guru.email}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-yellow-400 text-yellow-600 hover:bg-yellow-50 bg-transparent"
+                  <div className="flex gap-1 ml-4">
+                    <button
+                      className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
                       onClick={() => handleEditMapel(m)}
+                      title="Edit"
                     >
                       <Edit size={16} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-red-400 text-red-600 hover:bg-red-50 bg-transparent"
+                    </button>
+                    <button
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
                       onClick={() => handleDeleteMapel(m.id)}
+                      title="Hapus"
                     >
                       <Trash2 size={16} />
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </Card>

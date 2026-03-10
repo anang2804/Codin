@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json(
       { error: "Server credentials not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -132,6 +132,15 @@ export async function POST(req: Request) {
       },
     });
 
+    // Save current_password to profiles (column not in Prisma schema, use supabaseAdmin)
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        current_password: generatedPassword,
+        password_updated_at: new Date().toISOString(),
+      })
+      .eq("id", created.user.id);
+
     return NextResponse.json({
       id: created.user.id,
       email,
@@ -142,7 +151,7 @@ export async function POST(req: Request) {
     console.error("Error creating guru:", err);
     return NextResponse.json(
       { error: err.message || "Failed to create guru" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -176,30 +185,45 @@ export async function GET(req: Request) {
         email: true,
         full_name: true,
         phone: true,
+        address: true,
         created_at: true,
       },
       orderBy: { created_at: "desc" },
     });
 
+    const mapped = guru.map((g) => ({
+      ...g,
+      no_telepon: g.phone ?? null,
+      alamat: g.address ?? null,
+    }));
+
     return NextResponse.json(
-      { data: guru },
+      { data: mapped },
       {
         headers: {
           "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
         },
-      }
+      },
     );
   } catch (err: any) {
     console.error("Error fetching guru:", err);
     return NextResponse.json(
       { error: err.message || "Failed to fetch guru" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(req: Request) {
   // Update guru profile (and optionally email)
+  const supabaseAdmin = getAdminClient();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Server credentials not configured" },
+      { status: 500 },
+    );
+  }
+
   // ensure caller is admin
   try {
     const serverSupabase = await createServerClient();
@@ -220,7 +244,7 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, email, full_name, password } = body;
+    const { id, email, full_name, password, no_telepon, alamat } = body;
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -228,6 +252,8 @@ export async function PUT(req: Request) {
     const updates: any = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (email !== undefined) updates.email = email;
+    if (no_telepon !== undefined) updates.phone = no_telepon || null;
+    if (alamat !== undefined) updates.address = alamat || null;
 
     await prisma.profile.update({
       where: { id },
@@ -249,7 +275,7 @@ export async function PUT(req: Request) {
       if (password.length < 6) {
         return NextResponse.json(
           { error: "Password minimal 6 karakter" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       const { error: passwordError } =
@@ -258,9 +284,17 @@ export async function PUT(req: Request) {
         console.error("password update error:", passwordError);
         return NextResponse.json(
           { error: passwordError.message },
-          { status: 500 }
+          { status: 500 },
         );
       }
+      // Save current_password to profiles
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          current_password: password,
+          password_updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
     }
 
     return NextResponse.json({ ok: true });
@@ -275,7 +309,7 @@ export async function DELETE(req: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json(
       { error: "Server credentials not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -313,7 +347,7 @@ export async function DELETE(req: Request) {
     console.error("Error deleting guru:", err);
     return NextResponse.json(
       { error: err.message || "Failed to delete guru" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

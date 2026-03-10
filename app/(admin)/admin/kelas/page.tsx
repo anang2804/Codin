@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Edit, Trash2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import {
   useKelas,
@@ -61,7 +61,7 @@ export default function AdminKelasPage() {
     } catch (error: any) {
       toast.error(
         error.message ||
-          `Gagal ${isEditing ? "mengupdate" : "menambahkan"} kelas`
+          `Gagal ${isEditing ? "mengupdate" : "menambahkan"} kelas`,
       );
     }
   };
@@ -98,7 +98,7 @@ export default function AdminKelasPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Kelola Kelas</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Kelola Kelas</h1>
         <Button
           onClick={openAddForm}
           className="bg-green-600 hover:bg-green-700 gap-2"
@@ -109,30 +109,37 @@ export default function AdminKelasPage() {
       </div>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 shadow-md p-8">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-gray-900">
               {isEditing ? "Edit Kelas" : "Tambah Kelas"}
             </DialogTitle>
+            <p className="text-sm text-gray-500">
+              {isEditing
+                ? "Perbarui nama kelas yang sudah ada."
+                : "Isi nama kelas yang ingin ditambahkan."}
+            </p>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5 mt-1">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nama Kelas
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Nama Kelas <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
-                placeholder="Contoh: X-A, XI IPA 1, XII IPS 2"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
-                className="border-green-200"
+                className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
               />
             </div>
-            <div className="flex gap-3">
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
+            <div className="flex gap-3 pt-1">
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 px-6 rounded-lg transition"
+              >
                 {isEditing ? "Update" : "Simpan"}
               </Button>
               <Button
@@ -142,7 +149,7 @@ export default function AdminKelasPage() {
                   setIsEditing(false);
                 }}
                 variant="outline"
-                className="border-green-200"
+                className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"
               >
                 Batal
               </Button>
@@ -157,48 +164,49 @@ export default function AdminKelasPage() {
           <p className="text-gray-600">Memuat kelas...</p>
         </div>
       ) : !kelas || kelas.length === 0 ? (
-        <Card className="p-12 text-center border-green-100">
-          <Users size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">
+        <Card className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
+          <GraduationCap size={48} className="mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500">
             Belum ada kelas. Tambahkan kelas baru untuk memulai.
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {kelas.map((k) => (
             <Card
               key={k.id}
-              className="p-6 border-green-100 hover:shadow-md transition-shadow"
+              className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
             >
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {k.name}
-                  </h3>
-                  <div className="flex gap-4 text-sm text-gray-500">
-                    <span>
+              <div className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                    <GraduationCap size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {k.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
                       Dibuat:{" "}
                       {new Date(k.created_at).toLocaleDateString("id-ID")}
-                    </span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
+                <div className="flex gap-1">
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
                     onClick={() => openEditForm(k)}
-                    className="border-yellow-400 text-yellow-600 hover:bg-yellow-50 bg-transparent"
+                    title="Edit"
                   >
                     <Edit size={16} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  </button>
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
                     onClick={() => handleDeleteKelas(k.id)}
-                    className="border-red-400 text-red-600 hover:bg-red-50 bg-transparent"
+                    title="Hapus"
                   >
                     <Trash2 size={16} />
-                  </Button>
+                  </button>
                 </div>
               </div>
             </Card>

@@ -23,6 +23,14 @@ import {
   FileSpreadsheet,
   AlertCircle,
   User,
+  Lock,
+  Phone,
+  MapPin,
+  RefreshCw,
+  FileText,
+  CheckCircle2,
+  FileUp,
+  X as XIcon,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -40,6 +48,8 @@ interface Guru {
   id: string;
   email: string;
   full_name: string;
+  no_telepon?: string;
+  alamat?: string;
   created_at: string;
 }
 
@@ -64,12 +74,14 @@ export default function AdminGuruPage() {
     password: string;
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showAddPassword, setShowAddPassword] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Bulk upload state
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelData, setExcelData] = useState<any[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [uploadResults, setUploadResults] = useState<{
     success: number;
     failed: number;
@@ -133,7 +145,7 @@ export default function AdminGuruPage() {
           (opts.id && p.id === opts.id) ||
           (p.email &&
             normalizeEmail(p.email) === e &&
-            (p.temporaryPassword || "").length > 0)
+            (p.temporaryPassword || "").length > 0),
       )
     )
       return true;
@@ -218,7 +230,7 @@ export default function AdminGuruPage() {
       try {
         localStorage.setItem(
           "admin_created_accounts_guru",
-          JSON.stringify(createdAccounts)
+          JSON.stringify(createdAccounts),
         );
       } catch (e) {
         console.warn("Failed to save created accounts", e);
@@ -239,8 +251,8 @@ export default function AdminGuruPage() {
         guru.filter(
           (g) =>
             g.full_name?.toLowerCase().includes(term) ||
-            g.email?.toLowerCase().includes(term)
-        )
+            g.email?.toLowerCase().includes(term),
+        ),
       );
     }
   }, [searchTerm, guru]);
@@ -260,7 +272,7 @@ export default function AdminGuruPage() {
           },
           body: JSON.stringify({ userIds }),
           cache: "no-store",
-        }
+        },
       );
       if (res.ok) {
         const json = await res.json();
@@ -402,6 +414,18 @@ export default function AdminGuruPage() {
     reader.readAsBinaryString(file);
   };
 
+  // Handle template download
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Nama", "Email", "Password", "No Telepon"],
+      ["Contoh Guru", "guru@sekolah.com", "password123", "08123456789"],
+    ]);
+    ws["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Guru");
+    XLSX.writeFile(wb, "template_import_guru.xlsx");
+  };
+
   // Handle bulk create from Excel
   const handleBulkCreate = async () => {
     if (excelData.length === 0) {
@@ -418,7 +442,12 @@ export default function AdminGuruPage() {
       errors: [] as string[],
     };
 
-    const newAccounts = [];
+    const newAccounts: Array<{
+      id: string;
+      full_name: string;
+      email: string;
+      temporaryPassword: string;
+    }> = [];
 
     for (let i = 0; i < excelData.length; i++) {
       const row = excelData[i];
@@ -427,7 +456,7 @@ export default function AdminGuruPage() {
       if (!row.full_name || !row.email || !row.password) {
         results.failed++;
         results.errors.push(
-          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, dan Password harus diisi)`
+          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, dan Password harus diisi)`,
         );
         continue;
       }
@@ -451,11 +480,11 @@ export default function AdminGuruPage() {
           results.failed++;
           if (data.error === "email_exists") {
             results.errors.push(
-              `Baris ${row.rowNum}: Email ${row.email} sudah terdaftar`
+              `Baris ${row.rowNum}: Email ${row.email} sudah terdaftar`,
             );
           } else {
             results.errors.push(
-              `Baris ${row.rowNum}: ${data.error || "Gagal menambahkan"}`
+              `Baris ${row.rowNum}: ${data.error || "Gagal menambahkan"}`,
             );
           }
           continue;
@@ -471,7 +500,7 @@ export default function AdminGuruPage() {
       } catch (err: any) {
         results.failed++;
         results.errors.push(
-          `Baris ${row.rowNum}: ${err.message || "Terjadi kesalahan"}`
+          `Baris ${row.rowNum}: ${err.message || "Terjadi kesalahan"}`,
         );
       }
     }
@@ -481,7 +510,7 @@ export default function AdminGuruPage() {
         const next = [...newAccounts, ...prev];
         localStorage.setItem(
           "admin_created_accounts_guru",
-          JSON.stringify(next)
+          JSON.stringify(next),
         );
         return next;
       });
@@ -546,7 +575,7 @@ export default function AdminGuruPage() {
         const next = [newEntry, ...prev];
         localStorage.setItem(
           "admin_created_accounts_guru",
-          JSON.stringify(next)
+          JSON.stringify(next),
         );
         return next;
       });
@@ -576,11 +605,24 @@ export default function AdminGuruPage() {
 
   async function saveEdit() {
     if (!editingId) return;
+
+    // Client-side validation
+    if (
+      editForm.password &&
+      editForm.password.trim().length > 0 &&
+      editForm.password.trim().length < 6
+    ) {
+      toast.error("Password baru minimal 6 karakter");
+      return;
+    }
+
     setSaving(true);
     try {
       const updateData: any = {
         id: editingId,
         full_name: editForm.full_name,
+        no_telepon: editForm.no_telepon ?? null,
+        alamat: editForm.alamat ?? null,
       };
 
       // Only include password if it's been provided
@@ -588,11 +630,14 @@ export default function AdminGuruPage() {
         updateData.password = editForm.password;
       }
 
-      const response = await fetch("/api/admin/guru", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
+      const [response] = await Promise.all([
+        fetch("/api/admin/guru", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        }),
+        new Promise((res) => setTimeout(res, 700)), // minimum loading duration
+      ]);
       const json = await response.json();
       if (!response.ok) {
         throw new Error(json.error || "Failed to update guru");
@@ -653,7 +698,7 @@ export default function AdminGuruPage() {
       email: string;
       temporaryPassword?: string;
     }>,
-    title?: string
+    title?: string,
   ) => {
     const escapeHtml = (unsafe: string) => {
       return unsafe
@@ -667,8 +712,8 @@ export default function AdminGuruPage() {
       .map(
         (i) =>
           `<tr><td>${escapeHtml(i.full_name)}</td><td>${escapeHtml(
-            i.email
-          )}</td><td>${escapeHtml(i.temporaryPassword || "")}</td></tr>`
+            i.email,
+          )}</td><td>${escapeHtml(i.temporaryPassword || "")}</td></tr>`,
       )
       .join("");
     const pdfTitle = title || `Daftar Akun Guru`;
@@ -697,7 +742,7 @@ export default function AdminGuruPage() {
     const w = window.open("", "_blank");
     if (!w) {
       toast.error(
-        "Tidak bisa membuka jendela baru. Izinkan pop-up lalu coba lagi."
+        "Tidak bisa membuka jendela baru. Izinkan pop-up lalu coba lagi.",
       );
       return;
     }
@@ -778,15 +823,13 @@ export default function AdminGuruPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl font-semibold text-gray-900">
             Kelola Guru & Akun
           </h1>
-          <p className="text-gray-600 mt-1">
-            Total <strong className="text-green-600">{guru.length}</strong> guru
-            terdaftar
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            💡 Kelola profil guru dan manajemen password akun
+          <p className="text-sm text-gray-500 mt-1">
+            Total{" "}
+            <span className="font-semibold text-green-600">{guru.length}</span>{" "}
+            guru terdaftar
           </p>
         </div>
         <div className="flex gap-2">
@@ -801,18 +844,18 @@ export default function AdminGuruPage() {
       </div>
 
       {/* Search Bar */}
-      <Card className="p-4 mb-6">
+      <Card className="p-4 mb-6 bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="relative">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={20}
+            size={18}
           />
           <Input
             type="text"
             placeholder="Cari guru berdasarkan nama, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
           />
         </div>
       </Card>
@@ -823,90 +866,262 @@ export default function AdminGuruPage() {
           <p className="text-gray-600">Memuat data guru...</p>
         </div>
       ) : filteredGuru.length === 0 ? (
-        <Card className="p-12 text-center border-green-100">
-          <Users size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">
+        <Card className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
+          <Users size={48} className="mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500">
             {searchTerm
               ? "Tidak ada guru yang cocok dengan pencarian"
               : "Belum ada guru terdaftar"}
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {filteredGuru.map((g) => (
-            <Card key={g.id} className="p-6 border-green-100">
+            <Card
+              key={g.id}
+              className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+            >
               {editingId === g.id ? (
                 // Edit Mode
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {/* Edit Header */}
+                  <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                      {g.full_name ? g.full_name.charAt(0).toUpperCase() : "G"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {g.full_name}
+                      </p>
+                      <p className="text-[11px] text-gray-400 truncate">
+                        {g.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={cancelEdit}
+                      disabled={saving}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150 flex-shrink-0"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+
+                  {/* Fields grid */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                    {/* Nama Lengkap */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
                         Nama Lengkap
                       </label>
-                      <Input
-                        value={editForm.full_name || ""}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            full_name: e.target.value,
-                          })
-                        }
-                        placeholder="Nama lengkap"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email (tidak bisa diubah)
-                      </label>
-                      <Input value={g.email} disabled className="bg-gray-100" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Password Baru (opsional)
-                      </label>
-                      <div className="flex gap-2">
+                      <div className="relative">
+                        <User
+                          size={12}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
                         <Input
-                          type={showEditPassword ? "text" : "password"}
-                          value={editForm.password || ""}
+                          value={editForm.full_name || ""}
                           onChange={(e) =>
                             setEditForm({
                               ...editForm,
-                              password: e.target.value,
+                              full_name: e.target.value,
                             })
                           }
-                          placeholder="Kosongkan jika tidak ingin mengubah"
+                          placeholder="Nama lengkap"
+                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setShowEditPassword(!showEditPassword)}
-                        >
-                          {showEditPassword ? (
-                            <EyeOff size={16} />
-                          ) : (
-                            <Eye size={16} />
-                          )}
-                        </Button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Minimal 6 karakter. Kosongkan jika tidak ingin mengubah
-                        password.
-                      </p>
+                    </div>
+                    {/* Email */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        Email
+                      </label>
+                      <div className="relative">
+                        <Mail
+                          size={12}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
+                        <Input
+                          value={g.email}
+                          disabled
+                          className="h-8 text-sm pl-7 bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                    {/* No. Telepon */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        No. Telepon
+                      </label>
+                      <div className="relative">
+                        <Phone
+                          size={12}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
+                        <Input
+                          value={editForm.no_telepon || ""}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              no_telepon: e.target.value,
+                            })
+                          }
+                          placeholder="08xxxxxxxxxx"
+                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                        />
+                      </div>
+                    </div>
+                    {/* Placeholder col to keep grid balanced */}
+                    <div />
+                    {/* Alamat — full width */}
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        Alamat
+                      </label>
+                      <div className="relative">
+                        <MapPin
+                          size={12}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
+                        <Input
+                          value={editForm.alamat || ""}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, alamat: e.target.value })
+                          }
+                          placeholder="Alamat lengkap"
+                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                        />
+                      </div>
+                    </div>
+                    {/* Password row — current pw left, new pw right */}
+                    <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
+                      {/* Current password display */}
+                      {(() => {
+                        const currentPw = userPasswords.get(g.id)?.password;
+                        const tempPw = getTemporaryPassword({
+                          id: g.id,
+                          email: g.email,
+                        });
+                        const displayPw = currentPw || tempPw;
+                        return (
+                          <div>
+                            <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                              Password Saat Ini
+                            </label>
+                            <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-100 bg-gray-50">
+                              <Key
+                                size={11}
+                                className="text-gray-400 flex-shrink-0"
+                              />
+                              {displayPw ? (
+                                <code className="text-xs font-mono text-gray-700 flex-1 truncate">
+                                  {displayPw}
+                                </code>
+                              ) : (
+                                <span className="text-[11px] text-gray-400 italic flex-1">
+                                  Belum tersimpan
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => getUserPassword(g.id)}
+                                className="text-gray-400 hover:text-green-600 transition flex-shrink-0"
+                                title="Refresh"
+                              >
+                                <RefreshCw size={10} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {/* New password input */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Password Baru{" "}
+                          <span className="text-gray-400 font-normal">
+                            (opsional)
+                          </span>
+                        </label>
+                        <div className="relative">
+                          <Lock
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                          />
+                          <Input
+                            type={showEditPassword ? "text" : "password"}
+                            value={editForm.password || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                password: e.target.value,
+                              })
+                            }
+                            placeholder="Min. 6 karakter"
+                            className="h-8 text-sm pl-7 pr-8 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowEditPassword(!showEditPassword)
+                            }
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                          >
+                            {showEditPassword ? (
+                              <EyeOff size={12} />
+                            ) : (
+                              <Eye size={12} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={cancelEdit}>
-                      <X size={16} className="mr-2" />
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                    <Button
+                      variant="outline"
+                      onClick={cancelEdit}
+                      disabled={saving}
+                      className="h-8 text-sm px-3 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg"
+                    >
                       Batal
                     </Button>
                     <Button
                       onClick={saveEdit}
                       disabled={saving}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="h-8 text-sm px-4 bg-green-600 hover:bg-green-700 rounded-lg min-w-[90px] transition"
                     >
-                      <Save size={16} className="mr-2" />
-                      {saving ? "Menyimpan..." : "Simpan"}
+                      {saving ? (
+                        <span className="flex items-center gap-1.5">
+                          <svg
+                            className="animate-spin h-3.5 w-3.5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                          </svg>
+                          Menyimpan...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <Save size={13} />
+                          Simpan
+                        </span>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -914,39 +1129,42 @@ export default function AdminGuruPage() {
                 // View Mode
                 <div>
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {g.full_name}
-                      </h3>
-                      <div className="flex flex-col gap-2 mt-3 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Mail size={16} />
-                          {g.email}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar size={16} />
-                          Terdaftar:{" "}
-                          {new Date(g.created_at).toLocaleDateString("id-ID")}
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 text-sm font-semibold">
+                        {(g.full_name || g.email || "?")[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {g.full_name}
+                        </h3>
+                        <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <Mail size={13} />
+                            {g.email}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={13} />
+                            Terdaftar:{" "}
+                            {new Date(g.created_at).toLocaleDateString("id-ID")}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                    <div className="flex gap-1">
+                      <button
+                        className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
                         onClick={() => startEdit(g)}
-                        className="border-yellow-400 text-yellow-600 hover:bg-yellow-50"
+                        title="Edit"
                       >
-                        <Edit size={14} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                        <Edit size={15} />
+                      </button>
+                      <button
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
                         onClick={() => handleDelete(g.id, g.full_name)}
-                        className="border-red-400 text-red-600 hover:bg-red-50"
+                        title="Hapus"
                       >
-                        <Trash2 size={14} />
-                      </Button>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
 
@@ -966,10 +1184,10 @@ export default function AdminGuruPage() {
                         currentPassword.password !== tempPassword);
 
                     return (
-                      <div className="border-t mt-4 pt-3">
+                      <div className="border-t border-gray-100 mt-4 pt-3">
                         <div className="flex items-center gap-2 mb-2">
-                          <Key size={14} className="text-gray-500" />
-                          <span className="text-xs font-medium text-gray-700">
+                          <Key size={13} className="text-gray-400" />
+                          <span className="text-xs font-medium text-gray-500">
                             Manajemen Password
                           </span>
                         </div>
@@ -989,7 +1207,7 @@ export default function AdminGuruPage() {
                               <p className="text-xs text-gray-500 mb-1">
                                 {currentPassword &&
                                 currentPassword.password !== tempPassword
-                                  ? "Password Terbaru (Diganti User)"
+                                  ? "Password Terbaru"
                                   : "Password dari Database"}
                               </p>
                               {currentPassword ? (
@@ -1000,7 +1218,7 @@ export default function AdminGuruPage() {
                                   {currentPassword.updatedAt && (
                                     <span className="text-xs text-gray-500">
                                       {new Date(
-                                        currentPassword.updatedAt
+                                        currentPassword.updatedAt,
                                       ).toLocaleString("id-ID", {
                                         dateStyle: "short",
                                         timeStyle: "short",
@@ -1060,32 +1278,43 @@ export default function AdminGuruPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-xl border border-gray-100">
           <DialogHeader>
-            <DialogTitle>Tambah Guru Baru</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Tambah Guru Baru
+            </DialogTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Tambahkan akun guru untuk mengakses sistem pembelajaran.
+            </p>
           </DialogHeader>
 
           {/* Mode Selection */}
           {!createdAccount && !uploadResults && (
-            <div className="flex gap-2 mb-4 p-2 bg-gray-50 rounded-lg">
-              <Button
+            <div className="flex gap-1 mb-4 p-1 bg-gray-100 rounded-lg">
+              <button
                 type="button"
-                variant={addMode === "single" ? "default" : "outline"}
                 onClick={() => setAddMode("single")}
-                className="flex-1"
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  addMode === "single"
+                    ? "bg-green-600 text-white shadow-sm"
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                }`}
               >
-                <User size={16} className="mr-2" />
+                <User size={15} />
                 Tambah Satuan
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant={addMode === "bulk" ? "default" : "outline"}
                 onClick={() => setAddMode("bulk")}
-                className="flex-1"
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  addMode === "bulk"
+                    ? "bg-green-600 text-white shadow-sm"
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                }`}
               >
-                <FileSpreadsheet size={16} className="mr-2" />
+                <FileSpreadsheet size={15} />
                 Upload Excel
-              </Button>
+              </button>
             </div>
           )}
 
@@ -1209,58 +1438,93 @@ export default function AdminGuruPage() {
               </Button>
             </div>
           ) : addMode === "single" ? (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Nama Lengkap <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  value={addForm.full_name}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, full_name: e.target.value })
-                  }
-                  placeholder="Nama lengkap guru"
-                />
+                <div className="relative">
+                  <User
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                  <Input
+                    value={addForm.full_name}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, full_name: e.target.value })
+                    }
+                    placeholder="Nama lengkap guru"
+                    className="pl-9 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Email <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  type="email"
-                  value={addForm.email}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, email: e.target.value })
-                  }
-                  placeholder="email@guru.com"
-                />
+                <div className="relative">
+                  <Mail
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                  <Input
+                    type="email"
+                    value={addForm.email}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, email: e.target.value })
+                    }
+                    placeholder="email@guru.com"
+                    className="pl-9 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  type="password"
-                  value={addForm.password}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, password: e.target.value })
-                  }
-                  placeholder="Password untuk guru"
-                />
+                <div className="relative">
+                  <Lock
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                  <Input
+                    type={showAddPassword ? "text" : "password"}
+                    value={addForm.password}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, password: e.target.value })
+                    }
+                    placeholder="Password untuk guru"
+                    className="pl-9 pr-10 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPassword(!showAddPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showAddPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   No. Telepon
                 </label>
-                <Input
-                  value={addForm.no_telepon}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, no_telepon: e.target.value })
-                  }
-                  placeholder="08xxxxxxxxxx"
-                />
+                <div className="relative">
+                  <Phone
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                  <Input
+                    value={addForm.no_telepon}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, no_telepon: e.target.value })
+                    }
+                    placeholder="08xxxxxxxxxx"
+                    className="pl-9 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-1">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1272,14 +1536,14 @@ export default function AdminGuruPage() {
                       no_telepon: "",
                     });
                   }}
-                  className="flex-1"
+                  className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
                   Batal
                 </Button>
                 <Button
                   onClick={handleAddGuru}
                   disabled={isSubmitting}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
                 >
                   {isSubmitting ? "Menambahkan..." : "Tambah Guru"}
                 </Button>
@@ -1287,120 +1551,236 @@ export default function AdminGuruPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Template Info */}
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle
-                    size={20}
-                    className="text-blue-600 flex-shrink-0 mt-0.5"
-                  />
-                  <div className="text-sm">
-                    <p className="font-medium text-blue-900 mb-2">
-                      Format File Excel:
-                    </p>
-                    <p className="text-blue-800 mb-2">
-                      File harus memiliki kolom berikut (header di baris
-                      pertama):
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 text-blue-700">
-                      <li>
-                        <strong>Nama</strong> - Nama lengkap guru (wajib)
-                      </li>
-                      <li>
-                        <strong>Email</strong> atau <strong>Akun</strong> -
-                        Alamat email (wajib)
-                      </li>
-                      <li>
-                        <strong>Password</strong> - Password akun (wajib)
-                      </li>
-                      <li>
-                        <strong>No Telepon</strong> atau{" "}
-                        <strong>Telepon</strong> - Nomor telepon (opsional)
-                      </li>
-                    </ul>
-                    <p className="text-xs text-blue-600 mt-2">
-                      💡 Tips: Gunakan format .xlsx atau .xls
-                    </p>
+              {/* Template Info + Download */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <FileText size={15} className="text-blue-600" />
+                    </div>
+                    <div className="text-sm">
+                      <p className="font-semibold text-blue-900 mb-1.5">
+                        Format File Excel
+                      </p>
+                      <div className="grid grid-cols-1 gap-1">
+                        {[
+                          {
+                            col: "Nama",
+                            note: "Nama lengkap guru",
+                            required: true,
+                          },
+                          {
+                            col: "Email / Akun",
+                            note: "Alamat email",
+                            required: true,
+                          },
+                          {
+                            col: "Password",
+                            note: "Password akun",
+                            required: true,
+                          },
+                          {
+                            col: "No Telepon",
+                            note: "Nomor telepon",
+                            required: false,
+                          },
+                        ].map((item) => (
+                          <div
+                            key={item.col}
+                            className="flex items-center gap-1.5 text-xs"
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                item.required ? "bg-blue-500" : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="font-medium text-blue-800">
+                              {item.col}
+                            </span>
+                            <span className="text-blue-600">— {item.note}</span>
+                            {item.required ? (
+                              <span className="text-red-400 text-[10px] font-medium">
+                                wajib
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-[10px]">
+                                opsional
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-150 flex-shrink-0 shadow-sm"
+                  >
+                    <Download size={12} />
+                    Template
+                  </button>
                 </div>
               </div>
 
-              {/* File Upload */}
+              {/* File Upload Dropzone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload File Excel <span className="text-red-500">*</span>
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleExcelUpload}
-                    className="hidden"
-                    id="excel-upload-guru"
-                  />
-                  <label htmlFor="excel-upload-guru" className="cursor-pointer">
-                    <Upload size={32} className="mx-auto text-gray-400 mb-2" />
-                    {excelFile ? (
-                      <div>
-                        <p className="text-sm font-medium text-green-600">
-                          {excelFile.name}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelUpload}
+                  className="hidden"
+                  id="excel-upload-guru"
+                />
+                {excelFile ? (
+                  /* File selected — preview card */
+                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl animate-in fade-in duration-200">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <FileSpreadsheet size={18} className="text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-green-800 truncate">
+                        {excelFile.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <CheckCircle2 size={12} className="text-green-500" />
+                        <p className="text-xs text-green-600">
+                          {excelData.length} baris data siap diupload
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {excelData.length} data terbaca
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">
-                          Klik untuk upload file
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          atau drag & drop file disini
+                        <span className="text-green-300">·</span>
+                        <p className="text-xs text-green-500">
+                          {(excelFile.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
-                    )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExcelFile(null);
+                        setExcelData([]);
+                      }}
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150"
+                    >
+                      <XIcon size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  /* Empty dropzone */
+                  <label
+                    htmlFor="excel-upload-guru"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(true);
+                    }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(false);
+                      const file = e.dataTransfer.files[0];
+                      if (file)
+                        handleExcelUpload({
+                          target: { files: e.dataTransfer.files },
+                        } as any);
+                    }}
+                    className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all duration-200 ${
+                      isDragOver
+                        ? "border-green-400 bg-green-50 scale-[1.01]"
+                        : "border-gray-200 bg-gray-50 hover:border-green-300 hover:bg-green-50/50"
+                    }`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                        isDragOver
+                          ? "bg-green-100"
+                          : "bg-white border border-gray-200"
+                      }`}
+                    >
+                      <FileUp
+                        size={22}
+                        className={
+                          isDragOver ? "text-green-600" : "text-gray-400"
+                        }
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p
+                        className={`text-sm font-medium transition-colors ${
+                          isDragOver ? "text-green-700" : "text-gray-700"
+                        }`}
+                      >
+                        {isDragOver
+                          ? "Lepaskan file di sini"
+                          : "Klik atau drag & drop file Excel"}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        .xlsx atau .xls · Maks 10 MB
+                      </p>
+                    </div>
                   </label>
-                </div>
+                )}
               </div>
 
-              {/* Preview Data */}
+              {/* Preview Table */}
               {excelData.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Preview Data ({excelData.length} baris):
-                  </p>
-                  <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                <div className="animate-in fade-in slide-in-from-bottom-1 duration-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      Preview Data
+                    </p>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {excelData.length} baris
+                    </span>
+                  </div>
+                  <div className="border border-gray-100 rounded-xl overflow-hidden max-h-52 overflow-y-auto shadow-sm">
                     <table className="w-full text-xs">
-                      <thead className="bg-gray-50 sticky top-0">
+                      <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
                         <tr>
-                          <th className="px-2 py-2 text-left">No</th>
-                          <th className="px-2 py-2 text-left">Nama</th>
-                          <th className="px-2 py-2 text-left">Email</th>
-                          <th className="px-2 py-2 text-left">Password</th>
-                          <th className="px-2 py-2 text-left">Telepon</th>
+                          {["#", "Nama", "Email", "Password", "Telepon"].map(
+                            (h) => (
+                              <th
+                                key={h}
+                                className="px-3 py-2 text-left font-medium text-gray-500"
+                              >
+                                {h}
+                              </th>
+                            ),
+                          )}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-50">
                         {excelData.slice(0, 10).map((row, idx) => (
-                          <tr key={idx} className="border-t">
-                            <td className="px-2 py-2">{idx + 1}</td>
-                            <td className="px-2 py-2">
-                              {row.full_name || "-"}
+                          <tr
+                            key={idx}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-3 py-2 text-gray-400">
+                              {idx + 1}
                             </td>
-                            <td className="px-2 py-2">{row.email || "-"}</td>
-                            <td className="px-2 py-2">
-                              {row.password ? "••••••" : "-"}
+                            <td className="px-3 py-2 font-medium text-gray-700">
+                              {row.full_name || "—"}
                             </td>
-                            <td className="px-2 py-2">
-                              {row.no_telepon || "-"}
+                            <td className="px-3 py-2 text-gray-500">
+                              {row.email || "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              {row.password ? (
+                                <span className="text-gray-400 tracking-widest">
+                                  ••••••
+                                </span>
+                              ) : (
+                                <span className="text-red-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-gray-500">
+                              {row.no_telepon || "—"}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                     {excelData.length > 10 && (
-                      <p className="text-xs text-gray-500 text-center py-2 bg-gray-50">
-                        ... dan {excelData.length - 10} baris lainnya
+                      <p className="text-xs text-gray-400 text-center py-2 bg-gray-50 border-t border-gray-100">
+                        +{excelData.length - 10} baris lainnya tidak ditampilkan
                       </p>
                     )}
                   </div>
@@ -1409,21 +1789,26 @@ export default function AdminGuruPage() {
 
               {/* Progress Bar */}
               {isSubmitting && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Mengupload data... {uploadProgress}%
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div className="animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-gray-600">
+                      Mengupload data...
+                    </p>
+                    <p className="text-xs font-semibold text-green-600">
+                      {uploadProgress}%
+                    </p>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-green-600 h-2.5 rounded-full transition-all"
+                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
-                    ></div>
+                    />
                   </div>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-1">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1431,7 +1816,7 @@ export default function AdminGuruPage() {
                     setExcelData([]);
                     setExcelFile(null);
                   }}
-                  className="flex-1"
+                  className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"
                   disabled={isSubmitting}
                 >
                   Batal
@@ -1439,14 +1824,38 @@ export default function AdminGuruPage() {
                 <Button
                   onClick={handleBulkCreate}
                   disabled={isSubmitting || excelData.length === 0}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
                 >
                   {isSubmitting ? (
-                    <>Mengupload... {uploadProgress}%</>
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                      Mengupload... {uploadProgress}%
+                    </span>
                   ) : (
                     <>
-                      <Upload size={16} className="mr-2" />
-                      Upload {excelData.length} Guru
+                      <Upload size={15} className="mr-1.5" />
+                      Upload{" "}
+                      {excelData.length > 0
+                        ? `${excelData.length} Guru`
+                        : "Guru"}
                     </>
                   )}
                 </Button>

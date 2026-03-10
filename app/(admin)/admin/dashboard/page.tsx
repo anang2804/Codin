@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -66,26 +66,28 @@ export default function AdminDashboard() {
       label: "Total Guru",
       value: stats.totalGuru,
       icon: Users,
-      color: "bg-blue-100 text-blue-600",
+      color: "bg-green-100 text-green-600",
     },
     {
       label: "Total Kelas",
       value: stats.totalKelas,
       icon: Layers,
-      color: "bg-purple-100 text-purple-600",
+      color: "bg-green-100 text-green-600",
     },
     {
       label: "Total Mapel",
       value: stats.totalMapel,
       icon: BookOpen,
-      color: "bg-yellow-100 text-yellow-600",
+      color: "bg-green-100 text-green-600",
     },
   ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Admin</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Dashboard Admin
+        </h1>
       </div>
 
       {loading ? (
@@ -95,18 +97,21 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((stat) => {
               const Icon = stat.icon;
               return (
-                <Card key={stat.label} className="p-6 border-green-100">
+                <Card
+                  key={stat.label}
+                  className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+                >
                   <div
-                    className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center mb-4`}
+                    className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-4`}
                   >
                     <Icon size={24} />
                   </div>
-                  <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900">
                     {stat.value}
                   </p>
                 </Card>

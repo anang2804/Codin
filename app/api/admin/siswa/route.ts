@@ -12,7 +12,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const getAdminClient = () => {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error(
-      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for admin siswa API"
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for admin siswa API",
     );
     return null;
   }
@@ -22,7 +22,7 @@ const getAdminClient = () => {
   console.log("  URL:", SUPABASE_URL);
   console.log(
     "  Service Role Key (first 20 chars):",
-    SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "..."
+    SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "...",
   );
   console.log("  Service Role Key length:", SUPABASE_SERVICE_ROLE_KEY?.length);
 
@@ -61,7 +61,7 @@ if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
   });
 } else {
   console.warn(
-    "SMTP not configured. Will create an Ethereal test account for email previews in development. To send real emails, set SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS in env."
+    "SMTP not configured. Will create an Ethereal test account for email previews in development. To send real emails, set SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS in env.",
   );
 }
 
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json(
       { error: "Server credentials not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
         console.error("Supabase createUser exception:", err);
         return NextResponse.json(
           { error: `Failed to create user: ${err.message || "Unknown error"}` },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -208,13 +208,13 @@ export async function POST(req: Request) {
           if (existingProfile?.id) {
             return NextResponse.json(
               { error: "email_exists", id: existingProfile.id },
-              { status: 409 }
+              { status: 409 },
             );
           }
         } catch (e) {
           console.error(
             "profiles lookup after createUser email_exists error:",
-            e
+            e,
           );
         }
         return NextResponse.json({ error: "email_exists" }, { status: 409 });
@@ -227,7 +227,7 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json(
         { error: "Failed to get created user id" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -257,15 +257,24 @@ export async function POST(req: Request) {
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
       return NextResponse.json(
         { error: "Failed to create profile" },
-        { status: 500 }
+        { status: 500 },
       );
       // try to cleanup created user
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
       return NextResponse.json(
         { error: "Failed to create or update profile" },
-        { status: 500 }
+        { status: 500 },
       );
     }
+
+    // Save current_password to profiles (not in Prisma schema, use supabaseAdmin)
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        current_password: generatedPassword,
+        password_updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
 
     // Optionally send email with temporary password. If the client sets sendEmail=false
     // we skip sending and return the generated password in the response so the admin
@@ -291,7 +300,7 @@ export async function POST(req: Request) {
             },
           });
           console.info(
-            "Using Ethereal test account for email preview. Preview URLs will be returned in the API response."
+            "Using Ethereal test account for email preview. Preview URLs will be returned in the API response.",
           );
         }
 
@@ -401,7 +410,7 @@ export async function GET(req: Request) {
         headers: {
           "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
         },
-      }
+      },
     );
   } catch (err) {
     console.error(err);
@@ -414,7 +423,7 @@ export async function PUT(req: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json(
       { error: "Server credentials not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -481,7 +490,7 @@ export async function PUT(req: Request) {
       if (password.length < 6) {
         return NextResponse.json(
           { error: "Password minimal 6 karakter" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       const { error: passwordError } =
@@ -490,9 +499,17 @@ export async function PUT(req: Request) {
         console.error("password update error:", passwordError);
         return NextResponse.json(
           { error: passwordError.message },
-          { status: 500 }
+          { status: 500 },
         );
       }
+      // Save current_password to profiles
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          current_password: password,
+          password_updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
     }
 
     return NextResponse.json({ ok: true });
@@ -507,7 +524,7 @@ export async function DELETE(req: Request) {
   if (!supabaseAdmin) {
     return NextResponse.json(
       { error: "Server credentials not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -542,7 +559,7 @@ export async function DELETE(req: Request) {
       console.error("delete user error:", deleteAuthError);
       return NextResponse.json(
         { error: deleteAuthError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
