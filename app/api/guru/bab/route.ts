@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!materiId) {
       return NextResponse.json(
         { error: "materi_id is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,19 +44,12 @@ export async function GET(request: NextRequest) {
       orderBy: { order_index: "asc" },
     });
 
-    return NextResponse.json(
-      { data: babs },
-      {
-        headers: {
-          "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
-        },
-      }
-    );
+    return NextResponse.json({ data: babs });
   } catch (error) {
-    console.error("Error fetching babs:", error);
+    console.error("Error fetching babs", error);
     return NextResponse.json(
       { error: "Failed to fetch babs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (!materi_id || !title) {
       return NextResponse.json(
         { error: "materi_id and title are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,7 +111,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating bab:", error);
     return NextResponse.json(
       { error: "Failed to create bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -141,7 +134,7 @@ export async function PUT(request: NextRequest) {
     if (!id || !title) {
       return NextResponse.json(
         { error: "id and title are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -174,7 +167,7 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating bab:", error);
     return NextResponse.json(
       { error: "Failed to update bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -218,7 +211,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting bab:", error);
     return NextResponse.json(
       { error: "Failed to delete bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

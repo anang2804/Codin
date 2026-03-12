@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!babId) {
       return NextResponse.json(
         { error: "bab_id is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,19 +40,12 @@ export async function GET(request: NextRequest) {
       orderBy: { order_index: "asc" },
     });
 
-    return NextResponse.json(
-      { data: subBabs },
-      {
-        headers: {
-          "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
-        },
-      }
-    );
+    return NextResponse.json({ data: subBabs });
   } catch (error) {
-    console.error("Error fetching sub_babs:", error);
+    console.error("Error fetching sub_babs", error);
     return NextResponse.json(
       { error: "Failed to fetch sub_babs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -83,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!bab_id || !title || !content_type) {
       return NextResponse.json(
         { error: "bab_id, title, and content_type are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,7 +117,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating sub_bab:", error);
     return NextResponse.json(
       { error: "Failed to create sub_bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -155,7 +148,7 @@ export async function PUT(request: NextRequest) {
     if (!id || !title || !content_type) {
       return NextResponse.json(
         { error: "id, title, and content_type are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -181,7 +174,7 @@ export async function PUT(request: NextRequest) {
         description,
         content: content_type === "text" ? content : null,
         content_type,
-        content_url: content_type !== "text" ? content_url : null,
+        content_url: content_type !== "text" ? content_url || null : null,
         duration: duration || 0,
       },
     });
@@ -191,7 +184,7 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating sub_bab:", error);
     return NextResponse.json(
       { error: "Failed to update sub_bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -239,7 +232,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting sub_bab:", error);
     return NextResponse.json(
       { error: "Failed to delete sub_bab" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
