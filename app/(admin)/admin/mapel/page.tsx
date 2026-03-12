@@ -6,7 +6,21 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Plus, Edit, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  BookOpen,
+  Plus,
+  Edit,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import {
   useMapel,
   useCreateMapel,
@@ -32,6 +46,9 @@ export default function AdminMapelPage() {
     guru_id: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (error) {
     toast({
@@ -95,16 +112,23 @@ export default function AdminMapelPage() {
     setShowForm(true);
   };
 
-  const handleDeleteMapel = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus mata pelajaran ini?"))
-      return;
+  const handleDeleteMapel = (id: string) => {
+    setDeleteTargetId(id);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDeleteMapel = async () => {
+    if (!deleteTargetId) return;
+
+    setIsDeleting(true);
     try {
-      await deleteMapel.mutateAsync(id);
+      await deleteMapel.mutateAsync(deleteTargetId);
       toast({
         title: "Berhasil",
         description: "Mata pelajaran berhasil dihapus",
       });
+      setShowDeleteDialog(false);
+      setDeleteTargetId(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -112,6 +136,8 @@ export default function AdminMapelPage() {
           "Gagal menghapus mata pelajaran. Pastikan tidak ada data terkait.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -247,6 +273,59 @@ export default function AdminMapelPage() {
           </Card>
         </div>
       )}
+
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open);
+          if (!open && !isDeleting) {
+            setDeleteTargetId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <AlertTriangle size={16} />
+              </span>
+              Hapus Mata Pelajaran
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              Apakah Anda yakin ingin menghapus mata pelajaran ini? Tindakan ini
+              tidak dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteTargetId(null);
+              }}
+              disabled={isDeleting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteMapel}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-all duration-150"
+            >
+              {isDeleting ? (
+                <Loader2 size={15} className="mr-2 animate-spin" />
+              ) : (
+                <Trash2 size={15} className="mr-2" />
+              )}
+              Hapus
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {loading ? (
         <div className="text-center py-12">

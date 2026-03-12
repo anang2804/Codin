@@ -19,6 +19,7 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -85,7 +86,7 @@ export default function SiswaProfilePage() {
       setFormData(data);
     } catch (error: any) {
       console.error("Error loading profile:", error);
-      alert("Gagal memuat profil");
+      toast.error("Gagal memuat profil");
     } finally {
       setLoading(false);
     }
@@ -113,7 +114,7 @@ export default function SiswaProfilePage() {
             return { ...k, wali_kelas: waliKelas };
           }
           return k;
-        })
+        }),
       );
 
       setKelasList(kelasWithWali);
@@ -145,10 +146,10 @@ export default function SiswaProfilePage() {
 
       setProfile({ ...profile, ...formData } as Profile);
       setEditMode(false);
-      alert("Profil berhasil diperbarui");
+      toast.success("Profil berhasil diperbarui");
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert("Gagal memperbarui profil");
+      toast.error("Gagal memperbarui profil");
     } finally {
       setSaving(false);
     }
@@ -238,8 +239,12 @@ export default function SiswaProfilePage() {
           </div>
 
           <div className="text-center space-y-1">
-            <h1 className="text-xl font-bold text-slate-800">{profile.full_name}</h1>
-            <p className="text-sm text-slate-400 font-medium">{profile.email}</p>
+            <h1 className="text-xl font-bold text-slate-800">
+              {profile.full_name}
+            </h1>
+            <p className="text-sm text-slate-400 font-medium">
+              {profile.email}
+            </p>
           </div>
 
           <div className="w-full mt-10 p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
@@ -248,8 +253,12 @@ export default function SiswaProfilePage() {
                 <School size={16} />
               </div>
               <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Unit Kelas</p>
-                <p className="text-sm font-bold text-slate-700">{profile.kelas || "Belum dipilih"}</p>
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Unit Kelas
+                </p>
+                <p className="text-sm font-bold text-slate-700">
+                  {profile.kelas || "Belum dipilih"}
+                </p>
               </div>
             </div>
           </div>
@@ -272,20 +281,31 @@ export default function SiswaProfilePage() {
                   <InputMinimal
                     label="No Telepon"
                     value={formData.no_telepon || ""}
-                    onChange={(v) => setFormData({ ...formData, no_telepon: v })}
+                    onChange={(v) =>
+                      setFormData({ ...formData, no_telepon: v })
+                    }
                   />
                   <InputMinimal
                     label="Tanggal Lahir"
                     type="date"
                     value={formData.tanggal_lahir || ""}
-                    onChange={(v) => setFormData({ ...formData, tanggal_lahir: v })}
+                    onChange={(v) =>
+                      setFormData({ ...formData, tanggal_lahir: v })
+                    }
                   />
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Jenis Kelamin</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Jenis Kelamin
+                    </label>
                     <select
                       className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm appearance-none"
                       value={formData.jenis_kelamin || ""}
-                      onChange={(e) => setFormData({ ...formData, jenis_kelamin: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          jenis_kelamin: e.target.value,
+                        })
+                      }
                     >
                       <option value="">Pilih</option>
                       <option value="L">Laki-laki</option>
@@ -293,30 +313,41 @@ export default function SiswaProfilePage() {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Kelas</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    Kelas
+                  </label>
                   <select
                     className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm"
                     value={formData.kelas || ""}
-                    onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, kelas: e.target.value })
+                    }
                   >
                     <option value="">Pilih Kelas</option>
                     {kelasList.map((k) => (
                       <option key={k.id} value={k.name}>
-                        {k.name} {k.wali_kelas?.full_name ? `(${k.wali_kelas.full_name})` : ""}
+                        {k.name}{" "}
+                        {k.wali_kelas?.full_name
+                          ? `(${k.wali_kelas.full_name})`
+                          : ""}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Alamat</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    Alamat
+                  </label>
                   <textarea
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm resize-none"
                     rows={3}
                     value={formData.alamat || ""}
-                    onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, alamat: e.target.value })
+                    }
                   />
                 </div>
 
@@ -330,10 +361,26 @@ export default function SiswaProfilePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10">
-                <ItemStatic label="Tanggal Lahir" value={profile.tanggal_lahir} />
-                <ItemStatic label="Jenis Kelamin" value={profile.jenis_kelamin === "L" ? "Laki-laki" : profile.jenis_kelamin === "P" ? "Perempuan" : "-"} />
+                <ItemStatic
+                  label="Tanggal Lahir"
+                  value={profile.tanggal_lahir}
+                />
+                <ItemStatic
+                  label="Jenis Kelamin"
+                  value={
+                    profile.jenis_kelamin === "L"
+                      ? "Laki-laki"
+                      : profile.jenis_kelamin === "P"
+                        ? "Perempuan"
+                        : "-"
+                  }
+                />
                 <ItemStatic label="No Telepon" value={profile.no_telepon} />
-                <ItemStatic label="Alamat Domisili" value={profile.alamat} fullWidth />
+                <ItemStatic
+                  label="Alamat Domisili"
+                  value={profile.alamat}
+                  fullWidth
+                />
               </div>
             )}
           </div>
@@ -343,7 +390,9 @@ export default function SiswaProfilePage() {
               <div className="p-2 bg-slate-50 text-slate-400 rounded-lg">
                 <Lock size={16} />
               </div>
-              <h4 className="text-sm font-bold text-slate-800 tracking-tight">Pengaturan Keamanan</h4>
+              <h4 className="text-sm font-bold text-slate-800 tracking-tight">
+                Pengaturan Keamanan
+              </h4>
             </div>
 
             {passwordSuccess && (
@@ -357,8 +406,13 @@ export default function SiswaProfilePage() {
                 onClick={() => setShowPasswordForm(true)}
                 className="group w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-emerald-50 transition-all"
               >
-                <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700">Ubah Kata Sandi Akun</span>
-                <ChevronRight size={14} className="text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+                <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700">
+                  Ubah Kata Sandi Akun
+                </span>
+                <ChevronRight
+                  size={14}
+                  className="text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all"
+                />
               </button>
             ) : (
               <form onSubmit={handleChangePassword} className="space-y-4">
@@ -378,7 +432,11 @@ export default function SiswaProfilePage() {
                     className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm font-medium"
                   />
                 </div>
-                {passwordError && <p className="text-[10px] font-bold text-red-500 ml-1">{passwordError}</p>}
+                {passwordError && (
+                  <p className="text-[10px] font-bold text-red-500 ml-1">
+                    {passwordError}
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -390,8 +448,8 @@ export default function SiswaProfilePage() {
                   <button
                     type="button"
                     onClick={() => {
-                        setShowPasswordForm(false);
-                        setPasswordError("");
+                      setShowPasswordForm(false);
+                      setPasswordError("");
                     }}
                     className="px-6 text-slate-400 font-bold text-[10px] uppercase hover:text-slate-600"
                   >
@@ -407,7 +465,15 @@ export default function SiswaProfilePage() {
   );
 }
 
-function ItemStatic({ label, value, fullWidth }: { label: string; value?: string; fullWidth?: boolean }) {
+function ItemStatic({
+  label,
+  value,
+  fullWidth,
+}: {
+  label: string;
+  value?: string;
+  fullWidth?: boolean;
+}) {
   return (
     <div className={`${fullWidth ? "sm:col-span-2" : ""}`}>
       <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1.5 block">
@@ -420,10 +486,22 @@ function ItemStatic({ label, value, fullWidth }: { label: string; value?: string
   );
 }
 
-function InputMinimal({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function InputMinimal({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+        {label}
+      </label>
       <input
         type={type}
         className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium text-slate-700 transition-all text-sm"

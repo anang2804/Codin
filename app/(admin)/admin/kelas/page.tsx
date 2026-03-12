@@ -8,10 +8,19 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2, GraduationCap } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  GraduationCap,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useKelas,
@@ -34,6 +43,9 @@ export default function AdminKelasPage() {
     name: "",
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,14 +78,24 @@ export default function AdminKelasPage() {
     }
   };
 
-  const handleDeleteKelas = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus kelas ini?")) return;
+  const handleDeleteKelas = (id: string) => {
+    setDeleteTargetId(id);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDeleteKelas = async () => {
+    if (!deleteTargetId) return;
+
+    setIsDeleting(true);
     try {
-      await deleteKelas.mutateAsync(id);
+      await deleteKelas.mutateAsync(deleteTargetId);
       toast.success("Kelas berhasil dihapus");
+      setShowDeleteDialog(false);
+      setDeleteTargetId(null);
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus kelas");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -155,6 +177,59 @@ export default function AdminKelasPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open);
+          if (!open && !isDeleting) {
+            setDeleteTargetId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <AlertTriangle size={16} />
+              </span>
+              Hapus Kelas
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              Apakah Anda yakin ingin menghapus kelas ini? Tindakan ini tidak
+              dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteTargetId(null);
+              }}
+              disabled={isDeleting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteKelas}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-all duration-150"
+            >
+              {isDeleting ? (
+                <Loader2 size={15} className="mr-2 animate-spin" />
+              ) : (
+                <Trash2 size={15} className="mr-2" />
+              )}
+              Hapus
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

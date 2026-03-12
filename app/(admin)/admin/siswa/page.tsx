@@ -36,6 +36,7 @@ import * as XLSX from "xlsx";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -123,6 +124,11 @@ export default function AdminSiswaPage() {
     failed: number;
     errors: string[];
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Progress state
   const [showProgressDialog, setShowProgressDialog] = useState(false);
@@ -436,7 +442,6 @@ export default function AdminSiswaPage() {
   };
 
   const clearCreatedAccounts = () => {
-    if (!confirm("Hapus daftar akun baru yang tersimpan?")) return;
     try {
       localStorage.removeItem("admin_created_accounts_siswa");
     } catch (e) {
@@ -622,17 +627,22 @@ export default function AdminSiswaPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Yakin ingin menghapus siswa "${name}"?`)) return;
+    setDeleteTarget({ id, name });
+  }
+
+  async function confirmDeleteSiswa() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
 
     // Optimistic update - langsung hapus dari UI
     const previousSiswa = [...siswa];
     const previousFiltered = [...filteredSiswa];
 
-    setSiswa((prev) => prev.filter((s) => s.id !== id));
-    setFilteredSiswa((prev) => prev.filter((s) => s.id !== id));
+    setSiswa((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+    setFilteredSiswa((prev) => prev.filter((s) => s.id !== deleteTarget.id));
 
     try {
-      const response = await fetch(`/api/admin/siswa?id=${id}`, {
+      const response = await fetch(`/api/admin/siswa?id=${deleteTarget.id}`, {
         method: "DELETE",
       });
 
@@ -646,9 +656,12 @@ export default function AdminSiswaPage() {
       }
 
       toast.success("Siswa berhasil dihapus");
+      setDeleteTarget(null);
     } catch (err: any) {
       console.error("Error deleting siswa:", err);
       toast.error(err.message || "Gagal menghapus siswa");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -2148,6 +2161,48 @@ export default function AdminSiswaPage() {
               <p className="text-gray-600">Tidak ada data progress</p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Hapus Siswa
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              {deleteTarget
+                ? `Yakin ingin menghapus siswa "${deleteTarget.name}"?`
+                : "Yakin ingin menghapus data siswa ini?"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteSiswa}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Menghapus..." : "Hapus"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

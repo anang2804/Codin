@@ -39,6 +39,7 @@ import Link from "next/link";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -87,6 +88,11 @@ export default function AdminGuruPage() {
     failed: number;
     errors: string[];
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -656,17 +662,22 @@ export default function AdminGuruPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Yakin ingin menghapus guru "${name}"?`)) return;
+    setDeleteTarget({ id, name });
+  }
+
+  async function confirmDeleteGuru() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
 
     // Optimistic update - langsung hapus dari UI
     const previousGuru = [...guru];
     const previousFiltered = [...filteredGuru];
 
-    setGuru((prev) => prev.filter((g) => g.id !== id));
-    setFilteredGuru((prev) => prev.filter((g) => g.id !== id));
+    setGuru((prev) => prev.filter((g) => g.id !== deleteTarget.id));
+    setFilteredGuru((prev) => prev.filter((g) => g.id !== deleteTarget.id));
 
     try {
-      const response = await fetch(`/api/admin/guru?id=${id}`, {
+      const response = await fetch(`/api/admin/guru?id=${deleteTarget.id}`, {
         method: "DELETE",
       });
       const json = await response.json();
@@ -679,9 +690,12 @@ export default function AdminGuruPage() {
       }
 
       toast.success("Guru berhasil dihapus");
+      setDeleteTarget(null);
     } catch (err: any) {
       console.error("Error deleting guru:", err);
       toast.error(err.message || "Gagal menghapus guru");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -755,7 +769,6 @@ export default function AdminGuruPage() {
   };
 
   const clearCreatedAccounts = () => {
-    if (!confirm("Hapus daftar akun baru yang tersimpan?")) return;
     try {
       localStorage.removeItem("admin_created_accounts_guru");
     } catch (e) {
@@ -1862,6 +1875,48 @@ export default function AdminGuruPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Hapus Guru
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              {deleteTarget
+                ? `Yakin ingin menghapus guru "${deleteTarget.name}"?`
+                : "Yakin ingin menghapus data guru ini?"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteGuru}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Menghapus..." : "Hapus"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

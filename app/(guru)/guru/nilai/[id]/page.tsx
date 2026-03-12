@@ -9,15 +9,24 @@ import {
   CheckCircle,
   XCircle,
   History,
+  Users,
+  ClipboardCheck,
+  BadgeCheck,
+  AlertCircle,
+  FileBarChart,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type NilaiHistory = {
   id: string;
@@ -49,6 +58,12 @@ export default function GuruNilaiDetailPage({
     siswaName: string;
     attempts: NilaiHistory[];
   }>({ open: false, siswaName: "", attempts: [] });
+  const [resetDialog, setResetDialog] = useState<{
+    open: boolean;
+    siswaId: string;
+    siswaName: string;
+  }>({ open: false, siswaId: "", siswaName: "" });
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -83,6 +98,20 @@ export default function GuruNilaiDetailPage({
         .eq("id", asesmenData.kelas_id)
         .single();
 
+      const { data: mapelData } = asesmenData?.mapel_id
+        ? await supabase
+            .from("mapel")
+            .select("name")
+            .eq("id", asesmenData.mapel_id)
+            .single()
+        : { data: null };
+
+      setAsesmen({
+        ...asesmenData,
+        kelas: kelasData,
+        mapel: mapelData,
+      });
+
       // Fetch all students from this kelas
       const { data: siswaData, error: siswaError } = await supabase
         .from("profiles")
@@ -94,9 +123,6 @@ export default function GuruNilaiDetailPage({
       if (siswaError) {
         console.error("Error fetching siswa:", siswaError);
       }
-
-      console.log("Siswa data:", siswaData);
-
       // For each siswa, get ALL their nilai attempts
       if (siswaData) {
         const siswaWithNilai = await Promise.all(
@@ -108,13 +134,6 @@ export default function GuruNilaiDetailPage({
               .eq("asesmen_id", id)
               .eq("siswa_id", siswa.id)
               .order("completed_at", { ascending: false });
-
-            console.log(
-              `All nilai for ${siswa.full_name}:`,
-              allNilaiData,
-              nilaiError
-            );
-
             const latestNilai = allNilaiData?.[0];
             const attemptCount = allNilaiData?.length || 0;
 
@@ -127,9 +146,8 @@ export default function GuruNilaiDetailPage({
               attempt_count: attemptCount,
               all_attempts: allNilaiData || [],
             };
-          })
+          }),
         );
-        console.log("Siswa with nilai:", siswaWithNilai);
         setNilai(siswaWithNilai);
       } else {
         setNilai([]);
@@ -141,14 +159,14 @@ export default function GuruNilaiDetailPage({
     }
   };
 
-  const handleReset = async (siswaId: string, siswaName: string) => {
-    if (
-      !confirm(
-        `Yakin ingin membuka ulang asesmen untuk ${siswaName}? Nilai lama akan tetap tersimpan, siswa dapat mengerjakan ulang.`
-      )
-    )
-      return;
+  const handleReset = (siswaId: string, siswaName: string) => {
+    setResetDialog({ open: true, siswaId, siswaName });
+  };
 
+  const confirmReset = async () => {
+    if (!resetDialog.siswaId) return;
+
+    setIsResetting(true);
     const supabase = createClient();
     try {
       // Only delete jawaban siswa, keep nilai for history
@@ -156,17 +174,20 @@ export default function GuruNilaiDetailPage({
         .from("jawaban_siswa")
         .delete()
         .eq("asesmen_id", id)
-        .eq("siswa_id", siswaId);
+        .eq("siswa_id", resetDialog.siswaId);
 
       if (jawabanError) throw jawabanError;
 
-      alert(
-        "Berhasil membuka ulang asesmen. Siswa dapat mengerjakan ulang. Nilai lama tetap tersimpan."
+      toast.success(
+        "Berhasil membuka ulang asesmen. Siswa dapat mengerjakan ulang. Nilai lama tetap tersimpan.",
       );
+      setResetDialog({ open: false, siswaId: "", siswaName: "" });
       fetchData();
     } catch (error: any) {
       console.error("Error resetting:", error);
-      alert(`Gagal membuka ulang: ${error.message}`);
+      toast.error(`Gagal membuka ulang: ${error.message}`);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -187,22 +208,78 @@ export default function GuruNilaiDetailPage({
   const averageScore =
     scoreValues.length > 0
       ? Math.round(
-          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length
+          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
         )
       : 0;
 
   const passedCount = nilai.filter(
-    (n) => n.score !== null && n.score >= (asesmen?.passing_score || 70)
+    (n) => n.score !== null && n.score >= (asesmen?.passing_score || 70),
   ).length;
 
   const failedCount = completedCount - passedCount;
 
+  const handleDownloadExcel = () => {
+    if (nilai.length === 0) {
+      toast.info("Belum ada data siswa yang dapat diunduh.");
+      return;
+    }
+
+    try {
+      const rows = nilai.map((n, index) => ({
+        No: index + 1,
+        "Nama Siswa": n.profiles?.full_name || "-",
+        Nilai: n.score ?? "-",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Nilai");
+
+      const kelasName = (asesmen?.kelas?.name || "kelas").replace(/\s+/g, "_");
+      const quizName = (asesmen?.title || "kuis")
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+      const fileName = `nilai_${quizName}_${kelasName}.xlsx`;
+
+      const wbout: ArrayBuffer = XLSX.write(wb, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+
+      // Small delay before cleanup to ensure the click has fired
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 200);
+
+      toast.success("Data nilai berhasil diunduh.");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Gagal mengunduh file. Silakan coba lagi.");
+    }
+  };
+
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4">
         <Link href="/guru/nilai">
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-gray-200 text-gray-600 hover:bg-gray-50"
+          >
             <ArrowLeft size={16} className="mr-2" />
             Kembali
           </Button>
@@ -210,173 +287,229 @@ export default function GuruNilaiDetailPage({
       </div>
 
       {/* Asesmen Info */}
-      <Card className="p-6 mb-6 border-green-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {asesmen?.title}
-        </h1>
-
-        {/* Statistik */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <p className="text-gray-700 font-medium">
-            {completedCount} siswa telah mengerjakan
+      <Card className="border border-gray-100 p-6 shadow-sm">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {asesmen?.title}
+          </h1>
+          <p className="text-sm text-gray-500">
+            <span className="font-medium text-gray-700">
+              {asesmen?.mapel?.name || "-"}
+            </span>
+            <span className="mx-2 text-gray-300">•</span>
+            <span className="font-medium text-gray-700">
+              {asesmen?.kelas?.name || "-"}
+            </span>
           </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-gray-600">Total siswa</p>
-            <p className="text-2xl font-bold text-blue-600">{nilai.length}</p>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <p className="text-sm text-gray-600">Nilai diatas KKM</p>
-            <p className="text-2xl font-bold text-green-600">{passedCount}</p>
-          </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <p className="text-sm text-gray-600">Dibawah KKM</p>
-            <p className="text-2xl font-bold text-red-600">{failedCount}</p>
-          </div>
         </div>
       </Card>
 
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border border-gray-100 bg-gray-50/80 p-4 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+            <Users size={14} />
+            Total Siswa
+          </div>
+          <p className="text-3xl font-semibold text-gray-900">{totalSiswa}</p>
+        </Card>
+
+        <Card className="border border-blue-100 bg-blue-50/70 p-4 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400">
+            <ClipboardCheck size={14} />
+            Sudah Mengerjakan
+          </div>
+          <p className="text-3xl font-semibold text-blue-700">
+            {completedCount}
+          </p>
+        </Card>
+
+        <Card className="border border-green-100 bg-green-50/70 p-4 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-400">
+            <BadgeCheck size={14} />
+            Lulus
+          </div>
+          <p className="text-3xl font-semibold text-green-700">{passedCount}</p>
+        </Card>
+
+        <Card className="border border-red-100 bg-red-50/70 p-4 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-red-400">
+            <AlertCircle size={14} />
+            Belum Lulus
+          </div>
+          <p className="text-3xl font-semibold text-red-700">{failedCount}</p>
+        </Card>
+      </div>
+
       {/* Nilai List */}
-      <Card className="border-green-100">
+      <Card className="border border-gray-100 shadow-sm">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Daftar Nilai Siswa
-          </h2>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FileBarChart size={18} className="text-green-600" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Daftar Nilai Siswa
+              </h2>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleDownloadExcel}
+              className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
+            >
+              <Download size={14} className="mr-1.5" />
+              Download Excel
+            </Button>
+          </div>
           {nilai.length === 0 ? (
-            <p className="text-center text-gray-600 py-8">
-              Belum ada siswa yang mengerjakan.
-            </p>
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                <FileBarChart size={20} />
+              </div>
+              <p className="text-base font-medium text-gray-700">
+                Belum ada siswa yang mengerjakan kuis ini.
+              </p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      No
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      Nama Siswa
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">
-                      Nilai
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">
-                      Waktu Selesai
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {nilai.map((n, index) => {
-                    const hasScore = n.score !== null;
-                    const isPassed =
-                      hasScore && n.score >= (asesmen?.passing_score || 70);
-                    return (
-                      <tr
-                        key={`${n.siswa_id}-${index}`}
-                        className="hover:bg-gray-50"
-                      >
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {n.profiles?.full_name || "Unknown"}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {hasScore ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <span
-                                className={`text-lg font-bold ${
-                                  isPassed ? "text-green-600" : "text-red-600"
-                                }`}
-                              >
-                                {n.score}
-                              </span>
-                              {n.attempt_count > 1 && (
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                  {n.attempt_count}x
+            <div className="space-y-4">
+              {completedCount === 0 && (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                  <p className="font-medium text-gray-700">
+                    Belum ada siswa yang mengerjakan kuis ini.
+                  </p>
+                  <p className="mt-1 text-gray-500">
+                    Nilai akan muncul setelah siswa menyelesaikan kuis.
+                  </p>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50/80">
+                    <tr>
+                      <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
+                        No
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
+                        Nama Siswa
+                      </th>
+                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                        Nilai
+                      </th>
+                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                        Status
+                      </th>
+                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                        Waktu Selesai
+                      </th>
+                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {nilai.map((n, index) => {
+                      const hasScore = n.score !== null;
+                      const isPassed =
+                        hasScore && n.score >= (asesmen?.passing_score || 70);
+                      return (
+                        <tr
+                          key={`${n.siswa_id}-${index}`}
+                          className="transition-colors duration-150 hover:bg-gray-50/80"
+                        >
+                          <td className="px-4 py-4 text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            {n.profiles?.full_name || "Unknown"}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {hasScore ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <span
+                                  className={`text-lg font-semibold ${
+                                    isPassed ? "text-green-700" : "text-red-700"
+                                  }`}
+                                >
+                                  {n.score}
                                 </span>
+                                {n.attempt_count > 1 && (
+                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                                    {n.attempt_count}x
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {hasScore ? (
+                              isPassed ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 ring-1 ring-green-100">
+                                  <CheckCircle size={12} />
+                                  Lulus
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-red-100">
+                                  <XCircle size={12} />
+                                  Tidak Lulus
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
+                                Belum Mengerjakan
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center text-sm text-gray-600">
+                            {n.completed_at
+                              ? new Date(n.completed_at).toLocaleString("id-ID")
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              {hasScore && n.attempt_count > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setHistoryDialog({
+                                      open: true,
+                                      siswaName:
+                                        n.profiles?.full_name || "Unknown",
+                                      attempts: n.all_attempts,
+                                    })
+                                  }
+                                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                >
+                                  <History size={14} className="mr-1" />
+                                  History
+                                </Button>
+                              )}
+                              {hasScore && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleReset(
+                                      n.siswa_id,
+                                      n.profiles?.full_name || "Unknown",
+                                    )
+                                  }
+                                  className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                                >
+                                  <RefreshCw size={14} className="mr-1" />
+                                  Buka Ulang
+                                </Button>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {hasScore ? (
-                            isPassed ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                                <CheckCircle size={14} />
-                                Lulus
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
-                                <XCircle size={14} />
-                                Tidak Lulus
-                              </span>
-                            )
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
-                              Belum Mengerjakan
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">
-                          {n.completed_at
-                            ? new Date(n.completed_at).toLocaleString("id-ID")
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex gap-2 justify-center">
-                            {hasScore && n.attempt_count > 1 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  setHistoryDialog({
-                                    open: true,
-                                    siswaName:
-                                      n.profiles?.full_name || "Unknown",
-                                    attempts: n.all_attempts,
-                                  })
-                                }
-                                className="border-blue-400 text-blue-600 hover:bg-blue-50"
-                              >
-                                <History size={14} className="mr-1" />
-                                History
-                              </Button>
-                            )}
-                            {hasScore && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleReset(
-                                    n.siswa_id,
-                                    n.profiles?.full_name || "Unknown"
-                                  )
-                                }
-                                className="border-orange-400 text-orange-600 hover:bg-orange-50"
-                              >
-                                <RefreshCw size={14} className="mr-1" />
-                                Buka Ulang
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -453,6 +586,44 @@ export default function GuruNilaiDetailPage({
                 })}
               </tbody>
             </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={resetDialog.open}
+        onOpenChange={(open) => setResetDialog((prev) => ({ ...prev, open }))}
+      >
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Buka Ulang Asesmen
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              {`Yakin ingin membuka ulang asesmen untuk ${resetDialog.siswaName}? Nilai lama akan tetap tersimpan, siswa dapat mengerjakan ulang.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setResetDialog({ open: false, siswaId: "", siswaName: "" })
+              }
+              disabled={isResetting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmReset}
+              disabled={isResetting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isResetting ? "Memproses..." : "Ya, Buka Ulang"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

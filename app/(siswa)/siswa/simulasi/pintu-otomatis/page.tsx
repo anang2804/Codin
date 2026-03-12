@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 // --- Konfigurasi Solusi Utama (Kunci Jawaban) ---
 const EXPECTED_SOLUTION = [
@@ -230,7 +231,7 @@ const PintuOtomatisSimulation = () => {
 
   const markAsTried = () => {
     setHasTried(true);
-    alert("Simulasi berhasil ditandai sebagai sudah dicoba! ✅");
+    toast.success("Simulasi berhasil ditandai sebagai sudah dicoba! ✅");
   };
 
   const executeStep = async (index: number): Promise<void> => {

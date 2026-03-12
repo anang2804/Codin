@@ -20,6 +20,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  AlertTriangle,
   ChevronDown,
   ChevronRight,
   GripVertical,
@@ -57,6 +58,17 @@ interface SubBab {
   created_at?: string;
 }
 
+interface DeleteSubBabTarget {
+  id: string;
+  babId: string;
+  title: string;
+}
+
+interface DeleteBabTarget {
+  id: string;
+  title: string;
+}
+
 export default function GuruMateriDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -74,8 +86,14 @@ export default function GuruMateriDetailPage() {
   // Dialog states
   const [showBabDialog, setShowBabDialog] = useState(false);
   const [showSubBabDialog, setShowSubBabDialog] = useState(false);
+  const [showDeleteBabDialog, setShowDeleteBabDialog] = useState(false);
+  const [showDeleteSubBabDialog, setShowDeleteSubBabDialog] = useState(false);
   const [editingBabId, setEditingBabId] = useState<string | null>(null);
   const [editingSubBabId, setEditingSubBabId] = useState<string | null>(null);
+  const [deleteSubBabTarget, setDeleteSubBabTarget] =
+    useState<DeleteSubBabTarget | null>(null);
+  const [deleteBabTarget, setDeleteBabTarget] =
+    useState<DeleteBabTarget | null>(null);
 
   // Form data
   const [babForm, setBabForm] = useState({
@@ -159,21 +177,22 @@ export default function GuruMateriDetailPage() {
     }
   };
 
-  const handleDeleteBab = async (babId: string) => {
-    if (
-      !confirm(
-        "Yakin ingin menghapus bab ini? Semua sub-bab di dalamnya juga akan terhapus.",
-      )
-    ) {
-      return;
-    }
+  const handleDeleteBab = (babId: string, babTitle: string) => {
+    setDeleteBabTarget({ id: babId, title: babTitle });
+    setShowDeleteBabDialog(true);
+  };
+
+  const confirmDeleteBab = async () => {
+    if (!deleteBabTarget) return;
 
     try {
       await deleteBab.mutateAsync({
-        id: babId,
+        id: deleteBabTarget.id,
         materi_id: materiId,
       });
       toast.success("Bab berhasil dihapus");
+      setShowDeleteBabDialog(false);
+      setDeleteBabTarget(null);
     } catch (error: any) {
       console.error("Error deleting bab:", error);
       toast.error(error.message || "Gagal menghapus bab");
@@ -292,17 +311,28 @@ export default function GuruMateriDetailPage() {
     }
   };
 
-  const handleDeleteSubBab = async (subBabId: string, babId: string) => {
-    if (!confirm("Yakin ingin menghapus sub-bab ini?")) {
+  const handleDeleteSubBab = (
+    subBabId: string,
+    babId: string,
+    title: string,
+  ) => {
+    setDeleteSubBabTarget({ id: subBabId, babId, title });
+    setShowDeleteSubBabDialog(true);
+  };
+
+  const confirmDeleteSubBab = async () => {
+    if (!deleteSubBabTarget) {
       return;
     }
 
     try {
       await deleteSubBab.mutateAsync({
-        id: subBabId,
-        bab_id: babId,
+        id: deleteSubBabTarget.id,
+        bab_id: deleteSubBabTarget.babId,
       });
       toast.success("Sub-bab berhasil dihapus");
+      setShowDeleteSubBabDialog(false);
+      setDeleteSubBabTarget(null);
     } catch (error: any) {
       console.error("Error deleting sub-bab:", error);
       toast.error(error.message || "Gagal menghapus sub-bab");
@@ -464,7 +494,7 @@ export default function GuruMateriDetailPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDeleteBab(bab.id)}
+                      onClick={() => handleDeleteBab(bab.id, bab.title)}
                       disabled={deleteBab.isPending}
                       className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
                     >
@@ -531,7 +561,11 @@ export default function GuruMateriDetailPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() =>
-                                handleDeleteSubBab(subBab.id, bab.id)
+                                handleDeleteSubBab(
+                                  subBab.id,
+                                  bab.id,
+                                  subBab.title,
+                                )
                               }
                               disabled={deleteSubBab.isPending}
                               className="h-7 w-7 p-0 hover:bg-red-50 hover:scale-[1.05] transition-all duration-150"
@@ -835,6 +869,120 @@ export default function GuruMateriDetailPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showDeleteBabDialog}
+        onOpenChange={(open) => {
+          setShowDeleteBabDialog(open);
+          if (!open && !deleteBab.isPending) {
+            setDeleteBabTarget(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 duration-200"
+          showCloseButton={false}
+        >
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <AlertTriangle size={16} />
+              </span>
+              Hapus Bab
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              {deleteBabTarget?.title
+                ? `Apakah kamu yakin ingin menghapus bab "${deleteBabTarget.title}"? Semua sub-bab di dalamnya juga akan terhapus.`
+                : "Apakah kamu yakin ingin menghapus bab ini? Semua sub-bab di dalamnya juga akan terhapus."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteBabDialog(false);
+                setDeleteBabTarget(null);
+              }}
+              disabled={deleteBab.isPending}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteBab}
+              disabled={deleteBab.isPending}
+              className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-all duration-150"
+            >
+              {deleteBab.isPending ? (
+                <Loader2 size={15} className="mr-2 animate-spin" />
+              ) : (
+                <Trash2 size={15} className="mr-2" />
+              )}
+              Hapus
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showDeleteSubBabDialog}
+        onOpenChange={(open) => {
+          setShowDeleteSubBabDialog(open);
+          if (!open && !deleteSubBab.isPending) {
+            setDeleteSubBabTarget(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 duration-200"
+          showCloseButton={false}
+        >
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <AlertTriangle size={16} />
+              </span>
+              Hapus Sub-Bab
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              {deleteSubBabTarget?.title
+                ? `Apakah kamu yakin ingin menghapus sub-bab "${deleteSubBabTarget.title}"? Tindakan ini tidak dapat dibatalkan.`
+                : "Apakah kamu yakin ingin menghapus sub-bab ini? Tindakan ini tidak dapat dibatalkan."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteSubBabDialog(false);
+                setDeleteSubBabTarget(null);
+              }}
+              disabled={deleteSubBab.isPending}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteSubBab}
+              disabled={deleteSubBab.isPending}
+              className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-all duration-150"
+            >
+              {deleteSubBab.isPending ? (
+                <Loader2 size={15} className="mr-2 animate-spin" />
+              ) : (
+                <Trash2 size={15} className="mr-2" />
+              )}
+              Hapus
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

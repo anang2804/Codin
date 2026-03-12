@@ -3,20 +3,32 @@
 import React, { useEffect, useState, use } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Soal {
   id: string;
   question: string;
   type: "pilihan_ganda" | "essay";
-  options?: { [key: string]: string };
+  options?: {
+    [key: string]: string | { text?: string; image_url?: string | null };
+  };
   correct_answer?: string;
   points: number;
   file_url?: string;
 }
+
+type OptionValue = string | { text?: string; image_url?: string | null };
 
 interface Jawaban {
   soal_id: string;
@@ -37,6 +49,7 @@ export default function SiswaAsesmenDetailPage({
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 menit dalam detik
   const [submitting, setSubmitting] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   useEffect(() => {
     fetchAsesmenData();
@@ -88,10 +101,8 @@ export default function SiswaAsesmenDetailPage({
           .limit(1)
           .single();
 
-        alert(
-          "Anda sudah mengerjakan kuis ini. Nilai terakhir: " +
-            (nilaiData?.score || 0) +
-            ". Hubungi guru untuk membuka ulang."
+        toast.error(
+          "Anda sudah mengerjakan kuis ini. Hubungi guru untuk membuka ulang.",
         );
         router.push("/siswa/asesmen");
         return;
@@ -136,7 +147,7 @@ export default function SiswaAsesmenDetailPage({
 
   const handleAnswerChange = (soalId: string, answer: string) => {
     setJawaban((prev) =>
-      prev.map((j) => (j.soal_id === soalId ? { ...j, answer } : j))
+      prev.map((j) => (j.soal_id === soalId ? { ...j, answer } : j)),
     );
   };
 
@@ -154,14 +165,6 @@ export default function SiswaAsesmenDetailPage({
 
   const handleSubmit = async () => {
     if (submitting) return;
-
-    if (
-      !confirm(
-        "Yakin ingin mengirim jawaban? Jawaban tidak dapat diubah setelah dikirim."
-      )
-    ) {
-      return;
-    }
 
     setSubmitting(true);
     const supabase = createClient();
@@ -227,13 +230,18 @@ export default function SiswaAsesmenDetailPage({
 
       if (nilaiError) throw nilaiError;
 
-      alert(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}`);
+      toast.success(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}`);
       router.push("/siswa/asesmen");
     } catch (error: any) {
       console.error("Error submitting answers:", error);
-      alert(`Gagal mengirim jawaban: ${error.message}`);
+      toast.error(`Gagal mengirim jawaban: ${error.message}`);
       setSubmitting(false);
     }
+  };
+
+  const openSubmitDialog = () => {
+    if (submitting) return;
+    setShowSubmitDialog(true);
   };
 
   const formatTime = (seconds: number) => {
@@ -242,6 +250,17 @@ export default function SiswaAsesmenDetailPage({
     return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
+  };
+
+  const getOptionText = (optionValue?: OptionValue) => {
+    if (!optionValue) return "";
+    if (typeof optionValue === "string") return optionValue;
+    return optionValue.text || "";
+  };
+
+  const getOptionImageUrl = (optionValue?: OptionValue) => {
+    if (!optionValue || typeof optionValue === "string") return "";
+    return optionValue.image_url || "";
   };
 
   if (loading) {
@@ -303,7 +322,7 @@ export default function SiswaAsesmenDetailPage({
           <div className="flex flex-col gap-2">
             {soals.map((soal, index) => {
               const answered = jawaban.find(
-                (j) => j.soal_id === soal.id
+                (j) => j.soal_id === soal.id,
               )?.answer;
               return (
                 <button
@@ -313,8 +332,8 @@ export default function SiswaAsesmenDetailPage({
                     index === currentSoalIndex
                       ? "bg-green-600 text-white"
                       : answered
-                      ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-green-100 text-green-700 border border-green-300"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {index + 1}
@@ -360,30 +379,46 @@ export default function SiswaAsesmenDetailPage({
             {/* Answer Options - Scrollable if needed */}
             <div className="flex-1 overflow-y-auto space-y-2 mb-3">
               {currentSoal.type === "pilihan_ganda" && currentSoal.options ? (
-                Object.entries(currentSoal.options).map(([key, value]) => (
-                  <label
-                    key={key}
-                    className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition ${
-                      currentJawaban?.answer === key
-                        ? "border-green-600 bg-green-50"
-                        : "border-gray-200 hover:border-green-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`soal-${currentSoal.id}`}
-                      value={key}
-                      checked={currentJawaban?.answer === key}
-                      onChange={(e) =>
-                        handleAnswerChange(currentSoal.id, e.target.value)
-                      }
-                      className="mt-1 mr-3 flex-shrink-0"
-                    />
-                    <span className="flex-1 text-sm">
-                      <span className="font-medium">{key}.</span> {value}
-                    </span>
-                  </label>
-                ))
+                Object.entries(currentSoal.options).map(([key, value]) => {
+                  const optionText = getOptionText(value as OptionValue);
+                  const optionImageUrl = getOptionImageUrl(
+                    value as OptionValue,
+                  );
+
+                  return (
+                    <label
+                      key={key}
+                      className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition ${
+                        currentJawaban?.answer === key
+                          ? "border-green-600 bg-green-50"
+                          : "border-gray-200 hover:border-green-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`soal-${currentSoal.id}`}
+                        value={key}
+                        checked={currentJawaban?.answer === key}
+                        onChange={(e) =>
+                          handleAnswerChange(currentSoal.id, e.target.value)
+                        }
+                        className="mt-1 mr-3 flex-shrink-0"
+                      />
+                      <span className="flex-1 text-sm">
+                        <span className="font-medium">{key}.</span> {optionText}
+                        {optionImageUrl && (
+                          <span className="block mt-2">
+                            <img
+                              src={optionImageUrl}
+                              alt={`Gambar opsi ${key}`}
+                              className="h-20 w-auto rounded border border-gray-200 object-contain"
+                            />
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })
               ) : (
                 <textarea
                   value={currentJawaban?.answer || ""}
@@ -410,7 +445,7 @@ export default function SiswaAsesmenDetailPage({
 
               {currentSoalIndex === soals.length - 1 ? (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={openSubmitDialog}
                   disabled={submitting}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 gap-2"
@@ -431,6 +466,43 @@ export default function SiswaAsesmenDetailPage({
           </Card>
         </div>
       </div>
+
+      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Kirim Jawaban
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              Yakin ingin mengirim jawaban? Jawaban tidak dapat diubah setelah
+              dikirim.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowSubmitDialog(false)}
+              disabled={submitting}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setShowSubmitDialog(false);
+                handleSubmit();
+              }}
+              disabled={submitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Kirim Jawaban
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
