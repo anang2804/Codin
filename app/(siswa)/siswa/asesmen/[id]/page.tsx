@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,10 +50,17 @@ export default function SiswaAsesmenDetailPage({
   const [timeLeft, setTimeLeft] = useState(3600); // 60 menit dalam detik
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [questionVisible, setQuestionVisible] = useState(false);
 
   useEffect(() => {
     fetchAsesmenData();
   }, [id]);
+
+  useEffect(() => {
+    setQuestionVisible(false);
+    const timer = window.setTimeout(() => setQuestionVisible(true), 20);
+    return () => window.clearTimeout(timer);
+  }, [currentSoalIndex]);
 
   // Timer countdown
   useEffect(() => {
@@ -290,9 +297,8 @@ export default function SiswaAsesmenDetailPage({
   const currentJawaban = jawaban.find((j) => j.soal_id === currentSoal.id);
 
   return (
-    <div className="h-screen flex flex-col p-4 max-w-7xl mx-auto">
-      {/* Header - Compact */}
-      <div className="flex justify-between items-center mb-3 flex-shrink-0">
+    <div className="h-screen flex flex-col p-4 max-w-6xl mx-auto bg-gray-50">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/siswa/asesmen">
             <Button variant="outline" size="sm">
@@ -307,58 +313,58 @@ export default function SiswaAsesmenDetailPage({
             <p className="text-xs text-gray-600">{asesmen?.description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-lg font-semibold text-gray-700 bg-white px-4 py-2 rounded-lg border">
-          <Clock size={20} />
+        <div className="flex items-center gap-2 text-base font-semibold text-gray-700 bg-green-50 px-3 py-2 rounded-lg border border-green-100 shadow-sm">
+          <Clock size={16} className="text-green-600" />
           <span className={timeLeft < 300 ? "text-red-600" : ""}>
             {formatTime(timeLeft)}
           </span>
         </div>
       </div>
 
-      {/* Main Content - Single Screen Layout */}
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* Left Side - Question Numbers */}
-        <Card className="p-3 border-green-100 flex-shrink-0 w-20 overflow-y-auto">
-          <div className="flex flex-col gap-2">
-            {soals.map((soal, index) => {
-              const answered = jawaban.find(
-                (j) => j.soal_id === soal.id,
-              )?.answer;
-              return (
-                <button
-                  key={soal.id}
-                  onClick={() => setCurrentSoalIndex(index)}
-                  className={`w-12 h-12 rounded-lg font-medium transition text-sm ${
-                    index === currentSoalIndex
-                      ? "bg-green-600 text-white"
-                      : answered
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-
-        {/* Right Side - Question and Answers */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <Card className="p-4 border-green-100 flex-1 flex flex-col">
-            {/* Question Header */}
-            <div className="flex justify-between items-start mb-3 flex-shrink-0">
-              <h2 className="text-base font-bold text-gray-900">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="w-full max-w-4xl mx-auto h-full flex flex-col gap-3">
+          <Card className="p-3 border border-gray-100 rounded-xl shadow-sm flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-gray-700">
                 Soal {currentSoalIndex + 1} dari {soals.length}
-              </h2>
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              </p>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                 {currentSoal.points} poin
               </span>
             </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {soals.map((soal, index) => {
+                const answered = jawaban.find(
+                  (j) => j.soal_id === soal.id,
+                )?.answer;
+                return (
+                  <button
+                    key={soal.id}
+                    onClick={() => setCurrentSoalIndex(index)}
+                    className={`min-w-8 h-8 px-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                      index === currentSoalIndex
+                        ? "bg-green-600 text-white"
+                        : answered
+                          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
 
-            {/* Question Text */}
-            <div className="mb-3 flex-shrink-0">
-              <p className="text-sm text-gray-800 whitespace-pre-wrap">
+          <Card
+            className={`p-5 border border-gray-100 rounded-xl shadow-sm flex-1 flex flex-col min-h-0 transition-all duration-300 ${
+              questionVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
+            <div className="mb-4 flex-shrink-0">
+              <p className="text-lg font-medium text-gray-900 whitespace-pre-wrap leading-relaxed">
                 {currentSoal.question}
               </p>
 
@@ -376,8 +382,7 @@ export default function SiswaAsesmenDetailPage({
               )}
             </div>
 
-            {/* Answer Options - Scrollable if needed */}
-            <div className="flex-1 overflow-y-auto space-y-2 mb-3">
+            <div className="flex-1 overflow-y-auto space-y-2.5 mb-4 pr-1">
               {currentSoal.type === "pilihan_ganda" && currentSoal.options ? (
                 Object.entries(currentSoal.options).map(([key, value]) => {
                   const optionText = getOptionText(value as OptionValue);
@@ -388,10 +393,10 @@ export default function SiswaAsesmenDetailPage({
                   return (
                     <label
                       key={key}
-                      className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition ${
+                      className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all duration-150 shadow-sm ${
                         currentJawaban?.answer === key
-                          ? "border-green-600 bg-green-50"
-                          : "border-gray-200 hover:border-green-300"
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50"
                       }`}
                     >
                       <input
@@ -404,8 +409,11 @@ export default function SiswaAsesmenDetailPage({
                         }
                         className="mt-1 mr-3 flex-shrink-0"
                       />
-                      <span className="flex-1 text-sm">
-                        <span className="font-medium">{key}.</span> {optionText}
+                      <span className="flex-1 text-sm text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-900">
+                          {key}.
+                        </span>{" "}
+                        {optionText}
                         {optionImageUrl && (
                           <span className="block mt-2">
                             <img
@@ -426,20 +434,20 @@ export default function SiswaAsesmenDetailPage({
                     handleAnswerChange(currentSoal.id, e.target.value)
                   }
                   placeholder="Tulis jawaban Anda di sini..."
-                  className="w-full h-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-600 focus:outline-none text-sm resize-none"
+                  className="w-full h-full px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:outline-none text-sm resize-none"
                 />
               )}
             </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between flex-shrink-0 pt-2 border-t">
+            <div className="flex justify-between items-center flex-shrink-0 pt-3 border-t border-gray-100">
               <Button
                 onClick={handlePrevious}
                 disabled={currentSoalIndex === 0}
                 variant="outline"
                 size="sm"
-                className="border-green-200"
+                className="min-w-28 gap-2"
               >
+                <ArrowLeft size={14} />
                 Sebelumnya
               </Button>
 
@@ -448,18 +456,19 @@ export default function SiswaAsesmenDetailPage({
                   onClick={openSubmitDialog}
                   disabled={submitting}
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700 gap-2"
+                  className="bg-green-600 hover:bg-green-700 gap-2 min-w-32"
                 >
                   <CheckCircle size={16} />
-                  {submitting ? "Mengirim..." : "Selanjutnya"}
+                  {submitting ? "Mengirim..." : "Kirim Jawaban"}
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 min-w-28 gap-2"
                 >
                   Selanjutnya
+                  <ArrowRight size={14} />
                 </Button>
               )}
             </div>
