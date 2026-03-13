@@ -35,6 +35,14 @@ interface Jawaban {
   answer: string;
 }
 
+interface QuizDraft {
+  asesmenId: string;
+  currentSoalIndex: number;
+  jawaban: Jawaban[];
+  flaggedSoalIds: string[];
+  expiresAt: number;
+}
+
 export default function SiswaAsesmenDetailPage({
   params,
 }: {
@@ -50,7 +58,16 @@ export default function SiswaAsesmenDetailPage({
   const [timeLeft, setTimeLeft] = useState(3600); // 60 menit dalam detik
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const [questionVisible, setQuestionVisible] = useState(false);
+  const [allowExit, setAllowExit] = useState(false);
+  const [flaggedSoalIds, setFlaggedSoalIds] = useState<string[]>([]);
+
+  const getDraftKey = () => `quiz_draft_${id}`;
+
+  const clearQuizDraft = () => {
+    localStorage.removeItem(getDraftKey());
+  };
 
   useEffect(() => {
     fetchAsesmenData();
@@ -61,6 +78,52 @@ export default function SiswaAsesmenDetailPage({
     const timer = window.setTimeout(() => setQuestionVisible(true), 20);
     return () => window.clearTimeout(timer);
   }, [currentSoalIndex]);
+
+  useEffect(() => {
+    if (loading || soals.length === 0 || allowExit) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      setShowExitDialog(true);
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [loading, soals.length, allowExit]);
+
+  useEffect(() => {
+    if (loading || soals.length === 0 || submitting) return;
+
+    const draft: QuizDraft = {
+      asesmenId: id,
+      currentSoalIndex,
+      jawaban,
+      flaggedSoalIds,
+      expiresAt: Date.now() + timeLeft * 1000,
+    };
+
+    localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+  }, [
+    id,
+    loading,
+    soals.length,
+    submitting,
+    currentSoalIndex,
+    jawaban,
+    flaggedSoalIds,
+    timeLeft,
+  ]);
 
   // Timer countdown
   useEffect(() => {
@@ -98,6 +161,8 @@ export default function SiswaAsesmenDetailPage({
         .limit(1);
 
       if (jawabanData && jawabanData.length > 0) {
+        clearQuizDraft();
+
         // Get latest nilai
         const { data: nilaiData } = await supabase
           .from("nilai")
@@ -144,7 +209,53 @@ export default function SiswaAsesmenDetailPage({
           soal_id: s.id,
           answer: "",
         })) || [];
-      setJawaban(initialJawaban);
+
+      const savedDraftRaw = localStorage.getItem(getDraftKey());
+
+      if (savedDraftRaw && soalsData && soalsData.length > 0) {
+        try {
+          const savedDraft = JSON.parse(savedDraftRaw) as QuizDraft;
+
+          if (savedDraft.asesmenId === id) {
+            const restoredJawaban = initialJawaban.map((item) => {
+              const savedAnswer = savedDraft.jawaban.find(
+                (draftItem) => draftItem.soal_id === item.soal_id,
+              );
+
+              return savedAnswer
+                ? { ...item, answer: savedAnswer.answer }
+                : item;
+            });
+
+            setJawaban(restoredJawaban);
+            setFlaggedSoalIds(savedDraft.flaggedSoalIds || []);
+            setCurrentSoalIndex(
+              Math.min(
+                Math.max(savedDraft.currentSoalIndex || 0, 0),
+                Math.max(soalsData.length - 1, 0),
+              ),
+            );
+
+            if (savedDraft.expiresAt) {
+              const remainingTime = Math.max(
+                0,
+                Math.floor((savedDraft.expiresAt - Date.now()) / 1000),
+              );
+              setTimeLeft(remainingTime);
+            }
+          } else {
+            setJawaban(initialJawaban);
+            setFlaggedSoalIds([]);
+          }
+        } catch {
+          setJawaban(initialJawaban);
+          setFlaggedSoalIds([]);
+          clearQuizDraft();
+        }
+      } else {
+        setJawaban(initialJawaban);
+        setFlaggedSoalIds([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -168,6 +279,14 @@ export default function SiswaAsesmenDetailPage({
     if (currentSoalIndex > 0) {
       setCurrentSoalIndex(currentSoalIndex - 1);
     }
+  };
+
+  const toggleRaguRagu = (soalId: string) => {
+    setFlaggedSoalIds((prev) =>
+      prev.includes(soalId)
+        ? prev.filter((id) => id !== soalId)
+        : [...prev, soalId],
+    );
   };
 
   const handleSubmit = async () => {
@@ -237,11 +356,13 @@ export default function SiswaAsesmenDetailPage({
 
       if (nilaiError) throw nilaiError;
 
+      clearQuizDraft();
       toast.success(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}`);
       router.push("/siswa/asesmen");
     } catch (error: any) {
       console.error("Error submitting answers:", error);
       toast.error(`Gagal mengirim jawaban: ${error.message}`);
+      setAllowExit(false);
       setSubmitting(false);
     }
   };
@@ -249,6 +370,17 @@ export default function SiswaAsesmenDetailPage({
   const openSubmitDialog = () => {
     if (submitting) return;
     setShowSubmitDialog(true);
+  };
+
+  const openExitDialog = () => {
+    if (submitting) return;
+    setShowExitDialog(true);
+  };
+
+  const handleExitAndFinish = async () => {
+    setShowExitDialog(false);
+    setAllowExit(true);
+    await handleSubmit();
   };
 
   const formatTime = (seconds: number) => {
@@ -295,17 +427,22 @@ export default function SiswaAsesmenDetailPage({
 
   const currentSoal = soals[currentSoalIndex];
   const currentJawaban = jawaban.find((j) => j.soal_id === currentSoal.id);
+  const unansweredNumbers = soals
+    .map((soal, index) => ({
+      index: index + 1,
+      answer: jawaban.find((j) => j.soal_id === soal.id)?.answer,
+    }))
+    .filter((item) => !item.answer)
+    .map((item) => item.index);
 
   return (
     <div className="h-screen flex flex-col p-4 max-w-6xl mx-auto bg-gray-50">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Link href="/siswa/asesmen">
-            <Button variant="outline" size="sm">
-              <ArrowLeft size={16} className="mr-2" />
-              Kembali
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={openExitDialog}>
+            <ArrowLeft size={16} className="mr-2" />
+            Kembali
+          </Button>
           <div>
             <h1 className="text-lg font-bold text-gray-900">
               {asesmen?.title}
@@ -337,17 +474,24 @@ export default function SiswaAsesmenDetailPage({
                 const answered = jawaban.find(
                   (j) => j.soal_id === soal.id,
                 )?.answer;
+                const isActive = index === currentSoalIndex;
+                const isAnswered = Boolean(answered);
+                const isFlagged = flaggedSoalIds.includes(soal.id);
+
                 return (
                   <button
                     key={soal.id}
                     onClick={() => setCurrentSoalIndex(index)}
                     className={`min-w-8 h-8 px-2 rounded-md text-xs font-medium transition-all duration-200 ${
-                      index === currentSoalIndex
+                      isActive
                         ? "bg-green-600 text-white"
-                        : answered
-                          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : isFlagged
+                          ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200"
+                          : isAnswered
+                            ? "bg-green-100 text-green-700 border border-green-200 hover:bg-green-200"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
+                    aria-label={`Soal ${index + 1}${isFlagged ? " ditandai ragu-ragu" : isAnswered ? " sudah dijawab" : " belum dijawab"}`}
                   >
                     {index + 1}
                   </button>
@@ -440,16 +584,33 @@ export default function SiswaAsesmenDetailPage({
             </div>
 
             <div className="flex justify-between items-center flex-shrink-0 pt-3 border-t border-gray-100">
-              <Button
-                onClick={handlePrevious}
-                disabled={currentSoalIndex === 0}
-                variant="outline"
-                size="sm"
-                className="min-w-28 gap-2"
-              >
-                <ArrowLeft size={14} />
-                Sebelumnya
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handlePrevious}
+                  disabled={currentSoalIndex === 0}
+                  variant="outline"
+                  size="sm"
+                  className="min-w-28 gap-2"
+                >
+                  <ArrowLeft size={14} />
+                  Sebelumnya
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toggleRaguRagu(currentSoal.id)}
+                  className={
+                    flaggedSoalIds.includes(currentSoal.id)
+                      ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }
+                >
+                  {flaggedSoalIds.includes(currentSoal.id)
+                    ? "Batalkan Ragu-ragu"
+                    : "Ragu-ragu"}
+                </Button>
+              </div>
 
               {currentSoalIndex === soals.length - 1 ? (
                 <Button
@@ -488,6 +649,17 @@ export default function SiswaAsesmenDetailPage({
             </DialogDescription>
           </DialogHeader>
 
+          {unansweredNumbers.length > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-medium text-amber-800">
+                Masih ada soal yang belum dijawab.
+              </p>
+              <p className="mt-1 text-sm text-amber-700">
+                Nomor soal: {unansweredNumbers.join(", ")}
+              </p>
+            </div>
+          )}
+
           <div className="mt-6 flex justify-end gap-3">
             <Button
               type="button"
@@ -508,6 +680,40 @@ export default function SiswaAsesmenDetailPage({
               className="bg-green-600 hover:bg-green-700"
             >
               Kirim Jawaban
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <DialogContent className="max-w-md rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Keluar dari Kuis?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              Jika Anda keluar sekarang, kuis akan dianggap selesai dan jawaban
+              yang sudah dipilih akan dikumpulkan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={() => setShowExitDialog(false)}
+              disabled={submitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Tetap di Kuis
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExitAndFinish}
+              disabled={submitting}
+              className="border-red-200 text-red-600 hover:bg-red-50"
+            >
+              Keluar & Selesai
             </Button>
           </div>
         </DialogContent>
