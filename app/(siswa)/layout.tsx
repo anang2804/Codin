@@ -59,10 +59,10 @@ export default function SiswaLayout({
     checkAuth();
   }, [router]);
 
-  const getGreeting = () => {
-    if (!profile) return "Halo";
-    const name = profile.full_name || "Siswa";
-    return `Halo, ${name}`;
+  const getFirstName = () => {
+    if (!profile) return "Siswa";
+    const fullName = profile.full_name || "Siswa";
+    return fullName.split(" ")[1] || fullName.split(" ")[0];
   };
 
   if (loading) {
@@ -84,29 +84,21 @@ export default function SiswaLayout({
       <main
         className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-gray-50" : ""} min-h-screen`}
       >
-        {/* Header dengan greeting dan foto profil - Sticky */}
+        {/* Header - Sticky */}
         {!hideHeader && (
-          <div className="sticky top-0 z-30 bg-gray-50 pt-4 md:pt-8 px-4 md:px-8">
-            <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+          <div className="sticky top-0 z-30 bg-gray-50 pt-4 md:pt-6 px-4 md:px-8">
+            <div className="flex items-center justify-between mb-6 bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {getGreeting()}
+                <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                  Halo, {getFirstName()} 👋
                 </h1>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  Selamat datang di Dashboard Siswa
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {profile?.kelas ? `Kelas ${profile.kelas}` : "Dashboard Siswa"}
                 </p>
-                {profile?.kelas && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Kelas:{" "}
-                    <span className="font-semibold text-green-600">
-                      {profile.kelas}
-                    </span>
-                  </p>
-                )}
               </div>
               <Link href="/siswa/profile">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors shadow-sm">
-                  <User size={28} className="text-green-600" />
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors">
+                  <User size={20} className="text-green-600" />
                 </div>
               </Link>
             </div>
