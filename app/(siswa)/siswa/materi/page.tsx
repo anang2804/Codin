@@ -4,18 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  BookOpen,
-  Eye,
-  Download,
-  FileText,
-  Calendar,
-  User,
-  Search,
-  Filter,
-  Play,
-} from "lucide-react";
+import { BookOpen, Calendar, Search, Filter, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Materi {
@@ -43,6 +32,7 @@ export default function SiswaMateriPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMapel, setSelectedMapel] = useState<string>("all");
   const [mapelList, setMapelList] = useState<any[]>([]);
+  const [animateCards, setAnimateCards] = useState(false);
 
   useEffect(() => {
     fetchMateri();
@@ -92,6 +82,28 @@ export default function SiswaMateriPage() {
     filterMateri();
   }, [searchTerm, selectedMapel, materi]);
 
+  useEffect(() => {
+    if (!loading) {
+      const timer = window.setTimeout(() => setAnimateCards(true), 50);
+      return () => window.clearTimeout(timer);
+    }
+  }, [loading]);
+
+  const toProgressValue = (value: unknown) => {
+    if (typeof value === "number") {
+      if (Number.isNaN(value)) return 0;
+      return Math.min(100, Math.max(0, Math.round(value)));
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number.parseFloat(value.replace("%", ""));
+      if (Number.isNaN(parsed)) return 0;
+      return Math.min(100, Math.max(0, Math.round(parsed)));
+    }
+
+    return 0;
+  };
+
   const fetchMateri = async () => {
     const supabase = createClient();
     const {
@@ -104,13 +116,6 @@ export default function SiswaMateriPage() {
     }
 
     try {
-      // Get siswa profile to check kelas
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("kelas")
-        .eq("id", user.id)
-        .single();
-
       // Fetch materi data
       const { data: materiData, error: materiError } = await supabase
         .from("materi")
@@ -156,7 +161,7 @@ export default function SiswaMateriPage() {
           mapel: mapelData?.find((m) => m.id === materi.mapel_id) || null,
           profiles:
             profilesData?.find((p) => p.id === materi.created_by) || null,
-          progress: progressMap.get(materi.id) || 0, // Real progress from database
+          progress: toProgressValue(progressMap.get(materi.id)),
         }));
 
         setMateri(enrichedData);
@@ -165,6 +170,10 @@ export default function SiswaMateriPage() {
         // Get unique mapel untuk filter
         const uniqueMapel = mapelData || [];
         setMapelList(uniqueMapel);
+      } else {
+        setMateri([]);
+        setFilteredMateri([]);
+        setMapelList([]);
       }
     } catch (error) {
       console.error("Error fetching materi:", error);
@@ -201,8 +210,8 @@ export default function SiswaMateriPage() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             Materi Pembelajaran
@@ -220,35 +229,35 @@ export default function SiswaMateriPage() {
       </div>
 
       {/* Filter Section */}
-      <Card className="p-3 mb-4">
-        <div className="grid md:grid-cols-2 gap-4">
+      <Card className="p-3 border border-gray-100 rounded-xl shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
+              size={18}
             />
             <Input
               type="text"
               placeholder="Cari materi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-9"
             />
           </div>
           <div className="relative">
             <Filter
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
+              size={18}
             />
             <select
               value={selectedMapel}
               onChange={(e) => setSelectedMapel(e.target.value)}
-              className="w-full pl-10 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full pl-10 h-9 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="all">Semua Mata Pelajaran</option>
               {mapelList.map((mapel) => (
                 <option key={mapel.id} value={mapel.id}>
-                  {mapel.nama}
+                  {mapel.name}
                 </option>
               ))}
             </select>
@@ -271,97 +280,79 @@ export default function SiswaMateriPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-          {filteredMateri.map((m) => (
-            <Card
-              key={m.id}
-              className="overflow-hidden border-gray-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col max-h-[400px]"
-              onClick={() => handleViewMateri(m.id)}
-            >
-              {/* Thumbnail */}
-              <div className="relative h-28 bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden flex-shrink-0">
-                {m.thumbnail_url ? (
-                  <img
-                    src={m.thumbnail_url}
-                    alt={m.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-white text-center p-3">
-                      <BookOpen size={32} className="mx-auto mb-1 opacity-80" />
-                      <h3 className="text-sm font-bold line-clamp-1">
-                        {m.title}
-                      </h3>
-                    </div>
-                  </div>
-                )}
-                {/* Progress indicator on thumbnail */}
-                {m.progress !== undefined && m.progress > 0 && (
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold text-orange-600">
-                    {m.progress}%
-                  </div>
-                )}
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-fr">
+          {filteredMateri.map((m, index) =>
+            (() => {
+              const progressValue = toProgressValue(m.progress);
 
-              {/* Content */}
-              <div className="p-4 flex-1 flex flex-col overflow-hidden">
-                <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-1">
-                  {m.title}
-                </h3>
-
-                {/* Progress Bar */}
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-gray-600 font-medium">Progress</span>
-                    <span className="font-bold text-gray-900">
-                      {m.progress || 0}%
-                    </span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
-                      style={{ width: `${m.progress || 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Tabs */}
-                <Tabs
-                  defaultValue="overview"
-                  className="w-full flex-1 flex flex-col"
+              return (
+                <Card
+                  key={m.id}
+                  className={`overflow-hidden border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 cursor-pointer flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+                  style={{ transitionDelay: `${index * 60}ms` }}
+                  onClick={() => handleViewMateri(m.id)}
                 >
-                  <TabsList
-                    className="grid w-full grid-cols-2 h-8 mb-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <TabsTrigger value="overview" className="text-xs py-1">
-                      Overview
-                    </TabsTrigger>
-                    <TabsTrigger value="learn" className="text-xs py-1">
-                      Lanjut Belajar
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="overview"
-                    className="mt-0 flex-1 overflow-hidden"
-                  >
-                    <div className="space-y-1.5 text-xs">
-                      {m.mapel && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <BookOpen size={12} />
-                          <span className="line-clamp-1">{m.mapel.name}</span>
+                  {/* Thumbnail */}
+                  <div className="relative h-20 bg-gradient-to-br from-green-100 to-green-200 overflow-hidden flex-shrink-0">
+                    {m.thumbnail_url ? (
+                      <img
+                        src={m.thumbnail_url}
+                        alt={m.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-green-700 text-center p-2">
+                          <BookOpen
+                            size={22}
+                            className="mx-auto mb-1 opacity-80"
+                          />
+                          <h3 className="text-xs font-semibold line-clamp-1">
+                            {m.title}
+                          </h3>
                         </div>
-                      )}
-                      {m.profiles && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <User size={12} />
-                          <span className="line-clamp-1">
-                            {m.profiles.full_name}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-gray-600">
+                      </div>
+                    )}
+                    {/* Progress indicator on thumbnail */}
+                    {progressValue > 0 && (
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[11px] font-semibold text-green-700">
+                        {progressValue}%
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 flex-1 flex flex-col overflow-hidden">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1 line-clamp-1">
+                      {m.title}
+                    </h3>
+
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-1">
+                      {m.mapel?.name || "Mata pelajaran belum tersedia"}
+                    </p>
+
+                    {/* Progress Bar */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-gray-500 font-medium">
+                          Progress
+                        </span>
+                        <span className="font-semibold text-gray-700">
+                          {progressValue}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
+                          style={{
+                            width: `${animateCards ? progressValue : 0}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                      <div className="flex items-center gap-1.5">
                         <Calendar size={12} />
                         <span>
                           {new Date(m.created_at).toLocaleDateString("id-ID", {
@@ -372,24 +363,23 @@ export default function SiswaMateriPage() {
                         </span>
                       </div>
                     </div>
-                  </TabsContent>
-                  <TabsContent value="learn" className="mt-0">
+
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700 h-8 text-xs"
+                      className="w-full bg-green-600 hover:bg-green-700 h-8 text-xs mt-auto"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewMateri(m.id);
                       }}
                     >
-                      <Play size={14} className="mr-1" />
-                      Mulai Belajar
+                      Lanjut Belajar
+                      <ArrowRight size={14} className="ml-1" />
                     </Button>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </Card>
-          ))}
+                  </div>
+                </Card>
+              );
+            })(),
+          )}
         </div>
       )}
     </div>

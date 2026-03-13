@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     if (!sub_bab_id || completed === undefined) {
       return NextResponse.json(
         { error: "sub_bab_id and completed required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { error: errorMessage, details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -229,13 +229,71 @@ export async function GET(req: Request) {
         orderBy: { last_read_at: "desc" },
       });
 
-      return NextResponse.json({ data: progress });
+      // Recalculate from sub_bab_progress to avoid stale progress values
+      const recalculatedProgress = await Promise.all(
+        progress.map(async (item) => {
+          const totalSubBabs = await prisma.materiSubBab.count({
+            where: {
+              bab: {
+                materi_id: item.materi_id,
+              },
+            },
+          });
+
+          const completedSubBabs = await prisma.subBabProgress.count({
+            where: {
+              siswa_id: user.id,
+              completed: true,
+              sub_bab: {
+                bab: {
+                  materi_id: item.materi_id,
+                },
+              },
+            },
+          });
+
+          const progressPercentage =
+            totalSubBabs > 0
+              ? Math.round((completedSubBabs / totalSubBabs) * 100)
+              : 0;
+
+          // Keep table in sync if stored value is outdated
+          if (
+            item.progress_percentage !== progressPercentage ||
+            item.completed_sub_bab !== completedSubBabs ||
+            item.total_sub_bab !== totalSubBabs
+          ) {
+            await prisma.materiProgress.update({
+              where: { id: item.id },
+              data: {
+                completed_sub_bab: completedSubBabs,
+                total_sub_bab: totalSubBabs,
+                progress_percentage: progressPercentage,
+                completed_at:
+                  progressPercentage === 100
+                    ? item.completed_at || new Date()
+                    : null,
+              },
+            });
+          }
+
+          return {
+            ...item,
+            completed_sub_bab: completedSubBabs,
+            total_sub_bab: totalSubBabs,
+            progress_percentage: progressPercentage,
+            completed_at: progressPercentage === 100 ? item.completed_at : null,
+          };
+        }),
+      );
+
+      return NextResponse.json({ data: recalculatedProgress });
     }
   } catch (error: any) {
     console.error("Error in get progress API:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

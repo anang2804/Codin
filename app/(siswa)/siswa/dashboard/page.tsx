@@ -16,11 +16,21 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
+const SIMULASI_MENU_TOTAL = 6;
+
 export default function SiswaDashboard() {
   const [stats, setStats] = useState({
     totalMateri: 0,
     totalAsesmen: 0,
-    totalSimulasi: 3,
+    totalSimulasi: SIMULASI_MENU_TOTAL,
+  });
+  const [learningProgress, setLearningProgress] = useState({
+    materiCompleted: 0,
+    materiTotal: 0,
+    simulasiCompleted: 0,
+    simulasiTotal: 0,
+    kuisCompleted: 0,
+    kuisTotal: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentMateri, setRecentMateri] = useState<any[]>([]);
@@ -46,7 +56,43 @@ export default function SiswaDashboard() {
           ...prev,
           totalMateri: materiRes.count || 0,
           totalAsesmen: asesmenRes.count || 0,
+          totalSimulasi: SIMULASI_MENU_TOTAL,
         }));
+
+        const [materiDoneRes, simulasiDoneRes, kuisDoneRes] = await Promise.all(
+          [
+            supabase
+              .from("materi_progress")
+              .select("materi_id", { count: "exact" })
+              .eq("siswa_id", user.id)
+              .eq("progress_percentage", 100),
+            supabase
+              .from("simulasi_progress")
+              .select("simulasi_id", { count: "exact" })
+              .eq("siswa_id", user.id)
+              .eq("completed", true),
+            supabase
+              .from("nilai_asesmen")
+              .select("asesmen_id")
+              .eq("siswa_id", user.id)
+              .not("completed_at", "is", null),
+          ],
+        );
+
+        const kuisCompletedUnique = new Set(
+          (kuisDoneRes.data || []).map(
+            (item: { asesmen_id: string }) => item.asesmen_id,
+          ),
+        ).size;
+
+        setLearningProgress({
+          materiCompleted: materiDoneRes.count || 0,
+          materiTotal: materiRes.count || 0,
+          simulasiCompleted: simulasiDoneRes.count || 0,
+          simulasiTotal: SIMULASI_MENU_TOTAL,
+          kuisCompleted: kuisCompletedUnique,
+          kuisTotal: asesmenRes.count || 0,
+        });
 
         const { data: materiData } = await supabase
           .from("materi")
@@ -138,6 +184,16 @@ export default function SiswaDashboard() {
     ? "opacity-100 translate-y-0"
     : "opacity-0 translate-y-2";
 
+  const getProgressPercentage = (completed: number, total: number) => {
+    if (!total) return 0;
+    return Math.min(100, Math.round((completed / total) * 100));
+  };
+
+  const getAnimatedProgressWidth = (completed: number, total: number) => {
+    if (!animateIn) return 0;
+    return getProgressPercentage(completed, total);
+  };
+
   return (
     <div className="space-y-5">
       {/* Stat Cards */}
@@ -165,6 +221,79 @@ export default function SiswaDashboard() {
           </Card>
         ))}
       </div>
+
+      <Card
+        className={`p-4 border border-gray-100 rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
+      >
+        <h2 className="text-base font-semibold text-gray-700 mb-3">
+          Progress Belajar
+        </h2>
+
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Materi selesai</span>
+              <span>
+                {learningProgress.materiCompleted} dari{" "}
+                {learningProgress.materiTotal}
+              </span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
+                style={{
+                  width: `${getAnimatedProgressWidth(
+                    learningProgress.materiCompleted,
+                    learningProgress.materiTotal,
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Simulasi selesai</span>
+              <span>
+                {learningProgress.simulasiCompleted} dari{" "}
+                {learningProgress.simulasiTotal}
+              </span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
+                style={{
+                  width: `${getAnimatedProgressWidth(
+                    learningProgress.simulasiCompleted,
+                    learningProgress.simulasiTotal,
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Kuis selesai</span>
+              <span>
+                {learningProgress.kuisCompleted} dari{" "}
+                {learningProgress.kuisTotal}
+              </span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
+                style={{
+                  width: `${getAnimatedProgressWidth(
+                    learningProgress.kuisCompleted,
+                    learningProgress.kuisTotal,
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Materi & Tugas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

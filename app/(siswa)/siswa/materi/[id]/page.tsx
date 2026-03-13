@@ -12,8 +12,6 @@ import {
   Link as LinkIcon,
   CheckCircle,
   Circle,
-  Play,
-  Lock,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -64,11 +62,23 @@ export default function SiswaMateriDetailPage() {
   const [expandedBabs, setExpandedBabs] = useState<Set<string>>(new Set());
   const [selectedSubBab, setSelectedSubBab] = useState<SubBab | null>(null);
   const [loading, setLoading] = useState(true);
+  const [contentVisible, setContentVisible] = useState(false);
 
   useEffect(() => {
     fetchMateri();
     fetchBabsAndProgress();
   }, [params.id]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setContentVisible(true), 30);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    setContentVisible(false);
+    const timer = window.setTimeout(() => setContentVisible(true), 20);
+    return () => window.clearTimeout(timer);
+  }, [selectedSubBab?.id]);
 
   async function fetchMateri() {
     try {
@@ -328,10 +338,24 @@ export default function SiswaMateriDetailPage() {
     }
   }
 
+  function handleNavigateNext() {
+    const nextSubBab = getNextSubBab();
+    if (nextSubBab) {
+      setSelectedSubBab(nextSubBab);
+      const nextBabId = Object.keys(subBabs).find((babId) =>
+        subBabs[babId].some((sb) => sb.id === nextSubBab.id),
+      );
+      if (nextBabId) {
+        setExpandedBabs((prev) => new Set([...prev, nextBabId]));
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   function renderContent() {
     if (!selectedSubBab) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-center p-12">
+        <Card className="border border-gray-100 rounded-xl shadow-sm p-10 flex flex-col items-center justify-center text-center min-h-[420px]">
           <BookOpen size={64} className="text-gray-300 mb-4" />
           <h3 className="text-xl font-semibold text-gray-600 mb-2">
             Pilih Sub-Bab untuk Mulai Belajar
@@ -339,137 +363,147 @@ export default function SiswaMateriDetailPage() {
           <p className="text-gray-500">
             Pilih salah satu sub-bab dari daftar di sebelah kiri
           </p>
-        </div>
+        </Card>
       );
     }
 
     return (
-      <div className="p-8 pb-32">
-        {/* Sub-Bab Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            {selectedSubBab.content_type === "video" && (
-              <Video size={20} className="text-purple-600" />
-            )}
-            {selectedSubBab.content_type === "file" && (
-              <FileText size={20} className="text-blue-600" />
-            )}
-            {selectedSubBab.content_type === "link" && (
-              <LinkIcon size={20} className="text-green-600" />
-            )}
-            {selectedSubBab.content_type === "text" && (
-              <FileText size={20} className="text-gray-600" />
-            )}
-            <h2 className="text-2xl font-bold text-gray-900">
-              {selectedSubBab.title}
-            </h2>
-          </div>
-          {selectedSubBab.description && (
-            <p className="text-gray-600 text-sm mt-2 pl-7">
-              {selectedSubBab.description}
-            </p>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="bg-white">
-          {/* Text Content */}
-          {selectedSubBab.content && (
-            <Card className="p-6 mb-6 shadow-sm">
-              <div className="prose max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedSubBab.content}
-                </p>
-              </div>
-            </Card>
-          )}
-
-          {/* Media Content */}
-          {selectedSubBab.content_url && (
-            <div>
-              {/* Video Content */}
-              {selectedSubBab.content_type === "video" && (
-                <Card className="p-0 mb-6 shadow-sm overflow-hidden">
-                  {selectedSubBab.content_url.startsWith("http") ? (
-                    <div className="aspect-video bg-black">
-                      <video
-                        controls
-                        className="w-full h-full"
-                        src={selectedSubBab.content_url}
-                      >
-                        Browser Anda tidak mendukung video.
-                      </video>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-black flex items-center justify-center">
-                      <p className="text-white">
-                        Video tidak dapat ditampilkan
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              )}
-
-              {/* File/Document Content - Display as iframe or embed */}
-              {selectedSubBab.content_type === "file" && (
-                <Card className="p-0 mb-6 shadow-sm overflow-hidden">
-                  {selectedSubBab.content_url.startsWith("data:") ? (
-                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
-                      <iframe
-                        src={selectedSubBab.content_url}
-                        className="w-full h-full border-0"
-                        title={selectedSubBab.title}
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
-                      <iframe
-                        src={selectedSubBab.content_url}
-                        className="w-full h-full border-0"
-                        title={selectedSubBab.title}
-                      />
-                    </div>
-                  )}
-                </Card>
-              )}
-
-              {/* Link Content - Display as iframe */}
-              {selectedSubBab.content_type === "link" &&
-                selectedSubBab.content_url.startsWith("http") && (
-                  <Card className="p-0 mb-6 shadow-sm overflow-hidden">
-                    <div className="bg-blue-50 px-4 py-3 border-b flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <LinkIcon size={16} className="text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700 truncate max-w-md">
-                          {selectedSubBab.content_url}
-                        </span>
-                      </div>
-                      <a
-                        href={selectedSubBab.content_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex-shrink-0"
-                      >
-                        Buka di Tab Baru
-                      </a>
-                    </div>
-                    <div className="w-full h-[calc(100vh-300px)] bg-white">
-                      <iframe
-                        src={selectedSubBab.content_url}
-                        className="w-full h-full border-0"
-                        title={selectedSubBab.title}
-                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                      />
-                    </div>
-                  </Card>
+      <div className="p-5 md:p-6 pb-28">
+        <Card
+          className={`border border-gray-100 rounded-xl shadow-sm transition-all duration-300 ${
+            contentVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-2"
+          }`}
+        >
+          <div className="p-6 md:p-8">
+            {/* Sub-Bab Header */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                {selectedSubBab.content_type === "video" && (
+                  <Video size={20} className="text-green-600" />
                 )}
+                {selectedSubBab.content_type === "file" && (
+                  <FileText size={20} className="text-green-600" />
+                )}
+                {selectedSubBab.content_type === "link" && (
+                  <LinkIcon size={20} className="text-green-600" />
+                )}
+                {selectedSubBab.content_type === "text" && (
+                  <FileText size={20} className="text-green-600" />
+                )}
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {selectedSubBab.title}
+                </h2>
+              </div>
+              {selectedSubBab.description && (
+                <p className="text-gray-600 text-sm mt-2 pl-7">
+                  {selectedSubBab.description}
+                </p>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Content */}
+            <div className="bg-white">
+              {/* Text Content */}
+              {selectedSubBab.content && (
+                <Card className="p-6 mb-6 border border-gray-100 shadow-sm rounded-xl">
+                  <div className="prose max-w-none">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedSubBab.content}
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              {/* Media Content */}
+              {selectedSubBab.content_url && (
+                <div>
+                  {/* Video Content */}
+                  {selectedSubBab.content_type === "video" && (
+                    <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+                      {selectedSubBab.content_url.startsWith("http") ? (
+                        <div className="aspect-video bg-black">
+                          <video
+                            controls
+                            className="w-full h-full"
+                            src={selectedSubBab.content_url}
+                          >
+                            Browser Anda tidak mendukung video.
+                          </video>
+                        </div>
+                      ) : (
+                        <div className="aspect-video bg-black flex items-center justify-center">
+                          <p className="text-white">
+                            Video tidak dapat ditampilkan
+                          </p>
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* File/Document Content - Display as iframe or embed */}
+                  {selectedSubBab.content_type === "file" && (
+                    <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+                      {selectedSubBab.content_url.startsWith("data:") ? (
+                        <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
+                          <iframe
+                            src={selectedSubBab.content_url}
+                            className="w-full h-full border-0"
+                            title={selectedSubBab.title}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
+                          <iframe
+                            src={selectedSubBab.content_url}
+                            className="w-full h-full border-0"
+                            title={selectedSubBab.title}
+                          />
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* Link Content - Display as iframe */}
+                  {selectedSubBab.content_type === "link" &&
+                    selectedSubBab.content_url.startsWith("http") && (
+                      <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+                        <div className="bg-green-50 px-4 py-3 border-b border-green-100 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <LinkIcon size={16} className="text-green-600" />
+                            <span className="text-sm font-medium text-gray-700 truncate max-w-md">
+                              {selectedSubBab.content_url}
+                            </span>
+                          </div>
+                          <a
+                            href={selectedSubBab.content_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition flex-shrink-0"
+                          >
+                            Buka di Tab Baru
+                          </a>
+                        </div>
+                        <div className="w-full h-[calc(100vh-300px)] bg-white">
+                          <iframe
+                            src={selectedSubBab.content_url}
+                            className="w-full h-full border-0"
+                            title={selectedSubBab.title}
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                          />
+                        </div>
+                      </Card>
+                    )}
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
 
         {/* Navigation Buttons - Sticky at bottom */}
-        <div className="sticky bottom-0 left-0 right-0 pt-6 pb-4 bg-gradient-to-t from-gray-50 via-gray-50/95 to-transparent">
-          <div className="max-w-5xl mx-auto px-8">
+        <div className="sticky bottom-0 left-0 right-0 pt-4 pb-3 bg-gradient-to-t from-gray-50 via-gray-50/95 to-transparent">
+          <div className="max-w-5xl mx-auto px-1 md:px-2">
             <div className="flex items-center justify-between gap-4">
               <Button
                 variant="outline"
@@ -487,23 +521,28 @@ export default function SiswaMateriDetailPage() {
                 size="lg"
                 className="min-w-[200px] bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all rounded-lg"
                 onClick={() => {
+                  if (getNextSubBab()) {
+                    handleNavigateNext();
+                    return;
+                  }
                   handleMarkCompleteAndNext();
                 }}
+                disabled={selectedSubBab?.completed && !getNextSubBab()}
               >
-                {selectedSubBab?.completed ? (
+                {getNextSubBab() ? (
+                  <>
+                    Berikutnya
+                    <ChevronRight size={16} className="ml-2" />
+                  </>
+                ) : selectedSubBab?.completed ? (
                   <>
                     <CheckCircle size={16} className="mr-2" />
                     Sudah Selesai
                   </>
-                ) : getNextSubBab() ? (
-                  <>
-                    Tandai Selesai & Lanjut
-                    <ChevronRight size={16} className="ml-2" />
-                  </>
                 ) : (
                   <>
                     <CheckCircle size={16} className="mr-2" />
-                    Tandai Selesai
+                    Sudah Selesai
                   </>
                 )}
               </Button>
@@ -543,7 +582,7 @@ export default function SiswaMateriDetailPage() {
     totalSubBabs > 0 ? Math.round((completedSubBabs / totalSubBabs) * 100) : 0;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between mb-3">
@@ -593,15 +632,15 @@ export default function SiswaMateriDetailPage() {
                   <span className="font-bold text-green-600">
                     {progressPercentage}%
                   </span>{" "}
-                  complete
+                  selesai
                 </span>
                 <span className="text-xs text-gray-500">
-                  {completedSubBabs}/{totalSubBabs} lessons
+                  {completedSubBabs} dari {totalSubBabs} materi
                 </span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500"
+                  className="h-full bg-green-500 transition-all duration-500"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
@@ -613,9 +652,9 @@ export default function SiswaMateriDetailPage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Daftar Bab & Sub-Bab */}
-        <div className="w-80 bg-gray-50 border-r overflow-y-auto">
-          <div className="p-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="w-72 bg-white border-r border-gray-100 overflow-y-auto">
+          <div className="p-4 space-y-3">
+            <h2 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
               <BookOpen size={20} className="text-green-600" />
               Daftar Materi
             </h2>
@@ -634,7 +673,7 @@ export default function SiswaMateriDetailPage() {
                     {/* Bab Header */}
                     <button
                       onClick={() => toggleBab(bab.id)}
-                      className="w-full p-3 bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition"
+                      className="w-full p-2.5 bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 hover:shadow-sm transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-bold flex-shrink-0">
@@ -645,14 +684,20 @@ export default function SiswaMateriDetailPage() {
                             <h3 className="font-semibold text-gray-900 text-sm truncate">
                               {bab.title}
                             </h3>
-                            {/* Progress Badge */}
-                            <span className="text-xs font-bold text-gray-700 flex-shrink-0">
-                              {subBabs[bab.id]
-                                ? `${
-                                    subBabs[bab.id].filter((sb) => sb.completed)
-                                      .length
-                                  }/${subBabs[bab.id].length}`
-                                : "0/0"}
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                                subBabs[bab.id] &&
+                                subBabs[bab.id].length > 0 &&
+                                subBabs[bab.id].every((sb) => sb.completed)
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {subBabs[bab.id] &&
+                              subBabs[bab.id].length > 0 &&
+                              subBabs[bab.id].every((sb) => sb.completed)
+                                ? "Selesai"
+                                : "Belum"}
                             </span>
                           </div>
                           {bab.description && (
@@ -677,14 +722,14 @@ export default function SiswaMateriDetailPage() {
 
                     {/* Sub-Bab List */}
                     {expandedBabs.has(bab.id) && subBabs[bab.id] && (
-                      <div className="ml-4 mt-2 space-y-1">
+                      <div className="ml-4 mt-2 space-y-1.5">
                         {subBabs[bab.id].map((subBab, subIndex) => (
                           <button
                             key={subBab.id}
                             onClick={() => handleSelectSubBab(subBab)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-lg border transition relative ${
+                            className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all duration-200 relative hover:shadow-sm ${
                               selectedSubBab?.id === subBab.id
-                                ? "bg-green-50 border-green-400 border-l-4 border-l-green-600"
+                                ? "bg-green-50 border-green-300 border-l-4 border-l-green-600"
                                 : subBab.completed
                                   ? "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-green-500"
                                   : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-gray-200"
@@ -693,32 +738,35 @@ export default function SiswaMateriDetailPage() {
                             <div className="flex-shrink-0">
                               {subBab.completed ? (
                                 <CheckCircle
-                                  size={20}
+                                  size={18}
                                   className="text-green-600"
                                 />
                               ) : (
-                                <Circle size={20} className="text-gray-300" />
+                                <Circle size={18} className="text-gray-300" />
                               )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-900 truncate leading-snug">
                                 {subIndex + 1}. {subBab.title}
                               </p>
-                              <div className="flex items-center gap-1 mt-1">
+                              <div className="flex items-center gap-1 mt-0.5">
                                 {subBab.content_type === "video" && (
-                                  <Video
-                                    size={12}
-                                    className="text-purple-600"
-                                  />
+                                  <Video size={12} className="text-green-600" />
                                 )}
                                 {subBab.content_type === "file" && (
                                   <FileText
                                     size={12}
-                                    className="text-blue-600"
+                                    className="text-green-600"
                                   />
                                 )}
                                 {subBab.content_type === "link" && (
                                   <LinkIcon
+                                    size={12}
+                                    className="text-green-600"
+                                  />
+                                )}
+                                {subBab.content_type === "text" && (
+                                  <FileText
                                     size={12}
                                     className="text-green-600"
                                   />
@@ -740,7 +788,7 @@ export default function SiswaMateriDetailPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           {renderContent()}
         </div>
       </div>
