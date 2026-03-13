@@ -1,6 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+const SISWA_SIMULASI_CATALOG = [
+  { slug: "traffic-logic", name: "Logika Lalu Lintas" },
+  { slug: "traffic-debug", name: "Transisi Lampu Bertahap" },
+  { slug: "traffic-expert", name: "Prioritas Tiga Kendaraan" },
+  { slug: "kasir-kantin", name: "Perbaiki Mesin Kasir Kantin" },
+  { slug: "pintu-otomatis", name: "Koneksi Sensor & Pintu" },
+  { slug: "parkir-otomatis", name: "Sistem Parkir Otomatis" },
+];
+
+function isKelasX(kelas: string | null | undefined) {
+  const normalized = (kelas || "").trim().toUpperCase();
+  if (!normalized) return false;
+
+  const startsWithX = /^X(\b|[\s/-])/.test(normalized);
+  const startsWithXI = /^XI(\b|[\s/-])/.test(normalized);
+  const startsWithXII = /^XII(\b|[\s/-])/.test(normalized);
+
+  return startsWithX && !startsWithXI && !startsWithXII;
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -25,23 +45,37 @@ export async function GET() {
     if (!profile || (profile.role !== "guru" && profile.role !== "admin")) {
       return NextResponse.json(
         { error: "Forbidden - Guru or Admin access only" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    // Get all simulasi
-    const { data: simulasiList, error: simulasiError } = await supabase
+    // Get simulasi that are currently used in siswa page (source-of-truth by slug)
+    const simulasiSlugs = SISWA_SIMULASI_CATALOG.map((sim) => sim.slug);
+    const { data: simulasiRows, error: simulasiError } = await supabase
       .from("simulasi")
       .select("id, name, slug")
-      .order("created_at", { ascending: true });
+      .in("slug", simulasiSlugs);
 
     if (simulasiError) {
       console.error("Error fetching simulasi:", simulasiError);
       return NextResponse.json(
         { error: "Failed to fetch simulasi" },
-        { status: 500 }
+        { status: 500 },
       );
     }
+
+    const simulasiBySlug = new Map(
+      (simulasiRows || []).map((sim) => [sim.slug, sim]),
+    );
+
+    const simulasiList = SISWA_SIMULASI_CATALOG.map((catalogItem) => {
+      const dbSim = simulasiBySlug.get(catalogItem.slug);
+      return {
+        id: dbSim?.id || `missing-${catalogItem.slug}`,
+        name: dbSim?.name || catalogItem.name,
+        slug: catalogItem.slug,
+      };
+    });
 
     // Get all siswa
     const { data: siswaList, error: siswaError } = await supabase
@@ -54,7 +88,7 @@ export async function GET() {
       console.error("Error fetching siswa:", siswaError);
       return NextResponse.json(
         { error: "Failed to fetch siswa" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -67,7 +101,7 @@ export async function GET() {
       console.error("Error fetching progress:", progressError);
       return NextResponse.json(
         { error: "Failed to fetch progress" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -83,8 +117,12 @@ export async function GET() {
       };
     });
 
-    // Build result
-    const result = siswaList?.map((siswa) => ({
+    const siswaKelasX = (siswaList || []).filter((siswa) =>
+      isKelasX(siswa.kelas),
+    );
+
+    // Build result (kelas X only)
+    const result = siswaKelasX.map((siswa) => ({
       id: siswa.id,
       full_name: siswa.full_name,
       kelas: siswa.kelas,
@@ -105,7 +143,7 @@ export async function GET() {
     console.error("Error in simulasi-progress API:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

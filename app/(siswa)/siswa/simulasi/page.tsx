@@ -1,10 +1,78 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Microscope } from "lucide-react";
+import { Microscope, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+
+function isKelasX(kelas: string | null | undefined) {
+  const normalized = (kelas || "").trim().toUpperCase();
+  if (!normalized) return false;
+
+  const startsWithX = /^X(\b|[\s/-])/.test(normalized);
+  const startsWithXI = /^XI(\b|[\s/-])/.test(normalized);
+  const startsWithXII = /^XII(\b|[\s/-])/.test(normalized);
+
+  return startsWithX && !startsWithXI && !startsWithXII;
+}
 
 export default function SiswaSimulasiPage() {
+  const [isLoadingAccess, setIsLoadingAccess] = useState(true);
+  const [canAccessSimulasi, setCanAccessSimulasi] = useState(false);
+
+  useEffect(() => {
+    const checkKelasAccess = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setCanAccessSimulasi(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("kelas")
+          .eq("id", user.id)
+          .single();
+
+        setCanAccessSimulasi(isKelasX(profile?.kelas));
+      } catch (error) {
+        console.error("Error checking simulasi access:", error);
+        setCanAccessSimulasi(false);
+      } finally {
+        setIsLoadingAccess(false);
+      }
+    };
+
+    checkKelasAccess();
+  }, []);
+
+  if (isLoadingAccess) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="animate-spin text-green-600" size={32} />
+      </div>
+    );
+  }
+
+  if (!canAccessSimulasi) {
+    return (
+      <Card className="border border-amber-100 bg-amber-50/70 p-6">
+        <h1 className="text-xl font-semibold text-amber-900">
+          Simulasi khusus Kelas X
+        </h1>
+        <p className="mt-2 text-sm text-amber-800">
+          Fitur simulasi saat ini hanya tersedia untuk siswa kelas X.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
