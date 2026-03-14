@@ -5,8 +5,10 @@ import type React from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -121,7 +123,15 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel — login form ── */}
-      <div className="anim-right flex flex-col items-center justify-center w-full lg:w-1/2 flex-1 lg:min-h-screen px-6 py-10 lg:py-12 bg-white">
+      <div className="anim-right relative flex flex-col items-center justify-center w-full lg:w-1/2 flex-1 lg:min-h-screen px-6 py-10 lg:py-12 bg-white">
+        <Link
+          href="/"
+          className="absolute right-6 top-6 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+        >
+          <LogOut size={14} />
+          Keluar
+        </Link>
+
         <div className="w-full max-w-[420px]">
           {/* Card */}
           <div className="bg-white px-8 py-10">
