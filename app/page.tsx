@@ -1009,11 +1009,12 @@ export default function LandingPage() {
               }}
             >
               <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0f172a] mb-4 leading-tight">
-                Mitra Kami
+                Sekolah Implementasi
               </h2>
               <p className="text-[#64748b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-                Platform CODIN bekerja sama dengan berbagai institusi pendidikan
-                untuk mendukung pembelajaran yang lebih inovatif dan interaktif.
+                Platform CODIN digunakan sebagai media pembelajaran berbasis web
+                untuk mendukung pembelajaran Algoritma dan Pemrograman di SMKS
+                YPM 4 Taman.
               </p>
             </div>
 
