@@ -41,6 +41,7 @@ export default function SiswaProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -194,6 +195,11 @@ export default function SiswaProfilePage() {
     setPasswordError("");
     setPasswordSuccess("");
 
+    if (!oldPassword) {
+      setPasswordError("Password lama wajib diisi");
+      return;
+    }
+
     if (newPassword.length < 8) {
       setPasswordError("Password minimal 8 karakter");
       return;
@@ -207,6 +213,16 @@ export default function SiswaProfilePage() {
     try {
       setSaving(true);
 
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: profile?.email || "",
+        password: oldPassword,
+      });
+
+      if (verifyError) {
+        throw new Error("Password lama tidak sesuai");
+      }
+
       const res = await fetch("/api/auth/update-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,6 +235,7 @@ export default function SiswaProfilePage() {
       }
 
       setPasswordSuccess("Password berhasil diubah!");
+      setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordForm(false);
@@ -491,7 +508,14 @@ export default function SiswaProfilePage() {
               </button>
             ) : (
               <form onSubmit={handleChangePassword} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <input
+                    type="password"
+                    placeholder="Password lama"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                  />
                   <input
                     type="password"
                     placeholder="Password baru"
@@ -522,6 +546,7 @@ export default function SiswaProfilePage() {
                     type="button"
                     onClick={() => {
                       setShowPasswordForm(false);
+                      setOldPassword("");
                       setPasswordError("");
                     }}
                     className="px-5 text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"

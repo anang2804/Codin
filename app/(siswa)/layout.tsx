@@ -21,6 +21,7 @@ export default function SiswaLayout({
 
   // Check if current page should hide header and sidebar
   const hideHeader =
+    pathname === "/siswa/profile" ||
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
     (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
 
