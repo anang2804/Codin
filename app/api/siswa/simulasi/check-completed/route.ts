@@ -19,10 +19,46 @@ export async function GET(request: Request) {
     const simulasi_slug = searchParams.get("simulasi_slug");
 
     if (!simulasi_slug) {
-      return NextResponse.json(
-        { error: "simulasi_slug is required" },
-        { status: 400 }
+      const { data: progressList, error: progressError } = await supabase
+        .from("simulasi_progress")
+        .select(
+          `
+            completed,
+            completed_at,
+            simulasi:simulasi_id (
+              slug
+            )
+          `,
+        )
+        .eq("siswa_id", user.id)
+        .eq("completed", true);
+
+      if (progressError) {
+        return NextResponse.json(
+          { error: "Failed to fetch simulation completion list" },
+          { status: 500 },
+        );
+      }
+
+      const items = (progressList || []).reduce(
+        (acc, item: any) => {
+          const slug = item.simulasi?.slug;
+          if (!slug) return acc;
+
+          acc[slug] = {
+            completed: item.completed,
+            completed_at: item.completed_at,
+          };
+
+          return acc;
+        },
+        {} as Record<
+          string,
+          { completed: boolean; completed_at: string | null }
+        >,
       );
+
+      return NextResponse.json({ items });
     }
 
     // Get simulasi ID from slug
@@ -56,7 +92,7 @@ export async function GET(request: Request) {
     console.error("Error in check-completed API:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

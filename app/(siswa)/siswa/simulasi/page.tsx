@@ -21,6 +21,9 @@ export default function SiswaSimulasiPage() {
   const [isLoadingAccess, setIsLoadingAccess] = useState(true);
   const [canAccessSimulasi, setCanAccessSimulasi] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
+  const [completedSimulasi, setCompletedSimulasi] = useState<
+    Record<string, { completed: boolean; completed_at: string | null }>
+  >({});
 
   useEffect(() => {
     const checkKelasAccess = async () => {
@@ -52,6 +55,39 @@ export default function SiswaSimulasiPage() {
 
     checkKelasAccess();
   }, []);
+
+  useEffect(() => {
+    if (isLoadingAccess || !canAccessSimulasi) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchSimulationCompletion = async () => {
+      try {
+        const response = await fetch("/api/siswa/simulasi/check-completed", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (isActive) {
+          setCompletedSimulasi(data.items || {});
+        }
+      } catch (error) {
+        console.error("Error fetching simulation completion list:", error);
+      }
+    };
+
+    fetchSimulationCompletion();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isLoadingAccess, canAccessSimulasi]);
 
   useEffect(() => {
     if (!isLoadingAccess && canAccessSimulasi) {
@@ -91,8 +127,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Susun diagram alir untuk mengatur lampu lalu lintas dengan benar.",
           href: "/siswa/simulasi/traffic-logic",
+          slug: "traffic-logic",
           level: "Dasar",
-          status: "Belum dicoba",
           gradient: "from-sky-100 to-cyan-200",
           emoji: "🚦",
           accent: "border-sky-500",
@@ -102,8 +138,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Susun diagram alir untuk perubahan lampu Merah ke Kuning lalu Hijau secara berurutan.",
           href: "/siswa/simulasi/traffic-debug",
+          slug: "traffic-debug",
           level: "Menengah",
-          status: "Belum dicoba",
           gradient: "from-amber-100 to-orange-200",
           emoji: "🚦",
           accent: "border-amber-500",
@@ -113,8 +149,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Susun diagram alir bercabang untuk sistem prioritas ambulans, lampu lalu lintas, dan kendaraan biasa.",
           href: "/siswa/simulasi/traffic-expert",
+          slug: "traffic-expert",
           level: "Lanjutan",
-          status: "Belum dicoba",
           gradient: "from-rose-100 to-pink-200",
           emoji: "🚦",
           accent: "border-rose-500",
@@ -130,8 +166,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Tulis algoritma pseudocode untuk menghitung total harga makanan dan minuman pelanggan.",
           href: "/siswa/simulasi/kasir-kantin",
+          slug: "kasir-kantin",
           level: "Dasar",
-          status: "Belum dicoba",
           gradient: "from-emerald-100 to-teal-200",
           emoji: "🍛",
           accent: "border-emerald-500",
@@ -141,8 +177,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Lengkapi pseudocode pintu otomatis agar bekerja sesuai deteksi sensor infrared.",
           href: "/siswa/simulasi/pintu-otomatis",
+          slug: "pintu-otomatis",
           level: "Menengah",
-          status: "Belum dicoba",
           gradient: "from-indigo-100 to-purple-200",
           emoji: "🚪",
           accent: "border-indigo-500",
@@ -152,8 +188,8 @@ export default function SiswaSimulasiPage() {
           description:
             "Lengkapi pseudocode sistem parkir dengan sensor dan kondisi IF-ELSE untuk akses kendaraan.",
           href: "/siswa/simulasi/parkir-otomatis",
+          slug: "parkir-otomatis",
           level: "Menengah",
-          status: "Belum dicoba",
           gradient: "from-blue-100 to-cyan-200",
           emoji: "🚗",
           accent: "border-blue-500",
@@ -173,6 +209,12 @@ export default function SiswaSimulasiPage() {
       default:
         return "bg-gray-100 text-gray-600 border border-gray-200";
     }
+  };
+
+  const getStatusBadgeClass = (completed: boolean) => {
+    return completed
+      ? "rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100"
+      : "rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700 border border-amber-100";
   };
 
   return (
@@ -203,69 +245,77 @@ export default function SiswaSimulasiPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {section.items.map((item, itemIndex) => (
-              <Card
-                key={item.href}
-                className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${
-                  animateIn
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-3"
-                }`}
-                style={{
-                  transitionDelay: `${sectionIndex * 120 + itemIndex * 60}ms`,
-                }}
-              >
-                <div
-                  className={`h-24 bg-gradient-to-br ${item.gradient} flex items-center justify-center`}
+            {section.items.map((item, itemIndex) => {
+              const isCompleted = Boolean(
+                completedSimulasi[item.slug]?.completed,
+              );
+
+              return (
+                <Card
+                  key={item.href}
+                  className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
+                    animateIn
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-3"
+                  }`}
+                  style={{
+                    transitionDelay: `${sectionIndex * 120 + itemIndex * 60}ms`,
+                  }}
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="text-4xl">{item.emoji}</div>
-                    <div className="flex gap-1.5">
-                      <div
-                        className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
-                      />
-                      <div
-                        className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
-                      />
-                      <div
-                        className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
-                      />
+                  <div
+                    className={`h-24 bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="text-4xl">{item.emoji}</div>
+                      <div className="flex gap-1.5">
+                        <div
+                          className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
+                        />
+                        <div
+                          className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
+                        />
+                        <div
+                          className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-4 space-y-3">
-                  <div className="space-y-1.5">
-                    <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <div className="space-y-3 flex-1">
+                      <div className="space-y-1.5">
+                        <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <span
-                      className={`rounded-full px-2 py-1 text-[11px] font-medium ${getLevelBadgeClass(item.level)}`}
+                      <div className="flex flex-wrap gap-2">
+                        <span
+                          className={`rounded-full px-2 py-1 text-[11px] font-medium ${getLevelBadgeClass(item.level)}`}
+                        >
+                          Level {item.level}
+                        </span>
+                        <span className={getStatusBadgeClass(isCompleted)}>
+                          {isCompleted ? "Sudah dicoba" : "Belum dicoba"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        window.location.href = item.href;
+                      }}
+                      className="mt-auto w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
                     >
-                      Level {item.level}
-                    </span>
-                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700">
-                      {item.status}
-                    </span>
+                      Mulai Simulasi
+                    </Button>
                   </div>
-
-                  <Button
-                    onClick={() => {
-                      window.location.href = item.href;
-                    }}
-                    className="w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
-                  >
-                    Mulai Simulasi
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </section>
       ))}

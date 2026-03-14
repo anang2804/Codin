@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface MarkCompletedButtonProps {
   simulasiSlug: string;
@@ -22,7 +23,13 @@ export default function MarkCompletedButton({
     try {
       const response = await fetch(
         `/api/siswa/simulasi/check-completed?simulasi_slug=${simulasiSlug}`,
+        { cache: "no-store" },
       );
+
+      if (!response.ok) {
+        throw new Error("Gagal memeriksa status simulasi");
+      }
+
       const data = await response.json();
       setIsCompleted(data.completed || false);
     } catch (error) {
@@ -45,11 +52,20 @@ export default function MarkCompletedButton({
         body: JSON.stringify({ simulasi_slug: simulasiSlug }),
       });
 
-      if (response.ok) {
-        setIsCompleted(true);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menyimpan progress simulasi");
       }
-    } catch (error) {
+
+      setIsCompleted(true);
+      localStorage.setItem("simulasi_progress_updated", Date.now().toString());
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("simulasiProgressUpdated"));
+      toast.success("Simulasi ditandai selesai");
+    } catch (error: any) {
       console.error("Error marking as completed:", error);
+      toast.error(error.message || "Gagal menyimpan progress simulasi");
     } finally {
       setIsLoading(false);
     }
@@ -87,12 +103,12 @@ export default function MarkCompletedButton({
       ) : isCompleted ? (
         <>
           <CheckCircle2 size={14} fill="currentColor" />
-          Sudah Dicoba ✓
+          Selesai
         </>
       ) : (
         <>
           <CheckCircle2 size={14} />
-          Tandai Sudah Coba
+          Tandai Selesai
         </>
       )}
     </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Play,
   RotateCcw,
@@ -82,12 +82,15 @@ const COMMAND_DETAILS = {
   },
 };
 
+const SIMULASI_SLUG = "pintu-otomatis";
+
 const PintuOtomatisSimulation = () => {
   const [code, setCode] = useState("");
   const [activeLine, setActiveLine] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [hasTried, setHasTried] = useState(false);
+  const [isSavingCompletion, setIsSavingCompletion] = useState(false);
 
   const [simState, setSimState] = useState({
     sensorValue: "none",
@@ -196,6 +199,34 @@ const PintuOtomatisSimulation = () => {
     return COMMAND_DETAILS.DEFAULT;
   };
 
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchCompletionStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/siswa/simulasi/check-completed?simulasi_slug=${SIMULASI_SLUG}`,
+          { cache: "no-store" },
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (isActive && data.completed) {
+          setHasTried(true);
+        }
+      } catch (error) {
+        console.error("Error checking simulation completion:", error);
+      }
+    };
+
+    fetchCompletionStatus();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (isRunning) return;
     setCode(e.target.value);
@@ -229,9 +260,34 @@ const PintuOtomatisSimulation = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
   };
 
-  const markAsTried = () => {
-    setHasTried(true);
-    toast.success("Simulasi berhasil ditandai sebagai sudah dicoba! ✅");
+  const markAsTried = async () => {
+    if (hasTried || isSavingCompletion) return;
+
+    try {
+      setIsSavingCompletion(true);
+
+      const response = await fetch("/api/siswa/simulasi/mark-completed", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ simulasi_slug: SIMULASI_SLUG }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menyimpan progress simulasi");
+      }
+
+      setHasTried(true);
+      toast.success("Simulasi ditandai selesai");
+    } catch (error: any) {
+      console.error("Error marking simulation as completed:", error);
+      toast.error(error.message || "Gagal menyimpan progress simulasi");
+    } finally {
+      setIsSavingCompletion(false);
+    }
   };
 
   const executeStep = async (index: number): Promise<void> => {
@@ -406,7 +462,7 @@ const PintuOtomatisSimulation = () => {
           </button>
           <button
             onClick={markAsTried}
-            disabled={hasTried}
+            disabled={hasTried || isSavingCompletion}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 active:scale-95 disabled:opacity-50 ${
               hasTried
                 ? "bg-[#d1fae5] text-[#0f766e] border-2 border-[#86efac] shadow-sm"
