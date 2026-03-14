@@ -20,6 +20,7 @@ function isKelasX(kelas: string | null | undefined) {
 export default function SiswaSimulasiPage() {
   const [isLoadingAccess, setIsLoadingAccess] = useState(true);
   const [canAccessSimulasi, setCanAccessSimulasi] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
 
   useEffect(() => {
     const checkKelasAccess = async () => {
@@ -52,6 +53,13 @@ export default function SiswaSimulasiPage() {
     checkKelasAccess();
   }, []);
 
+  useEffect(() => {
+    if (!isLoadingAccess && canAccessSimulasi) {
+      const timer = window.setTimeout(() => setAnimateIn(true), 40);
+      return () => window.clearTimeout(timer);
+    }
+  }, [isLoadingAccess, canAccessSimulasi]);
+
   if (isLoadingAccess) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -73,9 +81,102 @@ export default function SiswaSimulasiPage() {
     );
   }
 
+  const simulationSections = [
+    {
+      title: "Diagram Alir",
+      badgeClass: "bg-sky-50 text-sky-700 border border-sky-100",
+      items: [
+        {
+          title: "Logika Lalu Lintas",
+          description:
+            "Susun diagram alir untuk mengatur lampu lalu lintas dengan benar.",
+          href: "/siswa/simulasi/traffic-logic",
+          level: "Dasar",
+          status: "Belum dicoba",
+          gradient: "from-sky-100 to-cyan-200",
+          emoji: "🚦",
+          accent: "border-sky-500",
+        },
+        {
+          title: "Transisi Lampu Bertahap",
+          description:
+            "Susun diagram alir untuk perubahan lampu Merah ke Kuning lalu Hijau secara berurutan.",
+          href: "/siswa/simulasi/traffic-debug",
+          level: "Menengah",
+          status: "Belum dicoba",
+          gradient: "from-amber-100 to-orange-200",
+          emoji: "🚦",
+          accent: "border-amber-500",
+        },
+        {
+          title: "Prioritas Tiga Kendaraan",
+          description:
+            "Susun diagram alir bercabang untuk sistem prioritas ambulans, lampu lalu lintas, dan kendaraan biasa.",
+          href: "/siswa/simulasi/traffic-expert",
+          level: "Lanjutan",
+          status: "Belum dicoba",
+          gradient: "from-rose-100 to-pink-200",
+          emoji: "🚦",
+          accent: "border-rose-500",
+        },
+      ],
+    },
+    {
+      title: "Pseudocode",
+      badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+      items: [
+        {
+          title: "Perbaiki Mesin Kasir Kantin",
+          description:
+            "Tulis algoritma pseudocode untuk menghitung total harga makanan dan minuman pelanggan.",
+          href: "/siswa/simulasi/kasir-kantin",
+          level: "Dasar",
+          status: "Belum dicoba",
+          gradient: "from-emerald-100 to-teal-200",
+          emoji: "🍛",
+          accent: "border-emerald-500",
+        },
+        {
+          title: "Koneksi Sensor & Pintu",
+          description:
+            "Lengkapi pseudocode pintu otomatis agar bekerja sesuai deteksi sensor infrared.",
+          href: "/siswa/simulasi/pintu-otomatis",
+          level: "Menengah",
+          status: "Belum dicoba",
+          gradient: "from-indigo-100 to-purple-200",
+          emoji: "🚪",
+          accent: "border-indigo-500",
+        },
+        {
+          title: "Sistem Parkir Otomatis",
+          description:
+            "Lengkapi pseudocode sistem parkir dengan sensor dan kondisi IF-ELSE untuk akses kendaraan.",
+          href: "/siswa/simulasi/parkir-otomatis",
+          level: "Menengah",
+          status: "Belum dicoba",
+          gradient: "from-blue-100 to-cyan-200",
+          emoji: "🚗",
+          accent: "border-blue-500",
+        },
+      ],
+    },
+  ];
+
+  const getLevelBadgeClass = (level: string) => {
+    switch (level) {
+      case "Dasar":
+        return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+      case "Menengah":
+        return "bg-sky-50 text-sky-700 border border-sky-100";
+      case "Lanjutan":
+        return "bg-rose-50 text-rose-700 border border-rose-100";
+      default:
+        return "bg-gray-100 text-gray-600 border border-gray-200";
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-7">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
@@ -88,212 +189,86 @@ export default function SiswaSimulasiPage() {
         </div>
       </div>
 
-      {/* Kategori 1: Diagram Alir */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-          <h2 className="text-lg font-bold text-gray-800">Diagram Alir</h2>
-          <span className="text-xs text-gray-500 bg-blue-50 px-2 py-1 rounded-full">
-            3 Simulasi
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: Traffic Logic */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🚦</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-cyan-500 rounded bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-blue-500 rotate-45 bg-white"></div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Logika Lalu Lintas
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Susun diagram alir untuk mengatur lampu lalu lintas dengan
-                benar.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/traffic-logic")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
-              >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
+      {simulationSections.map((section, sectionIndex) => (
+        <section key={section.title} className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-800">
+              {section.title}
+            </h2>
+            <span
+              className={`text-[11px] px-2 py-1 rounded-full font-medium ${section.badgeClass}`}
+            >
+              {section.items.length} simulasi
+            </span>
+          </div>
 
-          {/* Card 2: Traffic Debug */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🚦</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-amber-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-orange-500 rounded bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-amber-500 rotate-45 bg-white"></div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Transisi Lampu Bertahap
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Susun diagram alir untuk mengatur perubahan lampu dari Merah →
-                Kuning → Hijau secara berurutan.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/traffic-debug")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {section.items.map((item, itemIndex) => (
+              <Card
+                key={item.href}
+                className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${
+                  animateIn
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-3"
+                }`}
+                style={{
+                  transitionDelay: `${sectionIndex * 120 + itemIndex * 60}ms`,
+                }}
               >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
+                <div
+                  className={`h-24 bg-gradient-to-br ${item.gradient} flex items-center justify-center`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-4xl">{item.emoji}</div>
+                    <div className="flex gap-1.5">
+                      <div
+                        className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
+                      />
+                      <div
+                        className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
+                      />
+                      <div
+                        className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-          {/* Card 3: Traffic Expert */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-red-100 to-pink-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🚦</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-red-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-pink-500 rounded bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-red-500 rotate-45 bg-white"></div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Prioritas Tiga Kendaraan
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Susun diagram alir bercabang kompleks untuk mengatur 3 kendaraan
-                dengan sistem prioritas: ambulans → lampu lalu lintas →
-                kendaraan biasa.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/traffic-expert")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
-              >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+                <div className="p-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
 
-      {/* Kategori 2: Pseudocode */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-l-4 border-purple-600 pl-3">
-          <h2 className="text-lg font-bold text-gray-800">Pseudocode</h2>
-          <span className="text-xs text-gray-500 bg-purple-50 px-2 py-1 rounded-full">
-            3 Simulasi
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: Kasir Kantin */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-emerald-100 to-teal-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🍛</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-emerald-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-teal-500 rounded bg-white"></div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Perbaiki Mesin Kasir Kantin
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Tulis algoritma pseudocode untuk menghitung total harga makanan
-                dan minuman pelanggan di mesin kasir kantin.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/kasir-kantin")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
-              >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`rounded-full px-2 py-1 text-[11px] font-medium ${getLevelBadgeClass(item.level)}`}
+                    >
+                      Level {item.level}
+                    </span>
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700">
+                      {item.status}
+                    </span>
+                  </div>
 
-          {/* Card 2: Pintu Otomatis */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-indigo-100 to-purple-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🚪</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-indigo-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-purple-500 rounded bg-white"></div>
+                  <Button
+                    onClick={() => {
+                      window.location.href = item.href;
+                    }}
+                    className="w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
+                  >
+                    Mulai Simulasi
+                  </Button>
                 </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Koneksi Sensor & Pintu
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Lengkapi pseudocode pintu otomatis dengan perintah INPUT dan
-                PRINT agar pintu bekerja sesuai deteksi sensor infrared.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/pintu-otomatis")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
-              >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
-
-          {/* Card 3: Parkir Otomatis */}
-          <Card className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-all">
-            <div className="h-36 bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-5xl">🚗</div>
-                <div className="flex gap-1">
-                  <div className="w-5 h-5 border-2 border-blue-500 rounded-full bg-white"></div>
-                  <div className="w-5 h-5 border-2 border-cyan-500 rounded bg-white"></div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 mb-2 text-base flex items-center gap-2">
-                🎯 Sistem Parkir Otomatis
-              </h3>
-              <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                Lengkapi pseudocode sistem parkir dengan sensor dan kondisi
-                IF-ELSE untuk menentukan apakah kendaraan boleh masuk atau
-                parkiran penuh.
-              </p>
-              <Button
-                onClick={() =>
-                  (window.location.href = "/siswa/simulasi/parkir-otomatis")
-                }
-                className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm"
-              >
-                Mulai Simulasi
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
