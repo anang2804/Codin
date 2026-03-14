@@ -9,7 +9,6 @@ import {
   BarChart3,
   Zap,
   ChevronDown,
-  Power,
   FileCode,
   Play,
   Code2,
@@ -178,7 +177,6 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white text-[13.5px] font-semibold rounded-lg hover:bg-emerald-700 active:scale-95 transition-all duration-200 shadow-sm whitespace-nowrap"
                 aria-label="Masuk"
               >
-                <Power className="w-3.5 h-3.5" />
                 Masuk
               </button>
             </Link>
@@ -232,7 +230,6 @@ export default function LandingPage() {
             <li className="pt-2">
               <Link href="/auth/login" onClick={() => setMenuOpen(false)}>
                 <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-[14px] font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
-                  <Power className="w-4 h-4" />
                   Masuk
                 </button>
               </Link>
