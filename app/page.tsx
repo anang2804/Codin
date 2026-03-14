@@ -29,7 +29,7 @@ import {
 export default function LandingPage() {
   const [active, setActive] = useState<string>("home");
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const [codeLines, setCodeLines] = useState<number>(0);
+  const [heroVideoVisible, setHeroVideoVisible] = useState<boolean>(false);
   const [simFront, setSimFront] = useState<number>(0);
   const [simFlipping, setSimFlipping] = useState<boolean>(false);
   const [simTiltX, setSimTiltX] = useState<number>(0);
@@ -113,19 +113,11 @@ export default function LandingPage() {
     return () => obs.disconnect();
   }, []);
 
-  // Typewriter effect for code editor
+  // Hero video fade-in on first load
   useEffect(() => {
-    const TOTAL_LINES = 8;
-    const DELAY = 420;
-    const RESTART_PAUSE = 2200;
-    if (codeLines < TOTAL_LINES) {
-      const t = setTimeout(() => setCodeLines((v) => v + 1), DELAY);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => setCodeLines(0), RESTART_PAUSE);
-      return () => clearTimeout(t);
-    }
-  }, [codeLines]);
+    const timer = window.setTimeout(() => setHeroVideoVisible(true), 80);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -253,6 +245,17 @@ export default function LandingPage() {
       <main className="w-full">
         {/* Hero */}
         <section className="relative overflow-hidden bg-white">
+          <style>{`
+            @keyframes heroFloatSoft {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-8px); }
+            }
+            @keyframes heroFloatTilt {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              50% { transform: translateY(-6px) rotate(3deg); }
+            }
+          `}</style>
+
           {/* Background blobs */}
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-blue-100 rounded-full blur-3xl opacity-40 pointer-events-none" />
@@ -290,149 +293,78 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* RIGHT: Code Mockup Illustration */}
+              {/* RIGHT: CODIN video branding */}
               <div className="relative flex items-center justify-center">
-                {/* Floating tech icons */}
+                {/* Floating programming symbols */}
                 <div
-                  className="absolute -top-4 -left-4 p-2 bg-white rounded-xl shadow-md border border-neutral-100 animate-bounce"
-                  style={{ animationDuration: "3s" }}
+                  className="pointer-events-none absolute -top-3 left-6 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-emerald-200 bg-white/90 backdrop-blur-sm text-[11px] font-bold text-emerald-600 opacity-90 shadow-sm"
+                  style={{
+                    animation: "heroFloatSoft 5.5s ease-in-out infinite",
+                  }}
                 >
-                  <Code2 className="w-6 h-6 text-yellow-500" />
+                  &lt;/&gt;
                 </div>
                 <div
-                  className="absolute top-8 -right-4 p-2 bg-white rounded-xl shadow-md border border-neutral-100 animate-bounce"
-                  style={{ animationDuration: "2.5s", animationDelay: "0.5s" }}
+                  className="pointer-events-none absolute top-14 -right-2 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-blue-200 bg-white/90 backdrop-blur-sm text-[11px] font-bold text-blue-600 opacity-90 shadow-sm"
+                  style={{
+                    animation: "heroFloatTilt 6.3s ease-in-out infinite",
+                  }}
                 >
-                  <GitBranch className="w-6 h-6 text-blue-500" />
+                  {"{}"}
                 </div>
                 <div
-                  className="absolute -bottom-4 right-8 p-2 bg-white rounded-xl shadow-md border border-neutral-100 animate-bounce"
-                  style={{ animationDuration: "3.5s", animationDelay: "1s" }}
+                  className="pointer-events-none absolute bottom-8 -left-3 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-violet-200 bg-white/90 backdrop-blur-sm text-violet-600 opacity-85 shadow-sm"
+                  style={{
+                    animation: "heroFloatSoft 5.8s ease-in-out infinite",
+                  }}
                 >
-                  <FileCode className="w-6 h-6 text-emerald-500" />
+                  <GitBranch className="w-4 h-4" />
                 </div>
                 <div
-                  className="absolute bottom-8 -left-4 p-2 bg-white rounded-xl shadow-md border border-neutral-100 animate-bounce"
-                  style={{ animationDuration: "2.8s", animationDelay: "0.3s" }}
+                  className="pointer-events-none absolute -bottom-2 right-10 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-sky-200 bg-white/90 backdrop-blur-sm text-sky-600 opacity-85 shadow-sm"
+                  style={{
+                    animation: "heroFloatTilt 6.8s ease-in-out infinite",
+                  }}
                 >
-                  <Cpu className="w-6 h-6 text-purple-500" />
+                  <Code2 className="w-4 h-4" />
                 </div>
 
-                {/* Main card: Code editor mockup */}
-                <div className="w-full max-w-sm bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden border border-white/10">
-                  {/* Titlebar */}
-                  <div className="flex items-center gap-2 px-4 py-3 bg-[#1e293b] border-b border-white/10">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                    <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                    <span className="ml-3 text-xs text-gray-400 font-mono">
-                      algoritma.py
-                    </span>
-                  </div>
-                  {/* Code lines – typewriter effect */}
-                  <div className="px-5 py-5 font-mono text-sm leading-7 select-none min-h-[220px]">
-                    {/* Line 0 */}
-                    {codeLines > 0 && (
-                      <div className="flex items-center">
-                        <span className="text-purple-400">def </span>
-                        <span className="text-blue-300">bubble_sort</span>
-                        <span className="text-white">(arr):</span>
-                        {codeLines === 1 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 1 */}
-                    {codeLines > 1 && (
-                      <div className="ml-4 flex items-center">
-                        <span className="text-purple-400">for </span>
-                        <span className="text-white">&nbsp;i&nbsp;</span>
-                        <span className="text-purple-400">in </span>
-                        <span className="text-yellow-300">range</span>
-                        <span className="text-white">(</span>
-                        <span className="text-yellow-300">len</span>
-                        <span className="text-white">(arr)):</span>
-                        {codeLines === 2 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 2 */}
-                    {codeLines > 2 && (
-                      <div className="ml-8 flex items-center">
-                        <span className="text-purple-400">for </span>
-                        <span className="text-white">&nbsp;j&nbsp;</span>
-                        <span className="text-purple-400">in </span>
-                        <span className="text-yellow-300">range</span>
-                        <span className="text-white">(</span>
-                        <span className="text-orange-300">0</span>
-                        <span className="text-white">,&nbsp;</span>
-                        <span className="text-yellow-300">len</span>
-                        <span className="text-white">(arr)-i-</span>
-                        <span className="text-orange-300">1</span>
-                        <span className="text-white">):</span>
-                        {codeLines === 3 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 3 */}
-                    {codeLines > 3 && (
-                      <div className="ml-12 flex items-center">
-                        <span className="text-purple-400">if </span>
-                        <span className="text-white">
-                          arr[j]&nbsp;&gt;&nbsp;arr[j+
-                        </span>
-                        <span className="text-orange-300">1</span>
-                        <span className="text-white">]:</span>
-                        {codeLines === 4 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 4 */}
-                    {codeLines > 4 && (
-                      <div className="ml-16 flex items-center">
-                        <span className="text-white">arr[j],&nbsp;arr[j+</span>
-                        <span className="text-orange-300">1</span>
-                        <span className="text-white">]&nbsp;=&nbsp;arr[j+</span>
-                        <span className="text-orange-300">1</span>
-                        <span className="text-white">],&nbsp;arr[j]</span>
-                        {codeLines === 5 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 5 */}
-                    {codeLines > 5 && (
-                      <div className="mt-2 flex items-center">
-                        <span className="text-purple-400">return </span>
-                        <span className="text-white">&nbsp;arr</span>
-                        {codeLines === 6 && (
-                          <span className="inline-block w-[2px] h-4 bg-white animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 6 */}
-                    {codeLines > 6 && (
-                      <div className="mt-3 flex items-center">
-                        <span className="text-gray-500"># Output:</span>
-                        {codeLines === 7 && (
-                          <span className="inline-block w-[2px] h-4 bg-gray-500 animate-pulse rounded-sm ml-0.5" />
-                        )}
-                      </div>
-                    )}
-                    {/* Line 7 – output */}
-                    {codeLines > 7 && (
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="inline-block w-2 h-4 bg-emerald-400 rounded-sm" />
-                        <span className="text-emerald-400">
-                          [1, 2, 3, 4, 5]
-                        </span>
-                        <span className="inline-block w-[2px] h-4 bg-emerald-400 animate-pulse rounded-sm" />
-                      </div>
-                    )}
-                  </div>
+                {/* Floating flowchart symbols */}
+                <div
+                  className="pointer-events-none absolute top-8 left-2 z-20 block w-3.5 h-3.5 rounded-full border border-emerald-400/80 bg-emerald-200/70 opacity-85 shadow-sm"
+                  style={{
+                    animation: "heroFloatSoft 6.2s ease-in-out infinite",
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute top-24 right-6 z-20 block w-3.5 h-3.5 border border-blue-400/80 bg-blue-200/70 opacity-85 shadow-sm"
+                  style={{
+                    animation: "heroFloatTilt 6.6s ease-in-out infinite",
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute bottom-14 left-10 z-20 block w-3.5 h-3.5 rotate-45 border border-violet-400/80 bg-violet-200/70 opacity-85 shadow-sm"
+                  style={{
+                    animation: "heroFloatSoft 5.9s ease-in-out infinite",
+                  }}
+                />
+
+                <div
+                  className={`w-full max-w-[620px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.12)] transition-all duration-700 ${
+                    heroVideoVisible
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-4"
+                  }`}
+                >
+                  <video
+                    src="/codin.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="block aspect-video w-full object-cover"
+                  />
                 </div>
               </div>
             </div>
