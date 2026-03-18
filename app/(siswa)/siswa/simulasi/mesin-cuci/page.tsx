@@ -21,42 +21,42 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 const EXPECTED_SOLUTION = [
-  "start",
-  "",
-  "input pakaian_kotor",
-  "input air",
-  "input deterjen",
-  "",
-  "process:",
-  "isi_air",
-  "tambah_deterjen",
-  "cuci_pakaian",
-  "bilas_pakaian",
-  "peras_pakaian",
-  "",
-  "output pakaian_bersih",
-  "",
-  "end",
+  "INPUT pakaian_kotor",
+  "INPUT air",
+  "INPUT deterjen",
+  "PROCESS isi_air",
+  "PROCESS tambah_deterjen",
+  "PROCESS cuci_pakaian",
+  "PROCESS bilas_pakaian",
+  "PROCESS peras_pakaian",
+  "OUTPUT pakaian_bersih",
 ] as const;
 
 const INITIAL_TEMPLATE = [
-  "_____",
-  "",
   "_____ pakaian_kotor",
   "_____ air",
   "_____ deterjen",
-  "",
-  "_____:",
-  "    isi_air",
-  "    tambah_deterjen",
-  "    cuci_pakaian",
-  "    bilas_pakaian",
-  "    peras_pakaian",
-  "",
+  "_____ isi_air",
+  "_____ tambah_deterjen",
+  "_____ cuci_pakaian",
+  "_____ bilas_pakaian",
+  "_____ peras_pakaian",
   "_____ pakaian_bersih",
-  "",
-  "_____",
 ] as const;
+
+const BLANK_LINE_SUFFIX: Record<number, string> = {
+  0: "pakaian_kotor",
+  1: "air",
+  2: "deterjen",
+  3: "isi_air",
+  4: "tambah_deterjen",
+  5: "cuci_pakaian",
+  6: "bilas_pakaian",
+  7: "peras_pakaian",
+  8: "pakaian_bersih",
+};
+
+type CommandChoice = "INPUT" | "PROCESS" | "OUTPUT";
 
 const COMMAND_GLOSSARY: Record<string, string> = {
   input:
@@ -131,7 +131,6 @@ const OVERHEAT_SPARKS = [
 ] as const;
 
 const STEP_ADVANCE_DELAY_MS = 1800;
-const PROCESS_BLOCK_DELAY_MS = 1400;
 const PROCESS_SUBSTEP_DELAY_MS = 1100;
 const OUTPUT_DELAY_MS = 1300;
 
@@ -184,7 +183,11 @@ const DirtyLaundryIcon = ({
 );
 
 const MesinCuciSimulation = () => {
-  const [code, setCode] = useState<string>("");
+  const [selectedCommands, setSelectedCommands] = useState<
+    Partial<Record<number, CommandChoice>>
+  >({});
+  const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
+  const [code, setCode] = useState<string>(INITIAL_TEMPLATE.join("\n"));
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorLine, setErrorLine] = useState<number>(-1);
@@ -224,10 +227,16 @@ const MesinCuciSimulation = () => {
   });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const displayRef = useRef<HTMLDivElement | null>(null);
 
   const linesArray = code.split("\n");
+
+  const getLineText = (lineIndex: number): string => {
+    const suffix = BLANK_LINE_SUFFIX[lineIndex];
+    if (!suffix) return INITIAL_TEMPLATE[lineIndex] || "";
+
+    const command = selectedCommands[lineIndex] ?? "_____";
+    return `${command} ${suffix}`;
+  };
 
   const updateSimData = (newData: Partial<SimData>) => {
     simDataRef.current = { ...simDataRef.current, ...newData };
@@ -248,15 +257,15 @@ const MesinCuciSimulation = () => {
       return `Baris ${lineIdx + 1} salah.\n\n${COMMAND_GLOSSARY[firstWord]}`;
     }
 
-    if (lineIdx >= 7 && lineIdx <= 11) {
+    if (lineIdx >= 3 && lineIdx <= 7) {
       return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: ikuti urutan langkah process dari atas ke bawah sesuai template.`;
     }
 
-    if (lineIdx >= 2 && lineIdx <= 4) {
+    if (lineIdx >= 0 && lineIdx <= 2) {
       return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: pastikan format INPUT dan nama variabel sesuai template.`;
     }
 
-    if (lineIdx === 13) {
+    if (lineIdx === 8) {
       return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: gunakan format OUTPUT untuk menampilkan hasil akhir.`;
     }
 
@@ -308,30 +317,21 @@ const MesinCuciSimulation = () => {
     };
   }, []);
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  useEffect(() => {
+    const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
+    setCode(newCode);
+  }, [selectedCommands]);
+
+  const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
     if (isRunning) return;
-    setCode(e.target.value);
+    setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
+    setOpenSelectorLine(null);
+    setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
-
-    const cursorPosition = e.target.selectionStart;
-    const currentLines = e.target.value
-      .substring(0, cursorPosition)
-      .split("\n");
-    setActiveLine(currentLines.length - 1);
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    if (displayRef.current) {
-      displayRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-    const gutter = document.getElementById("line-gutter");
-    if (gutter) {
-      gutter.scrollTop = e.currentTarget.scrollTop;
-    }
-  };
-
-  const resetSim = () => {
+  const resetSim = (clearEditor: boolean = true) => {
     setIsRunning(false);
     setActiveLine(-1);
     setErrorLine(-1);
@@ -359,6 +359,12 @@ const MesinCuciSimulation = () => {
       deterjen: "",
       pakaian_bersih: "",
     });
+
+    if (clearEditor) {
+      setSelectedCommands({});
+      setOpenSelectorLine(null);
+      setCode(INITIAL_TEMPLATE.join("\n"));
+    }
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -408,13 +414,13 @@ const MesinCuciSimulation = () => {
 
     const lineRaw = linesArray[index] || "";
     const lineParsed = lineRaw.trim().toLowerCase();
-    const solution = EXPECTED_SOLUTION[index];
+    const solution = EXPECTED_SOLUTION[index]?.toLowerCase();
 
     if (lineParsed !== solution) {
       setIsRunning(false);
       setErrorLine(index);
       setShowSuccessCard(false);
-      const isInputLine = index === 2 || index === 3 || index === 4;
+      const isInputLine = index === 0 || index === 1 || index === 2;
       const hasWrongContent =
         lineParsed !== "" && !lineParsed.includes("_____");
 
@@ -463,16 +469,6 @@ const MesinCuciSimulation = () => {
       return;
     }
 
-    if (lineParsed === "start") {
-      setBlenderBroken(false);
-      setIsLeaking(false);
-      setIsOverheating(false);
-      setWashPhase("idle");
-      setFoamLevel(0);
-      setForeignObject(null);
-      setFeedback("Sistem: Memulai proses mesin cuci...");
-    }
-
     if (lineParsed === "input pakaian_kotor") {
       const picked =
         CLOTHES_OPTIONS[Math.floor(Math.random() * CLOTHES_OPTIONS.length)];
@@ -518,22 +514,16 @@ const MesinCuciSimulation = () => {
       setFeedback(`INPUT: Membaca deterjen = \"${toTitle(picked)}\"`);
     }
 
-    if (lineParsed === "process:") {
-      setBlenderActive(false);
-      setWashPhase("idle");
-      setFeedback("PROCESS: Mesin cuci menjalankan siklus pencucian...");
-      await new Promise((resolve) =>
-        setTimeout(resolve, PROCESS_BLOCK_DELAY_MS),
-      );
-      setBlenderActive(false);
-    }
+    const processStep = lineParsed.startsWith("process ")
+      ? lineParsed.replace("process ", "")
+      : "";
 
     if (
-      lineParsed === "isi_air" ||
-      lineParsed === "tambah_deterjen" ||
-      lineParsed === "cuci_pakaian" ||
-      lineParsed === "bilas_pakaian" ||
-      lineParsed === "peras_pakaian"
+      processStep === "isi_air" ||
+      processStep === "tambah_deterjen" ||
+      processStep === "cuci_pakaian" ||
+      processStep === "bilas_pakaian" ||
+      processStep === "peras_pakaian"
     ) {
       setBlenderActive(true);
       const stepLabelMap: Record<string, string> = {
@@ -544,43 +534,43 @@ const MesinCuciSimulation = () => {
         peras_pakaian: "Memeras pakaian",
       };
 
-      if (lineParsed === "isi_air") {
+      if (processStep === "isi_air") {
         setWashPhase("fill");
         setLiquidLevel(94);
         setMixedColor("linear-gradient(to top, #93c5fd, #38bdf8)");
       }
 
-      if (lineParsed === "tambah_deterjen") {
+      if (processStep === "tambah_deterjen") {
         setWashPhase("detergent");
         setFoamLevel(62);
         setLiquidLevel(78);
         setMixedColor("linear-gradient(to top, #93c5fd, #c084fc)");
       }
 
-      if (lineParsed === "cuci_pakaian") {
+      if (processStep === "cuci_pakaian") {
         setWashPhase("wash");
         setFoamLevel(55);
         setLiquidLevel(74);
         setMixedColor("linear-gradient(to top, #60a5fa, #6366f1)");
       }
 
-      if (lineParsed === "bilas_pakaian") {
+      if (processStep === "bilas_pakaian") {
         setWashPhase("rinse");
         setFoamLevel(22);
         setLiquidLevel(64);
         setMixedColor("linear-gradient(to top, #7dd3fc, #bfdbfe)");
       }
 
-      if (lineParsed === "peras_pakaian") {
+      if (processStep === "peras_pakaian") {
         setWashPhase("spin");
         setFoamLevel(6);
       }
 
-      setFeedback(`PROCESS: ${stepLabelMap[lineParsed]}`);
+      setFeedback(`PROCESS: ${stepLabelMap[processStep]}`);
       await new Promise((resolve) =>
         setTimeout(resolve, PROCESS_SUBSTEP_DELAY_MS),
       );
-      if (lineParsed === "peras_pakaian") {
+      if (processStep === "peras_pakaian") {
         setLiquidLevel(22);
       }
       setBlenderActive(false);
@@ -598,15 +588,9 @@ const MesinCuciSimulation = () => {
       setGlassLevel(85);
       setJusKeluar(true);
       setIsPouring(false);
-      setFeedback(`OUTPUT: ${hasilPakaian} berhasil dihasilkan.`);
-    }
-
-    if (lineParsed === "end") {
       setWashPhase("idle");
       setShowSuccessCard(true);
-      setFeedback(
-        "Berhasil! Algoritma berjalan dengan benar.\n\nMesin cuci menerima input, menjalankan process, dan menghasilkan output sesuai urutan.\n\nStruktur yang kamu gunakan: input → process → output.\n\nAlgoritma ini sudah sesuai dengan konsep dasar pemrograman.",
-      );
+      setFeedback(`OUTPUT: ${hasilPakaian} berhasil dihasilkan.`);
     }
 
     timerRef.current = setTimeout(() => {
@@ -615,53 +599,16 @@ const MesinCuciSimulation = () => {
   };
 
   const startRunning = () => {
-    resetSim();
+    resetSim(false);
     setIsRunning(true);
     void executeStep(0);
-  };
-
-  const renderLineContent = (
-    userLine = "",
-    lineIndex: number,
-  ): React.ReactNode[] => {
-    const templateLine = INITIAL_TEMPLATE[lineIndex] || "";
-    const maxLength = Math.max(userLine.length, templateLine.length);
-    const elements: React.ReactNode[] = [];
-
-    for (let i = 0; i < maxLength; i += 1) {
-      const uChar = userLine[i];
-      const tChar = templateLine[i];
-
-      if (uChar !== undefined) {
-        elements.push(
-          <span key={i} className="text-slate-900 font-bold">
-            {uChar}
-          </span>,
-        );
-      } else if (tChar !== undefined) {
-        elements.push(
-          <span
-            key={i}
-            className="text-slate-300 select-none italic font-medium"
-          >
-            {tChar}
-          </span>,
-        );
-      }
-    }
-
-    return elements;
   };
 
   const currentDesc = getActiveDescription();
   const pakaianData = ITEM_TYPES.pakaian_kotor;
   const airData = ITEM_TYPES.air;
   const deterjenData = ITEM_TYPES.deterjen;
-  const totalDisplayLines = Math.max(
-    linesArray.length,
-    INITIAL_TEMPLATE.length,
-    16,
-  );
+  const totalDisplayLines = Math.max(INITIAL_TEMPLATE.length, 12);
 
   return (
     <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
@@ -696,7 +643,7 @@ const MesinCuciSimulation = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={resetSim}
+            onClick={() => resetSim()}
             className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={14} /> Reset
@@ -890,7 +837,7 @@ const MesinCuciSimulation = () => {
                     ? "RUNNING"
                     : errorLine !== -1
                       ? "ERROR"
-                      : "SIAP MENULIS"}
+                      : "SIAP MENYUSUN"}
                 </div>
               </div>
 
@@ -914,13 +861,11 @@ const MesinCuciSimulation = () => {
                 </div>
 
                 <div className="relative flex-1 bg-white overflow-hidden">
-                  <div
-                    ref={displayRef}
-                    className="absolute inset-0 p-4 pt-4 pointer-events-none whitespace-pre overflow-hidden z-10"
-                  >
+                  <div className="absolute inset-0 p-4 pt-4 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
-                      const userText = linesArray[i] || "";
                       const isActive = activeLine === i;
+                      const suffix = BLANK_LINE_SUFFIX[i];
+                      const selected = selectedCommands[i];
                       return (
                         <div
                           key={i}
@@ -938,28 +883,72 @@ const MesinCuciSimulation = () => {
                               }`}
                             />
                           )}
+
                           <div
-                            className={`relative z-10 whitespace-pre ${
+                            className={`relative z-10 whitespace-pre text-slate-900 font-bold ${
                               isRunning && activeLine > i ? "opacity-30" : ""
                             }`}
                           >
-                            {renderLineContent(userText, i)}
+                            <button
+                              type="button"
+                              disabled={isRunning}
+                              onClick={() => {
+                                setOpenSelectorLine(i);
+                                setActiveLine(i);
+                              }}
+                              className={`rounded px-1 py-0 transition-all ${
+                                selected
+                                  ? "text-slate-900 hover:bg-emerald-50"
+                                  : "text-slate-300 italic hover:bg-slate-100"
+                              } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                            >
+                              {selected ?? "_____"}
+                            </button>{" "}
+                            <span className="text-slate-900 font-bold">
+                              {suffix}
+                            </span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <textarea
-                    ref={textareaRef}
-                    value={code}
-                    onChange={handleCodeChange}
-                    onScroll={handleScroll}
-                    readOnly={isRunning}
-                    spellCheck={false}
-                    className="absolute inset-0 w-full h-full bg-transparent p-4 pt-4 outline-none resize-none z-20 font-mono transition-all text-transparent caret-emerald-600 selection:bg-emerald-100"
-                    style={{ lineHeight: "22px" }}
-                  />
+                  {openSelectorLine !== null && !isRunning && (
+                    <div className="absolute left-4 right-4 bottom-4 z-30 bg-white border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
+                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
+                        PILIH PERINTAH BARIS {openSelectorLine + 1}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "INPUT")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        >
+                          INPUT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "PROCESS")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        >
+                          PROCESS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "OUTPUT")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                        >
+                          OUTPUT
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

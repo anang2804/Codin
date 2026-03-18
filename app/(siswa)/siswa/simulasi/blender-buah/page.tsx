@@ -22,22 +22,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 const EXPECTED_SOLUTION = [
-  "start",
   "input buah1",
   "input buah2",
   "proses: jus = buah1 + buah2",
   "output jus",
-  "end",
 ] as const;
 
 const INITIAL_TEMPLATE = [
-  "start",
   "_____ buah1",
   "_____ buah2",
   "proses: jus = buah1 + buah2",
   "_____ jus",
-  "end",
 ] as const;
+
+const BLANK_LINE_SUFFIX: Partial<Record<number, string>> = {
+  0: "buah1",
+  1: "buah2",
+  3: "jus",
+};
+
+type CommandChoice = "input" | "proses" | "output";
 
 const COMMAND_GLOSSARY: Record<string, string> = {
   input:
@@ -108,7 +112,11 @@ type SimData = {
 };
 
 const BlenderSimulation = () => {
-  const [code, setCode] = useState<string>("");
+  const [selectedCommands, setSelectedCommands] = useState<
+    Partial<Record<number, CommandChoice>>
+  >({});
+  const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
+  const [code, setCode] = useState<string>(INITIAL_TEMPLATE.join("\n"));
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorLine, setErrorLine] = useState<number>(-1);
@@ -144,10 +152,18 @@ const BlenderSimulation = () => {
   });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const displayRef = useRef<HTMLDivElement | null>(null);
 
   const linesArray = code.split("\n");
+
+  const getLineText = (lineIndex: number): string => {
+    const suffix = BLANK_LINE_SUFFIX[lineIndex];
+    if (!suffix) {
+      return INITIAL_TEMPLATE[lineIndex] || "";
+    }
+
+    const command = selectedCommands[lineIndex] ?? "_____";
+    return `${command} ${suffix}`;
+  };
 
   const updateSimData = (newData: Partial<SimData>) => {
     simDataRef.current = { ...simDataRef.current, ...newData };
@@ -217,27 +233,13 @@ const BlenderSimulation = () => {
     };
   }, []);
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
     if (isRunning) return;
-    setCode(e.target.value);
+    setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
+    setOpenSelectorLine(null);
+    setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
-
-    const cursorPosition = e.target.selectionStart;
-    const currentLines = e.target.value
-      .substring(0, cursorPosition)
-      .split("\n");
-    setActiveLine(currentLines.length - 1);
-  };
-
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    if (displayRef.current) {
-      displayRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-    const gutter = document.getElementById("line-gutter");
-    if (gutter) {
-      gutter.scrollTop = e.currentTarget.scrollTop;
-    }
   };
 
   const resetSim = () => {
@@ -265,6 +267,11 @@ const BlenderSimulation = () => {
       clearTimeout(timerRef.current);
     }
   };
+
+  useEffect(() => {
+    const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
+    setCode(newCode);
+  }, [selectedCommands]);
 
   const markAsTried = async () => {
     if (hasTried || isSavingCompletion) return;
@@ -315,7 +322,7 @@ const BlenderSimulation = () => {
       setIsRunning(false);
       setErrorLine(index);
       setShowSuccessCard(false);
-      const isInputLine = index === 1 || index === 2;
+      const isInputLine = index === 0 || index === 1;
       const hasWrongContent =
         lineParsed !== "" && !lineParsed.includes("_____");
 
@@ -362,14 +369,6 @@ const BlenderSimulation = () => {
         setFeedback(eduFeedback);
       }
       return;
-    }
-
-    if (lineParsed === "start") {
-      setBlenderBroken(false);
-      setIsLeaking(false);
-      setIsOverheating(false);
-      setForeignObject(null);
-      setFeedback("Sistem: Memulai proses blender...");
     }
 
     if (lineParsed === "input buah1") {
@@ -435,7 +434,7 @@ const BlenderSimulation = () => {
       setFeedback(`OUTPUT: Jus ${hasilJus} keluar ke gelas.`);
     }
 
-    if (lineParsed === "end") {
+    if (lineParsed === "output jus") {
       setShowSuccessCard(true);
       setFeedback(
         "Berhasil! Algoritma berjalan dengan benar.\n\nBlender menerima input, memproses data, dan menghasilkan output sesuai urutan.\n\nStruktur yang kamu gunakan: input → proses → output.\n\nAlgoritma ini sudah sesuai dengan konsep dasar pemrograman.",
@@ -453,39 +452,6 @@ const BlenderSimulation = () => {
     void executeStep(0);
   };
 
-  const renderLineContent = (
-    userLine = "",
-    lineIndex: number,
-  ): React.ReactNode[] => {
-    const templateLine = INITIAL_TEMPLATE[lineIndex] || "";
-    const maxLength = Math.max(userLine.length, templateLine.length);
-    const elements: React.ReactNode[] = [];
-
-    for (let i = 0; i < maxLength; i += 1) {
-      const uChar = userLine[i];
-      const tChar = templateLine[i];
-
-      if (uChar !== undefined) {
-        elements.push(
-          <span key={i} className="text-slate-900 font-bold">
-            {uChar}
-          </span>,
-        );
-      } else if (tChar !== undefined) {
-        elements.push(
-          <span
-            key={i}
-            className="text-slate-300 select-none italic font-medium"
-          >
-            {tChar}
-          </span>,
-        );
-      }
-    }
-
-    return elements;
-  };
-
   const currentDesc = getActiveDescription();
   const buah1Data = buah1
     ? FRUIT_TYPES[buah1 as keyof typeof FRUIT_TYPES]
@@ -493,11 +459,7 @@ const BlenderSimulation = () => {
   const buah2Data = buah2
     ? FRUIT_TYPES[buah2 as keyof typeof FRUIT_TYPES]
     : null;
-  const totalDisplayLines = Math.max(
-    linesArray.length,
-    INITIAL_TEMPLATE.length,
-    10,
-  );
+  const totalDisplayLines = Math.max(INITIAL_TEMPLATE.length, 10);
 
   return (
     <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
@@ -725,7 +687,7 @@ const BlenderSimulation = () => {
                     ? "RUNNING"
                     : errorLine !== -1
                       ? "ERROR"
-                      : "SIAP MENULIS"}
+                      : "SIAP MENYUSUN"}
                 </div>
               </div>
 
@@ -749,13 +711,11 @@ const BlenderSimulation = () => {
                 </div>
 
                 <div className="relative flex-1 bg-white overflow-hidden">
-                  <div
-                    ref={displayRef}
-                    className="absolute inset-0 p-5 pt-5 pointer-events-none whitespace-pre overflow-hidden z-10"
-                  >
+                  <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
-                      const userText = linesArray[i] || "";
                       const isActive = activeLine === i;
+                      const suffix = BLANK_LINE_SUFFIX[i];
+                      const selected = selectedCommands[i];
                       return (
                         <div
                           key={i}
@@ -773,28 +733,76 @@ const BlenderSimulation = () => {
                               }`}
                             />
                           )}
+
                           <div
-                            className={`relative z-10 whitespace-pre ${
+                            className={`relative z-10 whitespace-pre text-slate-900 font-bold ${
                               isRunning && activeLine > i ? "opacity-30" : ""
                             }`}
                           >
-                            {renderLineContent(userText, i)}
+                            {suffix ? (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={isRunning}
+                                  onClick={() => {
+                                    setOpenSelectorLine(i);
+                                    setActiveLine(i);
+                                  }}
+                                  className={`rounded px-1.5 py-0.5 transition-all ${
+                                    selected
+                                      ? "text-slate-900 hover:bg-emerald-50"
+                                      : "text-slate-300 italic hover:bg-slate-100"
+                                  } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                >
+                                  {selected ?? "_____"}
+                                </button>{" "}
+                                <span className="text-slate-900">{suffix}</span>
+                              </>
+                            ) : (
+                              getLineText(i)
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <textarea
-                    ref={textareaRef}
-                    value={code}
-                    onChange={handleCodeChange}
-                    onScroll={handleScroll}
-                    readOnly={isRunning}
-                    spellCheck={false}
-                    className="absolute inset-0 w-full h-full bg-transparent p-5 pt-5 outline-none resize-none z-20 font-mono transition-all text-transparent caret-emerald-600 selection:bg-emerald-100"
-                    style={{ lineHeight: "26px" }}
-                  />
+                  {openSelectorLine !== null && !isRunning && (
+                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-white border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
+                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
+                        PILIH PERINTAH BARIS {openSelectorLine + 1}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "input")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        >
+                          INPUT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "proses")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        >
+                          PROCESS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "output")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                        >
+                          OUTPUT
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

@@ -26,19 +26,35 @@ const EXPECTED_SOLUTION = [
   "start",
   "input harga_makanan",
   "input harga_minuman",
-  "hasil = harga_makanan + harga_minuman",
-  "print hasil",
+  "proses hasil = harga_makanan + harga_minuman",
+  "output hasil",
   "end",
-];
+] as const;
 
 const INITIAL_TEMPLATE = [
   "start",
-  "input harga_makanan",
-  "input harga_minuman",
-  "hasil = harga_makanan + harga_minuman",
-  "print hasil",
+  "_____ harga_makanan",
+  "_____ harga_minuman",
+  "_____ hasil = harga_makanan + harga_minuman",
+  "_____ hasil",
   "end",
-];
+] as const;
+
+const BLANK_LINE_SUFFIX: Partial<Record<number, string>> = {
+  1: "harga_makanan",
+  2: "harga_minuman",
+  3: "hasil = harga_makanan + harga_minuman",
+  4: "hasil",
+};
+
+const BLANK_LINE_GHOST_COMMAND: Partial<Record<number, string>> = {
+  1: "input",
+  2: "input",
+  3: "proses",
+  4: "output",
+};
+
+type CommandChoice = "input" | "proses" | "output";
 
 const COMMAND_DETAILS = {
   START: {
@@ -73,7 +89,7 @@ const COMMAND_DETAILS = {
   },
   DEFAULT: {
     title: "WORKSPACE",
-    desc: "Klik baris editor untuk mulai mengetik. Gunakan panduan teks abu-abu di layar.",
+    desc: "Klik bagian kosong (_____) lalu pilih INPUT, PROCESS, atau OUTPUT. Teks abu-abu adalah ghost text panduan.",
     icon: <Monitor className="text-slate-400" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
@@ -101,7 +117,11 @@ type SimulationState = {
 const SIMULASI_SLUG = "kasir-kantin";
 
 export default function SimulasiKasirKantin() {
-  const [code, setCode] = useState("");
+  const [selectedCommands, setSelectedCommands] = useState<
+    Partial<Record<number, CommandChoice>>
+  >({});
+  const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
+  const [code, setCode] = useState(INITIAL_TEMPLATE.join("\n"));
   const [isRunning, setIsRunning] = useState(false);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [errorLine, setErrorLine] = useState<number>(-1);
@@ -121,7 +141,6 @@ export default function SimulasiKasirKantin() {
   });
 
   const logEndRef = useRef<HTMLDivElement>(null);
-  const displayRef = useRef<HTMLDivElement>(null);
   const simDataRef = useRef<SimulationState>(simState);
 
   const linesArray = code.split("\n");
@@ -135,12 +154,36 @@ export default function SimulasiKasirKantin() {
     const line = linesArray[activeLine]?.toLowerCase() || "";
     if (line.includes("start")) return COMMAND_DETAILS.START;
     if (line.includes("input")) return COMMAND_DETAILS.INPUT;
-    if (line.includes("=") || line.includes("+"))
+    if (line.includes("proses") || line.includes("process"))
       return COMMAND_DETAILS.PROCESS;
-    if (line.includes("print")) return COMMAND_DETAILS.OUTPUT;
+    if (line.includes("output") || line.includes("print"))
+      return COMMAND_DETAILS.OUTPUT;
     if (line.includes("end")) return COMMAND_DETAILS.END;
     return COMMAND_DETAILS.DEFAULT;
   })();
+
+  const getLineText = (lineIndex: number): string => {
+    const suffix = BLANK_LINE_SUFFIX[lineIndex];
+    if (!suffix) {
+      return INITIAL_TEMPLATE[lineIndex] || "";
+    }
+
+    const command = selectedCommands[lineIndex] ?? "_____";
+    return `${command} ${suffix}`;
+  };
+
+  const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
+    if (isRunning) return;
+    setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
+    setOpenSelectorLine(null);
+    setActiveLine(lineIndex);
+    setErrorLine(-1);
+  };
+
+  useEffect(() => {
+    const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
+    setCode(newCode);
+  }, [selectedCommands]);
 
   useEffect(() => {
     let isActive = true;
@@ -214,7 +257,9 @@ export default function SimulasiKasirKantin() {
   };
 
   const resetSim = () => {
-    setCode("");
+    setSelectedCommands({});
+    setOpenSelectorLine(null);
+    setCode(INITIAL_TEMPLATE.join("\n"));
     setActiveLine(-1);
     setErrorLine(-1);
     setIsRunning(false);
@@ -272,6 +317,9 @@ export default function SimulasiKasirKantin() {
     }
 
     if (lineIndex === 3) {
+      if (!normalized.includes("proses") && !normalized.includes("process")) {
+        return "Tahap ini adalah PROCESS. Gunakan perintah proses untuk mengolah data harga.";
+      }
       if (!normalized.includes("hasil")) {
         return "Kita perlu menyimpan hasil perhitungan. Variabel apa yang seharusnya digunakan?";
       }
@@ -284,7 +332,7 @@ export default function SimulasiKasirKantin() {
     }
 
     if (lineIndex === 4) {
-      if (!normalized.includes("print")) {
+      if (!normalized.includes("output") && !normalized.includes("print")) {
         return "Setelah menghitung, kita perlu menampilkan hasilnya. Perintah apa yang cocok?";
       }
       if (!normalized.includes("hasil")) {
@@ -371,7 +419,7 @@ export default function SimulasiKasirKantin() {
         addLog(`💰 Hasil: Rp ${total.toLocaleString("id-ID")}`);
         break;
 
-      case 4: // print hasil
+      case 4: // output hasil
         updateSimData({ receiptPrinted: true, status: "Mencetak Struk" });
         addLog("🧾 Mencetak struk pembayaran...");
         addLog(
@@ -425,41 +473,6 @@ export default function SimulasiKasirKantin() {
     setIsRunning(false);
     setActiveLine(-1);
     addLog("🎉 Algoritma berhasil dijalankan!");
-  };
-
-  const renderLineContent = (userLine = "", lineIndex: number) => {
-    const templateLine = INITIAL_TEMPLATE[lineIndex] || "";
-    const maxLength = Math.max(userLine.length, templateLine.length);
-    const elements = [];
-
-    for (let i = 0; i < maxLength; i++) {
-      const uChar = userLine[i];
-      const tChar = templateLine[i];
-      if (uChar !== undefined) {
-        const isMatch = tChar !== undefined && uChar === tChar;
-        elements.push(
-          isMatch ? (
-            <span key={i} className="text-slate-900 font-bold">
-              {uChar}
-            </span>
-          ) : (
-            <span
-              key={i}
-              className="text-rose-600 font-black bg-rose-50 underline decoration-rose-200"
-            >
-              {uChar}
-            </span>
-          ),
-        );
-      } else if (tChar !== undefined) {
-        elements.push(
-          <span key={i} className="text-slate-200 italic font-light">
-            {tChar}
-          </span>,
-        );
-      }
-    }
-    return elements;
   };
 
   // ================== RENDER UI ==================
@@ -613,7 +626,7 @@ export default function SimulasiKasirKantin() {
                     ? "RUNNING"
                     : errorLine !== -1
                       ? "ERROR"
-                      : "READY TO TYPE"}
+                      : "READY TO CLICK"}
                 </div>
               </div>
 
@@ -632,13 +645,12 @@ export default function SimulasiKasirKantin() {
                   ))}
                 </div>
                 <div className="relative flex-1 bg-white overflow-hidden">
-                  <div
-                    ref={displayRef}
-                    className="absolute inset-0 p-5 pt-5 pointer-events-none whitespace-pre overflow-hidden z-10"
-                  >
-                    {INITIAL_TEMPLATE.map((tLine, i) => {
-                      const userText = linesArray[i] || "";
+                  <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
+                    {INITIAL_TEMPLATE.map((_, i) => {
                       const isActive = activeLine === i;
+                      const suffix = BLANK_LINE_SUFFIX[i];
+                      const selected = selectedCommands[i];
+
                       return (
                         <div
                           key={i}
@@ -650,40 +662,74 @@ export default function SimulasiKasirKantin() {
                               className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : errorLine === i ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
                             />
                           )}
+
                           <div
-                            className={`relative z-10 whitespace-pre ${isRunning && activeLine > i ? "opacity-30" : ""}`}
+                            className={`relative z-10 whitespace-pre text-slate-900 font-bold ${isRunning && activeLine > i ? "opacity-30" : ""}`}
                           >
-                            {renderLineContent(userText, i)}
+                            {suffix ? (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={isRunning}
+                                  onClick={() => {
+                                    setOpenSelectorLine(i);
+                                    setActiveLine(i);
+                                  }}
+                                  className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "text-slate-300 italic hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                >
+                                  {selected ??
+                                    BLANK_LINE_GHOST_COMMAND[i] ??
+                                    "_____"}
+                                </button>{" "}
+                                <span className="text-slate-900 font-bold">
+                                  {suffix}
+                                </span>
+                              </>
+                            ) : (
+                              getLineText(i)
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <textarea
-                    value={code}
-                    onChange={(e) => {
-                      if (isRunning) return;
-                      setCode(e.target.value);
-                      setErrorLine(-1);
-                      const cursorPosition = e.target.selectionStart;
-                      const linesUpToCursor = e.target.value
-                        .substr(0, cursorPosition)
-                        .split("\n");
-                      setActiveLine(linesUpToCursor.length - 1);
-                    }}
-                    onScroll={(e) => {
-                      if (displayRef.current)
-                        displayRef.current.scrollTop =
-                          e.currentTarget.scrollTop;
-                      const lineGutter = document.getElementById("line-gutter");
-                      if (lineGutter)
-                        lineGutter.scrollTop = e.currentTarget.scrollTop;
-                    }}
-                    readOnly={isRunning}
-                    spellCheck={false}
-                    className="absolute inset-0 w-full h-full bg-transparent p-5 pt-5 outline-none resize-none z-20 font-mono transition-all text-transparent caret-emerald-600 selection:bg-indigo-100"
-                    style={{ lineHeight: "26px" }}
-                  />
+
+                  {openSelectorLine !== null && !isRunning && (
+                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-white border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
+                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
+                        PILIH PERINTAH BARIS {openSelectorLine + 1}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "input")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        >
+                          INPUT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "proses")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        >
+                          PROCESS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectCommand(openSelectorLine, "output")
+                          }
+                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                        >
+                          OUTPUT
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
