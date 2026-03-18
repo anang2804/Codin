@@ -162,6 +162,17 @@ export default function SiswaSimulasiPage() {
       badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
       items: [
         {
+          title: "Login HP",
+          description:
+            "Lengkapi pseudocode login HP untuk memeriksa PIN dengan struktur IF-ELSE.",
+          href: "/siswa/simulasi/login-hp",
+          slug: "login-hp",
+          level: "Dasar",
+          gradient: "from-teal-100 to-emerald-200",
+          emoji: "📱",
+          accent: "border-teal-500",
+        },
+        {
           title: "Koneksi Sensor & Pintu",
           description:
             "Lengkapi pseudocode pintu otomatis agar bekerja sesuai deteksi sensor infrared.",
