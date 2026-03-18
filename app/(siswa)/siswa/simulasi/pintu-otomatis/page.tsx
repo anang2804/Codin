@@ -75,8 +75,8 @@ const COMMAND_DETAILS = {
     color: "bg-amber-100 border-amber-200",
   },
   DEFAULT: {
-    title: "READY TO TYPE",
-    desc: "Lengkapi bagian _____ pada editor untuk menyelesaikan misi pintu otomatis.",
+    title: "SIAP MENULIS",
+    desc: "Lengkapi bagian yang kosong sesuai urutan logika: input → proses → output.",
     icon: <Edit3 className="text-slate-400" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
@@ -96,7 +96,7 @@ const PintuOtomatisSimulation = () => {
     sensorValue: "none",
     doorOpen: false,
     personVisible: false,
-    feedback: "Workspace siap menerima algoritma",
+    feedback: "Sistem siap menjalankan algoritma.",
     isProcessing: false,
   });
 
@@ -254,7 +254,7 @@ const PintuOtomatisSimulation = () => {
     });
     setSimState((prev) => ({
       ...prev,
-      feedback: "Workspace siap menerima algoritma",
+      feedback: "Sistem siap menjalankan algoritma.",
       isProcessing: false,
     }));
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -517,6 +517,48 @@ const PintuOtomatisSimulation = () => {
             </motion.div>
           </AnimatePresence>
 
+          <div
+            className={`p-3 rounded-2xl border transition-all duration-300 ${
+              errorLine !== -1
+                ? "bg-rose-50/95 border-rose-200"
+                : "bg-white border-slate-200"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                errorLine !== -1 ? "border-rose-200" : "border-slate-200"
+              }`}
+            >
+              {errorLine !== -1 ? (
+                <AlertTriangle size={13} className="text-rose-500" />
+              ) : (
+                <CheckCircle2
+                  size={12}
+                  className={
+                    simState.doorOpen ? "text-emerald-500" : "text-slate-500"
+                  }
+                />
+              )}
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest ${
+                  errorLine !== -1 ? "text-rose-600" : "text-slate-500"
+                }`}
+              >
+                CATATAN PROSES
+              </span>
+            </div>
+
+            <div
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+                errorLine !== -1
+                  ? "text-rose-700 bg-rose-100/60"
+                  : "text-slate-700 bg-slate-100/80"
+              }`}
+            >
+              {simState.feedback}
+            </div>
+          </div>
+
           <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
             <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
               <span>Status Fokus</span>
@@ -532,21 +574,21 @@ const PintuOtomatisSimulation = () => {
 
         {/* WORKSPACE - EDITOR */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
-          <section className="px-6 pt-5 pb-3">
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
-              <div className="bg-white p-2.5 rounded-xl shadow-sm text-emerald-600">
-                <Lightbulb size={24} className="animate-pulse" />
+          <section className="px-6 pt-4 pb-2">
+            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="bg-white p-2 rounded-xl shadow-sm text-emerald-600">
+                <Lightbulb size={20} className="animate-pulse" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
                     Koneksi Sensor & Pintu
                   </h2>
                 </div>
-                <p className="text-[12px] text-slate-600 leading-relaxed max-w-4xl font-medium">
+                <p className="text-[11px] text-slate-600 leading-relaxed max-w-4xl font-medium">
                   Sistem pintu otomatis menggunakan sensor gerak untuk
                   mendeteksi orang yang mendekat. Namun algoritma yang digunakan
                   belum lengkap. Lengkapi pseudocode agar pintu dapat terbuka
@@ -566,7 +608,7 @@ const PintuOtomatisSimulation = () => {
                     className={`w-2 h-2 rounded-full ${isRunning ? "bg-rose-500 animate-pulse" : errorLine !== -1 ? "bg-red-500 shadow-[0_0_5px_red]" : "bg-emerald-500"}`}
                   ></div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
-                    DOOR_LOGIC.ALGO
+                    ALGORITMA PINTU OTOMATIS
                   </span>
                 </div>
                 <div
@@ -576,7 +618,7 @@ const PintuOtomatisSimulation = () => {
                     ? "RUNNING"
                     : errorLine !== -1
                       ? "ERROR"
-                      : "READY TO TYPE"}
+                      : "SIAP MENULIS"}
                 </div>
               </div>
 
@@ -637,19 +679,28 @@ const PintuOtomatisSimulation = () => {
             </section>
 
             {/* PANEL KANAN - SIMULASI */}
-            <aside className="w-[380px] bg-[#020617] rounded-3xl flex flex-col shrink-0 overflow-hidden shadow-2xl border border-slate-800 relative">
+            <aside className="w-[380px] bg-[#020617] rounded-3xl flex flex-col shrink-0 min-h-0 overflow-hidden shadow-2xl border border-slate-800 relative">
               <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-6">
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
                     <Activity size={14} />
                   </div>
                   <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Hardware Preview
+                    VISUALISASI
                   </h2>
                 </div>
+                <div
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    errorLine !== -1
+                      ? "bg-rose-500 animate-pulse shadow-[0_0_10px_#f43f5e]"
+                      : simState.isProcessing
+                        ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_#22c55e]"
+                        : "bg-slate-700"
+                  }`}
+                />
               </div>
 
-              <div className="h-[420px] p-6 flex flex-col items-center justify-center relative bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)] overflow-hidden">
+              <div className="flex-1 min-h-[230px] md:min-h-[260px] p-4 md:p-6 flex flex-col items-center justify-center relative bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)] overflow-hidden">
                 {/* Sensor Infrared UI */}
                 <div className="absolute top-20 w-64 h-4 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center shadow-lg">
                   <div
@@ -741,36 +792,6 @@ const PintuOtomatisSimulation = () => {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* LOG KONSOL / EDU FEEDBACK */}
-              <div
-                className={`p-5 border-t h-44 flex flex-col gap-2 shrink-0 transition-all duration-300 ${errorLine !== -1 ? "bg-rose-50 border-rose-200 shadow-inner" : "bg-black/40 border-slate-800"}`}
-              >
-                <div className="flex items-center gap-2 shrink-0">
-                  {errorLine !== -1 ? (
-                    <AlertTriangle size={14} className="text-rose-500" />
-                  ) : (
-                    <CheckCircle2
-                      size={12}
-                      className={
-                        simState.doorOpen
-                          ? "text-emerald-500"
-                          : "text-slate-600"
-                      }
-                    />
-                  )}
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-widest ${errorLine !== -1 ? "text-rose-600" : "text-slate-500"}`}
-                  >
-                    Logic Log
-                  </span>
-                </div>
-                <div
-                  className={`text-[11px] font-medium whitespace-pre-wrap leading-relaxed overflow-y-auto scrollbar-thin ${errorLine !== -1 ? "text-rose-700" : "text-emerald-400 font-mono"}`}
-                >
-                  {simState.feedback}
-                </div>
-              </div>
             </aside>
           </div>
         </div>
@@ -788,7 +809,7 @@ const PintuOtomatisSimulation = () => {
               ? "Algoritma sedang dijalankan"
               : errorLine !== -1
                 ? "Pemeriksaan logika diperlukan"
-                : "Workspace siap menerima algoritma"}
+                : "Sistem siap menjalankan algoritma."}
           </span>
         </div>
         <div className="flex items-center gap-4">

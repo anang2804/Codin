@@ -74,8 +74,8 @@ const COMMAND_DETAILS = {
     color: "bg-amber-100 border-amber-200",
   },
   DEFAULT: {
-    title: "READY TO TYPE",
-    desc: "Lengkapi bagian ______ pada editor untuk menyelesaikan misi parkir otomatis.",
+    title: "SIAP MENULIS",
+    desc: "Lengkapi bagian yang kosong sesuai urutan logika: input → proses → output.",
     icon: <Edit3 className="text-slate-400" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
@@ -131,7 +131,7 @@ export default function SimulasiParkirOtomatis() {
     gerbangTerbuka: false,
     mobilMasuk: false,
     statusParkir: "idle",
-    feedback: "Workspace siap menerima algoritma",
+    feedback: "Sistem siap menjalankan algoritma.",
   });
 
   const displayRef = useRef<HTMLDivElement>(null);
@@ -231,7 +231,7 @@ export default function SimulasiParkirOtomatis() {
     gerbangTerbuka: false,
     mobilMasuk: false,
     statusParkir: "idle",
-    feedback: "Workspace siap menerima algoritma",
+    feedback: "Sistem siap menjalankan algoritma.",
   };
 
   const resetSim = () => {
@@ -739,6 +739,50 @@ export default function SimulasiParkirOtomatis() {
             </motion.div>
           </AnimatePresence>
 
+          <div
+            className={`p-3 rounded-2xl border transition-all duration-300 ${
+              errorLine !== -1
+                ? "bg-rose-50/95 border-rose-200"
+                : "bg-white border-slate-200"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                errorLine !== -1 ? "border-rose-200" : "border-slate-200"
+              }`}
+            >
+              {errorLine !== -1 ? (
+                <AlertTriangle size={13} className="text-rose-500" />
+              ) : (
+                <CheckCircle2
+                  size={12}
+                  className={
+                    simState.gerbangTerbuka
+                      ? "text-emerald-500"
+                      : "text-slate-500"
+                  }
+                />
+              )}
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest ${
+                  errorLine !== -1 ? "text-rose-600" : "text-slate-500"
+                }`}
+              >
+                CATATAN PROSES
+              </span>
+            </div>
+
+            <div
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+                errorLine !== -1
+                  ? "text-rose-700 bg-rose-100/60"
+                  : "text-slate-700 bg-slate-100/80"
+              }`}
+            >
+              {simState.feedback}
+            </div>
+          </div>
+
           <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
             <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
               <span>Status Fokus</span>
@@ -764,11 +808,11 @@ export default function SimulasiParkirOtomatis() {
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
                     Sistem Parkir Otomatis
                   </h2>
                 </div>
-                <p className="text-[12px] text-slate-600 leading-relaxed max-w-4xl font-medium">
+                <p className="text-[11px] text-slate-600 leading-relaxed max-w-4xl font-medium">
                   Sistem parkir otomatis menggunakan sensor untuk mendeteksi
                   kendaraan yang datang ke area parkir. Namun sistem juga harus
                   memeriksa apakah tempat parkir masih tersedia atau sudah
@@ -799,7 +843,7 @@ export default function SimulasiParkirOtomatis() {
                     ? "RUNNING"
                     : errorLine !== -1
                       ? "ERROR"
-                      : "READY TO TYPE"}
+                      : "SIAP MENULIS"}
                 </div>
               </div>
 
@@ -875,19 +919,28 @@ export default function SimulasiParkirOtomatis() {
             </section>
 
             {/* PANEL KANAN - SIMULASI HARDWARE */}
-            <section className="w-96 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden shrink-0">
+            <aside className="w-[380px] bg-[#020617] rounded-3xl border border-slate-800 shadow-2xl flex flex-col min-h-0 overflow-hidden shrink-0 relative">
               <div className="px-5 py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#22c55e]"></div>
                   <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest">
-                    Hardware Preview
+                    VISUALISASI
                   </span>
                 </div>
+                <div
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    errorLine !== -1
+                      ? "bg-rose-500 animate-pulse shadow-[0_0_10px_#f43f5e]"
+                      : isRunning
+                        ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_#22c55e]"
+                        : "bg-slate-700"
+                  }`}
+                />
               </div>
 
               {/* Area Simulasi - Top Down Parking View */}
               <div
-                className="h-[420px] overflow-hidden relative"
+                className="flex-1 min-h-[230px] md:min-h-[260px] overflow-hidden relative"
                 style={{
                   background:
                     "linear-gradient(180deg, #1a1f2e 0%, #141824 100%)",
@@ -1330,47 +1383,7 @@ export default function SimulasiParkirOtomatis() {
                   </AnimatePresence>
                 </div>
               </div>
-
-              {/* Logic Log */}
-              <div
-                className={`p-4 border-t h-32 flex flex-col gap-2 shrink-0 transition-all duration-300 ${
-                  errorLine !== -1
-                    ? "bg-rose-50 border-rose-200 shadow-inner"
-                    : "bg-black/40 border-slate-800"
-                }`}
-              >
-                <div className="flex items-center gap-2 shrink-0">
-                  {errorLine !== -1 ? (
-                    <AlertTriangle size={14} className="text-rose-500" />
-                  ) : (
-                    <CheckCircle2
-                      size={12}
-                      className={
-                        simState.gerbangTerbuka
-                          ? "text-emerald-500"
-                          : "text-slate-600"
-                      }
-                    />
-                  )}
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-widest ${
-                      errorLine !== -1 ? "text-rose-600" : "text-slate-500"
-                    }`}
-                  >
-                    Logic Log
-                  </span>
-                </div>
-                <div
-                  className={`text-[11px] font-medium whitespace-pre-wrap leading-relaxed overflow-y-auto scrollbar-thin ${
-                    errorLine !== -1
-                      ? "text-rose-700"
-                      : "text-emerald-400 font-mono"
-                  }`}
-                >
-                  {simState.feedback}
-                </div>
-              </div>
-            </section>
+            </aside>
           </div>
         </div>
       </main>
@@ -1383,7 +1396,7 @@ export default function SimulasiParkirOtomatis() {
           </span>
           <span className="w-px h-3 bg-slate-300"></span>
           <span className="font-medium italic">
-            Workspace siap menerima algoritma
+            Sistem siap menjalankan algoritma.
           </span>
         </div>
         <div className="flex items-center gap-3">
