@@ -211,6 +211,17 @@ export default function SiswaSimulasiPage() {
           emoji: "🧃",
           accent: "border-lime-500",
         },
+        {
+          title: "Mesin Cuci Otomatis",
+          description:
+            "Lengkapi struktur Input-Process-Output mesin cuci hingga menghasilkan pakaian_bersih.",
+          href: "/siswa/simulasi/mesin-cuci",
+          slug: "mesin-cuci-lanjutan",
+          level: "Lanjutan",
+          gradient: "from-violet-100 to-indigo-200",
+          emoji: "🧺",
+          accent: "border-violet-500",
+        },
       ],
     },
   ];
