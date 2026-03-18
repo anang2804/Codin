@@ -183,6 +183,17 @@ export default function SiswaSimulasiPage() {
           emoji: "🚗",
           accent: "border-blue-500",
         },
+        {
+          title: "Beli di Kasir",
+          description:
+            "Lengkapi pseudocode kasir untuk menghitung total belanja dari harga_barang dan jumlah_barang.",
+          href: "/siswa/simulasi/beli-di-kasir",
+          slug: "beli-di-kasir",
+          level: "Menengah",
+          gradient: "from-emerald-100 to-lime-200",
+          emoji: "🛒",
+          accent: "border-emerald-500",
+        },
       ],
     },
     {

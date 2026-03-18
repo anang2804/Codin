@@ -122,6 +122,7 @@ export default function SimulasiParkirOtomatis() {
   const [isRunning, setIsRunning] = useState(false);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [errorLine, setErrorLine] = useState<number>(-1);
+  const [showSuccessCard, setShowSuccessCard] = useState(false);
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
 
@@ -240,6 +241,7 @@ export default function SimulasiParkirOtomatis() {
     applyPreOccupied(newOcc);
     setActiveLine(-1);
     setErrorLine(-1);
+    setShowSuccessCard(false);
     setIsRunning(false);
     setHasTried(false);
     setSimState(emptySimState);
@@ -258,220 +260,27 @@ export default function SimulasiParkirOtomatis() {
     const trimmed = userLine.trim().toLowerCase();
     const firstWord = trimmed.split(" ")[0];
 
-    // ── Baris kosong / belum diisi ──
-    if (trimmed === "" || trimmed.includes("_")) {
-      const hints: Record<number, string> = {
-        1: "Petunjuk: Gunakan perintah INPUT untuk membaca data dari sensor kendaraan.\n\nContoh: input kendaraan",
-        2: "Petunjuk: Gunakan perintah INPUT untuk membaca jumlah slot parkir dari database.\n\nContoh: input kapasitas",
-        3: "Petunjuk: Gunakan perintah IF untuk memeriksa apakah masih ada slot parkir tersedia.\n\nContoh: if kapasitas > 0",
-        4: "Petunjuk: Gunakan perintah PRINT untuk menampilkan status bahwa parkir masih tersedia.\n\nContoh: print parkir_tersedia",
-        5: "Petunjuk: Tulis kata kunci ELSE sebagai jalur alternatif jika parkir sudah penuh.\n\nContoh: else",
-        6: "Petunjuk: Gunakan perintah PRINT untuk menampilkan status bahwa parkir sudah penuh.\n\nContoh: print parkir_penuh",
-      };
-      return (
-        `Hmm... baris ini sepertinya masih kosong atau belum selesai diisi 👀\n\n` +
-        (hints[lineIndex] ??
-          "Coba perhatikan template yang tersedia di editor.")
-      );
+    if (!trimmed || trimmed.includes("_")) {
+      return `Baris ${lineIndex + 1} algoritma belum lengkap.\n\nLengkapi bagian yang kosong sesuai urutan logika.`;
     }
 
-    // ── Deteksi per baris ──
-
-    // Baris 1: input kendaraan
-    if (lineIndex === 1) {
-      if (firstWord !== "input") {
-        if (COMMAND_GLOSSARY[firstWord]) {
-          return (
-            `Hmm... perintah "${firstWord.toUpperCase()}" bukan yang tepat untuk baris ini 🤔\n\n` +
-            `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-            `Di sini kita perlu membaca data dari sensor kendaraan.\n` +
-            `Gunakan perintah INPUT, bukan ${firstWord.toUpperCase()}.`
-          );
-        }
-        return (
-          `Hmm... perintah "${firstWord}" tidak dikenali oleh sistem 🤔\n\n` +
-          `Di baris ini, sistem perlu mengambil data dari sensor kendaraan.\n\n` +
-          `Petunjuk: Gunakan perintah INPUT diikuti nama variabelnya.\n` +
-          `Contoh: input kendaraan`
-        );
-      }
-      // Perintah sudah "input", cek variabelnya
-      if (!trimmed.includes("kendaraan")) {
-        const parts = trimmed.split(" ").slice(1).join(" ");
-        return (
-          `Hmm... sepertinya ada yang kurang tepat di baris ini 🤔\n\n` +
-          `Perintah INPUT sudah benar, tetapi nama variabel${parts ? ` "${parts}"` : ""} tidak dikenali.\n\n` +
-          `Sistem sedang mencoba membaca data dari sensor kendaraan.\n` +
-          `Pastikan nama variabelnya ditulis: kendaraan`
-        );
-      }
-    }
-
-    // Baris 2: input kapasitas
-    if (lineIndex === 2) {
-      if (firstWord !== "input") {
-        if (COMMAND_GLOSSARY[firstWord]) {
-          return (
-            `Hmm... perintah "${firstWord.toUpperCase()}" bukan yang tepat untuk baris ini 🤔\n\n` +
-            `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-            `Di sini kita perlu membaca jumlah slot parkir yang tersedia.\n` +
-            `Gunakan perintah INPUT, bukan ${firstWord.toUpperCase()}.`
-          );
-        }
-        return (
-          `Hmm... perintah "${firstWord}" tidak dikenali oleh sistem 🤔\n\n` +
-          `Di baris ini, sistem perlu membaca data kapasitas parkir.\n\n` +
-          `Petunjuk: Gunakan perintah INPUT diikuti nama variabelnya.\n` +
-          `Contoh: input kapasitas`
-        );
-      }
-      if (!trimmed.includes("kapasitas")) {
-        const parts = trimmed.split(" ").slice(1).join(" ");
-        return (
-          `Hmm... sepertinya ada yang kurang tepat di baris ini 🤔\n\n` +
-          `Perintah INPUT sudah benar, tetapi nama variabel${parts ? ` "${parts}"` : ""} tidak dikenali.\n\n` +
-          `Sistem sedang mencoba membaca jumlah slot parkir dari database.\n` +
-          `Pastikan nama variabelnya ditulis: kapasitas`
-        );
-      }
-    }
-
-    // Baris 3: if kapasitas > 0
-    if (lineIndex === 3) {
-      if (firstWord !== "if") {
-        if (COMMAND_GLOSSARY[firstWord]) {
-          return (
-            `Hmm... perintah "${firstWord.toUpperCase()}" bukan yang tepat untuk baris ini 🤔\n\n` +
-            `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-            `Di sini kita perlu memeriksa kondisi kapasitas parkir.\n` +
-            `Gunakan perintah IF untuk pengambilan keputusan.`
-          );
-        }
-        return (
-          `Hmm... perintah "${firstWord}" tidak dikenali oleh sistem 🤔\n\n` +
-          `Di baris ini, sistem perlu memeriksa apakah masih ada slot parkir.\n\n` +
-          `Petunjuk: Gunakan struktur IF untuk pengecekan kondisi.\n` +
-          `Contoh: if kapasitas > 0`
-        );
-      }
-      // Perintah IF sudah benar — cek isi kondisinya
-      const afterIf = trimmed.replace(/^if\s*/, "");
-      if (!afterIf.includes("kapasitas")) {
-        const varUsed = afterIf.split(/[\s><=!]/)[0];
-        return (
-          `Hmm... sepertinya ada yang kurang tepat di baris ini 🤔\n\n` +
-          `Perintah IF sudah benar, tetapi sistem sedang mencoba memeriksa\n` +
-          `kondisi kapasitas parkir, dan nama variabel${varUsed ? ` "${varUsed}"` : ""} tidak dikenali.\n\n` +
-          `Coba periksa kembali penulisan variabel tersebut.\n` +
-          `Pastikan sama dengan variabel yang digunakan sebelumnya: kapasitas`
-        );
-      }
-      if (!afterIf.includes(">")) {
-        const op = afterIf.match(/[><=!]+/)?.[0];
-        return (
-          `Hmm... operator kondisi pada baris ini kurang tepat 🤔\n\n` +
-          `Variabel "kapasitas" sudah benar, tetapi operator${op ? ` "${op}"` : ""} yang digunakan\n` +
-          `tidak sesuai untuk memeriksa apakah slot parkir masih tersedia.\n\n` +
-          `Petunjuk: Gunakan operator ">" untuk mengecek apakah kapasitas lebih dari 0.\n` +
-          `Contoh: if kapasitas > 0`
-        );
-      }
-      if (!afterIf.includes("0")) {
-        return (
-          `Hmm... kondisi pada baris ini belum lengkap 🤔\n\n` +
-          `Variabel "kapasitas" dan operator ">" sudah benar,\n` +
-          `tetapi nilai yang dibandingkan belum dituliskan.\n\n` +
-          `Petunjuk: Bandingkan kapasitas dengan angka 0 untuk mengecek apakah ada slot yang tersisa.\n` +
-          `Contoh: if kapasitas > 0`
-        );
-      }
-    }
-
-    // Baris 4: print parkir_tersedia
-    if (lineIndex === 4) {
-      if (firstWord !== "print") {
-        if (COMMAND_GLOSSARY[firstWord]) {
-          return (
-            `Hmm... perintah "${firstWord.toUpperCase()}" bukan yang tepat untuk baris ini 🤔\n\n` +
-            `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-            `Di sini kita perlu menampilkan status bahwa parkir masih tersedia.\n` +
-            `Gunakan perintah PRINT.`
-          );
-        }
-        return (
-          `Hmm... perintah "${firstWord}" tidak dikenali oleh sistem 🤔\n\n` +
-          `Di baris ini, sistem perlu menampilkan status parkir ke papan display.\n\n` +
-          `Petunjuk: Gunakan perintah PRINT untuk menampilkan output.\n` +
-          `Contoh: print parkir_tersedia`
-        );
-      }
-      const afterPrint = trimmed.replace(/^print\s*/, "");
-      if (afterPrint !== "parkir_tersedia") {
-        return (
-          `Hmm... perintah PRINT sudah benar, tetapi nilai output tidak sesuai 🤔\n\n` +
-          `Sistem sedang berada di blok IF (kapasitas > 0),\n` +
-          `sehingga perlu menampilkan bahwa parkir masih tersedia.\n\n` +
-          `Coba periksa kembali penulisan output-nya.\n` +
-          `Yang diharapkan: parkir_tersedia${afterPrint ? `, bukan "${afterPrint}"` : ""}`
-        );
-      }
-    }
-
-    // Baris 5: else
-    if (lineIndex === 5) {
-      return (
-        `Hmm... sepertinya ada yang kurang tepat di baris ini 🤔\n\n` +
-        `Di sini dibutuhkan kata kunci ELSE sebagai jalur alternatif\n` +
-        `ketika kondisi IF tidak terpenuhi (kapasitas = 0).\n\n` +
-        `Petunjuk: Cukup tulis: else`
-      );
-    }
-
-    // Baris 6: print parkir_penuh
-    if (lineIndex === 6) {
-      if (firstWord !== "print") {
-        if (COMMAND_GLOSSARY[firstWord]) {
-          return (
-            `Hmm... perintah "${firstWord.toUpperCase()}" bukan yang tepat untuk baris ini 🤔\n\n` +
-            `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-            `Di sini kita perlu menampilkan status bahwa parkir sudah penuh.\n` +
-            `Gunakan perintah PRINT.`
-          );
-        }
-        return (
-          `Hmm... perintah "${firstWord}" tidak dikenali oleh sistem 🤔\n\n` +
-          `Di baris ini (blok ELSE), sistem perlu menampilkan status parkir penuh.\n\n` +
-          `Petunjuk: Gunakan perintah PRINT untuk menampilkan output.\n` +
-          `Contoh: print parkir_penuh`
-        );
-      }
-      const afterPrint = trimmed.replace(/^print\s*/, "");
-      if (afterPrint !== "parkir_penuh") {
-        return (
-          `Hmm... perintah PRINT sudah benar, tetapi nilai output tidak sesuai 🤔\n\n` +
-          `Sistem sedang berada di blok ELSE (kapasitas = 0),\n` +
-          `sehingga perlu menampilkan bahwa parkir sudah penuh.\n\n` +
-          `Coba periksa kembali penulisan output-nya.\n` +
-          `Yang diharapkan: parkir_penuh${afterPrint ? `, bukan "${afterPrint}"` : ""}`
-        );
-      }
-    }
-
-    // Fallback umum
     if (COMMAND_GLOSSARY[firstWord]) {
-      return (
-        `Hmm... perintah "${firstWord.toUpperCase()}" sudah dikenali, tetapi penulisannya kurang sesuai 🤔\n\n` +
-        `${COMMAND_GLOSSARY[firstWord]}\n\n` +
-        `Coba perhatikan lagi penulisan lengkapnya ya! 😊`
-      );
+      return `Baris ${lineIndex + 1} salah.\n\n${COMMAND_GLOSSARY[firstWord]}`;
     }
 
-    return (
-      `Hmm... sepertinya ada yang kurang tepat di baris ini 🤔\n\n` +
-      `Perintah "${firstWord || "..."}" tidak dikenali oleh sistem.\n\n` +
-      `Pastikan menggunakan perintah pseudocode yang sesuai:\n` +
-      `start, input, if, print, else, end`
-    );
+    if (lineIndex === 1 || lineIndex === 2) {
+      return `Baris ${lineIndex + 1} salah.\n\nPetunjuk: gunakan format INPUT untuk membaca data kendaraan dan kapasitas.`;
+    }
+
+    if (lineIndex === 3 || lineIndex === 5) {
+      return `Baris ${lineIndex + 1} salah.\n\nPetunjuk: pastikan struktur IF / ELSE sesuai urutan.`;
+    }
+
+    if (lineIndex === 4 || lineIndex === 6) {
+      return `Baris ${lineIndex + 1} salah.\n\nPetunjuk: gunakan format PRINT untuk menampilkan status parkir.`;
+    }
+
+    return `Baris ${lineIndex + 1} salah.\n\nPetunjuk: sesuaikan baris ini dengan template algoritma.`;
   };
 
   // ================== EKSEKUSI ALGORITMA ==================
@@ -495,6 +304,7 @@ export default function SimulasiParkirOtomatis() {
     if (normalizedUser !== normalizedExpected) {
       setIsRunning(false);
       setErrorLine(step);
+      setShowSuccessCard(false);
       updateSimData({ feedback: generateEducationalFeedback(step, userLine) });
       return false;
     }
@@ -502,7 +312,9 @@ export default function SimulasiParkirOtomatis() {
     // Eksekusi berdasarkan baris
     switch (step) {
       case 0: // start
-        updateSimData({ feedback: "Sistem: Memulai proses..." });
+        updateSimData({
+          feedback: "Sistem: Memulai proses parkir otomatis...",
+        });
         break;
 
       case 1: // input kendaraan
@@ -524,7 +336,7 @@ export default function SimulasiParkirOtomatis() {
 
       case 3: // if kapasitas > 0
         updateSimData({
-          feedback: "IF: Mengevaluasi kondisi kapasitas > 0...",
+          feedback: "PROSES: Mengevaluasi kondisi kapasitas > 0...",
         });
         await new Promise((resolve) => setTimeout(resolve, 800));
         const condition =
@@ -532,8 +344,8 @@ export default function SimulasiParkirOtomatis() {
           simDataRef.current.kapasitas > 0;
         updateSimData({
           feedback: condition
-            ? "Hasil: BENAR! (Ada slot parkir tersedia)"
-            : "Hasil: SALAH. (Kapasitas = 0, parkir penuh)",
+            ? "PROSES: Kondisi benar, jalur parkir tersedia dipilih."
+            : "PROSES: Kondisi salah, jalur parkir penuh dipilih.",
         });
         break;
 
@@ -545,12 +357,12 @@ export default function SimulasiParkirOtomatis() {
           updateSimData({
             gerbangTerbuka: true,
             statusParkir: "tersedia",
-            feedback: "PRINT: Membuka gerbang parkir.",
+            feedback: "OUTPUT: Gerbang parkir dibuka.",
           });
           await new Promise((resolve) => setTimeout(resolve, 800));
           updateSimData({
             mobilMasuk: true,
-            feedback: "PRINT: Kendaraan dipersilakan masuk ke area parkir.",
+            feedback: "OUTPUT: Kendaraan dipersilakan masuk.",
           });
         }
         break;
@@ -561,7 +373,7 @@ export default function SimulasiParkirOtomatis() {
           simDataRef.current.kapasitas === 0
         ) {
           updateSimData({
-            feedback: "ELSE: Kapasitas = 0, masuk blok else...",
+            feedback: "PROSES: Menjalankan jalur alternatif (ELSE).",
           });
         }
         break;
@@ -574,14 +386,16 @@ export default function SimulasiParkirOtomatis() {
           updateSimData({
             gerbangTerbuka: false,
             statusParkir: "penuh",
-            feedback: "PRINT: Menahan gerbang tetap tertutup. Parkir penuh.",
+            feedback: "OUTPUT: Parkir penuh, gerbang tetap tertutup.",
           });
         }
         break;
 
       case 7: // end
+        setShowSuccessCard(true);
         updateSimData({
-          feedback: "Berhasil! Algoritma dijalankan tanpa error.",
+          feedback:
+            "Berhasil! Algoritma berjalan dengan benar: input → proses → output.",
         });
         break;
     }
@@ -592,6 +406,7 @@ export default function SimulasiParkirOtomatis() {
   const startRunning = async () => {
     const lines = code.split("\n");
 
+    setShowSuccessCard(false);
     setIsRunning(true);
     setActiveLine(-1);
     setErrorLine(-1);
@@ -824,6 +639,30 @@ export default function SimulasiParkirOtomatis() {
             </div>
           </section>
 
+          <AnimatePresence>
+            {showSuccessCard && (
+              <motion.section
+                key="success-card"
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="px-6 pb-2"
+              >
+                <div className="bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
+                  <h3 className="text-sm font-black text-emerald-700 tracking-tight">
+                    🎉 Berhasil! Algoritma benar
+                  </h3>
+                  <p className="mt-1 text-[12px] text-slate-600 leading-relaxed font-medium">
+                    Algoritma berjalan sesuai urutan input → proses → output.
+                    <br />
+                    Sistem parkir otomatis berjalan dengan benar.
+                  </p>
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+
           <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
             <section className="flex-1 min-w-[500px] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative">
@@ -895,6 +734,7 @@ export default function SimulasiParkirOtomatis() {
                       if (isRunning) return;
                       setCode(e.target.value);
                       setErrorLine(-1);
+                      setShowSuccessCard(false);
                       const cursorPosition = e.target.selectionStart;
                       const linesUpToCursor = e.target.value
                         .substr(0, cursorPosition)

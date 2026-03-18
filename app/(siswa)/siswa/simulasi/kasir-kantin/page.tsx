@@ -128,7 +128,7 @@ export default function SimulasiKasirKantin() {
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
   const [logicLog, setLogicLog] = useState<string[]>([
-    "Workspace siap menerima algoritma",
+    "Sistem siap menjalankan algoritma.",
   ]);
 
   const [simState, setSimState] = useState<SimulationState>({
@@ -264,7 +264,7 @@ export default function SimulasiKasirKantin() {
     setErrorLine(-1);
     setIsRunning(false);
     setHasTried(false);
-    setLogicLog(["Workspace siap menerima algoritma"]);
+    setLogicLog(["Sistem siap menjalankan algoritma."]);
     setSimState({
       food: null,
       drink: null,
@@ -364,7 +364,7 @@ export default function SimulasiKasirKantin() {
     if (normalizedUser !== normalizedExpected) {
       setErrorLine(step);
       const feedback = generateEducationalFeedback(step, userLine);
-      addLog(`❌ ${feedback}`);
+      addLog(`ERROR: ${feedback}`);
       setActiveLine(-1);
       return false;
     }
@@ -373,7 +373,7 @@ export default function SimulasiKasirKantin() {
     switch (step) {
       case 0: // start
         updateSimData({ status: "Memulai Alur" });
-        addLog("✅ Algoritma dimulai...");
+        addLog("Sistem: Memulai proses kasir...");
         break;
 
       case 1: // input harga_makanan
@@ -386,7 +386,7 @@ export default function SimulasiKasirKantin() {
           foodItems[Math.floor(Math.random() * foodItems.length)];
         updateSimData({ food: randomFood, status: "Input Makanan" });
         addLog(
-          `🍽️ Input harga makanan: ${randomFood.name} - Rp ${randomFood.price.toLocaleString("id-ID")}`,
+          `INPUT: harga_makanan = ${randomFood.name} (Rp ${randomFood.price.toLocaleString("id-ID")})`,
         );
         break;
 
@@ -400,13 +400,13 @@ export default function SimulasiKasirKantin() {
           drinkItems[Math.floor(Math.random() * drinkItems.length)];
         updateSimData({ drink: randomDrink, status: "Input Minuman" });
         addLog(
-          `🥤 Input harga minuman: ${randomDrink.name} - Rp ${randomDrink.price.toLocaleString("id-ID")}`,
+          `INPUT: harga_minuman = ${randomDrink.name} (Rp ${randomDrink.price.toLocaleString("id-ID")})`,
         );
         break;
 
       case 3: // hasil = harga_makanan + harga_minuman
         updateSimData({ isCalculating: true, status: "Menghitung Total..." });
-        addLog("🧮 Menghitung total harga...");
+        addLog("PROSES: Menghitung total harga...");
         await new Promise((resolve) => setTimeout(resolve, 800));
         const total =
           (simDataRef.current.food?.price || 0) +
@@ -416,20 +416,20 @@ export default function SimulasiKasirKantin() {
           totalPrice: total,
           status: "Kalkulasi Selesai",
         });
-        addLog(`💰 Hasil: Rp ${total.toLocaleString("id-ID")}`);
+        addLog(`PROSES: hasil = Rp ${total.toLocaleString("id-ID")}`);
         break;
 
       case 4: // output hasil
         updateSimData({ receiptPrinted: true, status: "Mencetak Struk" });
-        addLog("🧾 Mencetak struk pembayaran...");
+        addLog("OUTPUT: Mencetak struk pembayaran...");
         addLog(
-          `📋 Total yang harus dibayar: Rp ${simDataRef.current.totalPrice.toLocaleString("id-ID")}`,
+          `OUTPUT: total_bayar = Rp ${simDataRef.current.totalPrice.toLocaleString("id-ID")}`,
         );
         break;
 
       case 5: // end
         updateSimData({ status: "Selesai" });
-        addLog("✅ Algoritma selesai dijalankan.");
+        addLog("Sukses: Algoritma selesai dijalankan.");
         break;
     }
 
@@ -460,7 +460,7 @@ export default function SimulasiKasirKantin() {
       status: "Menjalankan...",
     });
 
-    addLog("🚀 Memulai eksekusi algoritma...");
+    addLog("Sistem: Memulai eksekusi algoritma...");
 
     for (let i = 0; i < lines.length; i++) {
       const success = await executeStep(i);
@@ -472,7 +472,7 @@ export default function SimulasiKasirKantin() {
 
     setIsRunning(false);
     setActiveLine(-1);
-    addLog("🎉 Algoritma berhasil dijalankan!");
+    addLog("Sukses: Algoritma berhasil dijalankan.");
   };
 
   // ================== RENDER UI ==================
