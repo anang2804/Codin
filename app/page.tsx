@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import BlurText from "@/components/BlurText";
+import TextType from "@/components/TextType";
 import {
   BookOpen,
   BarChart3,
@@ -41,6 +43,10 @@ export default function LandingPage() {
   // Mitra section scroll animation
   const [mitraVisible, setMitraVisible] = useState<boolean>(false);
   const mitraRef = useRef<HTMLDivElement>(null);
+
+  const handleAnimationComplete = () => {
+    console.log("Animation completed!");
+  };
 
   const flipSim = () => {
     if (simFlipping) return;
@@ -264,12 +270,44 @@ export default function LandingPage() {
               <div className="flex flex-col gap-6">
                 {/* Heading */}
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0f172a] leading-[1.15] tracking-tight">
-                  Belajar{" "}
-                  <span className="text-emerald-600">Algoritma &amp;</span>
+                  <BlurText
+                    text="Belajar"
+                    delay={80}
+                    animateBy="words"
+                    direction="top"
+                    className="inline-flex"
+                  />{" "}
+                  <BlurText
+                    text="Algoritma &"
+                    delay={80}
+                    animateBy="words"
+                    direction="top"
+                    className="inline-flex text-emerald-600"
+                  />
                   <br />
-                  <span className="text-emerald-600">Pemrograman</span> Lebih
+                  <BlurText
+                    text="Pemrograman"
+                    delay={80}
+                    animateBy="words"
+                    direction="top"
+                    className="inline-flex text-emerald-600"
+                  />{" "}
+                  <BlurText
+                    text="Lebih"
+                    delay={80}
+                    animateBy="words"
+                    direction="top"
+                    className="inline-flex"
+                  />
                   <br />
-                  Mudah &amp; Interaktif
+                  <BlurText
+                    text="Mudah & Interaktif"
+                    delay={80}
+                    animateBy="words"
+                    direction="top"
+                    onAnimationComplete={handleAnimationComplete}
+                    className="inline-flex"
+                  />
                 </h1>
 
                 {/* Description */}
@@ -418,7 +456,16 @@ export default function LandingPage() {
               </span>
               <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-black text-[#0f172a] leading-tight">
                 Semua yang Kamu Butuhkan untuk{" "}
-                <span className="text-emerald-600">Belajar Lebih Baik</span>
+                <TextType
+                  as="span"
+                  text="Belajar Lebih Baik"
+                  className="text-emerald-600"
+                  startOnVisible
+                  loop={false}
+                  typingSpeed={55}
+                  initialDelay={120}
+                  showCursor={false}
+                />
               </h2>
               <p className="mt-4 text-base text-gray-500 leading-relaxed">
                 Platform CODIN menyediakan fitur lengkap untuk mendukung

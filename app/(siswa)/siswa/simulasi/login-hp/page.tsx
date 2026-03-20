@@ -31,22 +31,22 @@ import { toast } from "sonner";
 const EXPECTED_SOLUTION = [
   "start",
   "input pin",
-  "",
-  "if pin = benar",
+  "if pin = benar then",
   "output hp_terbuka",
   "else",
   "output pin_salah",
+  "end if",
   "end",
 ] as const;
 
 const INITIAL_TEMPLATE = [
   "start",
   "input pin",
-  "",
   "_____ pin = benar",
   "output hp_terbuka",
   "_____",
-  "output pin_salah",
+  "_____ pin_salah",
+  "end if",
   "end",
 ] as const;
 
@@ -148,7 +148,7 @@ export default function LoginHPSimulation() {
       return `Baris ${lineIdx + 1} algoritma belum lengkap.\n\nLengkapi bagian yang kosong sesuai template.`;
     }
 
-    if (lineIdx === 3) {
+    if (lineIdx === 2) {
       if (firstWord === "if" && !trimmed.includes("pin = benar")) {
         return `Baris ${lineIdx + 1} command IF sudah benar, tapi kondisi belum tepat.\n\nGunakan kondisi pengecekan PIN yang sesuai.`;
       }
@@ -160,7 +160,7 @@ export default function LoginHPSimulation() {
       }
     }
 
-    if (lineIdx === 5) {
+    if (lineIdx === 4) {
       if (trimmed !== "else") {
         return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: tulis ELSE untuk jalur alternatif.`;
       }
@@ -398,10 +398,10 @@ export default function LoginHPSimulation() {
     }
 
     if (lineParsed === "else" && simDataRef.current.pinValue === "benar") {
-      const endIdx = EXPECTED_SOLUTION.indexOf("end");
-      if (endIdx !== -1) {
+      const endIfIdx = EXPECTED_SOLUTION.indexOf("end if");
+      if (endIfIdx !== -1) {
         timerRef.current = setTimeout(() => {
-          void executeStep(endIdx);
+          void executeStep(endIfIdx);
         }, 900);
         return;
       }

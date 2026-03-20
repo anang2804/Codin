@@ -25,10 +25,11 @@ import { toast } from "sonner";
 const EXPECTED_SOLUTION = [
   "start",
   "input sensor",
-  "if sensor = aktif",
-  "print pintu_terbuka",
+  "if sensor = aktif then",
+  "output pintu_terbuka",
   "else",
-  "print pintu_tertutup",
+  "output pintu_tertutup",
+  "end if",
   "end",
 ];
 
@@ -36,10 +37,11 @@ const EXPECTED_SOLUTION = [
 const INITIAL_TEMPLATE = [
   "start",
   "_____ sensor",
-  "if sensor = aktif",
+  "if sensor = aktif then",
   "_____ pintu_terbuka",
   "_____",
-  "print pintu_tertutup",
+  "_____ pintu_tertutup",
+  "end if",
   "end",
 ];
 
@@ -47,8 +49,8 @@ const INITIAL_TEMPLATE = [
 const COMMAND_GLOSSARY: Record<string, string> = {
   input:
     "INPUT biasanya digunakan untuk mengambil data dari perangkat luar (seperti sensor gerak atau keyboard) agar data tersebut bisa diproses oleh sistem.",
-  print:
-    "PRINT biasanya digunakan untuk menampilkan hasil, memberikan informasi kepada pengguna, atau mengirimkan perintah aksi ke perangkat keluaran (seperti mesin penggerak pintu).",
+  output:
+    "OUTPUT biasanya digunakan untuk menampilkan hasil, memberikan informasi kepada pengguna, atau mengirimkan perintah aksi ke perangkat keluaran (seperti mesin penggerak pintu).",
   if: "Struktur IF digunakan untuk memeriksa sebuah kondisi. Jika kondisi tersebut terpenuhi (benar), maka perintah di dalamnya akan dijalankan.",
   else: "Bagian ELSE adalah jalur alternatif. Bagian ini hanya akan dijalankan jika kondisi pada bagian IF ternyata tidak terpenuhi (salah).",
   start: "START menandakan titik awal di mana alur algoritma mulai bekerja.",
@@ -63,8 +65,8 @@ const COMMAND_DETAILS = {
     color: "bg-emerald-50 border-emerald-100",
   },
   LOGIC: {
-    title: "INPUT & PRINT",
-    desc: "Gunakan INPUT untuk membaca sensor dan PRINT untuk menggerakkan pintu.",
+    title: "INPUT & OUTPUT",
+    desc: "Gunakan INPUT untuk membaca sensor dan OUTPUT untuk menggerakkan pintu.",
     icon: <Database className="text-blue-500" size={20} />,
     color: "bg-blue-50 border-blue-100",
   },
@@ -150,11 +152,11 @@ const PintuOtomatisSimulation = () => {
     }
 
     if (lineIdx === 3) {
-      if (firstWord === "print" && !trimmed.includes("pintu_terbuka")) {
-        return `Baris ${lineIdx + 1} command PRINT sudah benar, tapi output belum tepat untuk kondisi ini.`;
+      if (firstWord === "output" && !trimmed.includes("pintu_terbuka")) {
+        return `Baris ${lineIdx + 1} command OUTPUT sudah benar, tapi output belum tepat untuk kondisi ini.`;
       }
-      if (firstWord !== "print") {
-        return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: gunakan format PRINT untuk output status pintu.`;
+      if (firstWord !== "output") {
+        return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: gunakan format OUTPUT untuk output status pintu.`;
       }
     }
 
@@ -165,11 +167,17 @@ const PintuOtomatisSimulation = () => {
     }
 
     if (lineIdx === 5) {
-      if (firstWord === "print" && !trimmed.includes("pintu_tertutup")) {
-        return `Baris ${lineIdx + 1} command PRINT sudah benar, tapi output belum tepat untuk jalur ELSE.`;
+      if (firstWord === "output" && !trimmed.includes("pintu_tertutup")) {
+        return `Baris ${lineIdx + 1} command OUTPUT sudah benar, tapi output belum tepat untuk jalur ELSE.`;
       }
-      if (firstWord !== "print") {
-        return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: gunakan format PRINT untuk output status pintu.`;
+      if (firstWord !== "output") {
+        return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: gunakan format OUTPUT untuk output status pintu.`;
+      }
+    }
+
+    if (lineIdx === 6) {
+      if (trimmed !== "end if") {
+        return `Baris ${lineIdx + 1} salah.\n\nPetunjuk: tutup blok IF dengan END IF.`;
       }
     }
 
@@ -190,7 +198,7 @@ const PintuOtomatisSimulation = () => {
       return COMMAND_DETAILS.START;
     if (lineContent.includes("if") || lineContent.includes("else"))
       return COMMAND_DETAILS.BRANCH;
-    if (lineContent.includes("input") || lineContent.includes("print"))
+    if (lineContent.includes("input") || lineContent.includes("output"))
       return COMMAND_DETAILS.LOGIC;
     return COMMAND_DETAILS.DEFAULT;
   };
@@ -367,7 +375,7 @@ const PintuOtomatisSimulation = () => {
           return;
         }
       }
-    } else if (lineParsed.includes("print")) {
+    } else if (lineParsed.includes("output")) {
       if (lineParsed.includes("terbuka")) {
         updateSimData({ doorOpen: true });
         setSimState((prev) => ({
@@ -384,9 +392,9 @@ const PintuOtomatisSimulation = () => {
     } else if (lineParsed.includes("else")) {
       // Jika sensor aktif, maka kita sudah menjalankan blok IF, jadi lompat ke END
       if (simDataRef.current.sensorValue === "aktif") {
-        const endIdx = EXPECTED_SOLUTION.indexOf("end");
-        if (endIdx !== -1) {
-          timerRef.current = setTimeout(() => executeStep(endIdx), 800);
+        const endIfIdx = EXPECTED_SOLUTION.indexOf("end if");
+        if (endIfIdx !== -1) {
+          timerRef.current = setTimeout(() => executeStep(endIfIdx), 800);
           return;
         }
       }
