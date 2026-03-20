@@ -158,6 +158,45 @@ export default function SiswaSimulasiPage() {
       ],
     },
     {
+      title: "Struktur Program (IPO)",
+      badgeClass: "bg-violet-50 text-violet-700 border border-violet-100",
+      items: [
+        {
+          title: "Perbaiki Mesin Kasir Kantin",
+          description:
+            "Susun struktur Input-Process-Output untuk proses perhitungan total belanja di kasir kantin.",
+          href: "/siswa/simulasi/kasir-kantin",
+          slug: "kasir-kantin",
+          level: "Dasar",
+          gradient: "from-emerald-100 to-teal-200",
+          emoji: "🍛",
+          accent: "border-emerald-500",
+        },
+        {
+          title: "Blender Jus",
+          description:
+            "Susun struktur Input-Process-Output untuk proses blender dari buah menjadi jus.",
+          href: "/siswa/simulasi/blender-buah",
+          slug: "mesin-jus-blender",
+          level: "Menengah",
+          gradient: "from-lime-100 to-emerald-200",
+          emoji: "🧃",
+          accent: "border-lime-500",
+        },
+        {
+          title: "Mesin Cuci Otomatis",
+          description:
+            "Lengkapi struktur Input-Process-Output mesin cuci hingga menghasilkan pakaian_bersih.",
+          href: "/siswa/simulasi/mesin-cuci",
+          slug: "mesin-cuci-lanjutan",
+          level: "Lanjutan",
+          gradient: "from-violet-100 to-indigo-200",
+          emoji: "🧺",
+          accent: "border-violet-500",
+        },
+      ],
+    },
+    {
       title: "Pseudocode",
       badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
       items: [
@@ -215,45 +254,6 @@ export default function SiswaSimulasiPage() {
           gradient: "from-emerald-100 to-lime-200",
           emoji: "🛒",
           accent: "border-emerald-500",
-        },
-      ],
-    },
-    {
-      title: "Struktur Program (IPO)",
-      badgeClass: "bg-violet-50 text-violet-700 border border-violet-100",
-      items: [
-        {
-          title: "Perbaiki Mesin Kasir Kantin",
-          description:
-            "Susun struktur Input-Process-Output untuk proses perhitungan total belanja di kasir kantin.",
-          href: "/siswa/simulasi/kasir-kantin",
-          slug: "kasir-kantin",
-          level: "Dasar",
-          gradient: "from-emerald-100 to-teal-200",
-          emoji: "🍛",
-          accent: "border-emerald-500",
-        },
-        {
-          title: "Blender Jus",
-          description:
-            "Susun struktur Input-Process-Output untuk proses blender dari buah menjadi jus.",
-          href: "/siswa/simulasi/blender-buah",
-          slug: "mesin-jus-blender",
-          level: "Menengah",
-          gradient: "from-lime-100 to-emerald-200",
-          emoji: "🧃",
-          accent: "border-lime-500",
-        },
-        {
-          title: "Mesin Cuci Otomatis",
-          description:
-            "Lengkapi struktur Input-Process-Output mesin cuci hingga menghasilkan pakaian_bersih.",
-          href: "/siswa/simulasi/mesin-cuci",
-          slug: "mesin-cuci-lanjutan",
-          level: "Lanjutan",
-          gradient: "from-violet-100 to-indigo-200",
-          emoji: "🧺",
-          accent: "border-violet-500",
         },
       ],
     },

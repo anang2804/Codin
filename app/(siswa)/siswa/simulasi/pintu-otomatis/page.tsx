@@ -465,7 +465,7 @@ const PintuOtomatisSimulation = () => {
                 Pintu Otomatis
               </h1>
             </div>
-            <span className="text-[8px] text-emerald-600 font-bold tracking-widest uppercase italic bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="text-[8px] text-sky-600 font-bold tracking-widest uppercase italic bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
               Menengah
             </span>
           </div>
