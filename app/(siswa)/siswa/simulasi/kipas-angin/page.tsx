@@ -90,6 +90,8 @@ type SimulationState = {
 };
 
 const SIMULASI_SLUG = "kipas-angin";
+const STEP_DELAY_MS = 850;
+const CONDITION_DELAY_MS = 950;
 
 export default function SimulasiKipasAngin() {
   const [code, setCode] = useState("");
@@ -252,7 +254,7 @@ export default function SimulasiKipasAngin() {
     }
 
     setActiveLine(step);
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await new Promise((resolve) => setTimeout(resolve, STEP_DELAY_MS));
 
     const userLine = lines[step];
     const expectedLine = EXPECTED_SOLUTION[step];
@@ -287,7 +289,7 @@ export default function SimulasiKipasAngin() {
         updateSimData({
           feedback: "PROSES: Mengevaluasi kondisi suhu > 30...",
         });
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, CONDITION_DELAY_MS));
         updateSimData({
           kondisi:
             simDataRef.current.suhu !== null && simDataRef.current.suhu > 30
