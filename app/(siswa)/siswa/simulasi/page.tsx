@@ -189,10 +189,21 @@ export default function SiswaSimulasiPage() {
             "Lengkapi pseudocode sistem parkir dengan sensor dan kondisi IF-ELSE untuk akses kendaraan.",
           href: "/siswa/simulasi/parkir-otomatis",
           slug: "parkir-otomatis",
-          level: "Menengah",
+          level: "Lanjutan",
           gradient: "from-blue-100 to-cyan-200",
           emoji: "🚗",
           accent: "border-blue-500",
+        },
+        {
+          title: "Kipas Angin Otomatis",
+          description:
+            "Lengkapi pseudocode kontrol kipas berdasarkan suhu ruangan dengan struktur IF-ELSE.",
+          href: "/siswa/simulasi/kipas-angin",
+          slug: "kipas-angin",
+          level: "Lanjutan",
+          gradient: "from-cyan-100 to-sky-200",
+          emoji: "🌀",
+          accent: "border-cyan-500",
         },
         {
           title: "Beli di Kasir",
@@ -200,7 +211,7 @@ export default function SiswaSimulasiPage() {
             "Lengkapi pseudocode kasir untuk menghitung total belanja dari harga_barang dan jumlah_barang.",
           href: "/siswa/simulasi/beli-di-kasir",
           slug: "beli-di-kasir",
-          level: "Menengah",
+          level: "Dasar",
           gradient: "from-emerald-100 to-lime-200",
           emoji: "🛒",
           accent: "border-emerald-500",
@@ -267,6 +278,19 @@ export default function SiswaSimulasiPage() {
       : "rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700 border border-amber-100";
   };
 
+  const getLevelRank = (level: string) => {
+    switch (level) {
+      case "Dasar":
+        return 0;
+      case "Menengah":
+        return 1;
+      case "Lanjutan":
+        return 2;
+      default:
+        return 99;
+    }
+  };
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -283,90 +307,104 @@ export default function SiswaSimulasiPage() {
 
       {simulationSections.map((section, sectionIndex) => (
         <section key={section.title} className="space-y-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-800">
-              {section.title}
-            </h2>
-            <span
-              className={`text-[11px] px-2 py-1 rounded-full font-medium ${section.badgeClass}`}
-            >
-              {section.items.length} simulasi
-            </span>
-          </div>
+          {(() => {
+            const sortedItems = [...section.items].sort((a, b) => {
+              const rankDiff = getLevelRank(a.level) - getLevelRank(b.level);
+              if (rankDiff !== 0) return rankDiff;
+              return a.title.localeCompare(b.title);
+            });
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {section.items.map((item, itemIndex) => {
-              const isCompleted = Boolean(
-                completedSimulasi[item.slug]?.completed,
-              );
-
-              return (
-                <Card
-                  key={item.href}
-                  className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
-                    animateIn
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-3"
-                  }`}
-                  style={{
-                    transitionDelay: `${sectionIndex * 120 + itemIndex * 60}ms`,
-                  }}
-                >
-                  <div
-                    className={`h-24 bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0`}
+            return (
+              <>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {section.title}
+                  </h2>
+                  <span
+                    className={`text-[11px] px-2 py-1 rounded-full font-medium ${section.badgeClass}`}
                   >
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="text-4xl">{item.emoji}</div>
-                      <div className="flex gap-1.5">
-                        <div
-                          className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
-                        />
-                        <div
-                          className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
-                        />
-                        <div
-                          className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    {section.items.length} simulasi
+                  </span>
+                </div>
 
-                  <div className="flex flex-1 flex-col p-4">
-                    <div className="space-y-3 flex-1">
-                      <div className="space-y-1.5">
-                        <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
-                          {item.title}
-                        </h3>
-                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sortedItems.map((item, itemIndex) => {
+                    const isCompleted = Boolean(
+                      completedSimulasi[item.slug]?.completed,
+                    );
 
-                      <div className="flex flex-wrap gap-2">
-                        <span
-                          className={`rounded-full px-2 py-1 text-[11px] font-medium ${getLevelBadgeClass(item.level)}`}
+                    return (
+                      <Card
+                        key={item.href}
+                        className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
+                          animateIn
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 translate-y-3"
+                        }`}
+                        style={{
+                          transitionDelay: `${sectionIndex * 120 + itemIndex * 60}ms`,
+                        }}
+                      >
+                        <div
+                          className={`h-24 bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0`}
                         >
-                          Level {item.level}
-                        </span>
-                        <span className={getStatusBadgeClass(isCompleted)}>
-                          {isCompleted ? "Sudah dicoba" : "Belum dicoba"}
-                        </span>
-                      </div>
-                    </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="text-4xl">{item.emoji}</div>
+                            <div className="flex gap-1.5">
+                              <div
+                                className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
+                              />
+                              <div
+                                className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
+                              />
+                              <div
+                                className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                    <Button
-                      onClick={() => {
-                        window.location.href = item.href;
-                      }}
-                      className="mt-auto w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
-                    >
-                      Mulai Simulasi
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                        <div className="flex flex-1 flex-col p-4">
+                          <div className="space-y-3 flex-1">
+                            <div className="space-y-1.5">
+                              <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                                {item.title}
+                              </h3>
+                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                {item.description}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <span
+                                className={`rounded-full px-2 py-1 text-[11px] font-medium ${getLevelBadgeClass(item.level)}`}
+                              >
+                                Level {item.level}
+                              </span>
+                              <span
+                                className={getStatusBadgeClass(isCompleted)}
+                              >
+                                {isCompleted ? "Sudah dicoba" : "Belum dicoba"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => {
+                              window.location.href = item.href;
+                            }}
+                            className="mt-auto w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
+                          >
+                            Mulai Simulasi
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </section>
       ))}
     </div>

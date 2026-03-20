@@ -487,7 +487,7 @@ const BlenderSimulation = () => {
               </h1>
             </div>
             <span className="text-[8px] text-emerald-600 font-bold tracking-widest uppercase italic bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Sedang
+              Menengah
             </span>
           </div>
         </div>

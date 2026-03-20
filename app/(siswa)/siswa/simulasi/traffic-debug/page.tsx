@@ -15,6 +15,8 @@ import {
   MousePointerClick,
   AlertOctagon,
   ArrowLeft,
+  Activity,
+  Lightbulb,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkCompletedButton from "@/components/MarkCompletedButton";
@@ -318,7 +320,7 @@ export default function TrafficDebugPage() {
   return (
     <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 overflow-hidden font-sans text-sm">
       {/* Header */}
-      <header className="bg-white border-b px-3 py-1.5 flex justify-between items-center shadow-sm z-30 shrink-0">
+      <header className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shadow-sm z-30 shrink-0">
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.back()}
@@ -334,7 +336,7 @@ export default function TrafficDebugPage() {
               Transisi Lampu Bertahap
             </h1>
             <span className="text-[8px] text-amber-600 font-bold tracking-widest uppercase italic">
-              Sedang
+              Menengah
             </span>
           </div>
         </div>
@@ -363,10 +365,10 @@ export default function TrafficDebugPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
-        <aside className="w-44 border-r bg-white flex flex-col z-20 shrink-0 shadow-sm">
+        <aside className="w-72 border-r border-slate-200 bg-white flex flex-col z-20 shrink-0 shadow-sm overflow-y-auto">
           <div className="p-2 border-b bg-slate-50/50 overflow-y-auto max-h-[30%]">
             <h2 className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Info size={10} className="text-blue-500" /> KOMPONEN
+              <Info size={10} className="text-blue-500" /> DESKRIPSI PERINTAH
             </h2>
             <div className="space-y-1.5 text-justify">
               <p className="text-[10px] text-slate-600 leading-snug font-medium">
@@ -386,7 +388,51 @@ export default function TrafficDebugPage() {
             </div>
           </div>
 
-          <div className="p-2 overflow-y-auto flex-1">
+          <div
+            className={`p-3 rounded-2xl border transition-all duration-300 m-3 mt-2 ${
+              simulationStatus === "error"
+                ? "bg-rose-50/95 border-rose-200"
+                : "bg-white border-slate-200"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                simulationStatus === "error"
+                  ? "border-rose-200"
+                  : "border-slate-200"
+              }`}
+            >
+              <HelpCircle
+                size={12}
+                className={
+                  simulationStatus === "error"
+                    ? "text-rose-500"
+                    : "text-slate-500"
+                }
+              />
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest ${
+                  simulationStatus === "error"
+                    ? "text-rose-600"
+                    : "text-slate-500"
+                }`}
+              >
+                CATATAN PROSES
+              </span>
+            </div>
+
+            <div
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+                simulationStatus === "error"
+                  ? "text-rose-700 bg-rose-100/60"
+                  : "text-slate-700 bg-slate-100/80"
+              }`}
+            >
+              {feedback || "Sistem siap menjalankan algoritma."}
+            </div>
+          </div>
+
+          <div className="p-2 overflow-y-auto">
             <h2 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 text-center">
               BANK SIMBOL
             </h2>
@@ -414,10 +460,103 @@ export default function TrafficDebugPage() {
                 ))}
             </div>
           </div>
+
+          <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl m-3">
+            <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
+              <span>Status Fokus</span>
+              <Activity size={10} />
+            </div>
+            <p className="text-[10px] font-bold text-slate-500 italic leading-tight">
+              {activeStep !== null
+                ? `Menganalisis langkah ${String(activeStep).toUpperCase()}`
+                : "Editor siap digunakan"}
+            </p>
+          </div>
         </aside>
 
         {/* PANEL TENGAH */}
-        <section className="flex-1 bg-[#f1f5f9]/40 relative overflow-hidden p-2 flex flex-col items-center z-10 border-r shadow-inner">
+        <section className="flex-1 bg-[#f8fafc] relative overflow-hidden p-2 flex flex-col items-center z-10 border-r border-slate-200 shadow-inner">
+          <div className="w-full px-4 pt-3 pb-2">
+            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="bg-white p-2 rounded-xl shadow-sm text-emerald-600">
+                <Lightbulb size={20} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
+                    MISI
+                  </span>
+                  <h2 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
+                    Transisi Lampu Bertahap
+                  </h2>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                  Susun diagram alir agar lampu lalu lintas dapat bertransisi
+                  dari merah ke kuning lalu hijau secara bertahap.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {simulationStatus === "success" && (
+              <motion.section
+                key="success-card"
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="w-full px-4 pb-2"
+              >
+                <div className="bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
+                  <h3 className="text-sm font-black text-emerald-700 tracking-tight">
+                    🎉 Berhasil! Diagram alir benar
+                  </h3>
+                  <p className="mt-1 text-[12px] text-slate-600 leading-relaxed font-medium">
+                    Alur logika berjalan sesuai urutan keputusan.
+                    <br />
+                    Lampu berhasil transisi dari merah → kuning → hijau,
+                    kemudian kendaraan dapat melintas.
+                  </p>
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          <div className="w-full px-4 pb-2">
+            <div className="px-5 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isSimulating
+                      ? "bg-rose-500 animate-pulse"
+                      : simulationStatus === "error"
+                        ? "bg-red-500 shadow-[0_0_5px_red]"
+                        : "bg-emerald-500"
+                  }`}
+                />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
+                  ALGORITMA TRANSISI LAMPU
+                </span>
+              </div>
+              <div
+                className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${
+                  isSimulating
+                    ? "bg-rose-500 text-white"
+                    : simulationStatus === "error"
+                      ? "bg-red-500 text-white border-red-600 shadow-sm"
+                      : "bg-white text-slate-400 border-slate-200"
+                }`}
+              >
+                {isSimulating
+                  ? "RUNNING"
+                  : simulationStatus === "error"
+                    ? "ERROR"
+                    : "SIAP MENULIS"}
+              </div>
+            </div>
+          </div>
+
           <div
             className="absolute inset-0 opacity-[0.1] pointer-events-none"
             style={{
@@ -478,10 +617,10 @@ export default function TrafficDebugPage() {
         </section>
 
         {/* PANEL KANAN: HARDWARE SIMULATOR */}
-        <aside className="w-[440px] bg-white flex flex-col z-20 shrink-0 shadow-2xl border-l">
-          <div className="p-2 border-b bg-slate-50 flex items-center justify-between px-3 shrink-0">
+        <aside className="w-[420px] bg-[#020617] flex flex-col z-20 shrink-0 shadow-2xl border-l border-slate-800">
+          <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4 shrink-0">
             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">
-              Hardware Status
+              VISUALISASI
             </span>
             <div className="flex items-center gap-1.5">
               <div
@@ -498,7 +637,7 @@ export default function TrafficDebugPage() {
               ></div>
               <span
                 className={`text-[8px] font-black uppercase tracking-tighter ${
-                  hardwareBroken ? "text-red-600" : ""
+                  hardwareBroken ? "text-red-400" : "text-slate-300"
                 }`}
               >
                 {hardwareBroken ? "SYSTEM ERROR" : lightColor.toUpperCase()}

@@ -33,12 +33,12 @@ const EXPECTED_SOLUTION = [
 ];
 
 const INITIAL_TEMPLATE = [
-  "start",
+  "______ ",
   "______ kendaraan",
   "______ kapasitas",
   "______ kapasitas > 0",
   "______ parkir_tersedia",
-  "else",
+  "______ ",
   "______ parkir_penuh",
   "end",
 ];
@@ -485,7 +485,7 @@ export default function SimulasiParkirOtomatis() {
               </h1>
             </div>
             <span className="text-[8px] text-red-600 font-bold tracking-widest uppercase italic bg-red-50 px-2 py-0.5 rounded border border-red-200">
-              Sulit
+              Lanjutan
             </span>
           </div>
         </div>

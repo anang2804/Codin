@@ -377,7 +377,7 @@ export default function TrafficLogicPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#fafbfc] overflow-hidden font-sans text-sm">
+    <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 overflow-hidden font-sans text-sm">
       {/* Header */}
       <header className="px-8 py-2 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
@@ -398,7 +398,7 @@ export default function TrafficLogicPage() {
               </h1>
             </div>
             <span className="text-[8px] text-green-600 font-bold tracking-widest uppercase italic bg-green-50 px-2 py-0.5 rounded border border-green-200">
-              Mudah
+              Dasar
             </span>
           </div>
         </div>
@@ -427,7 +427,7 @@ export default function TrafficLogicPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
-        <aside className="w-60 border-r bg-white flex flex-col z-20 shrink-0 overflow-y-auto">
+        <aside className="w-72 border-r border-slate-200 bg-white flex flex-col z-20 shrink-0 overflow-y-auto">
           {/* Deskripsi */}
           <div className="p-3 border-b flex flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -562,7 +562,7 @@ export default function TrafficLogicPage() {
 
           <div className="flex-1 flex overflow-hidden">
             {/* PANEL TENGAH: WORKSPACE */}
-            <section className="flex-1 bg-slate-50 relative overflow-auto flex flex-col items-center justify-start py-4 z-10 border-r">
+            <section className="flex-1 bg-[#f8fafc] relative overflow-auto flex flex-col items-center justify-start py-4 z-10 border-r border-slate-200">
               <div
                 className="absolute inset-0 opacity-[0.06] pointer-events-none"
                 style={{
