@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import DarkModeSplashCursor from "@/components/DarkModeSplashCursor";
+import AppSplashScreen from "@/components/AppSplashScreen";
 import "./globals.css";
 
 const _geist = Geist({
@@ -39,7 +40,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <DarkModeSplashCursor />
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <AppSplashScreen>
+            <ReactQueryProvider>{children}</ReactQueryProvider>
+          </AppSplashScreen>
         </ThemeProvider>
         <Analytics />
       </body>

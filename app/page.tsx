@@ -33,6 +33,7 @@ import {
 export default function LandingPage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const isDark = mounted && resolvedTheme === "dark";
   const [active, setActive] = useState<string>("home");
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [heroVideoVisible, setHeroVideoVisible] = useState<boolean>(false);
@@ -196,12 +197,10 @@ export default function LandingPage() {
               }
               className="rounded-lg"
               aria-label={
-                resolvedTheme === "dark"
-                  ? "Aktifkan mode terang"
-                  : "Aktifkan mode gelap"
+                isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap"
               }
             >
-              {mounted && resolvedTheme === "dark" ? (
+              {isDark ? (
                 <Sun className="h-4 w-4" />
               ) : (
                 <Moon className="h-4 w-4" />

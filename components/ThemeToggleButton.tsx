@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function ThemeToggleButton() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const isDark = mounted && resolvedTheme === "dark";
 
   useEffect(() => {
     setMounted(true);
@@ -20,17 +21,9 @@ export default function ThemeToggleButton() {
       type="button"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       className="rounded-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70"
-      aria-label={
-        resolvedTheme === "dark"
-          ? "Aktifkan mode terang"
-          : "Aktifkan mode gelap"
-      }
+      aria-label={isDark ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
     >
-      {mounted && resolvedTheme === "dark" ? (
-        <Sun className="h-4 w-4" />
-      ) : (
-        <Moon className="h-4 w-4" />
-      )}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );
 }
