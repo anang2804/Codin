@@ -147,11 +147,11 @@ export default function SiswaAsesmenPage() {
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <ClipboardList className="text-green-600" size={28} />
             Akses Kuis
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Kerjakan kuis untuk menguji pemahaman materi
           </p>
         </div>
@@ -160,12 +160,15 @@ export default function SiswaAsesmenPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat kuis...</p>
+          <p className="text-muted-foreground">Memuat kuis...</p>
         </div>
       ) : asesmen.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
-          <ClipboardList size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">
+          <ClipboardList
+            size={48}
+            className="mx-auto text-muted-foreground mb-4"
+          />
+          <p className="text-muted-foreground">
             Belum ada kuis tersedia untuk kelas Anda.
           </p>
         </Card>
@@ -174,18 +177,18 @@ export default function SiswaAsesmenPage() {
           {asesmen.map((a, index) => (
             <Card
               key={a.id}
-              className={`overflow-hidden border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+              className={`overflow-hidden border-border bg-card rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
               style={{ transitionDelay: `${index * 60}ms` }}
             >
               {/* Header */}
-              <div className="px-4 py-2.5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-green-100">
+              <div className="px-4 py-2.5 border-b border-border bg-gradient-to-r from-green-50 to-green-100 dark:from-emerald-500/10 dark:to-emerald-500/20">
                 <div className="flex items-center gap-2 mb-1">
                   <ClipboardList className="text-green-600" size={16} />
-                  <span className="font-medium text-gray-600 text-xs">
+                  <span className="font-medium text-muted-foreground text-xs">
                     Kuis
                   </span>
                 </div>
-                <h2 className="text-sm font-bold text-gray-900 line-clamp-2">
+                <h2 className="text-sm font-bold text-foreground line-clamp-2">
                   {a.title}
                 </h2>
               </div>
@@ -193,47 +196,47 @@ export default function SiswaAsesmenPage() {
               {/* Content */}
               <div className="p-4 space-y-2.5 text-sm flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <FileText size={14} className="text-green-600" />
                     <span className="text-xs">Jumlah Soal</span>
                   </div>
-                  <span className="font-semibold text-gray-800 text-xs">
+                  <span className="font-semibold text-foreground text-xs">
                     {a.soal_count} soal
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <BookOpen size={14} className="text-green-600" />
                     <span className="text-xs">Mata Pelajaran</span>
                   </div>
-                  <span className="font-semibold text-gray-800 text-xs text-right truncate ml-2">
+                  <span className="font-semibold text-foreground text-xs text-right truncate ml-2">
                     {a.mapel?.name || "Umum"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock size={14} className="text-green-600" />
                     <span className="text-xs">Waktu</span>
                   </div>
-                  <span className="font-semibold text-gray-800 text-xs">
+                  <span className="font-semibold text-foreground text-xs">
                     {a.duration ? `${a.duration} Menit` : "Bebas"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Award size={14} className="text-green-600" />
                     <span className="text-xs">Nilai Minimum</span>
                   </div>
-                  <span className="font-semibold text-gray-800 text-xs">
+                  <span className="font-semibold text-foreground text-xs">
                     {a.passing_score}
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
-                  <span className="text-gray-500 text-xs">Status</span>
+                <div className="flex justify-between items-center pt-1.5 border-t border-border">
+                  <span className="text-muted-foreground text-xs">Status</span>
                   {a.is_completed ? (
                     <Badge className="bg-green-50 text-green-700 hover:bg-green-50 border border-green-200 text-[11px] px-2 py-0.5 rounded-full">
                       Selesai
@@ -245,8 +248,8 @@ export default function SiswaAsesmenPage() {
                   )}
                 </div>
                 {a.is_completed && a.nilai && (
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                    <span className="text-gray-500 font-medium text-xs">
+                  <div className="flex justify-between items-center pt-2 border-t border-border">
+                    <span className="text-muted-foreground font-medium text-xs">
                       Nilai
                     </span>
                     <span className="font-bold text-green-600 text-sm">
@@ -262,7 +265,7 @@ export default function SiswaAsesmenPage() {
                   <Button
                     disabled
                     size="sm"
-                    className="w-full bg-gray-100 text-gray-500 cursor-not-allowed h-9 text-xs border border-gray-200"
+                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
                   >
                     Sudah Dikerjakan
                   </Button>

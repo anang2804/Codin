@@ -224,7 +224,7 @@ export default function GuruProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-8 h-8 border-2 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -233,11 +233,11 @@ export default function GuruProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-20">
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-start gap-3 bg-white border-l-4 ${
+          className={`fixed top-5 right-5 z-50 flex items-start gap-3 bg-card border border-border border-l-4 ${
             toast.type === "success" ? "border-green-500" : "border-red-400"
           } rounded-xl shadow-lg px-4 py-3 min-w-[260px] max-w-xs animate-in slide-in-from-right-4 fade-in duration-300`}
         >
@@ -250,10 +250,12 @@ export default function GuruProfilePage() {
             <XCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
           )}
           <div>
-            <p className="text-sm font-semibold text-gray-800">
+            <p className="text-sm font-semibold text-foreground">
               {toast.type === "success" ? "Berhasil" : "Gagal"}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">{toast.message}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {toast.message}
+            </p>
           </div>
         </div>
       )}
@@ -261,7 +263,7 @@ export default function GuruProfilePage() {
       <div className="max-w-5xl mx-auto px-6 pt-8 flex flex-col md:flex-row gap-6 items-start">
         {/* ── Left: Profile Card ── */}
         <div className="w-full md:w-[300px] shrink-0">
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-8 flex flex-col items-center text-center">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-8 flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative group mb-5">
               <div className="w-24 h-24 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
@@ -278,10 +280,10 @@ export default function GuruProfilePage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:border-green-300 hover:text-green-600 text-gray-400 transition-colors duration-200 disabled:opacity-50"
+                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-card border border-border rounded-full flex items-center justify-center shadow-sm hover:border-green-300 hover:text-green-600 text-muted-foreground transition-colors duration-200 disabled:opacity-50"
               >
                 {uploadingAvatar ? (
-                  <div className="w-3 h-3 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-border border-t-green-500 rounded-full animate-spin" />
                 ) : (
                   <Camera size={13} />
                 )}
@@ -296,10 +298,12 @@ export default function GuruProfilePage() {
             </div>
 
             {/* Name & email */}
-            <h2 className="text-base font-semibold text-gray-900 leading-tight">
+            <h2 className="text-base font-semibold text-foreground leading-tight">
               {profile.full_name}
             </h2>
-            <p className="text-xs text-gray-400 mt-1">{profile.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {profile.email}
+            </p>
 
             {/* Role badge */}
             <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-green-50 border border-green-100 text-green-700 text-[11px] font-semibold rounded-full">
@@ -312,13 +316,13 @@ export default function GuruProfilePage() {
         {/* ── Right: Detail Cards ── */}
         <div className="flex-1 space-y-5 min-w-0">
           {/* Personal Info Card */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-0.5">
                   Akun
                 </p>
-                <h3 className="text-sm font-semibold text-gray-800">
+                <h3 className="text-sm font-semibold text-foreground">
                   {editMode ? "Ubah Data Diri" : "Informasi Personal"}
                 </h3>
               </div>
@@ -329,7 +333,7 @@ export default function GuruProfilePage() {
                 }}
                 className={`px-4 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
                   editMode
-                    ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    ? "bg-muted text-muted-foreground hover:bg-muted/80"
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
@@ -346,11 +350,11 @@ export default function GuruProfilePage() {
                     onChange={(v) => setFormData({ ...formData, full_name: v })}
                   />
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
                       Jenis Kelamin
                     </label>
                     <select
-                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm text-gray-700 transition-all appearance-none"
+                      className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-green-500 text-sm text-foreground transition-all appearance-none"
                       value={formData.jenis_kelamin || ""}
                       onChange={(e) =>
                         setFormData({
@@ -373,11 +377,11 @@ export default function GuruProfilePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
                     Alamat
                   </label>
                   <textarea
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm text-gray-700 transition-all resize-none"
+                    className="w-full p-3 bg-background border border-border rounded-xl outline-none focus:border-green-500 text-sm text-foreground transition-all resize-none"
                     rows={3}
                     value={formData.alamat || ""}
                     onChange={(e) =>
@@ -418,16 +422,16 @@ export default function GuruProfilePage() {
           </div>
 
           {/* Security Card */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                <Lock size={15} className="text-gray-400" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <Lock size={15} className="text-muted-foreground" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Keamanan
                 </p>
-                <h4 className="text-sm font-semibold text-gray-800">
+                <h4 className="text-sm font-semibold text-foreground">
                   Pengaturan Keamanan
                 </h4>
               </div>
@@ -442,14 +446,14 @@ export default function GuruProfilePage() {
             {!showPasswordForm ? (
               <button
                 onClick={() => setShowPasswordForm(true)}
-                className="group w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-green-50 hover:border-green-100 transition-all duration-200"
+                className="group w-full flex items-center justify-between p-4 bg-muted border border-border rounded-xl hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:border-green-100 transition-all duration-200"
               >
-                <span className="text-sm font-medium text-gray-600 group-hover:text-green-700">
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-green-700">
                   Ubah Kata Sandi Akun
                 </span>
                 <ChevronRight
                   size={15}
-                  className="text-gray-300 group-hover:text-green-500 group-hover:translate-x-0.5 transition-all"
+                  className="text-muted-foreground group-hover:text-green-500 group-hover:translate-x-0.5 transition-all"
                 />
               </button>
             ) : (
@@ -460,14 +464,14 @@ export default function GuruProfilePage() {
                     placeholder="Password baru"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm"
+                    className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-green-500 text-sm"
                   />
                   <input
                     type="password"
                     placeholder="Konfirmasi password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 text-sm"
+                    className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-green-500 text-sm"
                   />
                 </div>
                 {passwordError && (
@@ -487,7 +491,7 @@ export default function GuruProfilePage() {
                       setShowPasswordForm(false);
                       setPasswordError("");
                     }}
-                    className="px-5 text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
+                    className="px-5 text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
                   >
                     Batal
                   </button>
@@ -512,10 +516,10 @@ function ItemStatic({
 }) {
   return (
     <div className={fullWidth ? "sm:col-span-2" : ""}>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-sm font-medium text-gray-800">{value || "-"}</p>
+      <p className="text-sm font-medium text-foreground">{value || "-"}</p>
     </div>
   );
 }
@@ -533,12 +537,12 @@ function InputMinimal({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+      <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
         {label}
       </label>
       <input
         type={type}
-        className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:bg-white text-sm text-gray-700 transition-all"
+        className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-green-500 focus:bg-background text-sm text-foreground transition-all"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

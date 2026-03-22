@@ -90,7 +90,7 @@ const COMMAND_DETAILS = {
   DEFAULT: {
     title: "WORKSPACE",
     desc: "Klik bagian kosong (_____) lalu pilih INPUT, PROCESS, atau OUTPUT. Teks abu-abu adalah ghost text panduan.",
-    icon: <Monitor className="text-slate-400" size={20} />,
+    icon: <Monitor className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
 };
@@ -478,23 +478,23 @@ export default function SimulasiKasirKantin() {
   // ================== RENDER UI ==================
 
   return (
-    <div className="flex flex-col h-screen bg-[#fafbfc] overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       {/* HEADER */}
-      <header className="px-8 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <header className="px-8 py-4 bg-background border-b border-border flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={() => (window.location.href = "/siswa/simulasi")}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted-foreground hover:bg-muted rounded-lg transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-slate-200"></div>
+          <div className="w-px h-6 bg-border"></div>
           <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
             <Terminal size={20} />
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic leading-none">
+              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
                 Mesin Kasir Kantin
               </h1>
             </div>
@@ -507,7 +507,7 @@ export default function SimulasiKasirKantin() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -527,7 +527,7 @@ export default function SimulasiKasirKantin() {
             disabled={isRunning}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
               isRunning
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
@@ -538,10 +538,10 @@ export default function SimulasiKasirKantin() {
 
       <main className="flex-1 flex overflow-hidden">
         {/* PANEL KIRI - DESKRIPSI */}
-        <aside className="w-72 bg-white border-r border-slate-200 p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
+        <aside className="w-72 bg-card border-r border-border p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/60" />
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-wrap">
+            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-wrap">
               Deskripsi Perintah
             </h2>
           </div>
@@ -555,14 +555,14 @@ export default function SimulasiKasirKantin() {
               className={`p-5 rounded-3xl border ${currentDesc.color} shadow-sm transition-all duration-300`}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/90 rounded-xl shadow-sm">
+                <div className="p-2 bg-background/90 rounded-xl shadow-sm">
                   {currentDesc.icon}
                 </div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">
                   {currentDesc.title}
                 </h3>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                 {currentDesc.desc}
               </p>
             </motion.div>
@@ -573,7 +573,7 @@ export default function SimulasiKasirKantin() {
               <span>Info Baris</span>
               <Activity size={10} />
             </div>
-            <p className="text-[10px] font-bold text-slate-500 italic leading-tight">
+            <p className="text-[10px] font-bold text-muted-foreground italic leading-tight">
               {activeLine !== -1
                 ? `Sedang fokus di baris ${activeLine + 1}`
                 : "Klik editor untuk mulai"}
@@ -582,10 +582,10 @@ export default function SimulasiKasirKantin() {
         </aside>
 
         {/* WORKSPACE - EDITOR */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        <div className="flex-1 flex flex-col min-w-0 bg-background">
           <section className="px-6 pt-5 pb-3">
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
-              <div className="bg-white p-2.5 rounded-xl shadow-sm text-emerald-600">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
+              <div className="bg-background p-2.5 rounded-xl shadow-sm text-primary">
                 <Lightbulb size={24} className="animate-pulse" />
               </div>
               <div className="flex-1">
@@ -593,11 +593,11 @@ export default function SimulasiKasirKantin() {
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-sm font-black text-foreground uppercase tracking-tight">
                     Perbaiki Mesin Kasir Kantin
                   </h2>
                 </div>
-                <p className="text-[12px] text-slate-600 leading-relaxed max-w-4xl font-medium">
+                <p className="text-[12px] text-muted-foreground leading-relaxed max-w-4xl font-medium">
                   Mesin kasir di kantin sekolah tidak dapat menghitung total
                   belanja pelanggan. Tulis algoritma <strong>pseudocode</strong>{" "}
                   untuk membantu kasir menghitung total harga makanan dan
@@ -609,18 +609,18 @@ export default function SimulasiKasirKantin() {
 
           <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
-            <section className="flex-1 min-w-[500px] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative">
-              <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+            <section className="flex-1 min-w-[500px] bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden relative">
+              <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-2 h-2 rounded-full ${isRunning ? "bg-rose-500 animate-pulse" : errorLine !== -1 ? "bg-red-500 shadow-[0_0_5px_red]" : "bg-emerald-500"}`}
                   ></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic font-mono">
                     main.algo
                   </span>
                 </div>
                 <div
-                  className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${isRunning ? "bg-rose-500 text-white" : errorLine !== -1 ? "bg-red-500 text-white border-red-600 shadow-sm" : "bg-white text-slate-400 border-slate-200"}`}
+                  className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${isRunning ? "bg-rose-500 text-white" : errorLine !== -1 ? "bg-red-500 text-white border-red-600 shadow-sm" : "bg-background text-muted-foreground border-border"}`}
                 >
                   {isRunning
                     ? "RUNNING"
@@ -633,7 +633,7 @@ export default function SimulasiKasirKantin() {
               <div className="relative flex-1 flex font-mono text-[13px] leading-[26px] overflow-hidden">
                 <div
                   id="line-gutter"
-                  className="w-12 bg-slate-50/30 text-slate-300 text-right pr-4 pt-5 select-none border-r border-slate-100 overflow-hidden shrink-0"
+                  className="w-12 bg-muted/30 text-muted-foreground/70 text-right pr-4 pt-5 select-none border-r border-border/60 overflow-hidden shrink-0"
                 >
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
@@ -644,7 +644,7 @@ export default function SimulasiKasirKantin() {
                     </div>
                   ))}
                 </div>
-                <div className="relative flex-1 bg-white overflow-hidden">
+                <div className="relative flex-1 bg-card overflow-hidden">
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
                       const isActive = activeLine === i;
@@ -695,7 +695,7 @@ export default function SimulasiKasirKantin() {
                   </div>
 
                   {openSelectorLine !== null && !isRunning && (
-                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-white border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
+                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
                       <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
                         PILIH PERINTAH BARIS {openSelectorLine + 1}
                       </p>
@@ -741,12 +741,12 @@ export default function SimulasiKasirKantin() {
                   <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
                     <Activity size={14} />
                   </div>
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Hardware Visualization
                   </h2>
                 </div>
                 <div
-                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${isRunning ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}
+                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${isRunning ? "bg-emerald-600 text-white" : "bg-background/20 text-muted-foreground border border-border/60"}`}
                 >
                   {isRunning ? "Active" : "Idle"}
                 </div>
@@ -829,7 +829,7 @@ export default function SimulasiKasirKantin() {
                           <div className="text-[5px] text-emerald-800 font-black border-b border-slate-100 pb-0.5 mb-1 uppercase text-center tracking-tighter">
                             Receipt #001
                           </div>
-                          <div className="flex justify-between text-[4px] text-slate-500 font-bold uppercase tracking-tighter">
+                          <div className="flex justify-between text-[4px] text-muted-foreground font-bold uppercase tracking-tighter">
                             <span>Items</span>
                             <span>Price</span>
                           </div>
@@ -896,10 +896,10 @@ export default function SimulasiKasirKantin() {
                     className={
                       simState.receiptPrinted
                         ? "text-emerald-500"
-                        : "text-slate-600"
+                        : "text-muted-foreground"
                     }
                   />
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
                     Logic Log:
                   </span>
                 </div>
@@ -916,21 +916,21 @@ export default function SimulasiKasirKantin() {
       </main>
 
       {/* FOOTER */}
-      <footer className="px-8 py-3 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 text-[10px]">
-        <div className="flex items-center gap-3 text-slate-500">
+      <footer className="px-8 py-3 bg-background border-t border-border flex items-center justify-between shrink-0 text-[10px]">
+        <div className="flex items-center gap-3 text-muted-foreground">
           <span className="font-black uppercase tracking-widest">
             STATUS SISTEM
           </span>
-          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="w-px h-3 bg-border"></span>
           <span className="font-medium italic">
             Workspace siap menerima algoritma
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-slate-400 font-medium">
+          <span className="text-muted-foreground font-medium">
             BAHASA: PSEUDOCODE INDONESIA
           </span>
-          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="w-px h-3 bg-border"></span>
           <span className="font-black text-emerald-600 uppercase tracking-wide italic">
             CODIN • INTERACTIVE ALGORITHM LEARNING
           </span>

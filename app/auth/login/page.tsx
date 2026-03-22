@@ -57,7 +57,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background text-foreground">
       <style>{`
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(28px); }
@@ -77,11 +77,11 @@ export default function LoginPage() {
       `}</style>
 
       {/* ── Left panel ── */}
-      <div className="anim-left flex flex-col items-center justify-center w-full lg:w-1/2 min-h-[38vh] lg:min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 px-8 lg:px-16 py-10 lg:py-0">
+      <div className="anim-left flex flex-col items-center justify-center w-full lg:w-1/2 min-h-[38vh] lg:min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 dark:from-emerald-950/40 dark:to-emerald-900/25 px-8 lg:px-16 py-10 lg:py-0">
         {/* Blur circles */}
-        <div className="pointer-events-none absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full bg-green-200 blur-3xl opacity-40" />
-        <div className="pointer-events-none absolute bottom-[-80px] right-[-60px] w-80 h-80 rounded-full bg-emerald-200 blur-3xl opacity-35" />
-        <div className="pointer-events-none absolute top-1/2 right-[-40px] w-48 h-48 rounded-full bg-teal-100 blur-3xl opacity-50" />
+        <div className="pointer-events-none absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full bg-green-200 dark:bg-emerald-700/30 blur-3xl opacity-40" />
+        <div className="pointer-events-none absolute bottom-[-80px] right-[-60px] w-80 h-80 rounded-full bg-emerald-200 dark:bg-emerald-600/20 blur-3xl opacity-35" />
+        <div className="pointer-events-none absolute top-1/2 right-[-40px] w-48 h-48 rounded-full bg-teal-100 dark:bg-teal-600/20 blur-3xl opacity-50" />
         {/* Dot pattern */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -112,10 +112,10 @@ export default function LoginPage() {
 
         {/* Text — hidden on mobile to keep layout compact */}
         <div className="relative z-10 mt-8 text-center max-w-xs hidden lg:block">
-          <h2 className="text-xl font-bold text-[#0f172a] mb-2 leading-snug">
+          <h2 className="text-xl font-bold text-foreground mb-2 leading-snug">
             Belajar Lebih Mudah dengan CODIN
           </h2>
-          <p className="text-sm text-[#64748b] leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Platform pembelajaran interaktif untuk memahami konsep pemrograman
             secara visual.
           </p>
@@ -123,10 +123,10 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel — login form ── */}
-      <div className="anim-right relative flex flex-col items-center justify-center w-full lg:w-1/2 flex-1 lg:min-h-screen px-6 py-10 lg:py-12 bg-white">
+      <div className="anim-right relative flex flex-col items-center justify-center w-full lg:w-1/2 flex-1 lg:min-h-screen px-6 py-10 lg:py-12 bg-background">
         <Link
           href="/"
-          className="absolute right-6 top-6 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+          className="absolute right-6 top-6 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-green-200 hover:bg-green-50 hover:text-green-700 dark:hover:bg-emerald-500/10"
         >
           <LogOut size={14} />
           Keluar
@@ -134,7 +134,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[420px]">
           {/* Card */}
-          <div className="bg-white px-8 py-10">
+          <div className="bg-card border border-border rounded-2xl px-8 py-10 shadow-sm">
             {/* Logo inside card */}
             <div className="flex items-center justify-center mb-7">
               <img
@@ -145,10 +145,10 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-7 text-center">
-              <h1 className="text-2xl font-extrabold text-[#0f172a] mb-1">
+              <h1 className="text-2xl font-extrabold text-foreground mb-1">
                 Selamat Datang
               </h1>
-              <p className="text-sm text-[#64748b]">
+              <p className="text-sm text-muted-foreground">
                 Masuk ke akun Anda untuk melanjutkan pembelajaran.
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="email"
-                  className="text-sm font-medium text-[#374151]"
+                  className="text-sm font-medium text-foreground"
                 >
                   Email
                 </Label>
@@ -168,7 +168,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 rounded-lg border-neutral-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 px-4 text-sm"
+                  className="h-11 rounded-lg border-border bg-background focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 px-4 text-sm"
                   suppressHydrationWarning
                 />
               </div>
@@ -177,13 +177,13 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <Label
                     htmlFor="password"
-                    className="text-sm font-medium text-[#374151]"
+                    className="text-sm font-medium text-foreground"
                   >
                     Password
                   </Label>
                   <a
                     href="#"
-                    className="text-sm text-gray-500 hover:text-green-600 transition-colors duration-150"
+                    className="text-sm text-muted-foreground hover:text-green-600 transition-colors duration-150"
                   >
                     Lupa password?
                   </a>
@@ -195,13 +195,13 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-lg border-neutral-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 px-4 text-sm"
+                  className="h-11 rounded-lg border-border bg-background focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 px-4 text-sm"
                   suppressHydrationWarning
                 />
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
                   <p className="text-sm text-red-600">{error}</p>
                 </div>

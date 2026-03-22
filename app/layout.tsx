@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import DarkModeSplashCursor from "@/components/DarkModeSplashCursor";
 import "./globals.css";
 
 const _geist = Geist({
@@ -28,9 +30,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <DarkModeSplashCursor />
+          <ReactQueryProvider>{children}</ReactQueryProvider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

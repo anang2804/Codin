@@ -253,7 +253,7 @@ export default function SiswaProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-8 h-8 border-2 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -262,10 +262,10 @@ export default function SiswaProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="bg-gray-50 pb-6">
+    <div className="bg-muted/20 pb-6">
       <div className="max-w-5xl mx-auto px-6 pt-4 flex flex-col md:flex-row gap-4 items-start">
         <div className="w-full md:w-[300px] shrink-0 space-y-3">
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6 flex flex-col items-center text-center">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-6 flex flex-col items-center text-center">
             <div className="relative group mb-4">
               <div className="w-24 h-24 rounded-full bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 overflow-hidden">
                 {profile.avatar_url ? (
@@ -281,10 +281,10 @@ export default function SiswaProfilePage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:border-emerald-300 hover:text-emerald-600 text-gray-400 transition-colors duration-200 disabled:opacity-50"
+                className="absolute bottom-0.5 right-0.5 w-7 h-7 bg-card border border-border rounded-full flex items-center justify-center shadow-sm hover:border-emerald-300 hover:text-emerald-600 text-muted-foreground transition-colors duration-200 disabled:opacity-50"
               >
                 {uploadingAvatar ? (
-                  <div className="w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-border border-t-emerald-500 rounded-full animate-spin" />
                 ) : (
                   <Camera size={13} />
                 )}
@@ -298,10 +298,12 @@ export default function SiswaProfilePage() {
               />
             </div>
 
-            <h2 className="text-base font-semibold text-gray-900 leading-tight">
+            <h2 className="text-base font-semibold text-foreground leading-tight">
               {profile.full_name}
             </h2>
-            <p className="text-xs text-gray-400 mt-1">{profile.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {profile.email}
+            </p>
 
             <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-full">
               <GraduationCap size={11} />
@@ -309,16 +311,16 @@ export default function SiswaProfilePage() {
             </span>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                 <School size={17} />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Kelas
                 </p>
-                <h3 className="text-sm font-semibold text-gray-800">
+                <h3 className="text-sm font-semibold text-foreground">
                   {profile.kelas || "Belum dipilih"}
                 </h3>
               </div>
@@ -327,13 +329,13 @@ export default function SiswaProfilePage() {
         </div>
 
         <div className="flex-1 space-y-4 min-w-0">
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5">
+          <div className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-0.5">
                   Akun
                 </p>
-                <h3 className="text-sm font-semibold text-gray-800">
+                <h3 className="text-sm font-semibold text-foreground">
                   {editMode ? "Ubah Data Diri" : "Informasi Siswa"}
                 </h3>
               </div>
@@ -344,7 +346,7 @@ export default function SiswaProfilePage() {
                 }}
                 className={`px-4 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
                   editMode
-                    ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    ? "bg-muted text-muted-foreground hover:bg-muted/80"
                     : "bg-emerald-600 text-white hover:bg-emerald-700"
                 }`}
               >
@@ -361,11 +363,11 @@ export default function SiswaProfilePage() {
                     onChange={(v) => setFormData({ ...formData, full_name: v })}
                   />
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
                       Kelas
                     </label>
                     <select
-                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm text-gray-700 transition-all appearance-none"
+                      className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none"
                       value={formData.kelas || ""}
                       onChange={(e) =>
                         setFormData({ ...formData, kelas: e.target.value })
@@ -388,11 +390,11 @@ export default function SiswaProfilePage() {
                     }
                   />
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
                       Jenis Kelamin
                     </label>
                     <select
-                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm text-gray-700 transition-all appearance-none"
+                      className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none"
                       value={formData.jenis_kelamin || ""}
                       onChange={(e) =>
                         setFormData({
@@ -416,11 +418,11 @@ export default function SiswaProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest block">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
                     Alamat
                   </label>
                   <textarea
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm text-gray-700 transition-all resize-none"
+                    className="w-full p-3 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all resize-none"
                     rows={3}
                     value={formData.alamat || ""}
                     onChange={(e) =>
@@ -445,7 +447,9 @@ export default function SiswaProfilePage() {
                 <ItemStatic
                   label="Tanggal Lahir"
                   value={formatDate(profile.tanggal_lahir)}
-                  icon={<Calendar size={14} className="text-gray-400" />}
+                  icon={
+                    <Calendar size={14} className="text-muted-foreground" />
+                  }
                 />
                 <ItemStatic
                   label="Jenis Kelamin"
@@ -460,12 +464,12 @@ export default function SiswaProfilePage() {
                 <ItemStatic
                   label="No Telepon"
                   value={profile.no_telepon}
-                  icon={<Phone size={14} className="text-gray-400" />}
+                  icon={<Phone size={14} className="text-muted-foreground" />}
                 />
                 <ItemStatic
                   label="Alamat Domisili"
                   value={profile.alamat}
-                  icon={<MapPin size={14} className="text-gray-400" />}
+                  icon={<MapPin size={14} className="text-muted-foreground" />}
                   fullWidth
                 />
               </div>

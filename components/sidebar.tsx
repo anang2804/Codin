@@ -69,14 +69,14 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg shadow-md"
       >
         {open ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 shadow-sm p-6 transition-transform duration-300 z-40 flex flex-col ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-card border-r border-border shadow-sm p-6 transition-transform duration-300 z-40 flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -102,7 +102,7 @@ export function Sidebar({ role }: SidebarProps) {
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-150 ${
                     isActive
                       ? "bg-green-600 text-white font-semibold"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <Icon size={19} className="shrink-0" />
@@ -113,10 +113,10 @@ export function Sidebar({ role }: SidebarProps) {
           })}
         </nav>
 
-        <div className="border-t border-gray-100 pt-4 mt-4 space-y-1">
+        <div className="border-t border-border pt-4 mt-4 space-y-1">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 transition-colors duration-150"
           >
             <LogOut size={19} className="shrink-0" />
             <span className="text-sm">Keluar</span>

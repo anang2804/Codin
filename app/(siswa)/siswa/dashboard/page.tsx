@@ -151,7 +151,7 @@ export default function SiswaDashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-        <p className="text-sm text-gray-500">Memuat data...</p>
+        <p className="text-sm text-muted-foreground">Memuat data...</p>
       </div>
     );
   }
@@ -201,15 +201,17 @@ export default function SiswaDashboard() {
         {statCards.map(({ label, count, icon: Icon, href, action }) => (
           <Card
             key={label}
-            className={`h-full p-3 border border-gray-100 rounded-xl shadow-sm flex flex-col transition-all duration-200 ${entranceClass} hover:-translate-y-1 hover:shadow-md`}
+            className={`h-full p-3 border border-border bg-card rounded-xl shadow-sm flex flex-col transition-all duration-200 ${entranceClass} hover:-translate-y-1 hover:shadow-md`}
           >
             <div className="flex items-center justify-between mb-1">
-              <div className="p-1 bg-green-50 rounded-md inline-flex">
+              <div className="p-1 bg-green-50 dark:bg-emerald-500/15 rounded-md inline-flex">
                 <Icon size={14} className="text-green-500" />
               </div>
             </div>
-            <p className="text-base font-semibold text-gray-700">{label}</p>
-            <p className="text-sm text-gray-500 mb-2.5">{count} tersedia</p>
+            <p className="text-base font-semibold text-foreground">{label}</p>
+            <p className="text-sm text-muted-foreground mb-2.5">
+              {count} tersedia
+            </p>
             <Link href={href}>
               <Button
                 size="sm"
@@ -223,22 +225,22 @@ export default function SiswaDashboard() {
       </div>
 
       <Card
-        className={`p-4 border border-gray-100 rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
+        className={`p-4 border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
       >
-        <h2 className="text-base font-semibold text-gray-700 mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-3">
           Progress Belajar
         </h2>
 
         <div className="space-y-3">
           <div>
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
               <span>Materi selesai</span>
               <span>
                 {learningProgress.materiCompleted} dari{" "}
                 {learningProgress.materiTotal}
               </span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
                 style={{
@@ -252,14 +254,14 @@ export default function SiswaDashboard() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
               <span>Simulasi selesai</span>
               <span>
                 {learningProgress.simulasiCompleted} dari{" "}
                 {learningProgress.simulasiTotal}
               </span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
                 style={{
@@ -273,14 +275,14 @@ export default function SiswaDashboard() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
               <span>Kuis selesai</span>
               <span>
                 {learningProgress.kuisCompleted} dari{" "}
                 {learningProgress.kuisTotal}
               </span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
                 style={{
@@ -301,7 +303,7 @@ export default function SiswaDashboard() {
         <section>
           <div className="flex items-center gap-2 mb-3">
             <BookOpen size={16} className="text-green-500" />
-            <h2 className="text-base font-semibold text-gray-700">
+            <h2 className="text-base font-semibold text-foreground">
               Materi Terbaru
             </h2>
           </div>
@@ -310,21 +312,21 @@ export default function SiswaDashboard() {
               recentMateri.map((materi) => (
                 <Card
                   key={materi.id}
-                  className={`p-3 border border-gray-100 rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
+                  className={`p-3 border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
                 >
                   <div className="flex items-start gap-2">
-                    <div className="p-1.5 bg-green-50 rounded-md shrink-0">
+                    <div className="p-1.5 bg-green-50 dark:bg-emerald-500/15 rounded-md shrink-0">
                       <FileText size={14} className="text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-800 text-base leading-snug mb-0.5 truncate">
+                      <h3 className="font-medium text-foreground text-base leading-snug mb-0.5 truncate">
                         {materi.title}
                       </h3>
-                      <p className="text-sm text-gray-500 line-clamp-2 mb-1.5">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-1.5">
                         {materi.description || "Deskripsi belum tersedia"}
                       </p>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-sm text-gray-400">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar size={12} />
                           <span>
                             {new Date(materi.created_at).toLocaleDateString(
@@ -353,8 +355,10 @@ export default function SiswaDashboard() {
                 </Card>
               ))
             ) : (
-              <Card className="p-4 border border-gray-100 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-gray-400">Belum ada materi</p>
+              <Card className="p-4 border border-border bg-card rounded-xl shadow-sm text-center">
+                <p className="text-sm text-muted-foreground">
+                  Belum ada materi
+                </p>
               </Card>
             )}
           </div>
@@ -364,7 +368,7 @@ export default function SiswaDashboard() {
         <section>
           <div className="flex items-center gap-2 mb-3">
             <ClipboardList size={16} className="text-green-500" />
-            <h2 className="text-base font-semibold text-gray-700">
+            <h2 className="text-base font-semibold text-foreground">
               Tugas Terbaru
             </h2>
           </div>
@@ -377,28 +381,28 @@ export default function SiswaDashboard() {
                 return (
                   <Card
                     key={asesmen.id}
-                    className={`p-3 border border-gray-100 rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
+                    className={`p-3 border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
                   >
                     <div className="flex items-start gap-2">
-                      <div className="p-1.5 bg-green-50 rounded-md shrink-0">
+                      <div className="p-1.5 bg-green-50 dark:bg-emerald-500/15 rounded-md shrink-0">
                         <ClipboardList size={14} className="text-green-500" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="font-medium text-gray-800 text-base leading-snug truncate">
+                          <h3 className="font-medium text-foreground text-base leading-snug truncate">
                             {asesmen.title || "Tugas"}
                           </h3>
                           <Badge
                             className={
                               isCompleted
-                                ? "bg-green-100 text-green-700 hover:bg-green-100 text-sm px-2 py-0.5 rounded-full font-medium border border-green-200 shrink-0"
-                                : "bg-amber-50 text-amber-600 hover:bg-amber-50 text-sm px-2 py-0.5 rounded-full font-medium border border-amber-200 shrink-0"
+                                ? "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-300 dark:border-green-500/30 text-sm px-2 py-0.5 rounded-full font-medium border border-green-200 shrink-0"
+                                : "bg-amber-50 text-amber-600 hover:bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 text-sm px-2 py-0.5 rounded-full font-medium border border-amber-200 shrink-0"
                             }
                           >
                             {isCompleted ? "Selesai" : "Belum Selesai"}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-400 mb-2">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
                           <span className="flex items-center gap-1">
                             <FileText size={12} />
                             {(asesmen.question_count ??
@@ -427,8 +431,8 @@ export default function SiswaDashboard() {
                 );
               })
             ) : (
-              <Card className="p-4 border border-gray-100 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-gray-400">Belum ada tugas</p>
+              <Card className="p-4 border border-border bg-card rounded-xl shadow-sm text-center">
+                <p className="text-sm text-muted-foreground">Belum ada tugas</p>
               </Card>
             )}
           </div>

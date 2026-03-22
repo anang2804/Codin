@@ -436,12 +436,14 @@ export default function AsesmenDetailPage({
       </div>
 
       {/* Asesmen Info */}
-      <Card className="p-6 mb-6 border-green-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <Card className="p-5 mb-6 border-green-100">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1.5">
           {asesmen?.title}
         </h1>
         {asesmen?.description && (
-          <p className="text-gray-600 mb-4">{asesmen.description}</p>
+          <p className="text-gray-600 mb-2.5 leading-relaxed">
+            {asesmen.description}
+          </p>
         )}
         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
           <span className="font-medium text-gray-700">

@@ -339,8 +339,8 @@ export default function TrafficExpertPage() {
         className={`relative ${customWidth} h-[40px] rounded-lg flex items-center transition-all border shrink-0
           ${
             isPlaced
-              ? "bg-white border-white shadow-sm"
-              : "bg-slate-200/10 border-dashed border-slate-300 hover:bg-emerald-50/20"
+              ? "bg-card border-border shadow-sm"
+              : "bg-muted/20 border-dashed border-border hover:bg-primary/10"
           }
           ${
             isCurrent ? "ring-2 ring-blue-500/30 border-blue-400 shadow-lg" : ""
@@ -355,7 +355,7 @@ export default function TrafficExpertPage() {
             ></div>
             <span
               className={`text-[9px] font-black uppercase leading-tight truncate flex-1 min-w-0 ${
-                isError ? "text-red-700" : "text-slate-700"
+                isError ? "text-red-700" : "text-foreground"
               }`}
             >
               {slotData.placeholder}
@@ -363,7 +363,7 @@ export default function TrafficExpertPage() {
             {!isSimulating && (
               <button
                 onClick={() => removeSymbol(slotData.id)}
-                className="ml-auto shrink-0 text-slate-300 hover:text-red-500 transition-colors"
+                className="ml-auto shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
               >
                 <Trash2 size={12} />
               </button>
@@ -371,7 +371,7 @@ export default function TrafficExpertPage() {
           </div>
         ) : (
           <div className="w-full text-center px-1.5 overflow-hidden">
-            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter italic leading-none truncate">
+            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter italic leading-none truncate">
               {slotData.placeholder}
             </span>
           </div>
@@ -381,23 +381,23 @@ export default function TrafficExpertPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 overflow-hidden font-sans text-sm">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans text-sm">
       {/* Header Panel */}
-      <header className="px-8 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <header className="px-8 py-4 bg-background border-b border-border flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted-foreground hover:bg-muted rounded-lg transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-slate-200"></div>
+          <div className="w-px h-6 bg-border"></div>
           <div className="bg-rose-600 p-2 rounded-xl text-white shadow-rose-100 shadow-lg">
             <Terminal size={20} />
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic leading-none">
+              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
                 Prioritas Tiga Kendaraan
               </h1>
             </div>
@@ -410,7 +410,7 @@ export default function TrafficExpertPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-1 px-3 py-2 text-[10px] font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-1 px-3 py-2 text-[10px] font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={12} /> RESET
           </button>
@@ -419,7 +419,7 @@ export default function TrafficExpertPage() {
             disabled={isSimulating && !hardwareBroken}
             className={`flex items-center gap-1 px-4 py-2 text-[10px] font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
               isSimulating && !hardwareBroken
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
@@ -431,13 +431,13 @@ export default function TrafficExpertPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI: BANK SIMBOL */}
-        <aside className="w-72 border-r border-slate-200 bg-white flex flex-col z-20 shrink-0 shadow-sm overflow-y-auto">
-          <div className="p-2 border-b bg-slate-50/50 overflow-y-auto max-h-[30%]">
-            <h2 className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+        <aside className="w-72 border-r border-border bg-card flex flex-col z-20 shrink-0 shadow-sm overflow-y-auto">
+          <div className="p-2 border-b bg-muted/40 overflow-y-auto max-h-[30%]">
+            <h2 className="text-[9px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
               <Info size={10} className="text-blue-500" /> DESKRIPSI PERINTAH
             </h2>
             <div className="space-y-1.5 text-justify">
-              <p className="text-[10px] text-slate-600 leading-snug font-medium">
+              <p className="text-[10px] text-muted-foreground leading-snug font-medium">
                 Diagram alir nested (bersarang) menunjukkan percabangan dalam
                 percabangan. Simulasi ini mengatur 3 kendaraan dengan sistem
                 prioritas: ambulans → lampu lalu lintas → kendaraan biasa.
@@ -455,14 +455,14 @@ export default function TrafficExpertPage() {
             className={`p-3 rounded-2xl border transition-all duration-300 m-3 mt-2 ${
               simulationStatus === "error"
                 ? "bg-rose-50/95 border-rose-200"
-                : "bg-white border-slate-200"
+                : "bg-card border-border"
             }`}
           >
             <div
               className={`flex items-center gap-2 pb-2 border-b ${
                 simulationStatus === "error"
                   ? "border-rose-200"
-                  : "border-slate-200"
+                  : "border-border"
               }`}
             >
               <HelpCircle
@@ -470,14 +470,14 @@ export default function TrafficExpertPage() {
                 className={
                   simulationStatus === "error"
                     ? "text-rose-500"
-                    : "text-slate-500"
+                    : "text-muted-foreground"
                 }
               />
               <span
                 className={`text-[10px] font-black uppercase tracking-widest ${
                   simulationStatus === "error"
                     ? "text-rose-600"
-                    : "text-slate-500"
+                    : "text-muted-foreground"
                 }`}
               >
                 CATATAN PROSES
@@ -488,7 +488,7 @@ export default function TrafficExpertPage() {
               className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
                 simulationStatus === "error"
                   ? "text-rose-700 bg-rose-100/60"
-                  : "text-slate-700 bg-slate-100/80"
+                  : "text-foreground bg-muted"
               }`}
             >
               {feedback ||
@@ -497,7 +497,7 @@ export default function TrafficExpertPage() {
           </div>
 
           <div className="p-2 overflow-y-auto">
-            <h2 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 text-center">
+            <h2 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1.5 text-center">
               BANK SIMBOL
             </h2>
             <div className="grid grid-cols-1 gap-1.5">
@@ -506,7 +506,7 @@ export default function TrafficExpertPage() {
                   key={key}
                   draggable={!isSimulating}
                   onDragStart={(e) => handleDragStart(e, key)}
-                  className={`flex flex-col items-center p-1 bg-white border border-slate-100 rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-red-400 group ${
+                  className={`flex flex-col items-center p-1 bg-card border border-border rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-red-400 group ${
                     isSimulating && !hardwareBroken
                       ? "opacity-50 grayscale"
                       : ""
@@ -515,7 +515,7 @@ export default function TrafficExpertPage() {
                   <div
                     className={`${data.shape} ${data.color} mb-0.5 shadow-sm group-hover:scale-105 transition-transform scale-75`}
                   ></div>
-                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">
+                  <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter">
                     {data.label}
                   </span>
                 </div>
@@ -528,7 +528,7 @@ export default function TrafficExpertPage() {
               <span>Status Fokus</span>
               <Activity size={10} />
             </div>
-            <p className="text-[10px] font-bold text-slate-500 italic leading-tight">
+            <p className="text-[10px] font-bold text-muted-foreground italic leading-tight">
               {activeStep !== null
                 ? `Menganalisis langkah ${String(activeStep).toUpperCase()}`
                 : "Editor siap digunakan"}
@@ -537,10 +537,10 @@ export default function TrafficExpertPage() {
         </aside>
 
         {/* PANEL TENGAH: WORKSPACE */}
-        <section className="flex-1 bg-[#f8fafc] relative overflow-hidden p-2 flex flex-col items-center z-10 border-r border-slate-200 shadow-inner text-slate-900">
+        <section className="flex-1 bg-background relative overflow-hidden p-2 flex flex-col items-center z-10 border-r border-border shadow-inner text-foreground">
           <div className="w-full px-4 pt-3 pb-2 z-20">
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
-              <div className="bg-white p-2 rounded-xl shadow-sm text-emerald-600">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="bg-background p-2 rounded-xl shadow-sm text-primary">
                 <Lightbulb size={20} className="animate-pulse" />
               </div>
               <div className="flex-1">
@@ -548,11 +548,11 @@ export default function TrafficExpertPage() {
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-[15px] font-black text-foreground uppercase tracking-tight">
                     Prioritas Tiga Kendaraan
                   </h2>
                 </div>
-                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                   Susun diagram alir bercabang untuk memprioritaskan ambulans,
                   lalu sinkronkan warna lampu agar pergerakan tiga kendaraan
                   berjalan aman.
@@ -571,11 +571,11 @@ export default function TrafficExpertPage() {
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="w-full px-4 pb-2 z-20"
               >
-                <div className="bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
+                <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black text-emerald-700 tracking-tight">
                     🎉 Berhasil! Diagram alir benar
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-600 leading-relaxed font-medium">
+                  <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
                     Alur prioritas berjalan sesuai urutan keputusan.
                     <br />
                     Sistem berhasil menyinkronkan ambulans, lampu, dan
@@ -587,7 +587,7 @@ export default function TrafficExpertPage() {
           </AnimatePresence>
 
           <div className="w-full px-4 pb-2 z-20">
-            <div className="px-5 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-between">
+            <div className="px-5 py-3 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div
                   className={`w-2 h-2 rounded-full ${
@@ -598,7 +598,7 @@ export default function TrafficExpertPage() {
                         : "bg-emerald-500"
                   }`}
                 />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic font-mono">
                   ALGORITMA PRIORITAS KENDARAAN
                 </span>
               </div>
@@ -608,7 +608,7 @@ export default function TrafficExpertPage() {
                     ? "bg-rose-500 text-white"
                     : simulationStatus === "error"
                       ? "bg-red-500 text-white border-red-600 shadow-sm"
-                      : "bg-white text-slate-400 border-slate-200"
+                      : "bg-background text-muted-foreground border-border"
                 }`}
               >
                 {isSimulating
@@ -631,9 +631,9 @@ export default function TrafficExpertPage() {
           <div className="w-full flex-1 min-h-0 overflow-auto flex items-start justify-center z-20">
             <div className="w-full max-w-[600px] flex flex-col items-center scale-[0.8] origin-top font-black">
               <div className="w-36">{renderSlot(HARD_STRUCTURE.top[0])}</div>
-              <ArrowDown className="text-slate-300 my-1" size={16} />
+              <ArrowDown className="text-muted-foreground/60 my-1" size={16} />
               <div className="w-48">{renderSlot(HARD_STRUCTURE.top[1])}</div>
-              <ArrowDown className="text-slate-300 my-1" size={16} />
+              <ArrowDown className="text-muted-foreground/60 my-1" size={16} />
               <div className="w-56 mb-1.5">
                 {renderSlot(HARD_STRUCTURE.top[2])}
               </div>
@@ -649,28 +649,31 @@ export default function TrafficExpertPage() {
                   <div className="w-full">
                     {renderSlot(HARD_STRUCTURE.branchAmbYa[0])}
                   </div>
-                  <div className="h-36 w-[2px] bg-slate-200 mt-1.5 border-dashed border-l border-slate-300"></div>
+                  <div className="h-36 w-[2px] bg-border mt-1.5 border-dashed border-l border-border"></div>
                 </div>
 
-                <div className="flex-[2.2] flex flex-col items-center border-l border-slate-200 pl-4">
-                  <div className="flex items-center w-full mb-1 text-slate-400">
+                <div className="flex-[2.2] flex flex-col items-center border-l border-border pl-4">
+                  <div className="flex items-center w-full mb-1 text-muted-foreground">
                     <span className="px-2 text-[9px] uppercase font-black">
                       TIDAK
                     </span>
-                    <div className="h-[2px] bg-slate-300 flex-1"></div>
+                    <div className="h-[2px] bg-border flex-1"></div>
                   </div>
                   <div className="w-44">
                     {renderSlot(HARD_STRUCTURE.branchAmbTidak.header[0])}
                   </div>
-                  <ArrowDown className="text-slate-300 my-1" size={14} />
+                  <ArrowDown
+                    className="text-muted-foreground/60 my-1"
+                    size={14}
+                  />
                   <div className="w-52 mb-1.5">
                     {renderSlot(HARD_STRUCTURE.branchAmbTidak.header[1])}
                   </div>
 
                   <div className="flex w-full gap-3 items-start mt-1.5">
                     <div className="flex-1 flex flex-col items-center">
-                      <div className="flex items-center w-full mb-1 text-slate-400">
-                        <div className="h-[1px] bg-slate-200 flex-1"></div>
+                      <div className="flex items-center w-full mb-1 text-muted-foreground">
+                        <div className="h-[1px] bg-border flex-1"></div>
                         <span className="px-1.5 text-[8px] font-bold uppercase">
                           YA
                         </span>
@@ -678,27 +681,27 @@ export default function TrafficExpertPage() {
                       <div className="w-full">
                         {renderSlot(HARD_STRUCTURE.branchAmbTidak.redYa[0])}
                       </div>
-                      <div className="h-8 w-[2px] bg-slate-200"></div>
+                      <div className="h-8 w-[2px] bg-border"></div>
                     </div>
                     <div className="flex-1 flex flex-col items-center">
-                      <div className="flex items-center w-full mb-1 text-slate-400">
+                      <div className="flex items-center w-full mb-1 text-muted-foreground">
                         <span className="px-1.5 text-[8px] font-bold uppercase">
                           TIDAK
                         </span>
-                        <div className="h-[1px] bg-slate-200 flex-1"></div>
+                        <div className="h-[1px] bg-border flex-1"></div>
                       </div>
                       <div className="w-full">
                         {renderSlot(HARD_STRUCTURE.branchAmbTidak.redTidak[0])}
                       </div>
-                      <div className="h-8 w-[2px] bg-slate-200"></div>
+                      <div className="h-8 w-[2px] bg-border"></div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="relative w-full flex flex-col items-center mt-1.5">
-                <div className="flex w-[85%] justify-between h-4 border-b-2 border-x-2 border-slate-200 rounded-b-3xl"></div>
-                <div className="h-3 w-[2px] bg-slate-300"></div>
+                <div className="flex w-[85%] justify-between h-4 border-b-2 border-x-2 border-border rounded-b-3xl"></div>
+                <div className="h-3 w-[2px] bg-border"></div>
                 <div className="w-36">{renderSlot(HARD_STRUCTURE.footer)}</div>
               </div>
             </div>
@@ -709,7 +712,7 @@ export default function TrafficExpertPage() {
         <aside className="w-[420px] bg-[#020617] flex flex-col z-20 shrink-0 shadow-2xl border-l border-slate-800">
           <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">
+              <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">
                 VISUALISASI
               </span>
             </div>
@@ -848,7 +851,7 @@ export default function TrafficExpertPage() {
                     <h3 className="font-black text-xs uppercase tracking-widest mb-1">
                       Scanning Ambulans
                     </h3>
-                    <p className="text-slate-400 text-[10px] animate-pulse italic">
+                    <p className="text-muted-foreground text-[10px] animate-pulse italic">
                       Mendeteksi lalu lintas vertikal...
                     </p>
                   </div>
@@ -869,7 +872,7 @@ export default function TrafficExpertPage() {
                     <h3 className="text-white font-black text-[10px] uppercase mb-1 tracking-widest">
                       Input Sensor Lampu
                     </h3>
-                    <p className="text-slate-400 text-[9px] mb-4 uppercase leading-relaxed font-medium text-center">
+                    <p className="text-muted-foreground text-[9px] mb-4 uppercase leading-relaxed font-medium text-center">
                       Sinkronisasi: Pilih warna lampu:
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -975,21 +978,21 @@ export default function TrafficExpertPage() {
                   ? "bg-red-50"
                   : awaitingDecision || isScanning
                     ? "bg-amber-50"
-                    : "bg-white"
+                    : "bg-card"
             }`}
           >
             <div className="flex items-center gap-2 px-2">
               <div
                 className={`shrink-0 p-1.5 rounded-xl shadow-sm ${
                   simulationStatus === "success"
-                    ? "bg-white text-green-600 shadow-md"
+                    ? "bg-card text-green-600 shadow-md"
                     : simulationStatus === "error"
-                      ? "bg-white text-red-500 shadow-md"
+                      ? "bg-card text-red-500 shadow-md"
                       : isScanning
-                        ? "bg-white text-blue-500 shadow-md"
+                        ? "bg-card text-blue-500 shadow-md"
                         : awaitingDecision
-                          ? "bg-white text-amber-500 shadow-md"
-                          : "bg-slate-50 text-slate-300"
+                          ? "bg-card text-amber-500 shadow-md"
+                          : "bg-muted text-muted-foreground"
                 }`}
               >
                 {simulationStatus === "success" ? (
@@ -1005,7 +1008,7 @@ export default function TrafficExpertPage() {
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <h3 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">
+                <h3 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-0.5">
                   Laporan Logika
                 </h3>
                 <p
@@ -1014,7 +1017,7 @@ export default function TrafficExpertPage() {
                       ? "text-green-900"
                       : simulationStatus === "error"
                         ? "text-red-900"
-                        : "text-slate-600"
+                        : "text-muted-foreground"
                   }`}
                 >
                   {feedback ||
@@ -1026,10 +1029,10 @@ export default function TrafficExpertPage() {
         </aside>
       </main>
 
-      <footer className="bg-white border-t px-3 py-0.5 text-[7px] font-bold text-slate-400 flex justify-between items-center shrink-0 uppercase tracking-widest italic">
+      <footer className="bg-background border-t border-border px-3 py-0.5 text-[7px] font-bold text-muted-foreground flex justify-between items-center shrink-0 uppercase tracking-widest italic">
         <div className="flex gap-2 items-center font-black">
           <span className="text-red-500">STABLE ENGINE v12.5-EXPERT</span>
-          <span className="text-slate-200">|</span>
+          <span className="text-muted-foreground/40">|</span>
           <span>NESTED CROSSROAD LOGIC SYNC</span>
         </div>
         <span>TRAFFIC LAB ACADEMY</span>

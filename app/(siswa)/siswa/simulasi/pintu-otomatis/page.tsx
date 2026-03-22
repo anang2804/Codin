@@ -79,7 +79,7 @@ const COMMAND_DETAILS = {
   DEFAULT: {
     title: "SIAP MENULIS",
     desc: "Lengkapi bagian yang kosong sesuai urutan logika: input → proses → output.",
-    icon: <Edit3 className="text-slate-400" size={20} />,
+    icon: <Edit3 className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
 };
@@ -453,23 +453,23 @@ const PintuOtomatisSimulation = () => {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center z-40 shrink-0 shadow-sm">
+      <header className="bg-background border-b border-border px-6 py-3 flex justify-between items-center z-40 shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
           <button
             onClick={() => (window.location.href = "/siswa/simulasi")}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-slate-200"></div>
+          <div className="w-px h-6 bg-border"></div>
           <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
             <Terminal size={20} />
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic leading-none">
+              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
                 Pintu Otomatis
               </h1>
             </div>
@@ -482,7 +482,7 @@ const PintuOtomatisSimulation = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -502,7 +502,7 @@ const PintuOtomatisSimulation = () => {
             disabled={isRunning}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
               isRunning
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
@@ -513,10 +513,10 @@ const PintuOtomatisSimulation = () => {
 
       <main className="flex-1 flex overflow-hidden">
         {/* PANEL KIRI - DESKRIPSI */}
-        <aside className="w-72 bg-white border-r border-slate-200 p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
+        <aside className="w-72 bg-card border-r border-border p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/60" />
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-wrap">
+            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-wrap">
               Deskripsi Perintah
             </h2>
           </div>
@@ -530,14 +530,14 @@ const PintuOtomatisSimulation = () => {
               className={`p-5 rounded-3xl border ${currentDesc.color} shadow-sm transition-all duration-300`}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/90 rounded-xl shadow-sm">
+                <div className="p-2 bg-background/90 rounded-xl shadow-sm">
                   {currentDesc.icon}
                 </div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-tight">
                   {currentDesc.title}
                 </h3>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
                 {currentDesc.desc}
               </p>
             </motion.div>
@@ -547,12 +547,12 @@ const PintuOtomatisSimulation = () => {
             className={`p-3 rounded-2xl border transition-all duration-300 ${
               errorLine !== -1
                 ? "bg-rose-50/95 border-rose-200"
-                : "bg-white border-slate-200"
+                : "bg-card border-border"
             }`}
           >
             <div
               className={`flex items-center gap-2 pb-2 border-b ${
-                errorLine !== -1 ? "border-rose-200" : "border-slate-200"
+                errorLine !== -1 ? "border-rose-200" : "border-border"
               }`}
             >
               {errorLine !== -1 ? (
@@ -561,13 +561,15 @@ const PintuOtomatisSimulation = () => {
                 <CheckCircle2
                   size={12}
                   className={
-                    simState.doorOpen ? "text-emerald-500" : "text-slate-500"
+                    simState.doorOpen
+                      ? "text-emerald-500"
+                      : "text-muted-foreground"
                   }
                 />
               )}
               <span
                 className={`text-[10px] font-black uppercase tracking-widest ${
-                  errorLine !== -1 ? "text-rose-600" : "text-slate-500"
+                  errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
                 }`}
               >
                 CATATAN PROSES
@@ -578,19 +580,19 @@ const PintuOtomatisSimulation = () => {
               className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
                 errorLine !== -1
                   ? "text-rose-700 bg-rose-100/60"
-                  : "text-slate-700 bg-slate-100/80"
+                  : "text-foreground bg-muted"
               }`}
             >
               {simState.feedback}
             </div>
           </div>
 
-          <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
-            <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
+          <div className="mt-auto p-4 bg-primary/10 border border-primary/20 rounded-2xl">
+            <div className="flex items-center justify-between text-[9px] font-black text-primary uppercase mb-2">
               <span>Status Fokus</span>
               <Activity size={10} />
             </div>
-            <p className="text-[10px] font-bold text-slate-500 italic leading-tight">
+            <p className="text-[10px] font-bold text-muted-foreground italic leading-tight">
               {activeLine !== -1
                 ? `Menganalisis baris ke-${activeLine + 1}`
                 : "Editor siap digunakan"}
@@ -599,10 +601,10 @@ const PintuOtomatisSimulation = () => {
         </aside>
 
         {/* WORKSPACE - EDITOR */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        <div className="flex-1 flex flex-col min-w-0 bg-background">
           <section className="px-6 pt-4 pb-2">
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
-              <div className="bg-white p-2 rounded-xl shadow-sm text-emerald-600">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="bg-background p-2 rounded-xl shadow-sm text-primary">
                 <Lightbulb size={20} className="animate-pulse" />
               </div>
               <div className="flex-1">
@@ -610,11 +612,11 @@ const PintuOtomatisSimulation = () => {
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-[15px] font-black text-foreground uppercase tracking-tight">
                     Koneksi Sensor & Pintu
                   </h2>
                 </div>
-                <p className="text-[11px] text-slate-600 leading-relaxed max-w-4xl font-medium">
+                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-4xl font-medium">
                   Sistem pintu otomatis menggunakan sensor gerak untuk
                   mendeteksi orang yang mendekat. Namun algoritma yang digunakan
                   belum lengkap. Lengkapi pseudocode agar pintu dapat terbuka
@@ -635,11 +637,11 @@ const PintuOtomatisSimulation = () => {
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className="px-6 pb-2"
               >
-                <div className="bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
+                <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black text-emerald-700 tracking-tight">
                     🎉 Berhasil! Algoritma benar
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-600 leading-relaxed font-medium">
+                  <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
                     Algoritma berjalan sesuai urutan input → proses → output.
                     <br />
                     Sistem pintu otomatis berjalan dengan benar.
@@ -651,18 +653,18 @@ const PintuOtomatisSimulation = () => {
 
           <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
-            <section className="flex-1 min-w-[500px] bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative">
-              <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+            <section className="flex-1 min-w-[500px] bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden relative">
+              <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-2 h-2 rounded-full ${isRunning ? "bg-rose-500 animate-pulse" : errorLine !== -1 ? "bg-red-500 shadow-[0_0_5px_red]" : "bg-emerald-500"}`}
                   ></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic font-mono">
                     ALGORITMA PINTU OTOMATIS
                   </span>
                 </div>
                 <div
-                  className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${isRunning ? "bg-rose-500 text-white" : errorLine !== -1 ? "bg-red-500 text-white border-red-600 shadow-sm" : "bg-white text-slate-400 border-slate-200"}`}
+                  className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${isRunning ? "bg-rose-500 text-white" : errorLine !== -1 ? "bg-red-500 text-white border-red-600 shadow-sm" : "bg-background text-muted-foreground border-border"}`}
                 >
                   {isRunning
                     ? "RUNNING"
@@ -675,7 +677,7 @@ const PintuOtomatisSimulation = () => {
               <div className="relative flex-1 flex font-mono text-[13px] leading-[26px] overflow-hidden">
                 <div
                   id="line-gutter"
-                  className="w-12 bg-slate-50/30 text-slate-300 text-right pr-4 pt-5 select-none border-r border-slate-100 overflow-hidden shrink-0"
+                  className="w-12 bg-muted/30 text-muted-foreground text-right pr-4 pt-5 select-none border-r border-border overflow-hidden shrink-0"
                 >
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
@@ -686,7 +688,7 @@ const PintuOtomatisSimulation = () => {
                     </div>
                   ))}
                 </div>
-                <div className="relative flex-1 bg-white overflow-hidden">
+                <div className="relative flex-1 bg-card overflow-hidden">
                   <div
                     ref={displayRef}
                     className="absolute inset-0 p-5 pt-5 pointer-events-none whitespace-pre overflow-hidden z-10"
@@ -735,7 +737,7 @@ const PintuOtomatisSimulation = () => {
                   <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
                     <Activity size={14} />
                   </div>
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     VISUALISASI
                   </h2>
                 </div>
@@ -756,7 +758,7 @@ const PintuOtomatisSimulation = () => {
                   <div
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${simState.sensorValue === "aktif" ? "bg-rose-500 shadow-[0_0_15px_#ef4444]" : "bg-slate-900"}`}
                   ></div>
-                  <div className="ml-2 text-[8px] font-black text-slate-500 uppercase tracking-widest tracking-tighter">
+                  <div className="ml-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest tracking-tighter">
                     Infrared Detector
                   </div>
                 </div>
@@ -848,7 +850,7 @@ const PintuOtomatisSimulation = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-white px-6 py-2 border-t border-slate-200 flex justify-between items-center text-[10px] font-medium text-slate-500 z-30 shrink-0 select-none">
+      <footer className="bg-background px-6 py-2 border-t border-border flex justify-between items-center text-[10px] font-medium text-muted-foreground z-30 shrink-0 select-none">
         <div className="flex gap-2 items-center">
           <span
             className={`w-2 h-2 rounded-full transition-all duration-300 ${isRunning ? "bg-emerald-500 animate-pulse" : errorLine !== -1 ? "bg-rose-500 shadow-[0_0_8px_#f43f5e]" : "bg-slate-300"}`}
@@ -863,7 +865,7 @@ const PintuOtomatisSimulation = () => {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="hidden md:inline font-bold text-slate-400 uppercase tracking-tighter">
+          <span className="hidden md:inline font-bold text-muted-foreground uppercase tracking-tighter">
             Bahasa: Pseudocode Indonesia
           </span>
           <span className="font-black tracking-tight text-emerald-700 uppercase italic">

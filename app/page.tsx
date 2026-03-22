@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import BlurText from "@/components/BlurText";
@@ -25,9 +26,13 @@ import {
   Mail,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export default function LandingPage() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState<string>("home");
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [heroVideoVisible, setHeroVideoVisible] = useState<boolean>(false);
@@ -72,6 +77,10 @@ export default function LandingPage() {
     setSimTiltX(0);
     setSimTiltY(0);
   };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const ids = ["features", "simulasi", "about", "mitra"];
@@ -125,9 +134,9 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-neutral-200">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border transition-colors">
         <nav
           className="flex items-center justify-between px-6 md:px-8 h-[68px] max-w-7xl mx-auto"
           role="navigation"
@@ -158,7 +167,7 @@ export default function LandingPage() {
                   className={`relative inline-flex items-center px-4 h-[68px] text-[14px] font-medium transition-colors whitespace-nowrap group ${
                     active === id
                       ? "text-emerald-600"
-                      : "text-[#444] hover:text-emerald-600"
+                      : "text-muted-foreground hover:text-emerald-600"
                   }`}
                 >
                   {label}
@@ -178,6 +187,27 @@ export default function LandingPage() {
 
           {/* Right side: CTA + hamburger */}
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              type="button"
+              onClick={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
+              className="rounded-lg"
+              aria-label={
+                resolvedTheme === "dark"
+                  ? "Aktifkan mode terang"
+                  : "Aktifkan mode gelap"
+              }
+            >
+              {mounted && resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+
             <Link href="/auth/login" className="hidden md:inline-flex">
               <button
                 className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white text-[13.5px] font-semibold rounded-lg hover:bg-emerald-700 active:scale-95 transition-all duration-200 shadow-sm whitespace-nowrap"
@@ -189,7 +219,7 @@ export default function LandingPage() {
 
             {/* Hamburger toggle */}
             <button
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 text-[#444] hover:text-emerald-600 hover:border-emerald-300 transition-all duration-200"
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border text-muted-foreground hover:text-emerald-600 hover:border-emerald-300 transition-all duration-200"
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -204,7 +234,7 @@ export default function LandingPage() {
 
         {/* Mobile dropdown menu */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-white border-t border-neutral-100 ${
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-background border-t border-border ${
             menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
@@ -225,8 +255,8 @@ export default function LandingPage() {
                   }}
                   className={`block px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors ${
                     active === id
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "text-[#444] hover:bg-neutral-50 hover:text-emerald-600"
+                      ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15"
+                      : "text-muted-foreground hover:bg-muted hover:text-emerald-600"
                   }`}
                 >
                   {label}
@@ -247,7 +277,7 @@ export default function LandingPage() {
       {/* Main content */}
       <main className="w-full">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-white">
+        <section className="relative overflow-hidden bg-background">
           <style>{`
             @keyframes heroFloatSoft {
               0%, 100% { transform: translateY(0px); }
@@ -269,7 +299,7 @@ export default function LandingPage() {
               {/* LEFT: Text */}
               <div className="flex flex-col gap-6">
                 {/* Heading */}
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0f172a] leading-[1.15] tracking-tight">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-foreground leading-[1.15] tracking-tight">
                   <BlurText
                     text="Belajar"
                     delay={80}
@@ -311,7 +341,7 @@ export default function LandingPage() {
                 </h1>
 
                 {/* Description */}
-                <p className="text-base text-gray-500 leading-relaxed max-w-md">
+                <p className="text-base text-muted-foreground leading-relaxed max-w-md">
                   CODIN adalah platform pembelajaran berbasis web yang membantu
                   siswa memahami algoritma dan pemrograman melalui materi
                   terstruktur, kuis evaluasi, serta simulasi visual interaktif.
@@ -332,7 +362,7 @@ export default function LandingPage() {
               <div className="relative flex items-center justify-center">
                 {/* Floating programming symbols */}
                 <div
-                  className="pointer-events-none absolute -top-3 left-6 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-emerald-200 bg-white/90 backdrop-blur-sm text-[11px] font-bold text-emerald-600 opacity-90 shadow-sm"
+                  className="pointer-events-none absolute -top-3 left-6 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-emerald-200/70 bg-card/90 backdrop-blur-sm text-[11px] font-bold text-emerald-600 opacity-90 shadow-sm"
                   style={{
                     animation: "heroFloatSoft 5.5s ease-in-out infinite",
                   }}
@@ -340,7 +370,7 @@ export default function LandingPage() {
                   &lt;/&gt;
                 </div>
                 <div
-                  className="pointer-events-none absolute top-14 -right-2 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-blue-200 bg-white/90 backdrop-blur-sm text-[11px] font-bold text-blue-600 opacity-90 shadow-sm"
+                  className="pointer-events-none absolute top-14 -right-2 z-20 flex items-center justify-center h-7 md:h-8 px-2.5 md:px-3 rounded-lg border border-blue-200/70 bg-card/90 backdrop-blur-sm text-[11px] font-bold text-blue-600 opacity-90 shadow-sm"
                   style={{
                     animation: "heroFloatTilt 6.3s ease-in-out infinite",
                   }}
@@ -348,7 +378,7 @@ export default function LandingPage() {
                   {"{}"}
                 </div>
                 <div
-                  className="pointer-events-none absolute bottom-8 -left-3 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-violet-200 bg-white/90 backdrop-blur-sm text-violet-600 opacity-85 shadow-sm"
+                  className="pointer-events-none absolute bottom-8 -left-3 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-violet-200/70 bg-card/90 backdrop-blur-sm text-violet-600 opacity-85 shadow-sm"
                   style={{
                     animation: "heroFloatSoft 5.8s ease-in-out infinite",
                   }}
@@ -356,7 +386,7 @@ export default function LandingPage() {
                   <GitBranch className="w-4 h-4" />
                 </div>
                 <div
-                  className="pointer-events-none absolute -bottom-2 right-10 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-sky-200 bg-white/90 backdrop-blur-sm text-sky-600 opacity-85 shadow-sm"
+                  className="pointer-events-none absolute -bottom-2 right-10 z-20 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg border border-sky-200/70 bg-card/90 backdrop-blur-sm text-sky-600 opacity-85 shadow-sm"
                   style={{
                     animation: "heroFloatTilt 6.8s ease-in-out infinite",
                   }}
@@ -385,7 +415,7 @@ export default function LandingPage() {
                 />
 
                 <div
-                  className={`w-full max-w-[620px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.12)] transition-all duration-700 ${
+                  className={`w-full max-w-[620px] overflow-hidden rounded-2xl border border-border bg-card/90 shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition-all duration-700 ${
                     heroVideoVisible
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-4"
@@ -409,7 +439,7 @@ export default function LandingPage() {
         {/* Features */}
         <section id="features" className="relative overflow-hidden py-24">
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-emerald-50/70 via-white to-white pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/20 dark:via-background dark:to-background pointer-events-none" />
           {/* Decorative SVG dots */}
           <svg
             className="absolute top-0 left-0 w-64 h-64 opacity-20 pointer-events-none"
@@ -446,15 +476,15 @@ export default function LandingPage() {
             )}
           </svg>
           {/* Abstract shape */}
-          <div className="absolute -top-10 -right-10 w-72 h-72 bg-emerald-100 rounded-full blur-3xl opacity-40 pointer-events-none" />
+          <div className="absolute -top-10 -right-10 w-72 h-72 bg-emerald-100 dark:bg-emerald-900/20 rounded-full blur-3xl opacity-40 pointer-events-none" />
 
           <div className="relative max-w-7xl mx-auto px-8">
             {/* Section header */}
             <div className="max-w-2xl mx-auto text-center mb-16">
-              <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-4 py-1.5 rounded-full mb-4 tracking-widest uppercase">
+              <span className="inline-block bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 text-xs font-bold px-4 py-1.5 rounded-full mb-4 tracking-widest uppercase">
                 Fitur Unggulan
               </span>
-              <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-black text-[#0f172a] leading-tight">
+              <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-black text-foreground leading-tight">
                 Semua yang Kamu Butuhkan untuk{" "}
                 <TextType
                   as="span"
@@ -467,7 +497,7 @@ export default function LandingPage() {
                   showCursor={false}
                 />
               </h2>
-              <p className="mt-4 text-base text-gray-500 leading-relaxed">
+              <p className="mt-4 text-base text-muted-foreground leading-relaxed">
                 Platform CODIN menyediakan fitur lengkap untuk mendukung
                 pembelajaran algoritma dan pemrograman secara interaktif.
               </p>
@@ -519,7 +549,7 @@ export default function LandingPage() {
               ].map((f, i) => (
                 <div
                   key={i}
-                  className="group relative bg-white rounded-[18px] p-7 flex flex-col gap-5 shadow-[0_2px_16px_0_rgba(0,0,0,0.07)] border border-neutral-100 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.13)] hover:-translate-y-2 transition-all duration-300 cursor-default"
+                  className="group relative bg-card rounded-[18px] p-7 flex flex-col gap-5 shadow-[0_2px_16px_0_rgba(0,0,0,0.07)] dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.25)] border border-border hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.13)] dark:hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.35)] hover:-translate-y-2 transition-all duration-300 cursor-default"
                 >
                   {/* Icon container */}
                   <div
@@ -530,16 +560,16 @@ export default function LandingPage() {
                   {/* Text */}
                   <div className="flex flex-col gap-2">
                     <h3
-                      className={`text-[17px] font-bold text-[#0f172a] transition-colors duration-300 ${f.accent}`}
+                      className={`text-[17px] font-bold text-foreground transition-colors duration-300 ${f.accent}`}
                     >
                       {f.title}
                     </h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {f.desc}
                     </p>
                   </div>
                   {/* Bottom accent line */}
-                  <div className="absolute bottom-0 left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-neutral-100 to-transparent rounded-full group-hover:via-emerald-200 transition-all duration-300" />
+                  <div className="absolute bottom-0 left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-border to-transparent rounded-full group-hover:via-emerald-200 dark:group-hover:via-emerald-400/30 transition-all duration-300" />
                 </div>
               ))}
             </div>
@@ -549,7 +579,7 @@ export default function LandingPage() {
         {/* Simulation Showcase */}
         <section id="simulasi" className="relative overflow-hidden py-28">
           {/* Richer background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-blue-50/50 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-background to-blue-50/50 dark:from-emerald-950/20 dark:via-background dark:to-blue-950/20 pointer-events-none" />
           {/* Soft radial glow behind right side */}
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-100/60 rounded-full blur-[100px] opacity-50 pointer-events-none" />
           {/* Bottom-left accent */}
@@ -637,17 +667,17 @@ export default function LandingPage() {
               {/* LEFT: Text */}
               <div className="flex flex-col gap-7 order-2 md:order-1">
                 {/* Eyebrow badge */}
-                <span className="inline-flex items-center gap-2 self-start bg-blue-50 text-blue-700 text-xs font-bold px-4 py-1.5 rounded-full tracking-widest uppercase border border-blue-100 shadow-sm">
+                <span className="inline-flex items-center gap-2 self-start bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 text-xs font-bold px-4 py-1.5 rounded-full tracking-widest uppercase border border-blue-100 dark:border-blue-500/30 shadow-sm">
                   <GitBranch className="w-3.5 h-3.5" />
                   Simulasi Interaktif
                 </span>
 
-                <h2 className="text-3xl md:text-4xl font-black text-[#0f172a] leading-tight">
+                <h2 className="text-3xl md:text-4xl font-black text-foreground leading-tight">
                   Belajar Lebih Mudah dengan{" "}
                   <span className="text-emerald-600">Simulasi Interaktif</span>
                 </h2>
 
-                <p className="text-base text-gray-500 leading-relaxed max-w-md">
+                <p className="text-base text-muted-foreground leading-relaxed max-w-md">
                   Amati proses pembelajaran secara visual melalui simulasi
                   interaktif yang membantu memahami konsep secara lebih jelas
                   dan bertahap — langkah demi langkah.
@@ -657,15 +687,18 @@ export default function LandingPage() {
                 <ul className="flex flex-col gap-3">
                   {[
                     {
-                      color: "bg-emerald-100 text-emerald-700",
+                      color:
+                        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
                       text: "Visualisasi pembelajaran secara bertahap",
                     },
                     {
-                      color: "bg-blue-100 text-blue-700",
+                      color:
+                        "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
                       text: "Simulasi pembelajaran interaktif",
                     },
                     {
-                      color: "bg-purple-100 text-purple-700",
+                      color:
+                        "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
                       text: "Umpan balik pembelajaran secara real-time",
                     },
                   ].map((item, i) => (
@@ -675,7 +708,7 @@ export default function LandingPage() {
                       >
                         {i + 1}
                       </span>
-                      <span className="text-sm text-gray-600 font-medium">
+                      <span className="text-sm text-muted-foreground font-medium">
                         {item.text}
                       </span>
                     </li>
@@ -686,23 +719,23 @@ export default function LandingPage() {
               {/* RIGHT: Swipeable simulation card stack */}
               <div className="relative order-1 md:order-2 flex items-center justify-center min-h-[400px] select-none">
                 {/* Glow behind images */}
-                <div className="absolute inset-10 bg-emerald-200/30 rounded-3xl blur-2xl pointer-events-none" />
+                <div className="absolute inset-10 bg-emerald-200/30 dark:bg-emerald-900/25 rounded-3xl blur-2xl pointer-events-none" />
 
                 {/* Floating icon decorations */}
                 <div
-                  className="absolute -top-5 -right-3 p-2 bg-white rounded-xl shadow-lg border border-neutral-100 z-20"
+                  className="absolute -top-5 -right-3 p-2 bg-card rounded-xl shadow-lg border border-border z-20"
                   style={{ animation: "float 3.2s ease-in-out infinite" }}
                 >
                   <Code2 className="w-5 h-5 text-blue-500" />
                 </div>
                 <div
-                  className="absolute -bottom-4 -left-3 p-2 bg-white rounded-xl shadow-lg border border-neutral-100 z-20"
+                  className="absolute -bottom-4 -left-3 p-2 bg-card rounded-xl shadow-lg border border-border z-20"
                   style={{ animation: "float 2.7s ease-in-out infinite 0.6s" }}
                 >
                   <Cpu className="w-5 h-5 text-purple-500" />
                 </div>
                 <div
-                  className="absolute top-6 -left-6 p-2 bg-white rounded-xl shadow-lg border border-neutral-100 z-20"
+                  className="absolute top-6 -left-6 p-2 bg-card rounded-xl shadow-lg border border-border z-20"
                   style={{ animation: "float 4s ease-in-out infinite 1.2s" }}
                 >
                   <FileCode className="w-5 h-5 text-emerald-500" />
@@ -713,11 +746,11 @@ export default function LandingPage() {
                   {[0, 1].map((i) => (
                     <div
                       key={i}
-                      className={`rounded-full transition-all duration-300 ${simFront === i ? "w-5 h-2 bg-emerald-500" : "w-2 h-2 bg-neutral-300"}`}
+                      className={`rounded-full transition-all duration-300 ${simFront === i ? "w-5 h-2 bg-emerald-500" : "w-2 h-2 bg-muted-foreground/40"}`}
                     />
                   ))}
                 </div>
-                <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 text-[11px] text-gray-400 font-medium tracking-wide whitespace-nowrap">
+                <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 text-[11px] text-muted-foreground font-medium tracking-wide whitespace-nowrap">
                   Klik atau geser untuk melihat simulasi lain
                 </div>
 
@@ -738,7 +771,7 @@ export default function LandingPage() {
                 >
                   {/* Back card */}
                   <div
-                    className="absolute top-4 left-4 right-4 rounded-2xl overflow-hidden border border-neutral-100"
+                    className="absolute top-4 left-4 right-4 rounded-2xl overflow-hidden border border-border"
                     style={{
                       boxShadow: "0 12px 40px rgba(0,0,0,0.10)",
                       transform: `rotate(${simFront === 0 ? 2 : -2}deg) rotateY(${simTiltX * 0.3}deg)`,
@@ -757,7 +790,7 @@ export default function LandingPage() {
 
                   {/* Front card — 3D tilt + flip */}
                   <div
-                    className="relative rounded-2xl overflow-hidden border border-neutral-100"
+                    className="relative rounded-2xl overflow-hidden border border-border"
                     style={{
                       boxShadow: simHovered
                         ? "0 40px 100px rgba(0,0,0,0.22), 0 12px 32px rgba(0,0,0,0.12)"
@@ -788,9 +821,9 @@ export default function LandingPage() {
                       />
                     )}
                     {/* Overlay badge */}
-                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-md border border-neutral-100">
+                    <div className="absolute bottom-3 left-3 bg-card/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-md border border-border">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[11px] font-bold text-gray-700 tracking-wide">
+                      <span className="text-[11px] font-bold text-foreground tracking-wide">
                         Simulasi Aktif
                       </span>
                     </div>
@@ -804,7 +837,7 @@ export default function LandingPage() {
         {/* Roles */}
         <section
           id="about"
-          className="relative overflow-hidden py-24 bg-gradient-to-b from-emerald-50/40 via-white to-white"
+          className="relative overflow-hidden py-24 bg-gradient-to-b from-emerald-50/40 via-background to-background dark:from-emerald-950/20 dark:via-background dark:to-background"
         >
           <style>{`
             @keyframes floatRole {
@@ -858,13 +891,13 @@ export default function LandingPage() {
           <div className="relative max-w-5xl mx-auto px-8">
             {/* Heading */}
             <div className="text-center mb-16">
-              <span className="inline-block bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 tracking-wide">
+              <span className="inline-block bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 tracking-wide">
                 Untuk Siapa Platform Ini?
               </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0f172a] mb-4 leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4 leading-tight">
                 Dirancang untuk Semua Peran
               </h2>
-              <p className="text-[#64748b] text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
                 Platform CODIN hadir untuk memenuhi kebutuhan setiap pengguna —
                 dari guru, siswa, hingga admin sekolah.
               </p>
@@ -875,7 +908,7 @@ export default function LandingPage() {
               {/* — Guru — */}
               <div className="group flex flex-col items-center text-center max-w-[220px] mx-auto md:mx-0 transition-all duration-300 ease-in-out hover:-translate-y-2">
                 <div
-                  className="role-icon role-icon-1 relative flex items-center justify-center w-24 h-24 rounded-full bg-white border-2 border-emerald-100 mb-5 transition-transform duration-300 group-hover:scale-110"
+                  className="role-icon role-icon-1 relative flex items-center justify-center w-24 h-24 rounded-full bg-card border-2 border-emerald-100 dark:border-emerald-500/30 mb-5 transition-transform duration-300 group-hover:scale-110"
                   style={{
                     boxShadow:
                       "0 8px 32px rgba(16,185,129,0.18), 0 2px 8px rgba(0,0,0,0.06)",
@@ -890,8 +923,8 @@ export default function LandingPage() {
                   />
                   <GraduationCap className="relative z-10 w-10 h-10 text-emerald-500 transition-all duration-300 group-hover:text-emerald-600 group-hover:scale-110" />
                 </div>
-                <h3 className="text-lg font-bold text-[#0f172a] mb-2">Guru</h3>
-                <p className="text-[#64748b] text-sm leading-relaxed">
+                <h3 className="text-lg font-bold text-foreground mb-2">Guru</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Mengelola kelas, materi pembelajaran, serta memantau
                   perkembangan siswa.
                 </p>
@@ -930,7 +963,7 @@ export default function LandingPage() {
               {/* — Siswa — */}
               <div className="group flex flex-col items-center text-center max-w-[220px] mx-auto md:mx-0 transition-all duration-300 ease-in-out hover:-translate-y-2">
                 <div
-                  className="role-icon role-icon-2 relative flex items-center justify-center w-24 h-24 rounded-full bg-white border-2 border-blue-100 mb-5 transition-transform duration-300 group-hover:scale-110"
+                  className="role-icon role-icon-2 relative flex items-center justify-center w-24 h-24 rounded-full bg-card border-2 border-blue-100 dark:border-blue-500/30 mb-5 transition-transform duration-300 group-hover:scale-110"
                   style={{
                     boxShadow:
                       "0 8px 32px rgba(59,130,246,0.18), 0 2px 8px rgba(0,0,0,0.06)",
@@ -945,8 +978,10 @@ export default function LandingPage() {
                   />
                   <User className="relative z-10 w-10 h-10 text-blue-500 transition-all duration-300 group-hover:text-blue-600 group-hover:scale-110" />
                 </div>
-                <h3 className="text-lg font-bold text-[#0f172a] mb-2">Siswa</h3>
-                <p className="text-[#64748b] text-sm leading-relaxed">
+                <h3 className="text-lg font-bold text-foreground mb-2">
+                  Siswa
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Mengakses materi, mengikuti simulasi pembelajaran, dan
                   mengerjakan tugas.
                 </p>
@@ -986,7 +1021,7 @@ export default function LandingPage() {
               {/* — Admin — */}
               <div className="group flex flex-col items-center text-center max-w-[220px] mx-auto md:mx-0 transition-all duration-300 ease-in-out hover:-translate-y-2">
                 <div
-                  className="role-icon role-icon-3 relative flex items-center justify-center w-24 h-24 rounded-full bg-white border-2 border-violet-100 mb-5 transition-transform duration-300 group-hover:scale-110"
+                  className="role-icon role-icon-3 relative flex items-center justify-center w-24 h-24 rounded-full bg-card border-2 border-violet-100 dark:border-violet-500/30 mb-5 transition-transform duration-300 group-hover:scale-110"
                   style={{
                     boxShadow:
                       "0 8px 32px rgba(139,92,246,0.18), 0 2px 8px rgba(0,0,0,0.06)",
@@ -1001,8 +1036,10 @@ export default function LandingPage() {
                   />
                   <Settings className="relative z-10 w-10 h-10 text-violet-500 transition-all duration-300 group-hover:text-violet-600 group-hover:scale-110" />
                 </div>
-                <h3 className="text-lg font-bold text-[#0f172a] mb-2">Admin</h3>
-                <p className="text-[#64748b] text-sm leading-relaxed">
+                <h3 className="text-lg font-bold text-foreground mb-2">
+                  Admin
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Mengelola sistem, pengguna, serta pengaturan platform secara
                   menyeluruh.
                 </p>
@@ -1014,7 +1051,7 @@ export default function LandingPage() {
         {/* ─── Mitra Kami ─────────────────────────────────────────────── */}
         <section
           id="mitra"
-          className="relative overflow-hidden py-20 bg-gradient-to-b from-slate-50 via-white to-white"
+          className="relative overflow-hidden py-20 bg-gradient-to-b from-slate-50 via-background to-background dark:from-slate-900/40 dark:via-background dark:to-background"
         >
           {/* Dot pattern background */}
           <div
@@ -1052,10 +1089,10 @@ export default function LandingPage() {
                 transition: "opacity 0.7s ease, transform 0.7s ease",
               }}
             >
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0f172a] mb-4 leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4 leading-tight">
                 Sekolah Implementasi
               </h2>
-              <p className="text-[#64748b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
                 Platform CODIN digunakan sebagai media pembelajaran berbasis web
                 untuk mendukung pembelajaran Algoritma dan Pemrograman di SMKS
                 YPM 4 Taman.
@@ -1077,7 +1114,7 @@ export default function LandingPage() {
                 className="h-40 w-auto object-contain transition-transform duration-300 hover:scale-105"
                 draggable={false}
               />
-              <span className="text-base font-bold text-[#0f172a]">
+              <span className="text-base font-bold text-foreground">
                 SMKS YPM 4
               </span>
             </div>
@@ -1095,7 +1132,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#f8fafc] border-t border-neutral-200">
+      <footer className="bg-muted/20 border-t border-border">
         <div className="max-w-7xl mx-auto px-8 pt-14 pb-8">
           {/* 4-column grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
@@ -1108,7 +1145,7 @@ export default function LandingPage() {
                   className="h-12 w-auto"
                 />
               </div>
-              <p className="text-sm text-[#64748b] leading-relaxed max-w-[220px]">
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[220px]">
                 Platform pembelajaran berbasis proyek yang inovatif untuk siswa,
                 guru, dan institusi pendidikan.
               </p>
@@ -1116,7 +1153,7 @@ export default function LandingPage() {
 
             {/* Col 2 – Navigasi */}
             <div className="flex flex-col gap-3">
-              <h4 className="text-sm font-bold text-[#0f172a] uppercase tracking-widest mb-1">
+              <h4 className="text-sm font-bold text-foreground uppercase tracking-widest mb-1">
                 Navigasi
               </h4>
               {[
@@ -1128,7 +1165,7 @@ export default function LandingPage() {
                 <Link
                   key={label}
                   href={href}
-                  className="text-sm text-[#64748b] hover:text-emerald-600 transition-colors duration-200 w-fit"
+                  className="text-sm text-muted-foreground hover:text-emerald-600 transition-colors duration-200 w-fit"
                 >
                   {label}
                 </Link>
@@ -1137,7 +1174,7 @@ export default function LandingPage() {
 
             {/* Col 4 – Sosial Media */}
             <div className="flex flex-col gap-4">
-              <h4 className="text-sm font-bold text-[#0f172a] uppercase tracking-widest mb-1">
+              <h4 className="text-sm font-bold text-foreground uppercase tracking-widest mb-1">
                 Ikuti Kami
               </h4>
               <div className="flex gap-3">
@@ -1163,7 +1200,7 @@ export default function LandingPage() {
                     key={label}
                     href={href}
                     aria-label={label}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-neutral-200 text-[#64748b] hover:text-emerald-600 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                    className="flex items-center justify-center w-9 h-9 rounded-xl bg-card border border-border text-muted-foreground hover:text-emerald-600 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                   >
                     <Icon className="w-4 h-4" />
                   </a>
@@ -1173,11 +1210,11 @@ export default function LandingPage() {
           </div>
 
           {/* Divider + copyright */}
-          <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-[#94a3b8]">
+          <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} CODIN. Seluruh hak cipta dilindungi.
             </p>
-            <p className="text-xs text-[#94a3b8]">
+            <p className="text-xs text-muted-foreground">
               Dibuat dengan ❤️ untuk pendidikan Indonesia
             </p>
           </div>

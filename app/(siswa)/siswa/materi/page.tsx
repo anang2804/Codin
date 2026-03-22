@@ -213,10 +213,10 @@ export default function SiswaMateriPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Materi Pembelajaran
           </h1>
-          <p className="text-sm text-gray-600 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Akses semua materi pembelajaran yang tersedia
           </p>
         </div>
@@ -229,11 +229,11 @@ export default function SiswaMateriPage() {
       </div>
 
       {/* Filter Section */}
-      <Card className="p-3 border border-gray-100 rounded-xl shadow-sm">
+      <Card className="p-3 border border-border bg-card rounded-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               size={18}
             />
             <Input
@@ -246,7 +246,7 @@ export default function SiswaMateriPage() {
           </div>
           <div className="relative">
             <Filter
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               size={18}
             />
             <select
@@ -268,12 +268,12 @@ export default function SiswaMateriPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat materi...</p>
+          <p className="text-muted-foreground">Memuat materi...</p>
         </div>
       ) : filteredMateri.length === 0 ? (
         <Card className="p-12 text-center border-green-100">
-          <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">
+          <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">
             {searchTerm || selectedMapel !== "all"
               ? "Tidak ada materi yang cocok dengan pencarian"
               : "Belum ada materi tersedia"}
@@ -288,7 +288,7 @@ export default function SiswaMateriPage() {
               return (
                 <Card
                   key={m.id}
-                  className={`overflow-hidden border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 cursor-pointer flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+                  className={`overflow-hidden border-border bg-card rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 cursor-pointer flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
                   style={{ transitionDelay: `${index * 60}ms` }}
                   onClick={() => handleViewMateri(m.id)}
                 >
@@ -315,7 +315,7 @@ export default function SiswaMateriPage() {
                     )}
                     {/* Progress indicator on thumbnail */}
                     {progressValue > 0 && (
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[11px] font-semibold text-green-700">
+                      <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[11px] font-semibold text-green-700 dark:text-green-300">
                         {progressValue}%
                       </div>
                     )}
@@ -323,25 +323,25 @@ export default function SiswaMateriPage() {
 
                   {/* Content */}
                   <div className="p-4 flex-1 flex flex-col overflow-hidden">
-                    <h3 className="text-base font-semibold text-gray-900 mb-1 line-clamp-1">
+                    <h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1">
                       {m.title}
                     </h3>
 
-                    <p className="text-xs text-gray-500 mb-3 line-clamp-1">
+                    <p className="text-xs text-muted-foreground mb-3 line-clamp-1">
                       {m.mapel?.name || "Mata pelajaran belum tersedia"}
                     </p>
 
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-gray-500 font-medium">
+                        <span className="text-muted-foreground font-medium">
                           Progress
                         </span>
-                        <span className="font-semibold text-gray-700">
+                        <span className="font-semibold text-foreground">
                           {progressValue}%
                         </span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
                           style={{
@@ -351,7 +351,7 @@ export default function SiswaMateriPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                       <div className="flex items-center gap-1.5">
                         <Calendar size={12} />
                         <span>

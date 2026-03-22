@@ -332,8 +332,8 @@ export default function TrafficLogicPage() {
         className={`relative ${slotData.width} h-9 rounded-xl flex items-center transition-all border-2 shrink-0
           ${
             workspace[slotData.id]
-              ? "bg-white border-slate-200 shadow-md"
-              : "bg-white/60 border-dashed border-slate-300 hover:bg-blue-50 hover:border-blue-300"
+              ? "bg-card border-border shadow-md"
+              : "bg-card/70 border-dashed border-border hover:bg-primary/10 hover:border-primary/40"
           }
           ${
             isCurrent ? "ring-4 ring-blue-500/20 border-blue-400 shadow-lg" : ""
@@ -352,7 +352,7 @@ export default function TrafficLogicPage() {
             ></div>
             <span
               className={`text-[11px] font-bold uppercase leading-tight truncate pointer-events-none flex-1 min-w-0 ${
-                isError ? "text-red-700" : "text-slate-700"
+                isError ? "text-red-700" : "text-foreground"
               }`}
             >
               {slotData.placeholder}
@@ -360,14 +360,14 @@ export default function TrafficLogicPage() {
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => removeSymbol(slotData.id)}
-              className="ml-auto shrink-0 text-slate-300 hover:text-red-400 transition-colors"
+              className="ml-auto shrink-0 text-muted-foreground hover:text-red-400 transition-colors"
             >
               <Trash2 size={13} />
             </button>
           </motion.div>
         ) : (
           <div className="flex items-center justify-center w-full pointer-events-none px-3 text-center overflow-hidden">
-            <span className="text-[11px] font-medium text-slate-400 truncate">
+            <span className="text-[11px] font-medium text-muted-foreground truncate">
               {slotData.placeholder}
             </span>
           </div>
@@ -377,23 +377,23 @@ export default function TrafficLogicPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8fafc] text-slate-900 overflow-hidden font-sans text-sm">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans text-sm">
       {/* Header */}
-      <header className="px-8 py-2 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <header className="px-8 py-2 bg-background border-b border-border flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-1 text-xs font-bold text-muted-foreground hover:bg-muted rounded-lg transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-slate-200"></div>
+          <div className="w-px h-6 bg-border"></div>
           <div className="bg-green-600 p-1.5 rounded-xl text-white shadow-green-100 shadow-lg">
             <CheckCircle2 size={16} />
           </div>
           <div className="flex items-center gap-2">
             <div>
-              <h1 className="text-base font-black tracking-tighter text-slate-800 uppercase italic leading-none">
+              <h1 className="text-base font-black tracking-tighter text-foreground uppercase italic leading-none">
                 Logika Lalu Lintas
               </h1>
             </div>
@@ -406,7 +406,7 @@ export default function TrafficLogicPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -416,7 +416,7 @@ export default function TrafficLogicPage() {
             disabled={isSimulating}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
               isSimulating
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
@@ -427,17 +427,17 @@ export default function TrafficLogicPage() {
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
-        <aside className="w-72 border-r border-slate-200 bg-white flex flex-col z-20 shrink-0 overflow-y-auto">
+        <aside className="w-72 border-r border-border bg-card flex flex-col z-20 shrink-0 overflow-y-auto">
           {/* Deskripsi */}
           <div className="p-3 border-b flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Info size={14} className="text-blue-500/60" />
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 Deskripsi Tugas
               </h2>
             </div>
             <div className="p-3 rounded-xl border bg-blue-50 border-blue-100 shadow-sm">
-              <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+              <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
                 Diagram alir (flowchart) adalah gambar yang menunjukkan urutan
                 langkah dan keputusan dalam suatu sistem. Setiap langkah
                 digambarkan menggunakan simbol yang berbeda.
@@ -449,7 +449,7 @@ export default function TrafficLogicPage() {
           <div className="p-3 border-b flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Zap size={14} className="text-amber-500/70" />
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 Fungsi Simbol
               </h2>
             </div>
@@ -461,7 +461,7 @@ export default function TrafficLogicPage() {
                   <p className="text-[10px] font-black text-green-700 uppercase tracking-tight leading-none mb-0.5">
                     Start / End
                   </p>
-                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                  <p className="text-[9px] text-muted-foreground leading-relaxed">
                     Menandai awal atau akhir dari sebuah algoritma.
                   </p>
                 </div>
@@ -473,7 +473,7 @@ export default function TrafficLogicPage() {
                   <p className="text-[10px] font-black text-blue-700 uppercase tracking-tight leading-none mb-0.5">
                     Input / Output
                   </p>
-                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                  <p className="text-[9px] text-muted-foreground leading-relaxed">
                     Menerima data masukan atau menampilkan informasi.
                   </p>
                 </div>
@@ -485,7 +485,7 @@ export default function TrafficLogicPage() {
                   <p className="text-[10px] font-black text-orange-700 uppercase tracking-tight leading-none mb-0.5">
                     Proses
                   </p>
-                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                  <p className="text-[9px] text-muted-foreground leading-relaxed">
                     Melakukan langkah pengolahan data dalam algoritma.
                   </p>
                 </div>
@@ -497,10 +497,13 @@ export default function TrafficLogicPage() {
                   <p className="text-[10px] font-black text-amber-700 uppercase tracking-tight leading-none mb-0.5">
                     Keputusan
                   </p>
-                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                  <p className="text-[9px] text-muted-foreground leading-relaxed">
                     Menentukan kondisi dengan dua hasil:{" "}
                     <span className="font-bold text-blue-600">YA</span> atau{" "}
-                    <span className="font-bold text-slate-600">TIDAK</span>.
+                    <span className="font-bold text-muted-foreground">
+                      TIDAK
+                    </span>
+                    .
                   </p>
                 </div>
               </div>
@@ -510,8 +513,8 @@ export default function TrafficLogicPage() {
           {/* Bank Simbol */}
           <div className="p-3 flex flex-col gap-2 flex-1">
             <div className="flex items-center gap-2">
-              <HelpCircle size={14} className="text-slate-400/60" />
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <HelpCircle size={14} className="text-muted-foreground" />
+              <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 Bank Simbol
               </h2>
             </div>
@@ -521,12 +524,12 @@ export default function TrafficLogicPage() {
                   key={key}
                   draggable
                   onDragStart={(e) => handleDragStart(e, key)}
-                  className="flex flex-col items-center gap-1.5 p-2 bg-white border border-slate-200 rounded-xl transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md group"
+                  className="flex flex-col items-center gap-1.5 p-2 bg-card border border-border rounded-xl transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md group"
                 >
                   <div
                     className={`${data.shape} ${data.color} shadow-sm group-hover:scale-110 transition-transform`}
                   ></div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tight text-center leading-tight">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight text-center leading-tight">
                     {data.label}
                   </span>
                 </div>
@@ -538,8 +541,8 @@ export default function TrafficLogicPage() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* MISI BANNER */}
           <section className="px-6 pt-4 pb-3 shrink-0">
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
-              <div className="bg-white p-2.5 rounded-xl shadow-sm text-emerald-600 shrink-0">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
+              <div className="bg-background p-2.5 rounded-xl shadow-sm text-primary shrink-0">
                 <Lightbulb size={24} className="animate-pulse" />
               </div>
               <div className="flex-1">
@@ -547,11 +550,11 @@ export default function TrafficLogicPage() {
                   <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded uppercase tracking-widest">
                     MISI
                   </span>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  <h2 className="text-sm font-black text-foreground uppercase tracking-tight">
                     Logika Lalu Lintas
                   </h2>
                 </div>
-                <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
+                <p className="text-[12px] text-muted-foreground leading-relaxed font-medium">
                   Susun diagram alir yang menunjukkan bagaimana sistem membaca
                   warna lampu lalu lintas dan menentukan apakah kendaraan harus
                   berhenti atau dapat melaju.
@@ -562,7 +565,7 @@ export default function TrafficLogicPage() {
 
           <div className="flex-1 flex overflow-hidden">
             {/* PANEL TENGAH: WORKSPACE */}
-            <section className="flex-1 bg-[#f8fafc] relative overflow-auto flex flex-col items-center justify-start py-4 z-10 border-r border-slate-200">
+            <section className="flex-1 bg-background relative overflow-auto flex flex-col items-center justify-start py-4 z-10 border-r border-border">
               <div
                 className="absolute inset-0 opacity-[0.06] pointer-events-none"
                 style={{
@@ -574,10 +577,10 @@ export default function TrafficLogicPage() {
 
               <div className="relative flex flex-col items-center gap-1">
                 <div>{renderSlot(FLOWCHART_STRUCTURE.start)}</div>
-                <ArrowDown className="text-slate-300" size={14} />
+                <ArrowDown className="text-muted-foreground/60" size={14} />
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.input)}</div>
-                <ArrowDown className="text-slate-300" size={14} />
+                <ArrowDown className="text-muted-foreground/60" size={14} />
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.decision)}</div>
 
@@ -585,7 +588,7 @@ export default function TrafficLogicPage() {
                 <div className="flex w-full gap-4 relative items-start mt-1">
                   <div className="flex-1 flex flex-col items-center min-w-0">
                     <div className="flex items-center w-full mb-1.5">
-                      <div className="h-[2px] bg-slate-300 flex-1"></div>
+                      <div className="h-[2px] bg-border flex-1"></div>
                       <span className="px-2 text-[10px] font-black text-blue-500 uppercase">
                         Ya
                       </span>
@@ -597,10 +600,10 @@ export default function TrafficLogicPage() {
 
                   <div className="flex-1 flex flex-col items-center min-w-0">
                     <div className="flex items-center w-full mb-1.5">
-                      <span className="px-2 text-[10px] font-black text-slate-400 uppercase">
+                      <span className="px-2 text-[10px] font-black text-muted-foreground uppercase">
                         Tidak
                       </span>
-                      <div className="h-[2px] bg-slate-300 flex-1"></div>
+                      <div className="h-[2px] bg-border flex-1"></div>
                     </div>
                     <div className="w-full">
                       {renderSlot(FLOWCHART_STRUCTURE.branchTidak)}
@@ -609,8 +612,8 @@ export default function TrafficLogicPage() {
                 </div>
 
                 <div className="flex w-full justify-around mt-0.5">
-                  <ArrowDown size={14} className="text-slate-300" />
-                  <ArrowDown size={14} className="text-slate-300" />
+                  <ArrowDown size={14} className="text-muted-foreground/60" />
+                  <ArrowDown size={14} className="text-muted-foreground/60" />
                 </div>
 
                 <div>{renderSlot(FLOWCHART_STRUCTURE.end)}</div>
@@ -625,7 +628,7 @@ export default function TrafficLogicPage() {
                   <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
                     <Activity size={14} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Simulation Preview
                   </span>
                 </div>
@@ -635,7 +638,7 @@ export default function TrafficLogicPage() {
                       ? "bg-emerald-600 text-white"
                       : hardwareBroken
                         ? "bg-red-600 text-white"
-                        : "bg-slate-700 text-slate-400"
+                        : "bg-background/20 text-muted-foreground border border-border/60"
                   }`}
                 >
                   {isSimulating ? "Active" : hardwareBroken ? "Error" : "Idle"}
@@ -766,10 +769,10 @@ export default function TrafficLogicPage() {
                           ? "bg-red-500 animate-ping"
                           : isSimulating
                             ? "bg-blue-400 animate-pulse"
-                            : "border border-slate-600"
+                            : "border border-border/70"
                     }`}
                   />
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
                     Laporan Logika
                   </span>
                 </div>
@@ -794,21 +797,21 @@ export default function TrafficLogicPage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="px-8 py-3 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 text-[10px]">
-        <div className="flex items-center gap-3 text-slate-500">
+      <footer className="px-8 py-3 bg-background border-t border-border flex items-center justify-between shrink-0 text-[10px]">
+        <div className="flex items-center gap-3 text-muted-foreground">
           <span className="font-black uppercase tracking-widest">
             STATUS SISTEM
           </span>
-          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="w-px h-3 bg-border"></span>
           <span className="font-medium italic">
             Workspace siap menerima flowchart
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-slate-400 font-medium">
+          <span className="text-muted-foreground font-medium">
             MODE: DRAG & DROP FLOWCHART
           </span>
-          <span className="w-px h-3 bg-slate-300"></span>
+          <span className="w-px h-3 bg-border"></span>
           <span className="font-black text-emerald-600 uppercase tracking-wide italic">
             CODIN • INTERACTIVE ALGORITHM LEARNING
           </span>

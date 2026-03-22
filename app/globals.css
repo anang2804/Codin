@@ -231,3 +231,73 @@ div[style*="z-index: 9999"] {
   visibility: hidden !important;
   opacity: 0 !important;
 }
+
+/* Legacy Tailwind color compatibility for dark mode */
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: var(--card) !important;
+}
+
+.dark .bg-white\/90,
+.dark .bg-white\/80,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/30,
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100\/60 {
+  background-color: color-mix(
+    in oklab,
+    var(--card) 88%,
+    transparent
+  ) !important;
+}
+
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: var(--foreground) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400,
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: var(--muted-foreground) !important;
+}
+
+.dark .text-slate-400,
+.dark .text-slate-300,
+.dark .text-gray-400,
+.dark .text-gray-300 {
+  color: oklch(0.82 0 0) !important;
+}
+
+.dark .border-gray-50,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: var(--border) !important;
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-slate-200:hover {
+  background-color: var(--muted) !important;
+}
+
+.dark .hover\:text-gray-700:hover,
+.dark .hover\:text-gray-800:hover,
+.dark .hover\:text-slate-700:hover,
+.dark .hover\:text-slate-800:hover {
+  color: var(--foreground) !important;
+}

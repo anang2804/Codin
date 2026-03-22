@@ -4,6 +4,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "lucide-react";
 import Link from "next/link";
@@ -68,10 +69,10 @@ export default function SiswaLayout({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat...</p>
+          <p className="text-muted-foreground">Memuat...</p>
         </div>
       </div>
     );
@@ -83,22 +84,27 @@ export default function SiswaLayout({
     <div className="flex">
       {!hideSidebar && <Sidebar role="siswa" />}
       <main
-        className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-gray-50" : ""} min-h-screen`}
+        className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-muted/20" : ""} min-h-screen`}
       >
+        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50">
+          <ThemeToggleButton />
+        </div>
         {/* Header - Sticky */}
         {!hideHeader && (
-          <div className="sticky top-0 z-30 bg-gray-50 pt-4 md:pt-6 px-4 md:px-8">
-            <div className="flex items-center justify-between mb-6 bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100">
+          <div className="sticky top-0 z-30 bg-muted/20 pt-4 md:pt-6 px-4 md:px-8">
+            <div className="flex items-center justify-between mb-6 bg-card rounded-xl px-5 py-3 shadow-sm border border-border">
               <div>
-                <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                <h1 className="text-xl font-bold text-foreground leading-tight">
                   Halo, {getFirstName()} 👋
                 </h1>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {profile?.kelas ? `Kelas ${profile.kelas}` : "Dashboard Siswa"}
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {profile?.kelas
+                    ? `Kelas ${profile.kelas}`
+                    : "Dashboard Siswa"}
                 </p>
               </div>
               <Link href="/siswa/profile">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 dark:bg-emerald-500/15 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors">
                   <User size={20} className="text-green-600" />
                 </div>
               </Link>

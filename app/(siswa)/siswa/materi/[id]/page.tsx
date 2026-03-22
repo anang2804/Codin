@@ -564,7 +564,7 @@ export default function SiswaMateriDetailPage() {
   if (!materi) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Materi tidak ditemukan</p>
+        <p className="text-muted-foreground">Materi tidak ditemukan</p>
       </div>
     );
   }
@@ -582,9 +582,9 @@ export default function SiswaMateriDetailPage() {
     totalSubBabs > 0 ? Math.round((completedSubBabs / totalSubBabs) * 100) : 0;
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-muted/20">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-card border-b border-border px-6 py-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4 flex-1">
             <Button
@@ -603,19 +603,21 @@ export default function SiswaMateriDetailPage() {
               Kembali
             </Button>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-foreground">
                 {materi.title}
               </h1>
               {materi.mapel && (
-                <p className="text-sm text-gray-600">{materi.mapel.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {materi.mapel.name}
+                </p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-4">
             {materi.profiles && (
               <div className="text-right">
-                <p className="text-xs text-gray-500">Pengajar</p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-xs text-muted-foreground">Pengajar</p>
+                <p className="text-sm font-semibold text-foreground">
                   {materi.profiles.full_name}
                 </p>
               </div>
@@ -628,17 +630,17 @@ export default function SiswaMateriDetailPage() {
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="font-medium text-gray-700">
+                <span className="font-medium text-foreground">
                   <span className="font-bold text-green-600">
                     {progressPercentage}%
                   </span>{" "}
                   selesai
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {completedSubBabs} dari {totalSubBabs} materi
                 </span>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-green-500 transition-all duration-500"
                   style={{ width: `${progressPercentage}%` }}
@@ -652,17 +654,20 @@ export default function SiswaMateriDetailPage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Daftar Bab & Sub-Bab */}
-        <div className="w-72 bg-white border-r border-gray-100 overflow-y-auto">
+        <div className="w-72 bg-card border-r border-border overflow-y-auto">
           <div className="p-4 space-y-3">
-            <h2 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <h2 className="text-base font-bold text-foreground mb-2 flex items-center gap-2">
               <BookOpen size={20} className="text-green-600" />
               Daftar Materi
             </h2>
 
             {babs.length === 0 ? (
               <Card className="p-6 text-center">
-                <FileText size={32} className="mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600">
+                <FileText
+                  size={32}
+                  className="mx-auto text-muted-foreground mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
                   Belum ada materi yang tersedia
                 </p>
               </Card>
@@ -673,7 +678,7 @@ export default function SiswaMateriDetailPage() {
                     {/* Bab Header */}
                     <button
                       onClick={() => toggleBab(bab.id)}
-                      className="w-full p-2.5 bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 hover:shadow-sm transition-all duration-200"
+                      className="w-full p-2.5 bg-card rounded-lg border border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:shadow-sm transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-bold flex-shrink-0">
@@ -681,7 +686,7 @@ export default function SiswaMateriDetailPage() {
                         </span>
                         <div className="flex-1 text-left min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900 text-sm truncate">
+                            <h3 className="font-semibold text-foreground text-sm truncate">
                               {bab.title}
                             </h3>
                             <span
@@ -690,7 +695,7 @@ export default function SiswaMateriDetailPage() {
                                 subBabs[bab.id].length > 0 &&
                                 subBabs[bab.id].every((sb) => sb.completed)
                                   ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-600"
+                                  : "bg-muted text-muted-foreground"
                               }`}
                             >
                               {subBabs[bab.id] &&
@@ -701,7 +706,7 @@ export default function SiswaMateriDetailPage() {
                             </span>
                           </div>
                           {bab.description && (
-                            <p className="text-xs text-gray-600 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {bab.description}
                             </p>
                           )}
@@ -709,12 +714,12 @@ export default function SiswaMateriDetailPage() {
                         {expandedBabs.has(bab.id) ? (
                           <ChevronDown
                             size={20}
-                            className="text-gray-400 flex-shrink-0"
+                            className="text-muted-foreground flex-shrink-0"
                           />
                         ) : (
                           <ChevronRight
                             size={20}
-                            className="text-gray-400 flex-shrink-0"
+                            className="text-muted-foreground flex-shrink-0"
                           />
                         )}
                       </div>
@@ -731,8 +736,8 @@ export default function SiswaMateriDetailPage() {
                               selectedSubBab?.id === subBab.id
                                 ? "bg-green-50 border-green-300 border-l-4 border-l-green-600"
                                 : subBab.completed
-                                  ? "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-green-500"
-                                  : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50 border-l-4 border-l-gray-200"
+                                  ? "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-green-500"
+                                  : "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-border"
                             }`}
                           >
                             <div className="flex-shrink-0">
@@ -742,11 +747,14 @@ export default function SiswaMateriDetailPage() {
                                   className="text-green-600"
                                 />
                               ) : (
-                                <Circle size={18} className="text-gray-300" />
+                                <Circle
+                                  size={18}
+                                  className="text-muted-foreground"
+                                />
                               )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate leading-snug">
+                              <p className="text-sm font-medium text-foreground truncate leading-snug">
                                 {subIndex + 1}. {subBab.title}
                               </p>
                               <div className="flex items-center gap-1 mt-0.5">
@@ -771,7 +779,7 @@ export default function SiswaMateriDetailPage() {
                                     className="text-green-600"
                                   />
                                 )}
-                                <span className="text-xs text-gray-500 capitalize">
+                                <span className="text-xs text-muted-foreground capitalize">
                                   {subBab.content_type}
                                 </span>
                               </div>
@@ -788,7 +796,7 @@ export default function SiswaMateriDetailPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="flex-1 overflow-y-auto bg-muted/20">
           {renderContent()}
         </div>
       </div>

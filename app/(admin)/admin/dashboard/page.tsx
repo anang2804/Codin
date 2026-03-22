@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           Dashboard Admin
         </h1>
       </div>
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data...</p>
+          <p className="text-muted-foreground">Memuat data...</p>
         </div>
       ) : (
         <>
@@ -103,15 +103,17 @@ export default function AdminDashboard() {
               return (
                 <Card
                   key={stat.label}
-                  className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+                  className="p-6 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-all duration-200"
                 >
                   <div
-                    className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-4`}
+                    className={`w-10 h-10 rounded-lg ${stat.color} dark:bg-emerald-500/15 dark:text-emerald-300 flex items-center justify-center mb-4`}
                   >
                     <Icon size={24} />
                   </div>
-                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {stat.label}
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
                     {stat.value}
                   </p>
                 </Card>

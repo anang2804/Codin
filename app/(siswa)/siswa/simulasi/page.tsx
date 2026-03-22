@@ -99,7 +99,7 @@ export default function SiswaSimulasiPage() {
   if (isLoadingAccess) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="animate-spin text-green-600" size={32} />
+        <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
@@ -268,7 +268,7 @@ export default function SiswaSimulasiPage() {
       case "Lanjutan":
         return "bg-rose-50 text-rose-700 border border-rose-100";
       default:
-        return "bg-gray-100 text-gray-600 border border-gray-200";
+        return "bg-muted text-muted-foreground border border-border";
     }
   };
 
@@ -295,11 +295,11 @@ export default function SiswaSimulasiPage() {
     <div className="space-y-7">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <Microscope className="text-green-600" size={28} />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <Microscope className="text-primary" size={28} />
             Simulasi
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Simulasi interaktif untuk memahami algoritma dan pemrograman
           </p>
         </div>
@@ -317,7 +317,7 @@ export default function SiswaSimulasiPage() {
             return (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-gray-800">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {section.title}
                   </h2>
                   <span
@@ -336,7 +336,7 @@ export default function SiswaSimulasiPage() {
                     return (
                       <Card
                         key={item.href}
-                        className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
+                        className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
                           animateIn
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-3"
@@ -352,13 +352,13 @@ export default function SiswaSimulasiPage() {
                             <div className="text-4xl">{item.emoji}</div>
                             <div className="flex gap-1.5">
                               <div
-                                className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-white`}
+                                className={`w-4 h-4 border-2 ${item.accent} rounded-full bg-background`}
                               />
                               <div
-                                className={`w-4 h-4 border-2 ${item.accent} rounded bg-white`}
+                                className={`w-4 h-4 border-2 ${item.accent} rounded bg-background`}
                               />
                               <div
-                                className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-white`}
+                                className={`w-4 h-4 border-2 ${item.accent} rotate-45 bg-background`}
                               />
                             </div>
                           </div>
@@ -367,10 +367,10 @@ export default function SiswaSimulasiPage() {
                         <div className="flex flex-1 flex-col p-4">
                           <div className="space-y-3 flex-1">
                             <div className="space-y-1.5">
-                              <h3 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                              <h3 className="text-base font-semibold text-foreground leading-snug line-clamp-2">
                                 {item.title}
                               </h3>
-                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                              <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                                 {item.description}
                               </p>
                             </div>
@@ -393,7 +393,7 @@ export default function SiswaSimulasiPage() {
                             onClick={() => {
                               window.location.href = item.href;
                             }}
-                            className="mt-auto w-full h-9 bg-green-600 text-sm hover:bg-green-700 transition-all duration-200 hover:shadow-md"
+                            className="mt-auto w-full h-9 bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-all duration-200 hover:shadow-md"
                           >
                             Mulai Simulasi
                           </Button>

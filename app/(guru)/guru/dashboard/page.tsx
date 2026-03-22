@@ -143,15 +143,15 @@ export default function GuruDashboard() {
     <div>
       <div className="flex justify-between items-center mb-7">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+          <h1 className="text-2xl font-semibold text-foreground mb-1">
             {getGreeting()}
           </h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Selamat datang di Dashboard Guru
           </p>
         </div>
         <Link href="/guru/profile" className="mr-6 shrink-0">
-          <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-gray-100 hover:ring-gray-300 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 bg-gray-50">
+          <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-border hover:ring-emerald-300 dark:hover:ring-emerald-500/40 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 bg-muted/30">
             {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -159,17 +159,17 @@ export default function GuruDashboard() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User size={26} className="text-gray-400" />
+              <User size={26} className="text-muted-foreground" />
             )}
           </div>
         </Link>
       </div>
-      <div className="border-b border-gray-100 mb-8" />
+      <div className="border-b border-border mb-8" />
 
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data...</p>
+          <p className="text-muted-foreground">Memuat data...</p>
         </div>
       ) : (
         <>
@@ -179,13 +179,15 @@ export default function GuruDashboard() {
               return (
                 <Card
                   key={stat.label}
-                  className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                  className="p-6 bg-card rounded-xl shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-emerald-500/15 text-green-600 dark:text-emerald-300 flex items-center justify-center mb-4">
                     <Icon size={22} />
                   </div>
-                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {stat.label}
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
                     {stat.value}
                   </p>
                 </Card>
