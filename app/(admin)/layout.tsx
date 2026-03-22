@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
+import UserQuickMenu from "@/components/UserQuickMenu";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLayout({
@@ -15,6 +16,7 @@ export default function AdminLayout({
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,17 +30,18 @@ export default function AdminLayout({
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("role")
+        .select("*")
         .eq("id", user.id)
         .single();
 
-      if (profile?.role !== "admin") {
+      if (profileData?.role !== "admin") {
         router.push("/auth/login");
         return;
       }
 
+      setProfile(profileData);
       setMounted(true);
       setLoading(false);
     };
@@ -63,8 +66,13 @@ export default function AdminLayout({
     <div className="flex">
       <Sidebar role="admin" />
       <main className="flex-1 md:ml-64 bg-muted/20 min-h-screen">
-        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50">
+        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
           <ThemeToggleButton />
+          <UserQuickMenu
+            role="admin"
+            variant="avatar"
+            avatarUrl={profile?.avatar_url || null}
+          />
         </div>
         {/* Header */}
         <div className="bg-card border-b border-border px-4 md:px-8 py-4">

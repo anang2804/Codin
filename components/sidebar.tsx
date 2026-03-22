@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BookOpen,
@@ -9,7 +9,6 @@ import {
   Target,
   BarChart3,
   Users,
-  LogOut,
   Menu,
   X,
   UserCog,
@@ -18,7 +17,6 @@ import {
   Microscope,
 } from "lucide-react";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 interface SidebarProps {
   role: "guru" | "siswa" | "admin";
@@ -26,7 +24,6 @@ interface SidebarProps {
 
 export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const menuItems = {
@@ -57,12 +54,6 @@ export function Sidebar({ role }: SidebarProps) {
   };
 
   const items = menuItems[role];
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-  };
 
   return (
     <>
@@ -112,16 +103,6 @@ export function Sidebar({ role }: SidebarProps) {
             );
           })}
         </nav>
-
-        <div className="border-t border-border pt-4 mt-4 space-y-1">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 transition-colors duration-150"
-          >
-            <LogOut size={19} className="shrink-0" />
-            <span className="text-sm">Keluar</span>
-          </button>
-        </div>
       </aside>
 
       {/* Mobile Overlay */}

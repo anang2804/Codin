@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { BookOpen, Users, ClipboardList, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
 
 interface Profile {
   full_name: string;
@@ -141,31 +140,6 @@ export default function GuruDashboard() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-7">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">
-            {getGreeting()}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Selamat datang di Dashboard Guru
-          </p>
-        </div>
-        <Link href="/guru/profile" className="mr-6 shrink-0">
-          <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-border hover:ring-emerald-300 dark:hover:ring-emerald-500/40 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 bg-muted/30">
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User size={26} className="text-muted-foreground" />
-            )}
-          </div>
-        </Link>
-      </div>
-      <div className="border-b border-border mb-8" />
-
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>

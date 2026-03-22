@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
+import UserQuickMenu from "@/components/UserQuickMenu";
 import { createClient } from "@/lib/supabase/client";
-import { User } from "lucide-react";
-import Link from "next/link";
 
 export default function SiswaLayout({
   children,
@@ -25,6 +24,8 @@ export default function SiswaLayout({
     pathname === "/siswa/profile" ||
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
     (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
+
+  const showFloatingProfileMenu = hideHeader && pathname !== "/siswa/profile";
 
   const hideSidebar =
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
@@ -86,8 +87,15 @@ export default function SiswaLayout({
       <main
         className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-muted/20" : ""} min-h-screen`}
       >
-        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50">
+        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
           <ThemeToggleButton />
+          {showFloatingProfileMenu && (
+            <UserQuickMenu
+              role="siswa"
+              variant="avatar"
+              avatarUrl={profile?.avatar_url || null}
+            />
+          )}
         </div>
         {/* Header - Sticky */}
         {!hideHeader && (
@@ -103,11 +111,11 @@ export default function SiswaLayout({
                     : "Dashboard Siswa"}
                 </p>
               </div>
-              <Link href="/siswa/profile">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 bg-green-50 dark:bg-emerald-500/15 flex items-center justify-center cursor-pointer hover:border-green-600 transition-colors">
-                  <User size={20} className="text-green-600" />
-                </div>
-              </Link>
+              <UserQuickMenu
+                role="siswa"
+                variant="avatar"
+                avatarUrl={profile?.avatar_url || null}
+              />
             </div>
           </div>
         )}

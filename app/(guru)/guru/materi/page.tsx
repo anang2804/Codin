@@ -255,10 +255,10 @@ export default function GuruMateriPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <BookOpen className="text-green-600" size={22} />
