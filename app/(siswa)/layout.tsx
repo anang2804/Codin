@@ -87,16 +87,18 @@ export default function SiswaLayout({
       <main
         className={`flex-1 ${!hideSidebar ? "md:ml-64 bg-muted/20" : ""} min-h-screen`}
       >
-        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-          <ThemeToggleButton />
-          {showFloatingProfileMenu && (
-            <UserQuickMenu
-              role="siswa"
-              variant="avatar"
-              avatarUrl={profile?.avatar_url || null}
-            />
-          )}
-        </div>
+        {hideHeader && (
+          <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
+            <ThemeToggleButton />
+            {showFloatingProfileMenu && (
+              <UserQuickMenu
+                role="siswa"
+                variant="avatar"
+                avatarUrl={profile?.avatar_url || null}
+              />
+            )}
+          </div>
+        )}
         {/* Header - Sticky */}
         {!hideHeader && (
           <div className="sticky top-0 z-30 bg-muted/20 pt-4 md:pt-6 px-4 md:px-8">
@@ -111,11 +113,14 @@ export default function SiswaLayout({
                     : "Dashboard Siswa"}
                 </p>
               </div>
-              <UserQuickMenu
-                role="siswa"
-                variant="avatar"
-                avatarUrl={profile?.avatar_url || null}
-              />
+              <div className="flex items-center gap-2">
+                <ThemeToggleButton />
+                <UserQuickMenu
+                  role="siswa"
+                  variant="avatar"
+                  avatarUrl={profile?.avatar_url || null}
+                />
+              </div>
             </div>
           </div>
         )}
