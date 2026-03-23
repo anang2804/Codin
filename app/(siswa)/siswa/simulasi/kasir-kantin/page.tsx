@@ -125,6 +125,7 @@ export default function SimulasiKasirKantin() {
   const [isRunning, setIsRunning] = useState(false);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [errorLine, setErrorLine] = useState<number>(-1);
+  const [showSuccessCard, setShowSuccessCard] = useState(false);
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
   const [logicLog, setLogicLog] = useState<string[]>([
@@ -262,6 +263,7 @@ export default function SimulasiKasirKantin() {
     setCode(INITIAL_TEMPLATE.join("\n"));
     setActiveLine(-1);
     setErrorLine(-1);
+    setShowSuccessCard(false);
     setIsRunning(false);
     setHasTried(false);
     setLogicLog(["Sistem siap menjalankan algoritma."]);
@@ -363,6 +365,7 @@ export default function SimulasiKasirKantin() {
 
     if (normalizedUser !== normalizedExpected) {
       setErrorLine(step);
+      setShowSuccessCard(false);
       const feedback = generateEducationalFeedback(step, userLine);
       addLog(`ERROR: ${feedback}`);
       setActiveLine(-1);
@@ -430,6 +433,7 @@ export default function SimulasiKasirKantin() {
       case 5: // end
         updateSimData({ status: "Selesai" });
         addLog("Sukses: Algoritma selesai dijalankan.");
+        setShowSuccessCard(true);
         break;
     }
 
@@ -440,6 +444,7 @@ export default function SimulasiKasirKantin() {
     const lines = code.split("\n");
 
     setIsRunning(true);
+    setShowSuccessCard(false);
     setActiveLine(-1);
     setErrorLine(-1);
     setLogicLog([]);
@@ -465,6 +470,7 @@ export default function SimulasiKasirKantin() {
     for (let i = 0; i < lines.length; i++) {
       const success = await executeStep(i);
       if (!success) {
+        setShowSuccessCard(false);
         setIsRunning(false);
         return;
       }
@@ -473,6 +479,7 @@ export default function SimulasiKasirKantin() {
     setIsRunning(false);
     setActiveLine(-1);
     addLog("Sukses: Algoritma berhasil dijalankan.");
+    setShowSuccessCard(true);
   };
 
   // ================== RENDER UI ==================
@@ -605,6 +612,24 @@ export default function SimulasiKasirKantin() {
                 </p>
               </div>
             </div>
+
+            {showSuccessCard && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3"
+              >
+                <p className="text-base font-bold text-emerald-700 leading-tight">
+                  🎉 Berhasil! Algoritma benar
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">
+                  Algoritma berjalan sesuai urutan input → proses → output.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Simulasi kasir kantin berjalan dengan benar.
+                </p>
+              </motion.div>
+            )}
           </section>
 
           <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
