@@ -52,6 +52,46 @@ interface SubBab {
   completed?: boolean;
 }
 
+function toEmbeddableVideoUrl(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (host === "youtu.be") {
+      const videoId = parsed.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (parsed.pathname === "/watch") {
+        const videoId = parsed.searchParams.get("v");
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      }
+
+      if (parsed.pathname.startsWith("/shorts/")) {
+        const videoId = parsed.pathname.split("/").filter(Boolean)[1];
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      }
+
+      if (parsed.pathname.startsWith("/embed/")) {
+        return rawUrl;
+      }
+    }
+
+    if (host === "youtube-nocookie.com") {
+      return rawUrl;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function isDirectVideoFileUrl(url: string): boolean {
+  return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(url);
+}
+
 export default function SiswaMateriDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -367,6 +407,11 @@ export default function SiswaMateriDetailPage() {
       );
     }
 
+    const contentUrl = selectedSubBab.content_url?.trim() || "";
+    const embeddableVideoUrl = contentUrl
+      ? toEmbeddableVideoUrl(contentUrl)
+      : null;
+
     return (
       <div className="p-5 md:p-6 pb-28">
         <Card
@@ -422,16 +467,35 @@ export default function SiswaMateriDetailPage() {
                   {/* Video Content */}
                   {selectedSubBab.content_type === "video" && (
                     <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
-                      {selectedSubBab.content_url.startsWith("http") ? (
-                        <div className="aspect-video bg-black">
-                          <video
-                            controls
-                            className="w-full h-full"
-                            src={selectedSubBab.content_url}
-                          >
-                            Browser Anda tidak mendukung video.
-                          </video>
-                        </div>
+                      {contentUrl.startsWith("http") ? (
+                        embeddableVideoUrl ? (
+                          <div className="aspect-video bg-black">
+                            <iframe
+                              src={embeddableVideoUrl}
+                              className="w-full h-full border-0"
+                              title={selectedSubBab.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                            />
+                          </div>
+                        ) : isDirectVideoFileUrl(contentUrl) ? (
+                          <div className="aspect-video bg-black">
+                            <video
+                              controls
+                              className="w-full h-full"
+                              src={contentUrl}
+                            >
+                              Browser Anda tidak mendukung video.
+                            </video>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-black flex items-center justify-center">
+                            <p className="text-white text-sm text-center px-4">
+                              URL video belum didukung untuk preview langsung.
+                              Gunakan tombol "Buka di Tab Baru".
+                            </p>
+                          </div>
+                        )
                       ) : (
                         <div className="aspect-video bg-black flex items-center justify-center">
                           <p className="text-white">
@@ -467,17 +531,17 @@ export default function SiswaMateriDetailPage() {
 
                   {/* Link Content - Display as iframe */}
                   {selectedSubBab.content_type === "link" &&
-                    selectedSubBab.content_url.startsWith("http") && (
+                    contentUrl.startsWith("http") && (
                       <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
                         <div className="bg-green-50 px-4 py-3 border-b border-green-100 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <LinkIcon size={16} className="text-green-600" />
                             <span className="text-sm font-medium text-gray-700 truncate max-w-md">
-                              {selectedSubBab.content_url}
+                              {contentUrl}
                             </span>
                           </div>
                           <a
-                            href={selectedSubBab.content_url}
+                            href={contentUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition flex-shrink-0"
@@ -486,12 +550,22 @@ export default function SiswaMateriDetailPage() {
                           </a>
                         </div>
                         <div className="w-full h-[calc(100vh-300px)] bg-white">
-                          <iframe
-                            src={selectedSubBab.content_url}
-                            className="w-full h-full border-0"
-                            title={selectedSubBab.title}
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                          />
+                          {embeddableVideoUrl ? (
+                            <iframe
+                              src={embeddableVideoUrl}
+                              className="w-full h-full border-0"
+                              title={selectedSubBab.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <iframe
+                              src={contentUrl}
+                              className="w-full h-full border-0"
+                              title={selectedSubBab.title}
+                              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                            />
+                          )}
                         </div>
                       </Card>
                     )}

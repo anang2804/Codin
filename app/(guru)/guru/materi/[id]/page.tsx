@@ -25,7 +25,6 @@ import {
   ChevronRight,
   GripVertical,
   FileText,
-  Video,
   Link as LinkIcon,
   File,
   Loader2,
@@ -104,7 +103,7 @@ export default function GuruMateriDetailPage() {
   const [subBabForm, setSubBabForm] = useState({
     title: "",
     description: "",
-    content_type: "text" as "text" | "video" | "file" | "link",
+    content_type: "text" as "text" | "file" | "link",
     content_url: "",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -208,11 +207,10 @@ export default function GuruMateriDetailPage() {
       setSubBabForm({
         title: subBab.title || "",
         description: subBab.description || "",
-        content_type: (subBab.content_type || "text") as
-          | "text"
-          | "video"
-          | "file"
-          | "link",
+        content_type:
+          subBab.content_type === "video"
+            ? "link"
+            : ((subBab.content_type || "text") as "text" | "file" | "link"),
         content_url: subBab.content_url || "",
       });
       setEditingSubBabId(subBab.id);
@@ -342,7 +340,7 @@ export default function GuruMateriDetailPage() {
   const getContentTypeIcon = (type: string) => {
     switch (type) {
       case "video":
-        return <Video size={16} className="text-red-600" />;
+        return <LinkIcon size={16} className="text-green-600" />;
       case "file":
         return <File size={16} className="text-blue-600" />;
       case "link":
@@ -706,10 +704,9 @@ export default function GuruMateriDetailPage() {
               <Label className="text-sm font-medium text-gray-700">
                 Tipe Konten
               </Label>
-              <div className="grid grid-cols-4 gap-2 mt-1">
+              <div className="grid grid-cols-3 gap-2 mt-1">
                 {[
                   { value: "text", label: "Teks", icon: FileText },
-                  { value: "video", label: "Video", icon: Video },
                   { value: "file", label: "File", icon: File },
                   { value: "link", label: "Link", icon: LinkIcon },
                 ].map(({ value, label, icon: Icon }) => {
@@ -777,29 +774,22 @@ export default function GuruMateriDetailPage() {
               )}
             </div>
 
-            {/* URL input — always mounted, visible only for "video" and "link" types */}
+            {/* URL input — always mounted, visible only for "link" type */}
             <div
               className={
-                subBabForm.content_type === "video" ||
-                subBabForm.content_type === "link"
-                  ? "space-y-1.5"
-                  : "hidden"
+                subBabForm.content_type === "link" ? "space-y-1.5" : "hidden"
               }
             >
               <Label
                 htmlFor="content-url"
                 className="text-sm font-medium text-gray-700"
               >
-                URL {subBabForm.content_type === "video" ? "Video" : "Link"}
+                URL Link
               </Label>
               <Input
                 id="content-url"
                 type="url"
-                placeholder={
-                  subBabForm.content_type === "video"
-                    ? "https://youtube.com/watch?v=..."
-                    : "https://example.com"
-                }
+                placeholder="https://example.com atau https://youtube.com/watch?v=..."
                 value={subBabForm.content_url ?? ""}
                 onChange={(e) =>
                   setSubBabForm({

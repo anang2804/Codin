@@ -14,9 +14,10 @@ import {
   Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { SIMULATION_TOTAL } from "@/lib/simulation-catalog";
 import Link from "next/link";
 
-const SIMULASI_MENU_TOTAL = 6;
+const SIMULASI_MENU_TOTAL = SIMULATION_TOTAL;
 
 export default function SiswaDashboard() {
   const [stats, setStats] = useState({
@@ -38,13 +39,13 @@ export default function SiswaDashboard() {
   const [animateIn, setAnimateIn] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const supabase = createClient();
+    let isActive = true;
+    let refreshTimer: number | null = null;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
-      if (!user) return;
+    const fetchData = async (userId: string) => {
+      if (!isActive) return;
 
       try {
         const [materiRes, asesmenRes] = await Promise.all([
@@ -64,17 +65,17 @@ export default function SiswaDashboard() {
             supabase
               .from("materi_progress")
               .select("materi_id", { count: "exact" })
-              .eq("siswa_id", user.id)
+              .eq("siswa_id", userId)
               .eq("progress_percentage", 100),
             supabase
               .from("simulasi_progress")
               .select("simulasi_id", { count: "exact" })
-              .eq("siswa_id", user.id)
+              .eq("siswa_id", userId)
               .eq("completed", true),
             supabase
               .from("nilai_asesmen")
               .select("asesmen_id")
-              .eq("siswa_id", user.id)
+              .eq("siswa_id", userId)
               .not("completed_at", "is", null),
           ],
         );
@@ -116,7 +117,7 @@ export default function SiswaDashboard() {
           const { data: nilaiData } = await supabase
             .from("nilai_asesmen")
             .select("id, nilai, completed_at, asesmen_id")
-            .eq("siswa_id", user.id)
+            .eq("siswa_id", userId)
             .eq("asesmen_id", asesmenData[0].id)
             .maybeSingle();
 
@@ -133,11 +134,107 @@ export default function SiswaDashboard() {
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchData();
+    const scheduleRefresh = (userId: string) => {
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
+      }
+
+      refreshTimer = window.setTimeout(() => {
+        void fetchData(userId);
+      }, 200);
+    };
+
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (isActive) setLoading(false);
+        return;
+      }
+
+      await fetchData(user.id);
+
+      realtimeChannel = supabase
+        .channel(`siswa-dashboard-live:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "materi_progress",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "simulasi_progress",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "nilai_asesmen",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "materi",
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "asesmen",
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "soal",
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .subscribe();
+    };
+
+    void init();
+
+    return () => {
+      isActive = false;
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
+      }
+      if (realtimeChannel) {
+        void supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, []);
 
   useEffect(() => {

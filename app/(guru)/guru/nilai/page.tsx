@@ -45,7 +45,55 @@ export default function GuruNilaiPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAsesmen();
+    const supabase = createClient();
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+    let isActive = true;
+
+    const initRealtime = async () => {
+      await fetchAsesmen();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!isActive || !user) return;
+
+      realtimeChannel = supabase
+        .channel(`guru-nilai-live:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "asesmen",
+            filter: `created_by=eq.${user.id}`,
+          },
+          () => {
+            void fetchAsesmen();
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "nilai",
+          },
+          () => {
+            void fetchAsesmen();
+          },
+        )
+        .subscribe();
+    };
+
+    void initRealtime();
+
+    return () => {
+      isActive = false;
+      if (realtimeChannel) {
+        void supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, []);
 
   const fetchAsesmen = async () => {
@@ -93,17 +141,19 @@ export default function GuruNilaiPage() {
             // Get nilai stats
             const { data: nilaiData } = await supabase
               .from("nilai")
-              .select("siswa_id, score")
+              .select("siswa_id, score, completed_at")
               .eq("asesmen_id", a.id);
 
-            const completedScores = (nilaiData || [])
-              .filter((item) => item.score !== null)
-              .map((item) => item.score as number);
+            const completedAttempts = (nilaiData || []).filter(
+              (item) => item.completed_at !== null && item.score !== null,
+            );
+
+            const completedScores = completedAttempts.map(
+              (item) => item.score as number,
+            );
 
             const participantCount = new Set(
-              (nilaiData || [])
-                .filter((item) => item.score !== null)
-                .map((item) => item.siswa_id),
+              completedAttempts.map((item) => item.siswa_id),
             ).size;
 
             const averageScore =
