@@ -4,7 +4,6 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import ThemeToggleButton from "@/components/ThemeToggleButton";
 import UserQuickMenu from "@/components/UserQuickMenu";
 import { createClient } from "@/lib/supabase/client";
 
@@ -53,7 +52,7 @@ export default function GuruLayout({
         return;
       }
 
-      setProfile(profileData);
+      setProfile({ ...profileData, email: user.email || profileData?.email });
       setMounted(true);
       setLoading(false);
     };
@@ -80,11 +79,12 @@ export default function GuruLayout({
       <main className="flex-1 md:ml-64 bg-muted/20 min-h-screen">
         {hideHeader && (
           <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-            <ThemeToggleButton />
             <UserQuickMenu
               role="guru"
               variant="avatar"
               avatarUrl={profile?.avatar_url || null}
+              fullName={profile?.full_name || null}
+              email={profile?.email || null}
             />
           </div>
         )}
@@ -101,11 +101,12 @@ export default function GuruLayout({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <ThemeToggleButton />
                 <UserQuickMenu
                   role="guru"
                   variant="avatar"
                   avatarUrl={profile?.avatar_url || null}
+                  fullName={profile?.full_name || null}
+                  email={profile?.email || null}
                 />
               </div>
             </div>

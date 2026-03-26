@@ -1,13 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, UserCircle } from "lucide-react";
+import { useTheme } from "next-themes";
+import { LogOut, Moon, Sun, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,6 +18,8 @@ interface UserQuickMenuProps {
   role: "admin" | "guru" | "siswa";
   variant?: "icon" | "avatar";
   avatarUrl?: string | null;
+  fullName?: string | null;
+  email?: string | null;
 }
 
 const roleConfig = {
@@ -38,11 +41,28 @@ export default function UserQuickMenu({
   role,
   variant = "icon",
   avatarUrl,
+  fullName,
+  email,
 }: UserQuickMenuProps) {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const supabase = createClient();
   const config = roleConfig[role];
   const profilePath = config.profilePath;
+
+  const displayName = useMemo(() => {
+    const name = fullName?.trim();
+    if (name) return name;
+    return `Akun ${config.label}`;
+  }, [config.label, fullName]);
+
+  const displayEmail = useMemo(() => {
+    const value = email?.trim();
+    if (value) return value;
+    return `${role}@smartlearning.local`;
+  }, [email, role]);
+
+  const isDarkMode = resolvedTheme === "dark";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -85,21 +105,61 @@ export default function UserQuickMenu({
         )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>Akun {config.label}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-60 p-0 overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-border px-3 py-3">
+          <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden border border-border bg-card/95 flex items-center justify-center">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <UserCircle className="h-5 w-5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">
+              {displayName}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {displayEmail}
+            </p>
+          </div>
+        </div>
 
-        {profilePath && (
-          <DropdownMenuItem onSelect={handleGoProfile}>
-            <UserCircle className="h-4 w-4" />
-            Profil
+        <div className="p-1">
+          {profilePath && (
+            <DropdownMenuItem onSelect={handleGoProfile}>
+              <UserCircle className="h-4 w-4" />
+              View profile
+            </DropdownMenuItem>
+          )}
+
+          <DropdownMenuItem
+            onSelect={() => setTheme(isDarkMode ? "light" : "dark")}
+          >
+            {isDarkMode ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {isDarkMode ? "Mode terang" : "Mode gelap"}
           </DropdownMenuItem>
-        )}
+        </div>
 
-        <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
-          <LogOut className="h-4 w-4" />
-          Keluar
-        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <div className="p-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-center"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
