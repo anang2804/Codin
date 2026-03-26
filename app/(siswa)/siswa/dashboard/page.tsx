@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { SIMULATION_TOTAL } from "@/lib/simulation-catalog";
 import Link from "next/link";
+import { ProgressBarHalfCircle } from "@/components/base/progress-indicators/progress-circles";
 
 const SIMULASI_MENU_TOTAL = SIMULATION_TOTAL;
 
@@ -60,13 +61,9 @@ export default function SiswaDashboard() {
           totalSimulasi: SIMULASI_MENU_TOTAL,
         }));
 
-        const [materiDoneRes, simulasiDoneRes, kuisDoneRes] = await Promise.all(
-          [
-            supabase
-              .from("materi_progress")
-              .select("materi_id", { count: "exact" })
-              .eq("siswa_id", userId)
-              .eq("progress_percentage", 100),
+        const [materiProgressResponse, simulasiDoneRes, kuisDoneRes] =
+          await Promise.all([
+            fetch("/api/siswa/materi-progress"),
             supabase
               .from("simulasi_progress")
               .select("simulasi_id", { count: "exact" })
@@ -77,8 +74,30 @@ export default function SiswaDashboard() {
               .select("asesmen_id")
               .eq("siswa_id", userId)
               .not("completed_at", "is", null),
-          ],
-        );
+          ]);
+
+        let materiAveragePercent = 0;
+        try {
+          if (materiProgressResponse.ok) {
+            const materiProgressJson = await materiProgressResponse.json();
+            const materiProgressItems =
+              (materiProgressJson.data as
+                | { progress_percentage?: number }[]
+                | undefined) || [];
+
+            const sumPercent = materiProgressItems.reduce(
+              (acc, item) => acc + (item.progress_percentage || 0),
+              0,
+            );
+
+            const materiCount = materiRes.count || 0;
+            if (materiCount > 0) {
+              materiAveragePercent = Math.round(sumPercent / materiCount);
+            }
+          }
+        } catch (error) {
+          console.error("Error computing materi average progress:", error);
+        }
 
         const kuisCompletedUnique = new Set(
           (kuisDoneRes.data || []).map(
@@ -87,8 +106,9 @@ export default function SiswaDashboard() {
         ).size;
 
         setLearningProgress({
-          materiCompleted: materiDoneRes.count || 0,
-          materiTotal: materiRes.count || 0,
+          // Materi gauge shows average progress percentage across all materi
+          materiCompleted: materiAveragePercent,
+          materiTotal: 100,
           simulasiCompleted: simulasiDoneRes.count || 0,
           simulasiTotal: SIMULASI_MENU_TOTAL,
           kuisCompleted: kuisCompletedUnique,
@@ -324,72 +344,39 @@ export default function SiswaDashboard() {
       <Card
         className={`p-4 border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
       >
-        <h2 className="text-base font-semibold text-foreground mb-3">
+        <h2 className="text-base font-semibold text-foreground mb-4">
           Progress Belajar
         </h2>
 
-        <div className="space-y-3">
-          <div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-              <span>Materi selesai</span>
-              <span>
-                {learningProgress.materiCompleted} dari{" "}
-                {learningProgress.materiTotal}
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
-                style={{
-                  width: `${getAnimatedProgressWidth(
-                    learningProgress.materiCompleted,
-                    learningProgress.materiTotal,
-                  )}%`,
-                }}
-              />
-            </div>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-10 pt-1">
+          <div className="flex-1 flex flex-col items-center">
+            <ProgressBarHalfCircle
+              size="xxs"
+              min={0}
+              max={learningProgress.materiTotal || 1}
+              value={learningProgress.materiCompleted}
+              label="Materi"
+            />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-              <span>Simulasi selesai</span>
-              <span>
-                {learningProgress.simulasiCompleted} dari{" "}
-                {learningProgress.simulasiTotal}
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
-                style={{
-                  width: `${getAnimatedProgressWidth(
-                    learningProgress.simulasiCompleted,
-                    learningProgress.simulasiTotal,
-                  )}%`,
-                }}
-              />
-            </div>
+          <div className="flex-1 flex flex-col items-center">
+            <ProgressBarHalfCircle
+              size="xxs"
+              min={0}
+              max={learningProgress.simulasiTotal || 1}
+              value={learningProgress.simulasiCompleted}
+              label="Simulasi"
+            />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-              <span>Kuis selesai</span>
-              <span>
-                {learningProgress.kuisCompleted} dari{" "}
-                {learningProgress.kuisTotal}
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 rounded-full transition-[width] duration-[800ms] ease-out"
-                style={{
-                  width: `${getAnimatedProgressWidth(
-                    learningProgress.kuisCompleted,
-                    learningProgress.kuisTotal,
-                  )}%`,
-                }}
-              />
-            </div>
+          <div className="flex-1 flex flex-col items-center">
+            <ProgressBarHalfCircle
+              size="xxs"
+              min={0}
+              max={learningProgress.kuisTotal || 1}
+              value={learningProgress.kuisCompleted}
+              label="Kuis"
+            />
           </div>
         </div>
       </Card>

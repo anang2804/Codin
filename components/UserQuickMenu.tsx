@@ -62,6 +62,15 @@ export default function UserQuickMenu({
     return `${role}@smartlearning.local`;
   }, [email, role]);
 
+  const initials = useMemo(() => {
+    const name = displayName.trim();
+    if (!name) return "";
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const second = parts.length > 1 ? (parts[1][0] ?? "") : "";
+    return (first + second).toUpperCase();
+  }, [displayName]);
+
   const isDarkMode = resolvedTheme === "dark";
 
   const handleLogout = async () => {
@@ -81,17 +90,29 @@ export default function UserQuickMenu({
           <button
             type="button"
             aria-label="Buka menu akun"
-            className="w-12 h-12 rounded-full overflow-hidden border border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-sm flex items-center justify-center cursor-pointer transition-all hover:ring-2 hover:ring-emerald-500/30"
+            className="group flex items-center gap-3 cursor-pointer bg-transparent px-1 py-1"
           >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <UserCircle className="h-6 w-6 text-muted-foreground" />
-            )}
+            <div className="h-10 w-10 rounded-full overflow-hidden border border-border bg-card/95 flex items-center justify-center transition-all group-hover:ring-2 group-hover:ring-emerald-500/30">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xs font-semibold tracking-wide text-emerald-700 bg-emerald-100 w-full h-full flex items-center justify-center">
+                  {initials || "?"}
+                </span>
+              )}
+            </div>
+            <div className="hidden sm:flex flex-col items-start text-left min-w-0">
+              <span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[150px]">
+                {displayName}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight truncate max-w-[180px]">
+                {displayEmail}
+              </span>
+            </div>
           </button>
         ) : (
           <Button
@@ -115,7 +136,9 @@ export default function UserQuickMenu({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <UserCircle className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs font-semibold tracking-wide text-emerald-700 bg-emerald-100 w-full h-full flex items-center justify-center">
+                {initials || "?"}
+              </span>
             )}
           </div>
           <div className="min-w-0">
