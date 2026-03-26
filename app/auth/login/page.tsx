@@ -175,19 +175,13 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-start">
                   <Label
                     htmlFor="password"
                     className="text-sm font-medium text-foreground"
                   >
                     Password
                   </Label>
-                  <a
-                    href="#"
-                    className="text-sm text-muted-foreground hover:text-green-600 transition-colors duration-150"
-                  >
-                    Lupa password?
-                  </a>
                 </div>
                 <div className="relative">
                   <Input
