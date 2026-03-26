@@ -51,8 +51,7 @@ export default function LoginPage() {
         }
       }
     } catch (error: unknown) {
-      const rawMessage =
-        error instanceof Error ? error.message : "Gagal login";
+      const rawMessage = error instanceof Error ? error.message : "Gagal login";
 
       let friendlyMessage = rawMessage;
 
