@@ -101,8 +101,8 @@ export default function SiswaLayout({
         )}
         {/* Header - Sticky */}
         {!hideHeader && (
-          <div className="sticky top-0 z-30 bg-muted/20 pt-4 md:pt-6 px-4 md:px-8">
-            <div className="flex items-center justify-between mb-6 bg-card rounded-xl px-5 py-3 shadow-sm border border-border">
+          <div className="sticky top-0 z-30 bg-muted/20 pt-3 md:pt-4 px-4 md:px-8">
+            <div className="flex items-center justify-between mb-3 bg-card rounded-xl px-5 py-3 shadow-sm border border-border">
               <div>
                 <h1 className="text-xl font-bold text-foreground leading-tight">
                   Halo, {getFirstName()} 👋
@@ -126,7 +126,9 @@ export default function SiswaLayout({
           </div>
         )}
 
-        <div className={!hideSidebar ? "p-4 md:p-8 pt-0" : ""}>{children}</div>
+        <div className={!hideSidebar ? "p-4 md:p-8 pt-0 md:pt-0" : ""}>
+          {children}
+        </div>
       </main>
     </div>
   );
