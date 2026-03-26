@@ -103,7 +103,7 @@ export default function SiswaLayout({
         {!hideHeader && (
           <div className="sticky top-0 z-30 bg-muted/20 pt-3 md:pt-4 px-4 md:px-8">
             <div className="flex items-center justify-between mb-3 bg-card rounded-xl px-5 py-3 shadow-sm border border-border">
-              <div>
+              <div className="pl-14 md:pl-0">
                 <h1 className="text-xl font-bold text-foreground leading-tight">
                   Halo, {getFirstName()} 👋
                 </h1>
