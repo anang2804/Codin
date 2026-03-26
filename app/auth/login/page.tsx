@@ -51,7 +51,16 @@ export default function LoginPage() {
         }
       }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Gagal login");
+      const rawMessage =
+        error instanceof Error ? error.message : "Gagal login";
+
+      let friendlyMessage = rawMessage;
+
+      if (rawMessage === "Invalid login credentials") {
+        friendlyMessage = "Email atau password salah";
+      }
+
+      setError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
