@@ -157,6 +157,34 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       },
     ],
   },
+  {
+    title: "Variabel",
+    badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
+    items: [
+      {
+        title: "Buah di Keranjang",
+        description:
+          "Lengkapi deklarasi variabel jumlah_buah dan berat_buah dengan tipe data yang tepat.",
+        href: "/siswa/simulasi/variabel-buah-keranjang",
+        slug: "variabel-buah-keranjang",
+        level: "Dasar",
+        gradient: "from-amber-100 to-orange-200",
+        emoji: "🧺",
+        accent: "border-amber-500",
+      },
+      {
+        title: "Data Siswa",
+        description:
+          "Lengkapi deklarasi variabel umur, tinggi, dan jenis_kelamin dengan tipe data yang tepat.",
+        href: "/siswa/simulasi/variabel-data-siswa",
+        slug: "variabel-data-siswa",
+        level: "Menengah",
+        gradient: "from-cyan-100 to-sky-200",
+        emoji: "🎓",
+        accent: "border-cyan-500",
+      },
+    ],
+  },
 ];
 
 export const SIMULATION_SLUGS = SIMULATION_SECTIONS.flatMap((section) =>
