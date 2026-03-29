@@ -314,29 +314,62 @@ export default function SiswaDashboard() {
   return (
     <div className="space-y-5">
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         {statCards.map(({ label, count, icon: Icon, href, action }) => (
           <Card
             key={label}
-            className={`h-full p-3 border border-border bg-card rounded-xl shadow-sm flex flex-col transition-all duration-200 ${entranceClass} hover:-translate-y-1 hover:shadow-md`}
+            className={`h-full border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass} hover:-translate-y-0.5 hover:shadow-md`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <div className="p-1 bg-green-50 dark:bg-emerald-500/15 rounded-md inline-flex">
-                <Icon size={14} className="text-green-500" />
+            {/* Mobile: clean, compact row */}
+            <div className="flex items-center justify-between px-3 py-2.5 md:hidden">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-green-50 dark:bg-emerald-500/15 flex items-center justify-center">
+                  <Icon size={18} className="text-green-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-foreground">
+                    {label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {count} tersedia
+                  </span>
+                </div>
+              </div>
+              <Link href={href} className="shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full text-green-600 hover:text-green-700 hover:bg-green-50"
+                  aria-label={label}
+                >
+                  <ArrowRight size={16} />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Desktop: richer card with full button */}
+            <div className="hidden md:flex flex-col h-full px-4 py-3">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-base font-semibold text-foreground">
+                    {label}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {count} tersedia
+                  </p>
+                </div>
+                <div className="p-2 bg-green-50 dark:bg-emerald-500/15 rounded-lg">
+                  <Icon size={20} className="text-green-600" />
+                </div>
+              </div>
+              <div className="mt-auto">
+                <Link href={href}>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-xs md:text-sm">
+                    {action}
+                  </Button>
+                </Link>
               </div>
             </div>
-            <p className="text-base font-semibold text-foreground">{label}</p>
-            <p className="text-sm text-muted-foreground mb-2.5">
-              {count} tersedia
-            </p>
-            <Link href={href}>
-              <Button
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 h-7"
-              >
-                {action}
-              </Button>
-            </Link>
           </Card>
         ))}
       </div>
@@ -348,7 +381,7 @@ export default function SiswaDashboard() {
           Progress Belajar
         </h2>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-10 pt-1">
+        <div className="flex flex-row items-center justify-between gap-4 sm:gap-6 md:gap-10 pt-1">
           <div className="flex-1 flex flex-col items-center">
             <ProgressBarHalfCircle
               size="xxs"

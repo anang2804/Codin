@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { SIMULATION_SECTIONS } from "@/lib/simulation-catalog";
 
-const SISWA_SIMULASI_CATALOG = [
-  { slug: "traffic-logic", name: "Logika Lalu Lintas" },
-  { slug: "traffic-debug", name: "Transisi Lampu Bertahap" },
-  { slug: "traffic-expert", name: "Prioritas Tiga Kendaraan" },
-  { slug: "kasir-kantin", name: "Perbaiki Mesin Kasir Kantin" },
-  { slug: "pintu-otomatis", name: "Koneksi Sensor & Pintu" },
-  { slug: "parkir-otomatis", name: "Sistem Parkir Otomatis" },
-];
+// Ambil daftar simulasi dari katalog siswa sebagai sumber utama
+const SISWA_SIMULASI_CATALOG = SIMULATION_SECTIONS.flatMap((section) =>
+  section.items.map((item) => ({
+    slug: item.slug,
+    name: item.title,
+  })),
+);
 
 function isKelasX(kelas: string | null | undefined) {
   const normalized = (kelas || "").trim().toUpperCase();

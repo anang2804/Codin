@@ -28,6 +28,7 @@ import {
   Link as LinkIcon,
   File,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMateriDetail } from "@/lib/hooks/use-materi";
@@ -378,9 +379,9 @@ export default function GuruMateriDetailPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="pt-2 md:pt-4 pb-6 md:pb-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 md:mb-6">
         <Button
           variant="outline"
           onClick={() => router.push("/guru/materi")}
@@ -390,7 +391,7 @@ export default function GuruMateriDetailPage() {
           Kembali
         </Button>
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
           <div className="flex-1">
             <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <BookOpen className="text-green-600 shrink-0" size={22} />
@@ -407,13 +408,23 @@ export default function GuruMateriDetailPage() {
               </p>
             )}
           </div>
-          <Button
-            onClick={() => openBabDialog()}
-            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 shrink-0"
-          >
-            <Plus size={16} className="mr-2" />
-            Tambah Bab
-          </Button>
+          <div className="flex gap-2 justify-start md:justify-end mt-2 md:mt-0">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/guru/materi/${materiId}/preview`)}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
+            >
+              <Eye size={16} className="mr-2" />
+              Preview
+            </Button>
+            <Button
+              onClick={() => openBabDialog()}
+              className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 shrink-0"
+            >
+              <Plus size={16} className="mr-2" />
+              Tambah Bab
+            </Button>
+          </div>
         </div>
       </div>
 

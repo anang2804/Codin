@@ -64,7 +64,7 @@ export default function AdminLayout({
   return (
     <div className="flex">
       <Sidebar role="admin" />
-      <main className="flex-1 md:ml-64 bg-muted/20 min-h-screen">
+      <main className="flex-1 layout-with-sidebar bg-muted/20 min-h-screen">
         <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
           <UserQuickMenu
             role="admin"

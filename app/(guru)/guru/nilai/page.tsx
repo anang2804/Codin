@@ -193,12 +193,9 @@ export default function GuruNilaiPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-          <BarChart3 size={14} />
-          Dashboard Nilai
-        </div>
+    <div>
+      {/* Header */}
+      <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Kelola Nilai</h1>
           <p className="mt-2 text-sm text-gray-500">

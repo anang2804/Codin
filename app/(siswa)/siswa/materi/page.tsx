@@ -210,17 +210,20 @@ export default function SiswaMateriPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-5">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">
             Materi Pembelajaran
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
             Akses semua materi pembelajaran yang tersedia
           </p>
+          <p className="mt-1 text-xs text-muted-foreground md:hidden">
+            {filteredMateri.length} materi tersedia
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <BookOpen className="text-green-600" size={24} />
           <span className="text-xl font-bold text-green-600">
             {filteredMateri.length}
@@ -229,7 +232,7 @@ export default function SiswaMateriPage() {
       </div>
 
       {/* Filter Section */}
-      <Card className="p-3 border border-border bg-card rounded-xl shadow-sm">
+      <Card className="p-3 md:p-4 border border-border bg-card rounded-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <Search
@@ -280,7 +283,7 @@ export default function SiswaMateriPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-fr">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 auto-rows-fr">
           {filteredMateri.map((m, index) =>
             (() => {
               const progressValue = toProgressValue(m.progress);
@@ -293,7 +296,7 @@ export default function SiswaMateriPage() {
                   onClick={() => handleViewMateri(m.id)}
                 >
                   {/* Thumbnail */}
-                  <div className="relative h-20 bg-gradient-to-br from-green-100 to-green-200 overflow-hidden flex-shrink-0">
+                  <div className="relative h-24 md:h-20 bg-gradient-to-br from-green-100 to-green-200 overflow-hidden flex-shrink-0">
                     {m.thumbnail_url ? (
                       <img
                         src={m.thumbnail_url}
@@ -323,11 +326,11 @@ export default function SiswaMateriPage() {
 
                   {/* Content */}
                   <div className="p-4 flex-1 flex flex-col overflow-hidden">
-                    <h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1">
+                    <h3 className="text-sm md:text-base font-semibold text-foreground mb-1 line-clamp-1">
                       {m.title}
                     </h3>
 
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-1">
+                    <p className="text-[11px] md:text-xs text-muted-foreground mb-3 line-clamp-1">
                       {m.mapel?.name || "Mata pelajaran belum tersedia"}
                     </p>
 
@@ -351,7 +354,7 @@ export default function SiswaMateriPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                    <div className="flex items-center justify-between text-[11px] md:text-xs text-muted-foreground mb-3">
                       <div className="flex items-center gap-1.5">
                         <Calendar size={12} />
                         <span>

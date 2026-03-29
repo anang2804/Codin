@@ -11,12 +11,14 @@ import {
   Users,
   Menu,
   X,
+  ChevronsLeft,
+  ChevronsRight,
   UserCog,
   UserCircle,
   MessageCircle,
   Microscope,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   role: "guru" | "siswa" | "admin";
@@ -25,6 +27,31 @@ interface SidebarProps {
 export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Sync collapsed state with CSS variable and localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const stored = window.localStorage.getItem("sidebar_collapsed");
+    const initialCollapsed = stored === "true";
+    setCollapsed(initialCollapsed);
+
+    const width = initialCollapsed ? "4.5rem" : "16rem";
+    document.documentElement.style.setProperty("--sidebar-width", width);
+  }, []);
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("sidebar_collapsed", String(next));
+        const width = next ? "4.5rem" : "16rem";
+        document.documentElement.style.setProperty("--sidebar-width", width);
+      }
+      return next;
+    });
+  };
 
   const menuItems = {
     guru: [
@@ -60,49 +87,72 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg shadow-md"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 text-green-600 bg-transparent rounded-lg"
       >
         {open ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 bg-card border-r border-border shadow-sm p-6 transition-transform duration-300 z-40 flex flex-col ${
+        className={`sidebar-shell fixed left-0 top-0 h-screen bg-card border-r border-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-40 ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        } ${collapsed ? "sidebar-collapsed" : ""}`}
       >
-        <div className="flex items-center justify-center mb-8 pt-2">
-          <div className="relative">
-            <img
-              src="/logo codin.png"
-              alt="Codin Logo"
-              className="w-24 h-auto"
-            />
+        <div className="relative h-full flex flex-col">
+          <div className="flex items-center justify-between mb-6 pt-1">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <img
+                src="/logo codin.png"
+                alt="Codin Logo"
+                className="logo-compact h-8 w-auto md:h-9 object-contain"
+              />
+              <img
+                src="/codin nama.png"
+                alt="Codin Full Logo"
+                className="logo-full h-16 w-auto md:h-18 object-contain"
+              />
+            </div>
           </div>
-        </div>
 
-        <nav className="space-y-1 flex-1 overflow-y-auto">
-          {items.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href}>
-                <button
-                  onClick={() => setOpen(false)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-150 ${
-                    isActive
-                      ? "bg-green-600 text-white font-semibold"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <Icon size={19} className="shrink-0" />
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              </Link>
-            );
-          })}
-        </nav>
+          {/* Desktop collapse toggle - placed near bottom so it doesn't overlap icons */}
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border border-border bg-card text-muted-foreground hover:text-green-600 hover:border-green-500 shadow-sm absolute -right-4 bottom-6"
+            aria-label={collapsed ? "Perbesar sidebar" : "Sempitkan sidebar"}
+          >
+            {collapsed ? (
+              <ChevronsRight size={18} />
+            ) : (
+              <ChevronsLeft size={18} />
+            )}
+          </button>
+
+          <nav className="space-y-3 flex-1 overflow-y-auto mt-3">
+            {items.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link key={item.href} href={item.href}>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className={`sidebar-item w-full flex items-center px-3 py-3 rounded-full transition-colors duration-150 ${
+                      isActive
+                        ? "bg-green-600/10 text-green-700 border border-green-200"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Icon size={20} className="shrink-0" />
+                    <span className="sidebar-label text-sm font-medium">
+                      {item.label}
+                    </span>
+                  </button>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       </aside>
 
       {/* Mobile Overlay */}

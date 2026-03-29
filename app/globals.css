@@ -38,6 +38,10 @@
   --sidebar-accent-foreground: oklch(0.145 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.42 0.15 142.5);
+
+  /* Sidebar layout helpers */
+  --sidebar-width: 16rem; /* default expanded width on desktop */
+  --sidebar-width-collapsed: 4.5rem; /* compact width when collapsed */
 }
 
 .dark {
@@ -122,6 +126,107 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Sidebar logo defaults (apply on mobile too) */
+.logo-compact {
+  display: none;
+}
+
+.logo-full {
+  display: block;
+}
+
+/* Shared layout class for pages with sidebar */
+.layout-with-sidebar {
+  margin-left: 0;
+}
+
+@media (min-width: 768px) {
+  .layout-with-sidebar {
+    margin-left: var(--sidebar-width, 16rem);
+    transition: margin-left 200ms ease;
+  }
+
+  .sidebar-shell {
+    width: var(--sidebar-width, 16rem);
+    transition: width 200ms ease;
+  }
+
+  .sidebar-shell.sidebar-collapsed {
+    width: var(--sidebar-width-collapsed, 4.5rem);
+  }
+
+  /* When collapsed, expand the sidebar overlay on hover without shifting content */
+  .sidebar-shell.sidebar-collapsed:hover {
+    width: 16rem;
+  }
+
+  /* Sidebar item layout: compact icons when collapsed, full text on hover/expanded */
+  .sidebar-shell .sidebar-item {
+    justify-content: flex-start;
+  }
+
+  .sidebar-shell .sidebar-label {
+    margin-left: 0.5rem;
+    white-space: nowrap;
+    transition:
+      opacity 150ms ease,
+      width 150ms ease,
+      margin 150ms ease;
+  }
+
+  .sidebar-shell .sidebar-brand-text {
+    transition:
+      opacity 150ms ease,
+      width 150ms ease,
+      margin 150ms ease;
+    white-space: nowrap;
+  }
+
+  /* Collapsed: hide labels and brand text, center icons */
+  .sidebar-shell.sidebar-collapsed .sidebar-item {
+    justify-content: center;
+  }
+
+  .sidebar-shell.sidebar-collapsed .sidebar-label,
+  .sidebar-shell.sidebar-collapsed .sidebar-brand-text {
+    opacity: 0;
+    width: 0;
+    margin-left: 0;
+  }
+
+  /* When fully collapsed, use compact logo only */
+  .sidebar-shell.sidebar-collapsed .logo-compact {
+    display: block;
+  }
+
+  .sidebar-shell.sidebar-collapsed .logo-full {
+    display: none;
+  }
+
+  /* On hover (overlay expanded) or when not collapsed: show labels and brand text */
+  .sidebar-shell.sidebar-collapsed:hover .sidebar-label,
+  .sidebar-shell.sidebar-collapsed:hover .sidebar-brand-text,
+  .sidebar-shell:not(.sidebar-collapsed) .sidebar-label,
+  .sidebar-shell:not(.sidebar-collapsed) .sidebar-brand-text {
+    opacity: 1;
+    width: auto;
+  }
+
+  /* When collapsed but hovered (expanded state), left-align items again */
+  .sidebar-shell.sidebar-collapsed:hover .sidebar-item {
+    justify-content: flex-start;
+  }
+
+  /* On hover (expanded overlay) switch back to full logo */
+  .sidebar-shell.sidebar-collapsed:hover .logo-compact {
+    display: none;
+  }
+
+  .sidebar-shell.sidebar-collapsed:hover .logo-full {
+    display: block;
   }
 }
 

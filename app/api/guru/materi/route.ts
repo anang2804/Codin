@@ -16,10 +16,56 @@ export async function GET(request: NextRequest) {
 
     // Get query params
     const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
     const mapelId = searchParams.get("mapel_id");
     const search = searchParams.get("search");
 
-    // Build where clause
+    // Jika ada parameter id, kembalikan detail satu materi saja
+    if (id) {
+      const materi = await prisma.materi.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          mapel: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          creator: {
+            select: {
+              full_name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              babs: true,
+            },
+          },
+        },
+      });
+
+      if (!materi) {
+        return NextResponse.json(
+          { error: "Materi not found" },
+          { status: 404 },
+        );
+      }
+
+      return NextResponse.json(
+        { data: materi },
+        {
+          headers: {
+            "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
+          },
+        },
+      );
+    }
+
+    // Build where clause untuk daftar materi
     const where: any = {
       created_by: user.id,
     };
@@ -35,7 +81,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Fetch materi with relations
+    // Fetch list materi dengan relasi
     const materi = await prisma.materi.findMany({
       where,
       include: {
@@ -69,13 +115,13 @@ export async function GET(request: NextRequest) {
         headers: {
           "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Error fetching materi:", error);
     return NextResponse.json(
       { error: "Failed to fetch materi" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -123,7 +169,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating materi:", error);
     return NextResponse.json(
       { error: "Failed to create materi" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -146,7 +192,7 @@ export async function PUT(request: NextRequest) {
     if (!id || !title) {
       return NextResponse.json(
         { error: "ID and title are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -177,7 +223,7 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating materi:", error);
     return NextResponse.json(
       { error: "Failed to update materi" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -219,7 +265,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting materi:", error);
     return NextResponse.json(
       { error: "Failed to delete materi" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -214,16 +214,9 @@ export default function SiswaMateriDetailPage() {
           }
         });
 
+        // Set sub-bab map without auto-selecting anything
+        // User will explicitly choose bab dan sub-bab sendiri
         setSubBabs(subBabsMap);
-
-        // Auto-expand first bab and select first sub-bab
-        if (babData.length > 0) {
-          const firstBabId = babData[0].id;
-          setExpandedBabs(new Set([firstBabId]));
-          if (subBabsMap[firstBabId]?.length > 0) {
-            setSelectedSubBab(subBabsMap[firstBabId][0]);
-          }
-        }
       }
     } catch (err) {
       console.error("Error in fetchBabsAndProgress:", err);
@@ -656,10 +649,10 @@ export default function SiswaMateriDetailPage() {
     totalSubBabs > 0 ? Math.round((completedSubBabs / totalSubBabs) * 100) : 0;
 
   return (
-    <div className="h-screen flex flex-col bg-muted/20">
+    <div className="min-h-screen flex flex-col bg-muted/20">
       {/* Header */}
-      <div className="bg-card border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-card border-b border-border px-4 py-3 md:px-6 md:py-4">
+        <div className="flex items-start justify-between mb-3 gap-3">
           <div className="flex items-center gap-4 flex-1">
             <Button
               variant="outline"
@@ -677,17 +670,17 @@ export default function SiswaMateriDetailPage() {
               Kembali
             </Button>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-foreground">
+              <h1 className="text-lg md:text-xl font-bold text-foreground leading-tight">
                 {materi.title}
               </h1>
               {materi.mapel && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   {materi.mapel.name}
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {materi.profiles && (
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Pengajar</p>
@@ -698,6 +691,12 @@ export default function SiswaMateriDetailPage() {
             )}
           </div>
         </div>
+
+        {materi.profiles && (
+          <p className="mt-1 text-[11px] text-muted-foreground md:hidden">
+            Pengajar {materi.profiles.full_name}
+          </p>
+        )}
 
         {/* Progress Bar */}
         {totalSubBabs > 0 && (
@@ -726,12 +725,12 @@ export default function SiswaMateriDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 lg:flex lg:flex-row lg:overflow-hidden">
         {/* Sidebar - Daftar Bab & Sub-Bab */}
-        <div className="w-72 bg-card border-r border-border overflow-y-auto">
-          <div className="p-4 space-y-3">
-            <h2 className="text-base font-bold text-foreground mb-2 flex items-center gap-2">
-              <BookOpen size={20} className="text-green-600" />
+        <div className="w-full lg:w-72 bg-card border-b lg:border-b-0 lg:border-r border-border lg:overflow-y-auto">
+          <div className="p-3 md:p-4 space-y-3">
+            <h2 className="text-sm md:text-base font-bold text-foreground mb-2 flex items-center gap-2">
+              <BookOpen size={18} className="text-green-600" />
               Daftar Materi
             </h2>
 
@@ -752,7 +751,7 @@ export default function SiswaMateriDetailPage() {
                     {/* Bab Header */}
                     <button
                       onClick={() => toggleBab(bab.id)}
-                      className="w-full p-2.5 bg-card rounded-lg border border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:shadow-sm transition-all duration-200"
+                      className="w-full p-3 md:p-2.5 bg-card rounded-lg border border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:shadow-sm transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-bold flex-shrink-0">
@@ -870,9 +869,7 @@ export default function SiswaMateriDetailPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-muted/20">
-          {renderContent()}
-        </div>
+        <div className="flex-1 bg-muted/20 w-full">{renderContent()}</div>
       </div>
     </div>
   );

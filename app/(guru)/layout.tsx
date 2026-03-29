@@ -76,7 +76,7 @@ export default function GuruLayout({
   return (
     <div className="flex">
       <Sidebar role="guru" />
-      <main className="flex-1 md:ml-64 bg-muted/20 min-h-screen">
+      <main className="flex-1 layout-with-sidebar bg-muted/20 min-h-screen">
         {hideHeader && (
           <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
             <UserQuickMenu
@@ -90,9 +90,9 @@ export default function GuruLayout({
         )}
 
         {!hideHeader && (
-          <div className="sticky top-0 z-30 bg-muted/20 pt-3 md:pt-4 px-4 md:px-8">
-            <div className="flex items-center justify-between mb-3 bg-card rounded-xl px-5 py-3 shadow-sm border border-border">
-              <div>
+          <div className="sticky top-0 z-30 bg-card md:bg-muted/20 pt-0 md:pt-4 px-4 md:px-8">
+            <div className="flex items-center justify-between mb-3 bg-card px-4 md:px-5 py-3 shadow-sm border-b border-border md:border md:rounded-xl">
+              <div className="pl-14 md:pl-0">
                 <h1 className="text-xl font-bold text-foreground leading-tight">
                   Halo, {getDisplayName()} 👋
                 </h1>

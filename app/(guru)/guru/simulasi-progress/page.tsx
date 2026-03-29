@@ -88,10 +88,6 @@ export default function SimulasiProgressPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <div className="inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-          <MonitorPlay size={13} />
-          Monitoring Simulasi
-        </div>
         <h1 className="text-3xl font-semibold text-gray-900">
           Progress Simulasi Siswa
         </h1>
