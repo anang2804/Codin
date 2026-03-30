@@ -90,17 +90,12 @@ export default function GuruLayout({
         )}
 
         {!hideHeader && (
-          <div className="sticky top-0 z-30 bg-card md:bg-muted/20 pt-0 md:pt-4 px-4 md:px-8">
-            <div className="flex items-center justify-between mb-3 bg-card px-4 md:px-5 py-3 shadow-sm border-b border-border md:border md:rounded-xl">
-              <div className="pl-14 md:pl-0">
-                <h1 className="text-xl font-bold text-foreground leading-tight">
-                  Halo, {getDisplayName()} 👋
-                </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Selamat datang di Dashboard Guru
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
+          <div className="sticky top-0 z-50 bg-gradient-to-r from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950/80 border-b border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
+            <div className="flex items-center justify-between px-4 md:px-8 py-4">
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                Halo, {getDisplayName()}
+              </h1>
+              <div>
                 <UserQuickMenu
                   role="guru"
                   variant="avatar"

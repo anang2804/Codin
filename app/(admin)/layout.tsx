@@ -65,18 +65,22 @@ export default function AdminLayout({
     <div className="flex">
       <Sidebar role="admin" />
       <main className="flex-1 layout-with-sidebar bg-muted/20 min-h-screen">
-        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-          <UserQuickMenu
-            role="admin"
-            variant="avatar"
-            avatarUrl={profile?.avatar_url || null}
-            fullName={profile?.full_name || null}
-            email={profile?.email || null}
-          />
-        </div>
         {/* Header */}
-        <div className="bg-card border-b border-border px-4 md:px-8 py-4">
-          <h1 className="text-lg font-semibold text-foreground">Admin Panel</h1>
+        <div className="sticky top-0 z-50 bg-gradient-to-r from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950/80 border-b border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-4 md:px-8 py-4">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              Admin
+            </h1>
+            <div>
+              <UserQuickMenu
+                role="admin"
+                variant="avatar"
+                avatarUrl={profile?.avatar_url || null}
+                fullName={profile?.full_name || null}
+                email={profile?.email || null}
+              />
+            </div>
+          </div>
         </div>
         <div className="px-6 py-6 md:px-8 md:py-6">{children}</div>
       </main>

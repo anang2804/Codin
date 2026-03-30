@@ -87,14 +87,14 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 text-green-600 bg-transparent rounded-lg"
+        className="md:hidden fixed top-4 left-4 z-[70] p-2 text-green-600 bg-transparent rounded-lg"
       >
         {open ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`sidebar-shell fixed left-0 top-0 h-screen bg-card border-r border-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-40 ${
+        className={`sidebar-shell fixed left-0 top-0 h-screen bg-card border-r border-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-[60] ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } ${collapsed ? "sidebar-collapsed" : ""}`}
       >
@@ -128,7 +128,7 @@ export function Sidebar({ role }: SidebarProps) {
             )}
           </button>
 
-          <nav className="space-y-3 flex-1 overflow-y-auto mt-3">
+          <nav className="space-y-3 flex-1 overflow-y-auto mt-3 -mx-2">
             {items.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -137,7 +137,7 @@ export function Sidebar({ role }: SidebarProps) {
                 <Link key={item.href} href={item.href}>
                   <button
                     onClick={() => setOpen(false)}
-                    className={`sidebar-item w-full flex items-center px-3 py-3 rounded-full transition-colors duration-150 ${
+                    className={`sidebar-item w-full flex items-center px-4 py-3 rounded-full transition-colors duration-150 ${
                       isActive
                         ? "bg-green-600/10 text-green-700 border border-green-200"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -158,7 +158,7 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Mobile Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
