@@ -16,17 +16,18 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
-const SIMULASI_SLUG = "variabel-data-siswa";
+const SIMULASI_SLUG = "variabel-kapal-kargo";
 
 type CommandChoice = "int" | "short" | "long" | "float" | "double" | "char";
 
-type StudentData = {
-  umur: number;
-  tinggi: number;
-  jenisKelamin: "L" | "P" | "";
+type CargoData = {
+  jumlahKru: number;
+  beratKontainer: number;
+  jarakTempuhMm: number;
+  koordinatLintang: number;
 };
 
-type FruitVisual = {
+type CargoVisual = {
   emoji: string;
   left: number;
   top: number;
@@ -35,15 +36,17 @@ type FruitVisual = {
 };
 
 type ChallengeData = {
-  umur: number;
-  tinggi: number;
-  jenisKelamin: "L" | "P";
-  studentVisuals: FruitVisual[];
+  jumlahKru: number;
+  beratKontainer: number;
+  jarakTempuhMm: number;
+  koordinatLintang: number;
+  cargoVisuals: CargoVisual[];
 };
 
-const STUDENT_EMOJIS = ["🧑", "👧", "👦", "🧕", "👨", "👩"] as const;
+const CARGO_EMOJIS = ["🚢", "📦", "⚓", "🧭", "🛟", "🧰"] as const;
+const CREW_EMOJIS = ["👷", "👷‍♂️", "👷‍♀️"] as const;
 const CHAR_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"] as const;
-const FLOAT_DECIMAL_FRUITS = [
+const FLOAT_DECIMAL_VALUES = [
   "0.1",
   "1.5",
   "2.7",
@@ -51,7 +54,7 @@ const FLOAT_DECIMAL_FRUITS = [
   "4.2",
   "5.8",
 ] as const;
-const SHORT_SMALL_NUMBER_FRUITS = [
+const SHORT_SMALL_NUMBER_VALUES = [
   "7",
   "18",
   "42",
@@ -59,80 +62,79 @@ const SHORT_SMALL_NUMBER_FRUITS = [
   "512",
   "32000",
 ] as const;
-const INT_WHOLE_NUMBER_FRUITS = ["1", "2", "3", "4", "5", "8"] as const;
-const LONG_BIG_NUMBER_FRUITS = [
-  "120000",
-  "450000",
-  "980000",
-  "1500000",
-  "2300000",
-  "7800000",
+const INT_WHOLE_NUMBER_VALUES = ["32", "40", "45", "48", "52", "60"] as const;
+const LONG_BIG_NUMBER_VALUES = [
+  "2500000",
+  "3100000",
+  "4200000",
+  "9500000000",
+  "11000000000",
+  "12800000000",
 ] as const;
 
-const MISMATCH_FRUIT_SCATTER = [
-  { emoji: "🧑", left: 6, top: 68, rotate: -28 },
-  { emoji: "👧", left: 20, top: 82, rotate: 22 },
-  { emoji: "👦", left: 74, top: 80, rotate: -18 },
-  { emoji: "👩", left: 88, top: 66, rotate: 30 },
+const MISMATCH_CARGO_SCATTER = [
+  { emoji: "⚓", left: 8, top: 68, rotate: -28 },
+  { emoji: "📦", left: 20, top: 82, rotate: 22 },
+  { emoji: "🧭", left: 74, top: 80, rotate: -18 },
+  { emoji: "🛟", left: 88, top: 66, rotate: 30 },
 ] as const;
 
 const MISMATCH_CHAR_SCATTER = [
-  { emoji: "🧑", left: 8, top: 70, rotate: -20 },
-  { emoji: "👧", left: 22, top: 83, rotate: 18 },
-  { emoji: "👦", left: 76, top: 81, rotate: -16 },
-  { emoji: "👨", left: 90, top: 68, rotate: 22 },
+  { emoji: "⚓", left: 8, top: 70, rotate: -20 },
+  { emoji: "📦", left: 22, top: 83, rotate: 18 },
+  { emoji: "🧭", left: 76, top: 81, rotate: -16 },
+  { emoji: "🛟", left: 90, top: 68, rotate: 22 },
 ] as const;
 
 const MISMATCH_LONG_SCATTER = [
-  { emoji: "🧑", left: 6, top: 68, rotate: -10 },
-  { emoji: "👩", left: 20, top: 82, rotate: 12 },
-  { emoji: "👨", left: 74, top: 80, rotate: -8 },
-  { emoji: "🧕", left: 88, top: 66, rotate: 10 },
+  { emoji: "🚢", left: 6, top: 68, rotate: -10 },
+  { emoji: "📦", left: 20, top: 82, rotate: 12 },
+  { emoji: "⚓", left: 74, top: 80, rotate: -8 },
+  { emoji: "🧭", left: 88, top: 66, rotate: 10 },
 ] as const;
 
 const MISMATCH_INT_SCATTER = [
-  { emoji: "👦", left: 8, top: 70, rotate: -18 },
-  { emoji: "👧", left: 22, top: 84, rotate: 15 },
-  { emoji: "🧑", left: 76, top: 81, rotate: -15 },
-  { emoji: "👩", left: 90, top: 68, rotate: 18 },
+  { emoji: "👷", left: 8, top: 70, rotate: -18 },
+  { emoji: "👷‍♂️", left: 22, top: 84, rotate: 15 },
+  { emoji: "👷‍♀️", left: 76, top: 81, rotate: -15 },
+  { emoji: "🧰", left: 90, top: 68, rotate: 18 },
 ] as const;
 
 const MISMATCH_SHORT_SCATTER = [
-  { emoji: "👧", left: 10, top: 72, rotate: -18 },
-  { emoji: "👦", left: 23, top: 84, rotate: 14 },
-  { emoji: "🧑", left: 75, top: 82, rotate: -12 },
-  { emoji: "👩", left: 89, top: 69, rotate: 15 },
+  { emoji: "📦", left: 10, top: 72, rotate: -18 },
+  { emoji: "🧰", left: 23, top: 84, rotate: 14 },
+  { emoji: "⚓", left: 75, top: 82, rotate: -12 },
+  { emoji: "🧭", left: 89, top: 69, rotate: 15 },
 ] as const;
 
 const MISMATCH_FLOAT_SCATTER = [
-  { emoji: "🧑", left: 7, top: 69, rotate: -15 },
-  { emoji: "👧", left: 22, top: 83, rotate: 12 },
-  { emoji: "👨", left: 75, top: 81, rotate: -10 },
-  { emoji: "👩", left: 90, top: 67, rotate: 14 },
+  { emoji: "🌊", left: 7, top: 69, rotate: -15 },
+  { emoji: "🧭", left: 22, top: 83, rotate: 12 },
+  { emoji: "⚓", left: 75, top: 81, rotate: -10 },
+  { emoji: "🚢", left: 90, top: 67, rotate: 14 },
 ] as const;
 
 const MISMATCH_DOUBLE_SCATTER = [
-  { emoji: "🧑", left: 8, top: 69, rotate: -14 },
+  { emoji: "🧭", left: 8, top: 69, rotate: -14 },
   { emoji: "✨", left: 24, top: 82, rotate: 10 },
-  { emoji: "👨", left: 74, top: 80, rotate: -9 },
-  { emoji: "👩", left: 89, top: 66, rotate: 12 },
+  { emoji: "🌍", left: 74, top: 80, rotate: -9 },
+  { emoji: "📍", left: 89, top: 66, rotate: 12 },
 ] as const;
 
-const TOTAL_CODE_LINES = 3;
+const TOTAL_CODE_LINES = 4;
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function createChallenge(): ChallengeData {
-  const umur = randomInt(15, 18);
-  const tinggiBulat = randomInt(150, 175);
-  const tinggiDesimal = randomInt(1, 9);
-  const tinggi = Number(`${tinggiBulat}.${tinggiDesimal}`);
-  const jenisKelamin = Math.random() > 0.5 ? "L" : "P";
+  const jumlahKru = 45;
+  const beratKontainer = 2500000;
+  const jarakTempuhMm = 9500000000;
+  const koordinatLintang = -6.1751101234567;
 
-  const studentVisuals = Array.from({ length: randomInt(5, 9) }).map(() => ({
-    emoji: STUDENT_EMOJIS[randomInt(0, STUDENT_EMOJIS.length - 1)],
+  const cargoVisuals = Array.from({ length: randomInt(6, 10) }).map(() => ({
+    emoji: CARGO_EMOJIS[randomInt(0, CARGO_EMOJIS.length - 1)],
     left: randomInt(10, 78),
     top: randomInt(30, 76),
     scale: Number((Math.random() * 0.35 + 0.85).toFixed(2)),
@@ -140,10 +142,11 @@ function createChallenge(): ChallengeData {
   }));
 
   return {
-    umur,
-    tinggi,
-    jenisKelamin,
-    studentVisuals,
+    jumlahKru,
+    beratKontainer,
+    jarakTempuhMm,
+    koordinatLintang,
+    cargoVisuals,
   };
 }
 
@@ -189,9 +192,10 @@ function getEducationalFeedback(
   typedLine: string,
   lineIdx: number,
   expectedLine: string,
-  umur: number,
-  tinggi: number,
-  jenisKelamin: "L" | "P",
+  jumlahKru: number,
+  beratKontainer: number,
+  jarakTempuhMm: number,
+  koordinatLintang: number,
 ): string {
   const trimmed = typedLine.trim().toLowerCase();
 
@@ -207,38 +211,55 @@ function getEducationalFeedback(
       trimmed.startsWith("double") ||
       trimmed.startsWith("char"))
   ) {
-    return `Baris 1 salah. umur bernilai ${umur} (bilangan bulat). Pilih tipe data yang paling sesuai untuk bilangan bulat.`;
+    return `Baris 1 salah. jumlah_kru bernilai ${jumlahKru} (bilangan bulat). Pilih tipe data bilangan bulat yang paling tepat.`;
   }
 
   if (
     lineIdx === 1 &&
     (trimmed.startsWith("int") ||
       trimmed.startsWith("short") ||
-      trimmed.startsWith("long") ||
       trimmed.startsWith("char"))
   ) {
-    return `Baris 2 salah. tinggi bernilai ${tinggi.toFixed(1)} (desimal). Pilih tipe data yang paling sesuai untuk angka desimal.`;
+    return `Baris 2 salah. berat_kontainer bernilai ${beratKontainer} (bilangan bulat besar). Cek kembali tipe data bilangan bulat berkapasitas besar.`;
   }
 
-  if (lineIdx === 2 && !trimmed.startsWith("char")) {
-    return `Baris 3 salah. jenis_kelamin bernilai '${jenisKelamin}' (satu karakter). Pilih tipe data yang sesuai untuk satu karakter.`;
+  if (
+    lineIdx === 2 &&
+    (trimmed.startsWith("int") ||
+      trimmed.startsWith("short") ||
+      trimmed.startsWith("float") ||
+      trimmed.startsWith("double") ||
+      trimmed.startsWith("char"))
+  ) {
+    return `Baris 3 salah. jarak_tempuh_mm bernilai ${jarakTempuhMm} (bilangan bulat sangat besar). Pertimbangkan tipe data untuk rentang bilangan bulat yang sangat besar.`;
+  }
+
+  if (
+    lineIdx === 3 &&
+    (trimmed.startsWith("int") ||
+      trimmed.startsWith("short") ||
+      trimmed.startsWith("long") ||
+      trimmed.startsWith("float") ||
+      trimmed.startsWith("char"))
+  ) {
+    return `Baris 4 salah. koordinat_lintang bernilai ${koordinatLintang} (desimal sangat detail). Pilih tipe data desimal dengan presisi tinggi.`;
   }
 
   if (
     lineIdx === 0 &&
     (trimmed.startsWith("short") || trimmed.startsWith("long"))
   ) {
-    return "Baris 1 masih belum tepat. Cermati kembali jenis nilai pada variabel umur.";
+    return "Baris 1 masih belum tepat. Cermati kembali karakteristik nilai pada variabel jumlah_kru.";
   }
 
   if (lineIdx === 1 && trimmed.startsWith("double")) {
-    return "Baris 2 masih belum tepat. Fokus ke tipe data desimal yang diminta di simulasi ini.";
+    return "Baris 2 masih belum tepat. Variabel ini tidak membutuhkan tipe desimal.";
   }
 
   return `Baris ${lineIdx + 1} belum tepat. Cek lagi kecocokan tipe data dengan nilainya.`;
 }
 
-export default function VariabelDataSiswaPage() {
+export default function VariabelKapalKargoPage() {
   const [selectedCommands, setSelectedCommands] = useState<
     Partial<Record<number, CommandChoice>>
   >({});
@@ -248,8 +269,9 @@ export default function VariabelDataSiswaPage() {
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
   const [runVisualKey, setRunVisualKey] = useState(0);
+  const [shipEntering, setShipEntering] = useState(false);
   const [mismatchType, setMismatchType] = useState<
-    "umur" | "tinggi" | "jenisKelamin" | null
+    "jumlahKru" | "beratKontainer" | "jarakTempuh" | "koordinat" | null
   >(null);
   const [mismatchChoice, setMismatchChoice] = useState<CommandChoice | null>(
     null,
@@ -263,23 +285,27 @@ export default function VariabelDataSiswaPage() {
     createChallenge(),
   );
 
-  const [studentData, setStudentData] = useState<StudentData>({
-    umur: 0,
-    tinggi: 0,
-    jenisKelamin: "",
+  const [cargoData, setCargoData] = useState<CargoData>({
+    jumlahKru: 0,
+    beratKontainer: 0,
+    jarakTempuhMm: 0,
+    koordinatLintang: 0,
   });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const blankLineSuffix: Record<number, string> = {
-    0: `umur = ${challenge.umur};`,
-    1: `tinggi = ${challenge.tinggi.toFixed(1)};`,
-    2: `jenis_kelamin = '${challenge.jenisKelamin}';`,
+    0: `jumlah_kru = ${challenge.jumlahKru};`,
+    1: `berat_kontainer = ${challenge.beratKontainer};`,
+    2: `jarak_tempuh_mm = ${challenge.jarakTempuhMm};`,
+    3: `koordinat_lintang = ${challenge.koordinatLintang};`,
   };
   const ghostCommandHints: Record<number, CommandChoice> = {
     0: "int",
-    1: "float",
-    2: "char",
+    1: "long",
+    2: "long",
+    3: "double",
   };
 
   const linesArray = Array.from({ length: TOTAL_CODE_LINES }).map((_, i) => {
@@ -330,11 +356,14 @@ export default function VariabelDataSiswaPage() {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
+      if (visualTimerRef.current) {
+        clearTimeout(visualTimerRef.current);
+      }
     };
   }, []);
 
   const triggerMismatchVisual = (
-    type: "umur" | "tinggi" | "jenisKelamin",
+    type: "jumlahKru" | "beratKontainer" | "jarakTempuh" | "koordinat",
     wrongChoice: CommandChoice | null,
   ) => {
     setMismatchType(type);
@@ -390,7 +419,12 @@ export default function VariabelDataSiswaPage() {
     setMismatchType(null);
     setMismatchChoice(null);
     setFeedback("Sistem siap menjalankan algoritma.");
-    setStudentData({ umur: 0, tinggi: 0, jenisKelamin: "" });
+    setCargoData({
+      jumlahKru: 0,
+      beratKontainer: 0,
+      jarakTempuhMm: 0,
+      koordinatLintang: 0,
+    });
     if (regenerateChallenge) {
       setChallenge(createChallenge());
       setSelectedCommands({});
@@ -398,6 +432,9 @@ export default function VariabelDataSiswaPage() {
     }
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (visualTimerRef.current) {
+      clearTimeout(visualTimerRef.current);
     }
   };
 
@@ -409,24 +446,24 @@ export default function VariabelDataSiswaPage() {
       setIsRunning(false);
       setActiveLine(-1);
       setShowSuccessCard(true);
-      setFeedback(
-        "Berhasil! Deklarasi variabel sudah benar. int untuk umur, float untuk tinggi, dan char untuk jenis_kelamin.",
-      );
+      setFeedback("Berhasil! Deklarasi variabel kapal kargo sudah benar.");
       return;
     }
 
     setActiveLine(index);
 
     const lineSuffixByIndex = [
-      `umur = ${runChallenge.umur};`,
-      `tinggi = ${runChallenge.tinggi.toFixed(1)};`,
-      `jenis_kelamin = '${runChallenge.jenisKelamin}';`,
+      `jumlah_kru = ${runChallenge.jumlahKru};`,
+      `berat_kontainer = ${runChallenge.beratKontainer};`,
+      `jarak_tempuh_mm = ${runChallenge.jarakTempuhMm};`,
+      `koordinat_lintang = ${runChallenge.koordinatLintang};`,
     ] as const;
 
     const expectedSolutionByIndex = [
-      `int umur = ${runChallenge.umur};`,
-      `float tinggi = ${runChallenge.tinggi.toFixed(1)};`,
-      `char jenis_kelamin = '${runChallenge.jenisKelamin}';`,
+      `int jumlah_kru = ${runChallenge.jumlahKru};`,
+      `long berat_kontainer = ${runChallenge.beratKontainer};`,
+      `long jarak_tempuh_mm = ${runChallenge.jarakTempuhMm};`,
+      `double koordinat_lintang = ${runChallenge.koordinatLintang};`,
     ] as const;
 
     const lineParsed =
@@ -440,7 +477,13 @@ export default function VariabelDataSiswaPage() {
       setErrorLine(index);
       setShowSuccessCard(false);
       triggerMismatchVisual(
-        index === 0 ? "umur" : index === 1 ? "tinggi" : "jenisKelamin",
+        index === 0
+          ? "jumlahKru"
+          : index === 1
+            ? "beratKontainer"
+            : index === 2
+              ? "jarakTempuh"
+              : "koordinat",
         selectedCommands[index] ?? null,
       );
       setFeedback(
@@ -448,33 +491,47 @@ export default function VariabelDataSiswaPage() {
           `${selectedCommands[index] ?? "_____"} ${lineSuffixByIndex[index]}`,
           index,
           expectedSolutionByIndex[index],
-          runChallenge.umur,
-          runChallenge.tinggi,
-          runChallenge.jenisKelamin,
+          runChallenge.jumlahKru,
+          runChallenge.beratKontainer,
+          runChallenge.jarakTempuhMm,
+          runChallenge.koordinatLintang,
         ),
       );
       return;
     }
 
     if (index === 0) {
-      setStudentData((prev) => ({ ...prev, umur: runChallenge.umur }));
-      setFeedback(`Baris 1 benar: int umur = ${runChallenge.umur};`);
+      setCargoData((prev) => ({ ...prev, jumlahKru: runChallenge.jumlahKru }));
+      setFeedback(`Baris 1 benar: int jumlah_kru = ${runChallenge.jumlahKru};`);
     }
 
     if (index === 1) {
-      setStudentData((prev) => ({ ...prev, tinggi: runChallenge.tinggi }));
+      setCargoData((prev) => ({
+        ...prev,
+        beratKontainer: runChallenge.beratKontainer,
+      }));
       setFeedback(
-        `Baris 2 benar: float tinggi = ${runChallenge.tinggi.toFixed(1)};`,
+        `Baris 2 benar: long berat_kontainer = ${runChallenge.beratKontainer};`,
       );
     }
 
     if (index === 2) {
-      setStudentData((prev) => ({
+      setCargoData((prev) => ({
         ...prev,
-        jenisKelamin: runChallenge.jenisKelamin,
+        jarakTempuhMm: runChallenge.jarakTempuhMm,
       }));
       setFeedback(
-        `Baris 3 benar: char jenis_kelamin = '${runChallenge.jenisKelamin}';`,
+        `Baris 3 benar: long jarak_tempuh_mm = ${runChallenge.jarakTempuhMm};`,
+      );
+    }
+
+    if (index === 3) {
+      setCargoData((prev) => ({
+        ...prev,
+        koordinatLintang: runChallenge.koordinatLintang,
+      }));
+      setFeedback(
+        `Baris 4 benar: double koordinat_lintang = ${runChallenge.koordinatLintang};`,
       );
     }
 
@@ -486,15 +543,20 @@ export default function VariabelDataSiswaPage() {
   const startRunning = () => {
     resetSim(false);
     setRunVisualKey((prev) => prev + 1);
+    setShipEntering(false);
+    visualTimerRef.current = setTimeout(() => {
+      setShipEntering(true);
+    }, 70);
     const runChallenge = createChallenge();
     setChallenge(runChallenge);
     setIsRunning(true);
     void executeStep(0, runChallenge);
   };
 
-  const isJumlahMismatch = mismatchType === "umur";
-  const isBeratMismatch = mismatchType === "tinggi";
-  const isJenisKelaminMismatch = mismatchType === "jenisKelamin";
+  const isJumlahMismatch = mismatchType === "jumlahKru";
+  const isBeratMismatch = mismatchType === "beratKontainer";
+  const isJarakMismatch = mismatchType === "jarakTempuh";
+  const isKoordinatMismatch = mismatchType === "koordinat";
   const isMismatchVisual = mismatchType !== null;
   const isMismatchChar = mismatchChoice === "char";
   const isMismatchDouble = mismatchChoice === "double";
@@ -516,7 +578,7 @@ export default function VariabelDataSiswaPage() {
     if (isMismatchInt) return MISMATCH_INT_SCATTER;
     if (isMismatchDouble) return MISMATCH_DOUBLE_SCATTER;
     if (isMismatchFloat) return MISMATCH_FLOAT_SCATTER;
-    return MISMATCH_FRUIT_SCATTER;
+    return MISMATCH_CARGO_SCATTER;
   })();
 
   const mismatchAccentClass = (() => {
@@ -711,6 +773,55 @@ export default function VariabelDataSiswaPage() {
   };
 
   const totalDisplayLines = Math.max(TOTAL_CODE_LINES, 10);
+  const formattedBeratKontainer = cargoData.beratKontainer
+    ? new Intl.NumberFormat("id-ID").format(cargoData.beratKontainer)
+    : "-";
+  const formattedJarakKm = cargoData.jarakTempuhMm
+    ? (cargoData.jarakTempuhMm / 1_000_000).toFixed(1)
+    : "-";
+  const formattedKoordinat = cargoData.koordinatLintang
+    ? cargoData.koordinatLintang.toFixed(6)
+    : "-";
+  const shipHasArrived =
+    shipEntering || cargoData.jumlahKru > 0 || showSuccessCard;
+  const crewWaveCount = cargoData.jumlahKru
+    ? Math.min(6, Math.max(2, Math.floor(cargoData.jumlahKru / 8)))
+    : isRunning
+      ? 2
+      : 0;
+  const isCrewBoarding =
+    crewWaveCount > 0 && shipHasArrived && cargoData.beratKontainer === 0;
+  const crewOnDeckCount = cargoData.beratKontainer
+    ? Math.min(3, Math.max(1, Math.floor(cargoData.jumlahKru / 20)))
+    : 0;
+  const isCheckingBeratKontainer = isRunning && activeLine === 1;
+  const isCheckingJarakTempuh = isRunning && activeLine === 2;
+  const isRoutePhase =
+    isCheckingJarakTempuh ||
+    (cargoData.jarakTempuhMm > 0 && cargoData.koordinatLintang === 0);
+  const containerLoadCount = cargoData.beratKontainer
+    ? Math.min(8, Math.max(3, Math.floor(cargoData.beratKontainer / 400_000)))
+    : isCheckingBeratKontainer
+      ? 2
+      : 0;
+  const isCargoLoadingPhase =
+    isCheckingBeratKontainer ||
+    (cargoData.beratKontainer > 0 && cargoData.jarakTempuhMm === 0);
+  const craneRunning = isCargoLoadingPhase;
+  const hookStartX = 248;
+  const hookTargetX = 170;
+  const hookY = isCargoLoadingPhase ? 64 : 40;
+  const sceneStatus = showSuccessCard
+    ? ""
+    : cargoData.koordinatLintang
+      ? "Navigasi lintang aktif"
+      : cargoData.jarakTempuhMm
+        ? "Rute pelayaran tervalidasi"
+        : cargoData.beratKontainer
+          ? "Muatan kontainer diproses"
+          : cargoData.jumlahKru
+            ? "Kru naik ke kapal"
+            : "Kapal mendekati dermaga";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-lime-50 text-foreground">
@@ -733,7 +844,7 @@ export default function VariabelDataSiswaPage() {
 
           <div>
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-              Variabel Data Siswa
+              Variabel Kapal Kargo
             </h1>
           </div>
         </div>
@@ -867,11 +978,12 @@ export default function VariabelDataSiswaPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Susun deklarasi variabel untuk data siswa. Isi bagian kosong
-                  agar tipe data variabel sesuai nilainya. Nilai acak saat ini:
-                  umur = {challenge.umur}, tinggi ={" "}
-                  {challenge.tinggi.toFixed(1)}, jenis_kelamin = '
-                  {challenge.jenisKelamin}'.
+                  Susun deklarasi variabel manajemen kapal kargo. Isi bagian
+                  kosong agar tipe data sesuai nilainya. Data saat ini:
+                  jumlah_kru = {challenge.jumlahKru}, berat_kontainer ={" "}
+                  {challenge.beratKontainer}, jarak_tempuh_mm ={" "}
+                  {challenge.jarakTempuhMm}, koordinat_lintang ={" "}
+                  {challenge.koordinatLintang}.
                 </p>
               </div>
             </div>
@@ -891,7 +1003,8 @@ export default function VariabelDataSiswaPage() {
                     Berhasil! Deklarasi variabel benar
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Kunci benar: baris 1 int, baris 2 float, baris 3 char.
+                    Kunci benar: baris 1 int, baris 2 long, baris 3 long, baris
+                    4 double.
                   </p>
                 </div>
               </motion.section>
@@ -1051,10 +1164,10 @@ export default function VariabelDataSiswaPage() {
               </div>
             </section>
 
-            <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-emerald-400/40 bg-gradient-to-br from-[#0d2f1e] via-[#14532d] to-[#1f6f43] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-emerald-300/30 bg-emerald-900/20 px-6 py-4">
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-100">
-                  DASHBOARD SISWA
+            <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-sky-400/40 bg-gradient-to-br from-[#031428] via-[#0a2a4a] to-[#124267] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-sky-300/30 bg-sky-900/20 px-6 py-4">
+                <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-100">
+                  DASHBOARD KAPAL
                 </h2>
                 <div
                   className={`h-2.5 w-2.5 rounded-full ${
@@ -1063,18 +1176,18 @@ export default function VariabelDataSiswaPage() {
                       : errorLine !== -1
                         ? "animate-pulse bg-rose-500"
                         : isRunning
-                          ? "animate-pulse bg-emerald-500"
+                          ? "animate-pulse bg-sky-400"
                           : "bg-slate-700"
                   }`}
                 />
               </div>
 
-              <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_#14532d_0%,_#0f2d1f_100%)] p-6">
-                <div className="absolute -left-10 -top-8 h-32 w-32 rounded-full bg-emerald-300/20 blur-2xl" />
-                <div className="absolute -right-10 top-8 h-28 w-28 rounded-full bg-lime-400/20 blur-2xl" />
+              <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_#0e3459_0%,_#061a33_100%)] p-6">
+                <div className="absolute -left-10 -top-8 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl" />
+                <div className="absolute -right-10 top-8 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl" />
+                <div className="absolute bottom-4 left-4 right-4 h-14 rounded-full bg-sky-300/10 blur-xl" />
 
                 <motion.div
-                  key={`siswa-visual-${runVisualKey}`}
                   animate={jumlahMismatchAnimation}
                   transition={{ duration: 0.55 }}
                   className="relative h-[270px] w-[310px]"
@@ -1087,8 +1200,8 @@ export default function VariabelDataSiswaPage() {
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 z-40 pointer-events-none"
                       >
-                        <div className="absolute left-8 top-5 h-9 w-9 rounded-full bg-emerald-300/25 blur-md" />
-                        <div className="absolute right-8 top-6 h-8 w-8 rounded-full bg-lime-300/25 blur-md" />
+                        <div className="absolute left-8 top-5 h-9 w-9 rounded-full bg-sky-300/25 blur-md" />
+                        <div className="absolute right-8 top-6 h-8 w-8 rounded-full bg-cyan-300/25 blur-md" />
 
                         {mismatchScatter.map((item, idx) => (
                           <motion.div
@@ -1124,8 +1237,8 @@ export default function VariabelDataSiswaPage() {
                                 <span>{item.emoji}</span>
                                 <span className="absolute -right-3 -top-2 rounded-full border border-emerald-100/70 bg-emerald-400/35 px-1 text-[10px] font-black leading-none text-emerald-50 shadow-sm">
                                   {
-                                    FLOAT_DECIMAL_FRUITS[
-                                      idx % FLOAT_DECIMAL_FRUITS.length
+                                    FLOAT_DECIMAL_VALUES[
+                                      idx % FLOAT_DECIMAL_VALUES.length
                                     ]
                                   }
                                 </span>
@@ -1135,8 +1248,8 @@ export default function VariabelDataSiswaPage() {
                                 <span>{item.emoji}</span>
                                 <span className="absolute -right-3 -top-2 rounded-full border border-amber-100/80 bg-amber-500/40 px-1 text-[10px] font-black leading-none text-amber-50 shadow-sm">
                                   {
-                                    LONG_BIG_NUMBER_FRUITS[
-                                      idx % LONG_BIG_NUMBER_FRUITS.length
+                                    LONG_BIG_NUMBER_VALUES[
+                                      idx % LONG_BIG_NUMBER_VALUES.length
                                     ]
                                   }
                                 </span>
@@ -1146,8 +1259,8 @@ export default function VariabelDataSiswaPage() {
                                 <span>{item.emoji}</span>
                                 <span className="absolute -right-3 -top-2 rounded-full border border-orange-100/80 bg-orange-500/45 px-1 text-[10px] font-black leading-none text-orange-50 shadow-sm">
                                   {
-                                    INT_WHOLE_NUMBER_FRUITS[
-                                      idx % INT_WHOLE_NUMBER_FRUITS.length
+                                    INT_WHOLE_NUMBER_VALUES[
+                                      idx % INT_WHOLE_NUMBER_VALUES.length
                                     ]
                                   }
                                 </span>
@@ -1157,8 +1270,8 @@ export default function VariabelDataSiswaPage() {
                                 <span>{item.emoji}</span>
                                 <span className="absolute -right-3 -top-2 rounded-full border border-fuchsia-100/80 bg-fuchsia-500/45 px-1 text-[10px] font-black leading-none text-fuchsia-50 shadow-sm">
                                   {
-                                    SHORT_SMALL_NUMBER_FRUITS[
-                                      idx % SHORT_SMALL_NUMBER_FRUITS.length
+                                    SHORT_SMALL_NUMBER_VALUES[
+                                      idx % SHORT_SMALL_NUMBER_VALUES.length
                                     ]
                                   }
                                 </span>
@@ -1207,108 +1320,314 @@ export default function VariabelDataSiswaPage() {
                     )}
                   </AnimatePresence>
 
-                  <div className="absolute inset-x-3 top-4 rounded-2xl border border-emerald-200/30 bg-emerald-900/35 px-4 py-2">
+                  <div className="absolute inset-x-3 top-4 rounded-2xl border border-sky-200/30 bg-sky-900/35 px-4 py-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-[9px] font-black tracking-[0.16em] text-emerald-100">
-                        PAPAN ABSENSI
+                      <p className="text-[9px] font-black tracking-[0.16em] text-sky-100">
+                        JEMBATAN KOMANDO
                       </p>
-                      <p className="text-[9px] font-black tracking-[0.16em] text-emerald-200/80">
-                        KELAS IX-A
+                      <p className="text-[9px] font-black tracking-[0.16em] text-cyan-100/80">
+                        RUTE SAMUDRA-9
                       </p>
                     </div>
                   </div>
 
-                  <div className="absolute inset-x-3 bottom-3 top-[54px] rounded-2xl border border-emerald-200/35 bg-gradient-to-b from-[#1b4332]/70 via-[#14532d]/75 to-[#0f2d1f]/85 p-3 shadow-[0_18px_34px_rgba(0,0,0,0.45)]">
-                    <div className="grid h-full grid-cols-3 gap-2">
-                      {Array.from({ length: 6 }).map((_, i) => {
-                        const avatar =
-                          challenge.studentVisuals[
-                            i % challenge.studentVisuals.length
-                          ]?.emoji ?? "🧑";
+                  <div className="absolute inset-x-3 bottom-3 top-[54px] rounded-2xl border border-sky-200/35 bg-gradient-to-b from-[#11406b]/70 via-[#0b2f52]/75 to-[#071c36]/85 p-3 shadow-[0_18px_34px_rgba(0,0,0,0.45)]">
+                    {sceneStatus ? (
+                      <div className="mb-2 rounded-lg border border-cyan-200/35 bg-slate-900/45 px-2 py-1.5">
+                        <p className="text-[8px] font-black tracking-wide text-cyan-100/80">
+                          STATUS PELABUHAN
+                        </p>
+                        <p className="text-[10px] font-black text-cyan-100">
+                          {sceneStatus}
+                        </p>
+                      </div>
+                    ) : null}
 
-                        return (
-                          <motion.div
-                            key={`student-card-${i}`}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            className={`relative rounded-xl border p-1.5 ${
-                              isMismatchVisual
-                                ? "border-emerald-200/45 bg-slate-900/55"
-                                : "border-emerald-200/30 bg-slate-900/45"
-                            }`}
-                          >
-                            <div className="flex items-center gap-1">
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100/15 text-sm">
-                                {avatar}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="truncate text-[8px] font-black tracking-wide text-emerald-100">
-                                  SISWA {i + 1}
-                                </p>
-                                <p className="text-[8px] font-bold text-emerald-200/80">
-                                  {studentData.jenisKelamin || "-"}
-                                </p>
-                              </div>
-                            </div>
+                    <div
+                      key={`harbor-scene-${runVisualKey}`}
+                      className="relative h-[146px] overflow-hidden rounded-xl border border-sky-200/35 bg-gradient-to-b from-sky-300/15 via-sky-200/10 to-sky-900/30"
+                    >
+                      <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-sky-100/20 to-transparent" />
 
-                            <div className="mt-1 flex items-center justify-between text-[8px] font-black text-emerald-50/90">
-                              <span>{studentData.umur || "-"} th</span>
-                              <span>
-                                {studentData.tinggi
-                                  ? `${studentData.tinggi}`
-                                  : "-"}
-                              </span>
-                            </div>
+                      <motion.div
+                        animate={{ x: [0, 10, 0] }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                        className="absolute inset-x-0 bottom-8 h-8 bg-sky-400/20"
+                      />
+                      <motion.div
+                        animate={{ x: [0, -8, 0] }}
+                        transition={{
+                          duration: 2.2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                        className="absolute inset-x-0 bottom-6 h-6 bg-cyan-400/20"
+                      />
 
-                            {isMismatchVisual && isMismatchChar && (
-                              <span className="absolute -right-1 -top-1 rounded-full bg-violet-200 px-1 text-[8px] font-black text-violet-900">
-                                {CHAR_LABELS[i % CHAR_LABELS.length]}
-                              </span>
-                            )}
+                      <div className="absolute right-1 top-7 bottom-4 w-[82px] rounded-lg border border-amber-200/30 bg-amber-100/10">
+                        <div className="absolute bottom-2 left-2 right-2 h-2 rounded-sm bg-amber-200/30" />
+                        <p className="absolute top-1 left-2 text-[7px] font-black tracking-wide text-amber-100/85">
+                          DERMAGA
+                        </p>
+                      </div>
 
-                            {isMismatchVisual && isMismatchInt && (
-                              <span className="absolute -right-1 -top-1 rounded-full bg-orange-300 px-1 text-[8px] font-black text-orange-900">
-                                {
-                                  INT_WHOLE_NUMBER_FRUITS[
-                                    i % INT_WHOLE_NUMBER_FRUITS.length
-                                  ]
+                      <div className="absolute right-[10px] top-[24px] z-10 h-[58px] w-[3px] rounded-full bg-amber-200/70" />
+                      <div className="absolute right-[10px] top-[24px] z-10 h-[3px] w-[58px] rounded-full bg-amber-200/70" />
+
+                      <motion.div
+                        initial={false}
+                        animate={{
+                          x: shipHasArrived ? 0 : -120,
+                          y: isRunning ? [0, -2, 0, 1, 0] : 0,
+                        }}
+                        transition={{
+                          x: { duration: 1.1, ease: "easeOut" },
+                          y: {
+                            duration: 1.7,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          },
+                        }}
+                        className="absolute bottom-6 left-8"
+                      >
+                        <div className="relative">
+                          <div className="h-8 w-24 rounded-b-full rounded-t-lg border border-sky-100/50 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-100" />
+                          <div className="absolute -top-3 left-5 h-3 w-14 rounded-t-md border border-sky-100/50 bg-slate-100" />
+                          <div className="absolute -top-5 left-11 h-2 w-2 rounded-sm bg-red-300" />
+                          <div className="absolute -bottom-1 left-2 right-2 h-1.5 rounded-full bg-sky-950/60" />
+                        </div>
+                      </motion.div>
+
+                      <div className="absolute right-[84px] bottom-[66px] h-[2px] w-[54px] origin-right -rotate-[18deg] rounded-full bg-slate-100/70" />
+                      <div className="absolute right-[82px] bottom-[64px] h-[6px] w-[58px] origin-right -rotate-[18deg] rounded-full bg-sky-950/35 blur-[1px]" />
+
+                      <AnimatePresence>
+                        {isRoutePhase && (
+                          <>
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 0.9 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute left-[28px] top-[28px] z-30 h-[2px] w-[170px]"
+                            >
+                              <div className="h-full w-full bg-[repeating-linear-gradient(90deg,rgba(125,211,252,0.95)_0px,rgba(125,211,252,0.95)_8px,transparent_8px,transparent_14px)]" />
+                            </motion.div>
+
+                            <motion.div
+                              initial={{ opacity: 0, x: 0 }}
+                              animate={{
+                                opacity: [0.2, 1, 1],
+                                x: [0, 96, 160],
+                              }}
+                              exit={{ opacity: 0 }}
+                              transition={{
+                                duration: 1.8,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                              className="absolute left-[28px] top-[23px] z-30 text-[10px]"
+                            >
+                              🧭
+                            </motion.div>
+
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{
+                                opacity: [0.4, 1, 0.4],
+                                y: [0, -2, 0],
+                              }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 1.2, repeat: Infinity }}
+                              className="absolute left-[60px] top-[8px] z-30 rounded-full border border-sky-200/80 bg-sky-300/25 px-2 py-[1px] text-[8px] font-black tracking-wide text-sky-50"
+                            >
+                              RUTE 9.500 KM
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+
+                      <motion.div
+                        animate={{
+                          x: craneRunning
+                            ? [hookStartX, hookStartX, hookTargetX, hookTargetX]
+                            : hookStartX,
+                          y: hookY,
+                        }}
+                        transition={
+                          craneRunning
+                            ? {
+                                duration: 2.2,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                times: [0, 0.3, 0.75, 1],
+                              }
+                            : { duration: 0.4 }
+                        }
+                        className="absolute left-0 top-0 z-20"
+                      >
+                        <motion.div
+                          animate={{
+                            height: craneRunning ? [16, 42, 28, 18] : 16,
+                          }}
+                          transition={
+                            craneRunning
+                              ? {
+                                  duration: 2.2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut",
+                                  times: [0, 0.3, 0.75, 1],
                                 }
-                              </span>
-                            )}
-
-                            {isMismatchVisual && isMismatchFloat && (
-                              <span className="absolute -right-1 -top-1 rounded-full bg-emerald-300 px-1 text-[8px] font-black text-emerald-900">
-                                {
-                                  FLOAT_DECIMAL_FRUITS[
-                                    i % FLOAT_DECIMAL_FRUITS.length
-                                  ]
+                              : { duration: 0.4 }
+                          }
+                          className="mx-auto w-[2px] rounded-full bg-amber-100/90"
+                        />
+                        <div className="mx-auto -mt-[1px] h-[4px] w-[8px] rounded-full bg-amber-200" />
+                        <motion.div
+                          animate={{
+                            rotate: craneRunning ? [0, 3, -3, 0] : 0,
+                            y: craneRunning ? [0, 1, -1, 0] : 0,
+                          }}
+                          transition={
+                            craneRunning
+                              ? {
+                                  duration: 0.9,
+                                  repeat: Infinity,
+                                  ease: "easeInOut",
                                 }
-                              </span>
-                            )}
+                              : { duration: 0.4 }
+                          }
+                          className="mt-1 rounded-sm border border-amber-200/70 bg-amber-300/70 px-1 py-[1px] text-[8px] font-black text-amber-950"
+                        >
+                          📦
+                        </motion.div>
+                      </motion.div>
 
-                            {isMismatchVisual && isMismatchLong && (
-                              <span className="absolute -right-1 -top-1 rounded-full bg-amber-300 px-1 text-[8px] font-black text-amber-900">
-                                {
-                                  LONG_BIG_NUMBER_FRUITS[
-                                    i % LONG_BIG_NUMBER_FRUITS.length
-                                  ]
-                                }
+                      <AnimatePresence>
+                        {isCrewBoarding &&
+                          Array.from({ length: crewWaveCount }).map((_, i) => (
+                            <motion.div
+                              key={`crew-${i}`}
+                              initial={{ opacity: 0, x: 252 - i * 6, y: 108 }}
+                              animate={{
+                                opacity: [0, 1, 1, 1, 0],
+                                x: [
+                                  252 - i * 6,
+                                  230 - i * 5,
+                                  206 - i * 4,
+                                  176 - i * 3,
+                                  152 - i * 2,
+                                ],
+                                y: [
+                                  108,
+                                  96 - (i % 2) * 2,
+                                  84 - (i % 2) * 2,
+                                  74 - (i % 2),
+                                  68 - (i % 2),
+                                ],
+                                scale: [0.95, 1, 1, 1],
+                              }}
+                              exit={{ opacity: 0 }}
+                              transition={{
+                                delay: i * 0.1,
+                                duration: 1.45,
+                                ease: "easeInOut",
+                              }}
+                              className="absolute left-0 top-0 z-20 text-[12px]"
+                            >
+                              <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.55)]">
+                                {CREW_EMOJIS[i % CREW_EMOJIS.length]}
                               </span>
-                            )}
+                            </motion.div>
+                          ))}
+                      </AnimatePresence>
 
-                            {isMismatchVisual && isMismatchShort && (
-                              <span className="absolute -right-1 -top-1 rounded-full bg-fuchsia-300 px-1 text-[8px] font-black text-fuchsia-900">
-                                {
-                                  SHORT_SMALL_NUMBER_FRUITS[
-                                    i % SHORT_SMALL_NUMBER_FRUITS.length
-                                  ]
-                                }
-                              </span>
-                            )}
-                          </motion.div>
-                        );
-                      })}
+                      <AnimatePresence>
+                        {crewOnDeckCount > 0 &&
+                          Array.from({ length: crewOnDeckCount }).map(
+                            (_, i) => (
+                              <motion.div
+                                key={`crew-on-deck-${i}`}
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{
+                                  delay: 0.1 + i * 0.08,
+                                  duration: 0.35,
+                                }}
+                                className="absolute left-[128px] top-[62px] z-20 text-[11px]"
+                                style={{ transform: `translateX(${i * 10}px)` }}
+                              >
+                                <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.55)]">
+                                  {CREW_EMOJIS[i % CREW_EMOJIS.length]}
+                                </span>
+                              </motion.div>
+                            ),
+                          )}
+                      </AnimatePresence>
+
+                      <AnimatePresence>
+                        {containerLoadCount > 0 &&
+                          Array.from({ length: containerLoadCount }).map(
+                            (_, i) => (
+                              <motion.div
+                                key={`container-${i}`}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ delay: i * 0.06, duration: 0.35 }}
+                                className="absolute left-[132px] bottom-[42px] z-10"
+                                style={{
+                                  transform: `translate(${(i % 3) * 12}px, -${Math.floor(i / 3) * 10}px)`,
+                                }}
+                              >
+                                <span className="rounded-sm border border-amber-200/60 bg-amber-300/60 px-1 py-[1px] text-[8px] font-black text-amber-950">
+                                  📦
+                                </span>
+                              </motion.div>
+                            ),
+                          )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div
+                      className={`${sceneStatus ? "mt-2" : "mt-1"} grid grid-cols-2 gap-2`}
+                    >
+                      <div className="rounded-lg border border-sky-200/35 bg-slate-900/45 px-2 py-1.5">
+                        <p className="text-[8px] font-black tracking-wide text-sky-100/80">
+                          KRU AKTIF
+                        </p>
+                        <p className="text-[10px] font-black text-sky-100">
+                          {cargoData.jumlahKru || "-"} orang
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-cyan-200/35 bg-slate-900/45 px-2 py-1.5">
+                        <p className="text-[8px] font-black tracking-wide text-cyan-100/80">
+                          MUATAN
+                        </p>
+                        <p className="text-[10px] font-black text-cyan-100">
+                          {formattedBeratKontainer} kg
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-sky-200/35 bg-slate-900/45 px-2 py-1.5">
+                        <p className="text-[8px] font-black tracking-wide text-sky-100/80">
+                          JARAK
+                        </p>
+                        <p className="text-[10px] font-black text-sky-100">
+                          {formattedJarakKm} km
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-cyan-200/35 bg-slate-900/45 px-2 py-1.5">
+                        <p className="text-[8px] font-black tracking-wide text-cyan-100/80">
+                          KOORD. LAT
+                        </p>
+                        <p className="text-[10px] font-black text-cyan-100">
+                          {formattedKoordinat}
+                        </p>
+                      </div>
                     </div>
 
                     <AnimatePresence>

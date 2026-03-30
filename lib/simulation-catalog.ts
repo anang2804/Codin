@@ -97,6 +97,62 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
     ],
   },
   {
+    title: "Variabel",
+    badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
+    items: [
+      {
+        title: "Buah di Keranjang",
+        description:
+          "Lengkapi deklarasi variabel jumlah_buah dan berat_buah dengan tipe data yang tepat.",
+        href: "/siswa/simulasi/variabel-buah-keranjang",
+        slug: "variabel-buah-keranjang",
+        level: "Dasar",
+        gradient: "from-amber-100 to-orange-200",
+        emoji: "🧺",
+        accent: "border-amber-500",
+      },
+      {
+        title: "Data Siswa",
+        description:
+          "Lengkapi deklarasi variabel umur, tinggi, dan jenis_kelamin dengan tipe data yang tepat.",
+        href: "/siswa/simulasi/variabel-data-siswa",
+        slug: "variabel-data-siswa",
+        level: "Dasar",
+        gradient: "from-cyan-100 to-sky-200",
+        emoji: "🎓",
+        accent: "border-cyan-500",
+      },
+      {
+        title: "Manajemen Kapal Kargo",
+        description:
+          "Lengkapi deklarasi variabel jumlah_kru, berat_kontainer, jarak_tempuh_mm, dan koordinat_lintang dengan tipe data yang tepat.",
+        href: "/siswa/simulasi/variabel-kapal-kargo",
+        slug: "variabel-kapal-kargo",
+        level: "Dasar",
+        gradient: "from-emerald-100 to-lime-200",
+        emoji: "🚢",
+        accent: "border-emerald-500",
+      },
+    ],
+  },
+  {
+    title: "Ekspresi",
+    badgeClass: "bg-pink-50 text-pink-700 border border-pink-100",
+    items: [
+      {
+        title: "Operasi Matematika",
+        description:
+          "Pilih operator matematika (+, -, *, /) untuk menghitung hasil ekspresi dan lihat hasilnya secara real-time.",
+        href: "/siswa/simulasi/ekspresi-operasi",
+        slug: "ekspresi-operasi",
+        level: "Dasar",
+        gradient: "from-pink-100 to-rose-200",
+        emoji: "🔢",
+        accent: "border-pink-500",
+      },
+    ],
+  },
+  {
     title: "Pseudocode",
     badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
     items: [
@@ -154,34 +210,6 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         gradient: "from-emerald-100 to-lime-200",
         emoji: "🛒",
         accent: "border-emerald-500",
-      },
-    ],
-  },
-  {
-    title: "Variabel",
-    badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
-    items: [
-      {
-        title: "Buah di Keranjang",
-        description:
-          "Lengkapi deklarasi variabel jumlah_buah dan berat_buah dengan tipe data yang tepat.",
-        href: "/siswa/simulasi/variabel-buah-keranjang",
-        slug: "variabel-buah-keranjang",
-        level: "Dasar",
-        gradient: "from-amber-100 to-orange-200",
-        emoji: "🧺",
-        accent: "border-amber-500",
-      },
-      {
-        title: "Data Siswa",
-        description:
-          "Lengkapi deklarasi variabel umur, tinggi, dan jenis_kelamin dengan tipe data yang tepat.",
-        href: "/siswa/simulasi/variabel-data-siswa",
-        slug: "variabel-data-siswa",
-        level: "Menengah",
-        gradient: "from-cyan-100 to-sky-200",
-        emoji: "🎓",
-        accent: "border-cyan-500",
       },
     ],
   },

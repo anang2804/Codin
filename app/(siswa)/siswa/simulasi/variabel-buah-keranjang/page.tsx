@@ -238,6 +238,7 @@ export default function VariabelBuahKeranjangPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [runVisualKey, setRunVisualKey] = useState(0);
   const [mismatchType, setMismatchType] = useState<"jumlah" | "berat" | null>(
     null,
   );
@@ -263,6 +264,10 @@ export default function VariabelBuahKeranjangPage() {
   const blankLineSuffix: Record<number, string> = {
     0: `jumlah_buah = ${challenge.jumlahBuah};`,
     1: `berat_buah = ${challenge.beratBuah.toFixed(1)};`,
+  };
+  const ghostCommandHints: Record<number, CommandChoice> = {
+    0: "int",
+    1: "float",
   };
 
   const expectedSolution = [
@@ -444,6 +449,7 @@ export default function VariabelBuahKeranjangPage() {
 
   const startRunning = () => {
     resetSim(false);
+    setRunVisualKey((prev) => prev + 1);
     setIsRunning(true);
     void executeStep(0);
   };
@@ -926,7 +932,7 @@ export default function VariabelBuahKeranjangPage() {
                                   : "italic text-slate-300 hover:bg-slate-100"
                               } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
-                              {selected ?? "_____"}
+                              {selected ?? ghostCommandHints[i] ?? "_____"}
                             </button>{" "}
                             <span className="text-slate-900">
                               {blankLineSuffix[i]}
@@ -1089,6 +1095,7 @@ export default function VariabelBuahKeranjangPage() {
                 </div>
 
                 <motion.div
+                  key={`buah-visual-${runVisualKey}`}
                   animate={jumlahMismatchAnimation}
                   transition={{ duration: 0.55 }}
                   className="relative h-56 w-72"
