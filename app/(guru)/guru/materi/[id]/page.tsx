@@ -785,32 +785,30 @@ export default function GuruMateriDetailPage() {
               )}
             </div>
 
-            {/* URL input — always mounted, visible only for "link" type */}
-            <div
-              className={
-                subBabForm.content_type === "link" ? "space-y-1.5" : "hidden"
-              }
-            >
-              <Label
-                htmlFor="content-url"
-                className="text-sm font-medium text-gray-700"
-              >
-                URL Link
-              </Label>
-              <Input
-                id="content-url"
-                type="url"
-                placeholder="https://example.com atau https://youtube.com/watch?v=..."
-                value={subBabForm.content_url ?? ""}
-                onChange={(e) =>
-                  setSubBabForm({
-                    ...subBabForm,
-                    content_url: e.target.value,
-                  })
-                }
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
-              />
-            </div>
+            {/* URL input hanya dirender saat tipe konten link */}
+            {subBabForm.content_type === "link" && (
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="content-url"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  URL Link
+                </Label>
+                <Input
+                  id="content-url"
+                  type="url"
+                  placeholder="https://example.com atau https://youtube.com/watch?v=..."
+                  value={subBabForm.content_url ?? ""}
+                  onChange={(e) =>
+                    setSubBabForm({
+                      ...subBabForm,
+                      content_url: e.target.value,
+                    })
+                  }
+                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
+                />
+              </div>
+            )}
 
             {/* Deskripsi */}
             <div className="space-y-1.5">

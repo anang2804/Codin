@@ -180,7 +180,7 @@ const COMMAND_DETAILS = {
   },
   DEFAULT: {
     title: "SIAP MENULIS",
-    desc: "Lengkapi tipe data yang tepat untuk setiap variabel.",
+    desc: "Lengkapi tipe data variabel, lalu amati ekspresi sederhana yang terbentuk dari data.",
     color: "bg-slate-50 border-slate-200",
   },
 } as const;
@@ -410,7 +410,7 @@ export default function VariabelDataSiswaPage() {
       setActiveLine(-1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Deklarasi variabel sudah benar. int untuk umur, float untuk tinggi, dan char untuk jenis_kelamin.",
+        "Berhasil! Tipe data variabel benar, lalu ekspresi umur + 1 dapat dihitung dengan tepat.",
       );
       return;
     }
@@ -711,6 +711,11 @@ export default function VariabelDataSiswaPage() {
   };
 
   const totalDisplayLines = Math.max(TOTAL_CODE_LINES, 10);
+  const ekspresiUmurTahunDepan =
+    studentData.umur > 0 ? studentData.umur + 1 : null;
+  const ekspresiPreview = ekspresiUmurTahunDepan
+    ? `${studentData.umur} + 1 = ${ekspresiUmurTahunDepan}`
+    : "umur + 1 = ?";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-lime-50 text-foreground">
@@ -733,7 +738,7 @@ export default function VariabelDataSiswaPage() {
 
           <div>
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-              Variabel Data Siswa
+              Variabel Terpadu Siswa
             </h1>
           </div>
         </div>
@@ -777,7 +782,7 @@ export default function VariabelDataSiswaPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Deskripsi Tipe Data
+              Deskripsi Konsep
             </h2>
           </div>
 
@@ -838,6 +843,19 @@ export default function VariabelDataSiswaPage() {
             </div>
           </div>
 
+          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
+            <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase text-emerald-700">
+              <span>Preview Ekspresi</span>
+              <Edit3 size={10} />
+            </div>
+            <p className="text-[10px] font-bold leading-tight text-muted-foreground">
+              int umur_tahun_depan = umur + 1;
+            </p>
+            <p className="mt-1 text-[11px] font-black text-emerald-800">
+              {ekspresiPreview}
+            </p>
+          </div>
+
           <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
             <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase text-emerald-700">
               <span>Status Fokus</span>
@@ -863,15 +881,15 @@ export default function VariabelDataSiswaPage() {
                     MISI
                   </span>
                   <h2 className="text-[15px] font-black uppercase tracking-tight text-foreground">
-                    Lengkapi Tipe Data Variabel
+                    Tipe Data, Variabel, dan Ekspresi
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
                   Susun deklarasi variabel untuk data siswa. Isi bagian kosong
-                  agar tipe data variabel sesuai nilainya. Nilai acak saat ini:
-                  umur = {challenge.umur}, tinggi ={" "}
-                  {challenge.tinggi.toFixed(1)}, jenis_kelamin = '
-                  {challenge.jenisKelamin}'.
+                  agar tipe data variabel sesuai nilainya, lalu pahami ekspresi
+                  sederhana `umur + 1`. Nilai acak saat ini: umur ={" "}
+                  {challenge.umur}, tinggi = {challenge.tinggi.toFixed(1)},
+                  jenis_kelamin = '{challenge.jenisKelamin}'.
                 </p>
               </div>
             </div>
@@ -888,10 +906,11 @@ export default function VariabelDataSiswaPage() {
               >
                 <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black tracking-tight text-emerald-700">
-                    Berhasil! Deklarasi variabel benar
+                    Berhasil! Simulasi terpadu selesai
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
                     Kunci benar: baris 1 int, baris 2 float, baris 3 char.
+                    Ekspresi: umur + 1 = {ekspresiUmurTahunDepan ?? "?"}.
                   </p>
                 </div>
               </motion.section>
@@ -912,7 +931,7 @@ export default function VariabelDataSiswaPage() {
                     }`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    ALGORITMA VARIABEL
+                    ALGORITMA TERPADU
                   </span>
                 </div>
               </div>
