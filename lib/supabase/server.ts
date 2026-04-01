@@ -25,7 +25,11 @@ function resolveCookieName(
   ];
 
   for (const candidate of candidates) {
-    if (cookieNames.some((name) => name === candidate || name.startsWith(`${candidate}.`))) {
+    if (
+      cookieNames.some(
+        (name) => name === candidate || name.startsWith(`${candidate}.`),
+      )
+    ) {
       return candidate;
     }
   }
