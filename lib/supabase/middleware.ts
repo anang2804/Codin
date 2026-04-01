@@ -3,13 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 type AuthScope = "admin" | "guru" | "siswa" | "shared";
 
-function scopePath(scope: AuthScope): string {
-  if (scope === "admin") return "/admin";
-  if (scope === "guru") return "/guru";
-  if (scope === "siswa") return "/siswa";
-  return "/";
-}
-
 function scopeFromPath(pathname: string): AuthScope {
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/guru")) return "guru";
@@ -48,7 +41,10 @@ function resolveCookieName(
   cookieNames: string[],
 ): string {
   const preferred = `sb-${hostKey}-${scope}-auth-token`;
-  const candidates = [preferred];
+  const candidates =
+    scope === "shared"
+      ? [preferred]
+      : [preferred, `sb-${hostKey}-shared-auth-token`];
 
   for (const candidate of candidates) {
     if (
@@ -86,7 +82,6 @@ export async function updateSession(request: NextRequest) {
     {
       cookieOptions: {
         name: cookieName,
-        path: scopePath(scope),
       },
       cookies: {
         getAll() {
@@ -111,16 +106,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const debugEnabled = process.env.NEXT_PUBLIC_AUTH_DEBUG === "true";
-
-  const applyDebugHeaders = (response: NextResponse) => {
-    if (!debugEnabled) return response;
-    response.headers.set("x-auth-scope", scope);
-    response.headers.set("x-auth-cookie", cookieName);
-    response.headers.set("x-auth-user", user ? "1" : "0");
-    return response;
-  };
-
   // Redirect unauthenticated users to login
   if (
     !user &&
@@ -133,8 +118,8 @@ export async function updateSession(request: NextRequest) {
     if (scope !== "shared") {
       url.searchParams.set("role", scope);
     }
-    return applyDebugHeaders(NextResponse.redirect(url));
+    return NextResponse.redirect(url);
   }
 
-  return applyDebugHeaders(supabaseResponse);
+  return supabaseResponse;
 }

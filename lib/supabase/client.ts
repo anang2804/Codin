@@ -14,13 +14,6 @@ function resolveScope(pathname: string, override?: AuthScope): AuthScope {
   return "shared";
 }
 
-function scopePath(scope: AuthScope): string {
-  if (scope === "admin") return "/admin";
-  if (scope === "guru") return "/guru";
-  if (scope === "siswa") return "/siswa";
-  return "/";
-}
-
 export function createClient(scopeOverride?: AuthScope) {
   const host =
     typeof window !== "undefined" ? window.location.hostname : "local";
@@ -37,7 +30,6 @@ export function createClient(scopeOverride?: AuthScope) {
       isSingleton: false,
       cookieOptions: {
         name: cookieKey,
-        path: scopePath(scope),
       },
       global: {
         headers: {
