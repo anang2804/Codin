@@ -3,6 +3,13 @@ import { cookies, headers } from "next/headers";
 
 type AuthScope = "admin" | "guru" | "siswa" | "shared";
 
+function scopePath(scope: AuthScope): string {
+  if (scope === "admin") return "/admin";
+  if (scope === "guru") return "/guru";
+  if (scope === "siswa") return "/siswa";
+  return "/";
+}
+
 function scopeFromPath(pathname: string): AuthScope {
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/guru")) return "guru";
@@ -41,10 +48,7 @@ function resolveCookieName(
   cookieNames: string[],
 ): string {
   const preferred = `sb-${hostKey}-${scope}-auth-token`;
-  const candidates =
-    scope === "shared"
-      ? [preferred]
-      : [preferred, `sb-${hostKey}-shared-auth-token`];
+  const candidates = [preferred];
 
   for (const candidate of candidates) {
     if (
@@ -81,6 +85,7 @@ export async function createClient() {
     {
       cookieOptions: {
         name: cookieName,
+        path: scopePath(scope),
       },
       cookies: {
         getAll() {
