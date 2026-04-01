@@ -58,23 +58,3 @@ npm run dev
 DATABASE_URL="postgresql://postgres.PROJECT:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connect_timeout=10"
 DIRECT_URL="postgresql://postgres.PROJECT:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
 ```
-
-## 7. Multi-Role Login Paralel (Admin/Guru/Siswa)
-
-- ✅ Gunakan subdomain terpisah per role agar sesi tidak saling menimpa
-- ✅ Tambahkan domain berikut di project Vercel:
-	- `admin.your-domain.com`
-	- `guru.your-domain.com`
-	- `siswa.your-domain.com`
-- ✅ Arahkan semua subdomain ke deployment app yang sama
-- ✅ Set environment variable di Vercel (Production + Preview):
-	- `NEXT_PUBLIC_ADMIN_HOST=admin.your-domain.com`
-	- `NEXT_PUBLIC_GURU_HOST=guru.your-domain.com`
-	- `NEXT_PUBLIC_SISWA_HOST=siswa.your-domain.com`
-- ✅ Redeploy setelah env variable diubah
-
-Contoh alur pakai:
-
-1. Login admin di `https://admin.your-domain.com/auth/login`
-2. Login siswa di `https://siswa.your-domain.com/auth/login`
-3. Keduanya bisa aktif bersamaan dalam browser/profile yang sama

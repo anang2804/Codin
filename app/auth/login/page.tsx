@@ -18,12 +18,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  const roleHosts = {
-    admin: process.env.NEXT_PUBLIC_ADMIN_HOST,
-    guru: process.env.NEXT_PUBLIC_GURU_HOST,
-    siswa: process.env.NEXT_PUBLIC_SISWA_HOST,
-  } as const;
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -48,31 +42,13 @@ export default function LoginPage() {
           .eq("id", user.id)
           .single();
 
-        const role =
-          profile?.role === "guru" ||
-          profile?.role === "admin" ||
-          profile?.role === "siswa"
-            ? profile.role
-            : "siswa";
-
-        const dashboardPath =
-          role === "guru"
-            ? "/guru/dashboard"
-            : role === "admin"
-              ? "/admin/dashboard"
-              : "/siswa/dashboard";
-
-        const targetHost = roleHosts[role];
-        const currentHost =
-          typeof window !== "undefined" ? window.location.hostname : "";
-
-        if (targetHost && currentHost && targetHost !== currentHost) {
-          const targetUrl = `${window.location.protocol}//${targetHost}${dashboardPath}`;
-          window.location.assign(targetUrl);
-          return;
+        if (profile?.role === "guru") {
+          router.push("/guru/dashboard");
+        } else if (profile?.role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/siswa/dashboard");
         }
-
-        router.push(dashboardPath);
       }
     } catch (error: unknown) {
       const rawMessage = error instanceof Error ? error.message : "Gagal login";
