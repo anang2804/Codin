@@ -7,6 +7,9 @@ function scopeFromPath(pathname: string): AuthScope {
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/guru")) return "guru";
   if (pathname.startsWith("/siswa")) return "siswa";
+  if (pathname.startsWith("/api/admin")) return "admin";
+  if (pathname.startsWith("/api/guru")) return "guru";
+  if (pathname.startsWith("/api/siswa")) return "siswa";
   return "shared";
 }
 
@@ -38,13 +41,10 @@ function resolveCookieName(
   cookieNames: string[],
 ): string {
   const preferred = `sb-${hostKey}-${scope}-auth-token`;
-  const candidates = [
-    preferred,
-    `sb-${hostKey}-admin-auth-token`,
-    `sb-${hostKey}-guru-auth-token`,
-    `sb-${hostKey}-siswa-auth-token`,
-    `sb-${hostKey}-shared-auth-token`,
-  ];
+  const candidates =
+    scope === "shared"
+      ? [preferred]
+      : [preferred, `sb-${hostKey}-shared-auth-token`];
 
   for (const candidate of candidates) {
     if (
