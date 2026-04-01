@@ -134,7 +134,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         accent: "border-violet-500",
       },
       {
-        title: "Dasar (Varian): Lab Sains",
+        title: "Lab Sains",
         description:
           "Variasi visual level dasar untuk melatih tipe data int, float, char, dan boolean pada konteks lab sederhana.",
         href: "/siswa/simulasi/variabel-terpadu-dasar-lab",

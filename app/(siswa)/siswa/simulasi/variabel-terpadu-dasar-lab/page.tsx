@@ -268,6 +268,26 @@ export default function VariabelTerpaduDasarPage() {
   };
 
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
+  const completedCount = [
+    labPreview.umur !== null,
+    labPreview.tinggi !== null,
+    labPreview.inisial !== "",
+    labPreview.aktif !== null,
+  ].filter(Boolean).length;
+
+  const umurLevel =
+    labPreview.umur === null ? 8 : Math.max(24, Math.min(92, labPreview.umur * 5));
+  const tinggiLevel =
+    labPreview.tinggi === null
+      ? 6
+      : Math.max(20, Math.min(94, (labPreview.tinggi - 140) * 2));
+  const inisialLevel = labPreview.inisial ? 84 : 10;
+  const aktifColor =
+    labPreview.aktif === null
+      ? "#94a3b8"
+      : labPreview.aktif
+        ? "#22c55e"
+        : "#f97316";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-lime-50 text-foreground">
@@ -286,7 +306,7 @@ export default function VariabelTerpaduDasarPage() {
             <Terminal size={20} />
           </div>
           <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-            Variabel Dasar - Lab Sains
+            Lab Sains
           </h1>
         </div>
 
@@ -509,79 +529,159 @@ export default function VariabelTerpaduDasarPage() {
               </div>
             </section>
 
-            <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-300 bg-gradient-to-b from-slate-100 to-slate-200 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-300 bg-white/80 px-6 py-4">
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                  LAB SAINS REALISTIS
-                </h2>
-                <div
-                  className={`h-2.5 w-2.5 rounded-full ${isRunning ? "animate-pulse bg-emerald-500" : errorLine !== -1 ? "bg-rose-500" : "bg-slate-500"}`}
-                />
+            <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-800 bg-[#020617] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-1.5 text-emerald-400">
+                    <Activity size={14} />
+                  </div>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                    SIMULATION PREVIEW
+                  </h2>
+                </div>
+                <span
+                  className={`rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${isRunning ? "bg-emerald-500 text-white" : errorLine !== -1 ? "bg-rose-500 text-white" : "bg-slate-700 text-slate-300"}`}
+                >
+                  {isRunning ? "RUNNING" : errorLine !== -1 ? "ERROR" : "IDLE"}
+                </span>
               </div>
 
-              <div className="relative flex flex-1 flex-col p-5 text-slate-700">
-                <div className="absolute inset-x-4 bottom-20 h-3 rounded-full bg-slate-400/40 blur-sm" />
-                <div className="absolute inset-x-3 bottom-8 h-16 rounded-2xl border border-slate-300 bg-slate-300/70" />
+              <motion.div
+                animate={errorLine !== -1 ? { x: [0, -4, 4, -2, 2, 0] } : { x: 0 }}
+                transition={
+                  errorLine !== -1
+                    ? { duration: 0.35, repeat: Infinity, ease: "linear" }
+                    : { duration: 0.2 }
+                }
+                className="relative flex flex-1 flex-col overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#1e293b_0%,#020617_60%)]" />
+                <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(148,163,184,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.2)_1px,transparent_1px)] [background-size:34px_34px]" />
 
-                <div className="relative z-10 grid grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-slate-300 bg-white/90 p-3 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                      Tabung Umur
-                    </p>
-                    <div className="mt-2 h-20 rounded-md border border-emerald-200 bg-gradient-to-t from-emerald-300 to-emerald-100 px-2 pt-2">
-                      <p className="text-center text-lg font-black text-emerald-800">
-                        {labPreview.umur ?? "-"}
-                      </p>
+                <div className="relative z-10 px-5 pt-5">
+                  <div className="rounded-xl border border-slate-700 bg-slate-950/65 px-3 py-2">
+                    <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      <span>Progress Variabel</span>
+                      <span className="text-emerald-300">{completedCount}/4</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                      <motion.div
+                        animate={{ width: `${(completedCount / 4) * 100}%` }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative z-10 mt-3 flex-1 px-5">
+                  <div className="absolute inset-x-5 bottom-14 h-20 rounded-2xl border border-slate-700 bg-gradient-to-b from-slate-700 to-slate-900 shadow-2xl" />
+                  <div className="absolute inset-x-6 bottom-[126px] h-4 rounded-full bg-slate-900/70" />
+
+                  <div className="absolute left-8 bottom-[124px] flex items-end gap-3">
+                    <div className="relative h-28 w-14 rounded-b-2xl rounded-t-md border-2 border-white/20 bg-white/10 shadow-xl backdrop-blur-sm">
+                      <motion.div
+                        animate={{ height: `${umurLevel}%` }}
+                        transition={{ duration: 0.7, ease: "easeOut" }}
+                        className="absolute bottom-0 left-0 right-0 rounded-b-xl bg-gradient-to-t from-emerald-500 to-emerald-300"
+                      />
+                      {isRunning && (
+                        <motion.div
+                          animate={{ y: [-2, -22], opacity: [0.6, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.7, ease: "linear" }}
+                          className="absolute bottom-6 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/70"
+                        />
+                      )}
+                      <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-wide text-slate-300">
+                        Umur
+                      </span>
+                    </div>
+
+                    <div className="relative h-32 w-14 rounded-b-2xl rounded-t-md border-2 border-white/20 bg-white/10 shadow-xl backdrop-blur-sm">
+                      <motion.div
+                        animate={{ height: `${tinggiLevel}%` }}
+                        transition={{ duration: 0.7, ease: "easeOut" }}
+                        className="absolute bottom-0 left-0 right-0 rounded-b-xl bg-gradient-to-t from-sky-500 to-cyan-300"
+                      />
+                      {isRunning && (
+                        <motion.div
+                          animate={{ y: [-2, -24], opacity: [0.6, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.75, ease: "linear", delay: 0.18 }}
+                          className="absolute bottom-8 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/70"
+                        />
+                      )}
+                      <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-wide text-slate-300">
+                        Tinggi
+                      </span>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-300 bg-white/90 p-3 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                      Gelas Ukur
-                    </p>
-                    <div className="mt-2 h-20 rounded-md border border-sky-200 bg-gradient-to-t from-sky-300 to-sky-100 px-2 pt-2">
-                      <p className="text-center text-lg font-black text-sky-800">
-                        {labPreview.tinggi !== null
-                          ? labPreview.tinggi.toFixed(1)
-                          : "-"}
-                      </p>
+                  <div className="absolute right-8 bottom-[124px] w-24">
+                    <div className="relative h-24 rounded-xl border border-amber-300/40 bg-gradient-to-b from-amber-100 to-amber-300 shadow-xl">
+                      <motion.div
+                        animate={{ opacity: inisialLevel > 15 ? 1 : 0.5 }}
+                        transition={{ duration: 0.35 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center"
+                      >
+                        <p className="text-2xl font-black text-amber-900">
+                          {labPreview.inisial || "-"}
+                        </p>
+                        <div className="mt-1 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide text-amber-900">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: aktifColor }}
+                          />
+                          {labPreview.aktif === null
+                            ? "pending"
+                            : labPreview.aktif
+                              ? "aktif"
+                              : "off"}
+                        </div>
+                      </motion.div>
                     </div>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-300 bg-white/90 p-3 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                    <p className="mt-1 text-center text-[8px] font-black uppercase tracking-wide text-slate-300">
                       Label Sampel
                     </p>
-                    <div className="mt-2 h-20 rounded-md border border-amber-200 bg-gradient-to-t from-amber-300 to-amber-100 px-2 pt-2">
-                      <p className="text-center text-lg font-black text-amber-800">
-                        {labPreview.inisial || "-"}
-                      </p>
-                      <p className="mt-1 text-center text-[10px] font-bold text-amber-700">
-                        status:{" "}
-                        {labPreview.aktif === null
-                          ? "-"
-                          : String(labPreview.aktif)}
-                      </p>
+                  </div>
+
+                  <div className="absolute left-1/2 top-7 z-20 w-[174px] -translate-x-1/2 rounded-xl border border-slate-700 bg-slate-950/85 p-2.5 shadow-xl">
+                    <div className="mb-1 flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-slate-400">
+                      <span>Lab Monitor</span>
+                      <span className="text-cyan-300">A1</span>
                     </div>
+                    <p className="font-mono text-[9px] leading-relaxed text-emerald-300">
+                      int umur={labPreview.umur ?? "-"};
+                      <br />
+                      float tinggi=
+                      {labPreview.tinggi !== null
+                        ? labPreview.tinggi.toFixed(1)
+                        : "-"}
+                      ;
+                      <br />
+                      char inisial='{labPreview.inisial || "-"}';
+                      <br />
+                      boolean aktif=
+                      {labPreview.aktif === null ? "-" : String(labPreview.aktif)};
+                    </p>
                   </div>
                 </div>
 
-                <div className="relative z-10 mt-4 rounded-xl border border-slate-300 bg-white/90 p-3 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Ringkasan Pengamatan
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold text-slate-700">
-                    int umur = {labPreview.umur ?? "-"}; float tinggi ={" "}
-                    {labPreview.tinggi !== null
-                      ? labPreview.tinggi.toFixed(1)
-                      : "-"}
-                    ; char inisial = '{labPreview.inisial || "-"}'; boolean
-                    aktif ={" "}
-                    {labPreview.aktif === null ? "-" : String(labPreview.aktif)}
-                    ;
+                <div className="relative z-10 border-t border-slate-800 bg-slate-950/70 px-6 py-3">
+                  <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                    <span>Logic Log</span>
+                    <span className={errorLine !== -1 ? "text-rose-400" : "text-emerald-400"}>
+                      {errorLine !== -1 ? "MISMATCH" : "STABLE"}
+                    </span>
+                  </div>
+                  <p className="font-mono text-[10px] text-cyan-300">
+                    {isRunning
+                      ? "Memproses validasi tipe data..."
+                      : errorLine !== -1
+                        ? `Baris ${errorLine + 1} perlu koreksi tipe.`
+                        : "Sistem siap. Tekan Jalankan untuk simulasi."}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             </aside>
           </div>
         </div>
