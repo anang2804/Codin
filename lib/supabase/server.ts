@@ -3,32 +3,10 @@ import { cookies, headers } from "next/headers";
 
 type AuthScope = "admin" | "guru" | "siswa" | "shared";
 
-function scopeFromPath(pathname: string): AuthScope {
-  if (pathname.startsWith("/admin")) return "admin";
-  if (pathname.startsWith("/guru")) return "guru";
-  if (pathname.startsWith("/siswa")) return "siswa";
-  return "shared";
-}
-
-function resolveScope(
-  pathname: string,
-  roleQuery: string | null,
-  referer: string | null,
-): AuthScope {
+function resolveScope(pathname: string, roleQuery: string | null): AuthScope {
   if (pathname.startsWith("/admin") || roleQuery === "admin") return "admin";
   if (pathname.startsWith("/guru") || roleQuery === "guru") return "guru";
   if (pathname.startsWith("/siswa") || roleQuery === "siswa") return "siswa";
-
-  if (referer) {
-    try {
-      const refererPath = new URL(referer).pathname;
-      const scope = scopeFromPath(refererPath);
-      if (scope !== "shared") return scope;
-    } catch {
-      // ignore invalid referer
-    }
-  }
-
   return "shared";
 }
 
@@ -65,10 +43,9 @@ export async function createClient() {
   const hostHeader = headerStore.get("host") || "local";
   const host = hostHeader.split(":")[0].toLowerCase();
   const hostKey = host.replace(/[^a-z0-9-]/g, "-");
-  const requestPath = headerStore.get("x-matched-path") || "";
-  const referer = headerStore.get("referer");
-  const roleQuery = null;
-  const scope = resolveScope(requestPath, roleQuery, referer);
+  const pathname = headerStore.get("x-pathname") || "";
+  const roleQuery = headerStore.get("x-role") || null;
+  const scope = resolveScope(pathname, roleQuery);
   const cookieName = resolveCookieName(
     hostKey,
     scope,

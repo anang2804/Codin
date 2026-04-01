@@ -37,7 +37,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { data: signInData, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -60,17 +60,6 @@ export default function LoginPage() {
           profile?.role === "siswa"
             ? profile.role
             : "siswa";
-
-        // If login came from shared scope, move session into role-specific scope
-        // so each role can stay logged in independently in parallel tabs.
-        if (authScope === "shared" && signInData.session) {
-          const roleClient = createClient(role);
-          await roleClient.auth.setSession({
-            access_token: signInData.session.access_token,
-            refresh_token: signInData.session.refresh_token,
-          });
-          await supabase.auth.signOut({ scope: "local" });
-        }
 
         const dashboardPath =
           role === "guru"
