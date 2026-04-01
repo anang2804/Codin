@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, LogOut } from "lucide-react";
 
@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const roleHosts = {
     admin: process.env.NEXT_PUBLIC_ADMIN_HOST,
@@ -27,12 +26,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const roleParam = searchParams.get("role");
-    const authScope =
-      roleParam === "admin" || roleParam === "guru" || roleParam === "siswa"
-        ? roleParam
-        : "shared";
-    const supabase = createClient(authScope);
+    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
