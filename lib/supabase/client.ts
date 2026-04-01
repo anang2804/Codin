@@ -17,8 +17,7 @@ function resolveScope(pathname: string, override?: AuthScope): AuthScope {
 export function createClient(scopeOverride?: AuthScope) {
   const host =
     typeof window !== "undefined" ? window.location.hostname : "local";
-  const pathname =
-    typeof window !== "undefined" ? window.location.pathname : "/";
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const hostKey = sanitize(host);
   const scope = resolveScope(pathname, scopeOverride);
   const cookieKey = `sb-${hostKey}-${scope}-auth-token`;
