@@ -158,6 +158,17 @@
     width: var(--sidebar-width-collapsed, 4.5rem);
   }
 
+  /* Expand hover hit area so "near sidebar" hover works consistently across browsers */
+  .sidebar-shell.sidebar-collapsed::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -12px;
+    width: 12px;
+    height: 100%;
+    pointer-events: auto;
+  }
+
   /* When collapsed, expand the sidebar overlay on hover without shifting content */
   .sidebar-shell.sidebar-collapsed:hover {
     width: 16rem;

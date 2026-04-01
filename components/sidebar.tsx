@@ -33,12 +33,15 @@ export function Sidebar({ role }: SidebarProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const stored = window.localStorage.getItem("sidebar_collapsed");
-    const initialCollapsed = stored === null ? true : stored === "true";
+    // Always start desktop in collapsed mode so hover-expand is consistent.
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    const initialCollapsed = isDesktop ? true : false;
     setCollapsed(initialCollapsed);
 
     const width = initialCollapsed ? "4.5rem" : "16rem";
     document.documentElement.style.setProperty("--sidebar-width", width);
+
+    window.localStorage.setItem("sidebar_collapsed", String(initialCollapsed));
   }, []);
 
   const toggleCollapse = () => {
