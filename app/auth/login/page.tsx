@@ -37,10 +37,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { data: signInData, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: signInData, error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
       if (error) throw error;
 
       // Get user to redirect to appropriate dashboard
