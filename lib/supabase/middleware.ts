@@ -3,10 +3,32 @@ import { NextResponse, type NextRequest } from "next/server";
 
 type AuthScope = "admin" | "guru" | "siswa" | "shared";
 
-function resolveScope(pathname: string, roleQuery: string | null): AuthScope {
+function scopeFromPath(pathname: string): AuthScope {
+  if (pathname.startsWith("/admin")) return "admin";
+  if (pathname.startsWith("/guru")) return "guru";
+  if (pathname.startsWith("/siswa")) return "siswa";
+  return "shared";
+}
+
+function resolveScope(
+  pathname: string,
+  roleQuery: string | null,
+  referer: string | null,
+): AuthScope {
   if (pathname.startsWith("/admin") || roleQuery === "admin") return "admin";
   if (pathname.startsWith("/guru") || roleQuery === "guru") return "guru";
   if (pathname.startsWith("/siswa") || roleQuery === "siswa") return "siswa";
+
+  if (referer) {
+    try {
+      const refererPath = new URL(referer).pathname;
+      const scope = scopeFromPath(refererPath);
+      if (scope !== "shared") return scope;
+    } catch {
+      // ignore invalid referer
+    }
+  }
+
   return "shared";
 }
 
@@ -42,7 +64,8 @@ export async function updateSession(request: NextRequest) {
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, "-");
   const roleQuery = request.nextUrl.searchParams.get("role");
-  const scope = resolveScope(request.nextUrl.pathname, roleQuery);
+  const referer = request.headers.get("referer");
+  const scope = resolveScope(request.nextUrl.pathname, roleQuery, referer);
   const cookieName = resolveCookieName(
     host,
     scope,
