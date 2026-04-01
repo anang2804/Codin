@@ -557,7 +557,10 @@ export default function VariabelTerpaduDasarPage() {
                         {labPreview.inisial || "-"}
                       </p>
                       <p className="mt-1 text-center text-[10px] font-bold text-amber-700">
-                        status: {labPreview.aktif === null ? "-" : String(labPreview.aktif)}
+                        status:{" "}
+                        {labPreview.aktif === null
+                          ? "-"
+                          : String(labPreview.aktif)}
                       </p>
                     </div>
                   </div>
@@ -569,9 +572,13 @@ export default function VariabelTerpaduDasarPage() {
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-700">
                     int umur = {labPreview.umur ?? "-"}; float tinggi ={" "}
-                    {labPreview.tinggi !== null ? labPreview.tinggi.toFixed(1) : "-"}; char inisial = '
-                    {labPreview.inisial || "-"}'; boolean aktif ={" "}
-                    {labPreview.aktif === null ? "-" : String(labPreview.aktif)};
+                    {labPreview.tinggi !== null
+                      ? labPreview.tinggi.toFixed(1)
+                      : "-"}
+                    ; char inisial = '{labPreview.inisial || "-"}'; boolean
+                    aktif ={" "}
+                    {labPreview.aktif === null ? "-" : String(labPreview.aktif)}
+                    ;
                   </p>
                 </div>
               </div>

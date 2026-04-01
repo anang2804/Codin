@@ -590,10 +590,16 @@ export default function VariabelTerpaduLanjutanPage() {
                     Papan Nilai
                   </p>
                   <p className="mt-1 text-sm font-semibold">
-                    skor: {smartPreview.skor ?? "-"} | bonus: {smartPreview.bonus !== null ? smartPreview.bonus.toFixed(1) : "-"}
+                    skor: {smartPreview.skor ?? "-"} | bonus:{" "}
+                    {smartPreview.bonus !== null
+                      ? smartPreview.bonus.toFixed(1)
+                      : "-"}
                   </p>
                   <p className="text-lg font-black text-indigo-800">
-                    nilai_akhir: {smartPreview.nilaiAkhir !== null ? smartPreview.nilaiAkhir.toFixed(1) : "-"}
+                    nilai_akhir:{" "}
+                    {smartPreview.nilaiAkhir !== null
+                      ? smartPreview.nilaiAkhir.toFixed(1)
+                      : "-"}
                   </p>
                 </div>
 
@@ -603,7 +609,9 @@ export default function VariabelTerpaduLanjutanPage() {
                       lulus
                     </p>
                     <p className="text-xl font-black text-emerald-800">
-                      {smartPreview.lulus === null ? "-" : String(smartPreview.lulus)}
+                      {smartPreview.lulus === null
+                        ? "-"
+                        : String(smartPreview.lulus)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-sky-300 bg-sky-50 p-3">
@@ -611,7 +619,9 @@ export default function VariabelTerpaduLanjutanPage() {
                       rekomendasi
                     </p>
                     <p className="text-xl font-black text-sky-800">
-                      {smartPreview.rekomendasi === null ? "-" : String(smartPreview.rekomendasi)}
+                      {smartPreview.rekomendasi === null
+                        ? "-"
+                        : String(smartPreview.rekomendasi)}
                     </p>
                   </div>
                 </div>

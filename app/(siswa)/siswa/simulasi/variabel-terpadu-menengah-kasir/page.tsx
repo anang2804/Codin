@@ -233,7 +233,13 @@ export default function VariabelTerpaduMenengahPage() {
     setErrorLine(-1);
     setShowSuccessCard(false);
     setFeedback("Sistem siap menjalankan algoritma.");
-    setKasirPreview({ tugas: null, uts: null, total: null, rata: null, lulus: null });
+    setKasirPreview({
+      tugas: null,
+      uts: null,
+      total: null,
+      rata: null,
+      lulus: null,
+    });
     if (regenerateChallenge) {
       setChallenge(createChallenge());
       setSelectedCommands({});
@@ -548,7 +554,14 @@ export default function VariabelTerpaduMenengahPage() {
                     Rp {(kasirPreview.total ?? 0).toLocaleString("id-ID")}
                   </p>
                   <p className="text-[11px] font-semibold text-amber-100/90">
-                    rata: {kasirPreview.rata !== null ? kasirPreview.rata.toFixed(1) : "-"} | lulus: {kasirPreview.lulus === null ? "-" : String(kasirPreview.lulus)}
+                    rata:{" "}
+                    {kasirPreview.rata !== null
+                      ? kasirPreview.rata.toFixed(1)
+                      : "-"}{" "}
+                    | lulus:{" "}
+                    {kasirPreview.lulus === null
+                      ? "-"
+                      : String(kasirPreview.lulus)}
                   </p>
                 </div>
 
@@ -561,7 +574,12 @@ export default function VariabelTerpaduMenengahPage() {
                     <p>uts ............ {kasirPreview.uts ?? "-"}</p>
                     <p>-------------------------</p>
                     <p>total .......... {kasirPreview.total ?? "-"}</p>
-                    <p>rata ........... {kasirPreview.rata !== null ? kasirPreview.rata.toFixed(1) : "-"}</p>
+                    <p>
+                      rata ...........{" "}
+                      {kasirPreview.rata !== null
+                        ? kasirPreview.rata.toFixed(1)
+                        : "-"}
+                    </p>
                   </div>
                 </div>
 
