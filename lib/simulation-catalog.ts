@@ -134,15 +134,26 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         accent: "border-violet-500",
       },
       {
-        title: "Lab Sains",
+        title: "Dashboard Speedometer",
         description:
-          "Variasi visual level dasar untuk melatih tipe data int, float, char, dan boolean pada konteks lab sederhana.",
-        href: "/siswa/simulasi/variabel-terpadu-dasar-lab",
-        slug: "variabel-terpadu-dasar-lab",
+          "Susun tipe data variabel yang tepat menggunakan int, float, char, dan boolean.",
+        href: "/siswa/simulasi/variabel-spedomater",
+        slug: "variabel-spedomater",
         level: "Dasar",
-        gradient: "from-cyan-100 to-sky-200",
-        emoji: "🧪",
-        accent: "border-cyan-500",
+        gradient: "from-emerald-100 to-cyan-200",
+        emoji: "🏎️",
+        accent: "border-emerald-500",
+      },
+      {
+        title: "Tiket & Paspor Perjalanan",
+        description:
+          "Susun tipe data variabel yang tepat menggunakan string, char, int, float, dan boolean.",
+        href: "/siswa/simulasi/variabel-terpadu-dasar-travel",
+        slug: "variabel-terpadu-dasar-travel",
+        level: "Dasar",
+        gradient: "from-teal-100 to-cyan-200",
+        emoji: "🛂",
+        accent: "border-teal-500",
       },
       {
         title: "Menengah (Varian): Kasir Mini",

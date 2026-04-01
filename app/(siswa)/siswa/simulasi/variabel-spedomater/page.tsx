@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
@@ -14,15 +15,17 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
-const SIMULASI_SLUG = "variabel-terpadu-dasar-lab";
+const SIMULASI_SLUG = "variabel-spedomater";
+const MODE_OPTIONS = ["Eco", "Sport", "Normal", "Comfort"] as const;
 
-type CommandChoice = "int" | "float" | "char" | "boolean";
+type CommandChoice = "int" | "float" | "char" | "boolean" | "string";
 
 type ChallengeData = {
   umur: number;
   tinggi: number;
   inisial: "A" | "B" | "C" | "D";
   aktif: boolean;
+  mode: string;
 };
 
 type LineConfig = {
@@ -38,23 +41,28 @@ const COMMAND_DETAILS: Record<
 > = {
   int: {
     title: "INT",
-    desc: "int untuk bilangan bulat, contoh: umur = 16",
+    desc: "adalah tipe data yang digunakan untuk menyimpan bilangan bulat, baik positif maupun negatif, tanpa komponen desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
   float: {
     title: "FLOAT",
-    desc: "float untuk bilangan desimal, contoh: tinggi = 165.5",
+    desc: "digunakan untuk menyimpan angka dengan komponen desimal (pecahan). ",
     color: "bg-sky-50 border-sky-200",
   },
   char: {
     title: "CHAR",
-    desc: "char untuk satu karakter, contoh: inisial = 'A'",
+    desc: "digunakan untuk menyimpan satu karakter tunggal ",
     color: "bg-amber-50 border-amber-200",
   },
   boolean: {
     title: "BOOLEAN",
-    desc: "boolean untuk true/false, contoh: aktif = true",
+    desc: "adalah tipe data yang hanya memiliki dua nilai: true atau false",
     color: "bg-violet-50 border-violet-200",
+  },
+  string: {
+    title: "STRING",
+    desc: "digunakan untuk menyimpan kumpulan karakter berupa teks.",
+    color: "bg-rose-50 border-rose-200",
   },
   default: {
     title: "DASAR",
@@ -70,11 +78,13 @@ function randomInt(min: number, max: number): number {
 function createChallenge(): ChallengeData {
   const tinggiBulat = randomInt(150, 178);
   const tinggiDecimal = randomInt(1, 9);
+  const modeOptions = ["Eco", "Sport", "Normal", "Comfort"];
   return {
     umur: randomInt(15, 18),
     tinggi: Number(`${tinggiBulat}.${tinggiDecimal}`),
     inisial: ["A", "B", "C", "D"][randomInt(0, 3)] as "A" | "B" | "C" | "D",
     aktif: Math.random() > 0.5,
+    mode: modeOptions[randomInt(0, modeOptions.length - 1)],
   };
 }
 
@@ -101,37 +111,45 @@ export default function VariabelTerpaduDasarPage() {
     tinggi: number | null;
     inisial: string;
     aktif: boolean | null;
+    mode: string;
   }>({
     umur: null,
     tinggi: null,
     inisial: "",
     aktif: null,
+    mode: "",
   });
 
   const lineConfigs: LineConfig[] = [
     {
       before: "",
-      after: ` umur = ${challenge.umur};`,
+      after: ` kecepatan = ${challenge.umur};`,
       expected: "int",
-      choices: ["int", "float", "char", "boolean"],
+      choices: ["int", "float", "char", "boolean", "string"],
     },
     {
       before: "",
-      after: ` tinggi = ${challenge.tinggi.toFixed(1)};`,
+      after: ` trip_meter = ${challenge.tinggi.toFixed(1)};`,
       expected: "float",
-      choices: ["int", "float", "char", "boolean"],
+      choices: ["int", "float", "char", "boolean", "string"],
     },
     {
       before: "",
-      after: ` inisial = '${challenge.inisial}';`,
+      after: ` gigi = '${challenge.inisial}';`,
       expected: "char",
-      choices: ["int", "float", "char", "boolean"],
+      choices: ["int", "float", "char", "boolean", "string"],
     },
     {
       before: "",
-      after: ` aktif = ${challenge.aktif};`,
+      after: ` ready = ${challenge.aktif};`,
       expected: "boolean",
-      choices: ["int", "float", "char", "boolean"],
+      choices: ["int", "float", "char", "boolean", "string"],
+    },
+    {
+      before: "",
+      after: ` mode = "${challenge.mode}";`,
+      expected: "string",
+      choices: ["int", "float", "char", "boolean", "string"],
     },
   ];
 
@@ -212,7 +230,13 @@ export default function VariabelTerpaduDasarPage() {
     setErrorLine(-1);
     setShowSuccessCard(false);
     setFeedback("Sistem siap menjalankan algoritma.");
-    setLabPreview({ umur: null, tinggi: null, inisial: "", aktif: null });
+    setLabPreview({
+      umur: null,
+      tinggi: null,
+      inisial: "",
+      aktif: null,
+      mode: "",
+    });
     if (regenerateChallenge) {
       setChallenge(createChallenge());
       setSelectedCommands({});
@@ -220,12 +244,22 @@ export default function VariabelTerpaduDasarPage() {
     }
   };
 
+  const feedbackHints: Record<CommandChoice, string> = {
+    int: "Cek kembali apakah nilainya berupa bilangan bulat tanpa desimal.",
+    float: "Perhatikan apakah variabel ini membutuhkan angka desimal.",
+    char: "Periksa apakah variabel ini hanya membutuhkan satu karakter.",
+    boolean: "Pastikan variabel ini memang bertipe kondisi true/false.",
+    string: "Cek apakah variabel ini berisi teks (kumpulan karakter).",
+  };
+
   const executeStep = (index: number) => {
     if (index >= lineConfigs.length) {
       setIsRunning(false);
       setActiveLine(-1);
       setShowSuccessCard(true);
-      setFeedback("Mantap! Semua tipe data variabel sudah tepat.");
+      setFeedback(
+        "Berhasil! Semua tipe data sudah sesuai.\n\nDashboard menampilkan data dengan benar dari kecepatan, trip meter, gear, ready, hingga mode berkendara.\n\nUrutan konsep yang dipakai: int -> float -> char -> boolean -> string.",
+      );
       return;
     }
 
@@ -233,11 +267,20 @@ export default function VariabelTerpaduDasarPage() {
     const chosen = selectedCommands[index];
     const expected = lineConfigs[index].expected;
 
+    if (!chosen) {
+      setIsRunning(false);
+      setErrorLine(index);
+      setFeedback(
+        `Baris ${index + 1} belum lengkap.\n\nLengkapi terlebih dahulu tipe data pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca karakteristik nilai variabelnya, lalu pilih tipe data yang paling sesuai.`,
+      );
+      return;
+    }
+
     if (chosen !== expected) {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum tepat. Seharusnya ${expected}${lineConfigs[index].after}`,
+        `Baris ${index + 1} belum tepat.\n\n${feedbackHints[expected]}\n\nPetunjuk: pahami karakteristik datanya dulu, lalu pilih tipe data yang paling sesuai.`,
       );
       return;
     }
@@ -254,9 +297,12 @@ export default function VariabelTerpaduDasarPage() {
     if (index === 3) {
       setLabPreview((prev) => ({ ...prev, aktif: challenge.aktif }));
     }
+    if (index === 4) {
+      setLabPreview((prev) => ({ ...prev, mode: challenge.mode }));
+    }
 
     setFeedback(
-      `Baris ${index + 1} benar: ${expected}${lineConfigs[index].after}`,
+      `Baris ${index + 1} benar.\n\nDeklarasi \"${expected}\" sudah sesuai dan berhasil dibaca sistem dashboard.`,
     );
     timerRef.current = setTimeout(() => executeStep(index + 1), 850);
   };
@@ -268,13 +314,6 @@ export default function VariabelTerpaduDasarPage() {
   };
 
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
-  const completedCount = [
-    labPreview.umur !== null,
-    labPreview.tinggi !== null,
-    labPreview.inisial !== "",
-    labPreview.aktif !== null,
-  ].filter(Boolean).length;
-
   const umurLevel =
     labPreview.umur === null
       ? 8
@@ -290,6 +329,18 @@ export default function VariabelTerpaduDasarPage() {
       : labPreview.aktif
         ? "#22c55e"
         : "#f97316";
+  const speedometerAngle = (() => {
+    if (labPreview.umur === null) return -120;
+    const minValue = 15;
+    const maxValue = 18;
+    const clamped = Math.max(minValue, Math.min(maxValue, labPreview.umur));
+    const ratio = (clamped - minValue) / (maxValue - minValue);
+    return -120 + ratio * 240;
+  })();
+  const isSpeedBroken = errorLine === 0;
+  const isTripGlitch = errorLine === 1 || errorLine === 2;
+  const isReadyDisco = errorLine === 3;
+  const isModeChaos = errorLine === 4;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-lime-50 text-foreground">
@@ -373,18 +424,47 @@ export default function VariabelTerpaduDasarPage() {
           </AnimatePresence>
 
           <div
-            className={`rounded-2xl border p-3 ${errorLine !== -1 ? "border-rose-200 bg-rose-50/95" : "border-border bg-card"}`}
+            className={`p-3 rounded-2xl border transition-all duration-300 ${
+              errorLine !== -1
+                ? "bg-rose-50/95 border-rose-200"
+                : "bg-card border-border"
+            }`}
           >
-            <p
-              className={`text-[10px] font-black uppercase tracking-widest ${errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"}`}
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                errorLine !== -1 ? "border-rose-200" : "border-border"
+              }`}
             >
-              Catatan Proses
-            </p>
-            <p
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${errorLine !== -1 ? "bg-rose-100/60 text-rose-700" : "bg-muted text-foreground"}`}
+              {errorLine !== -1 ? (
+                <AlertTriangle size={13} className="text-rose-500" />
+              ) : (
+                <CheckCircle2
+                  size={12}
+                  className={
+                    showSuccessCard
+                      ? "text-emerald-500"
+                      : "text-muted-foreground"
+                  }
+                />
+              )}
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest ${
+                  errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
+                }`}
+              >
+                CATATAN PROSES
+              </span>
+            </div>
+
+            <div
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+                errorLine !== -1
+                  ? "text-rose-700 bg-rose-100/60"
+                  : "text-foreground bg-muted"
+              }`}
             >
               {feedback}
-            </p>
+            </div>
           </div>
 
           <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
@@ -416,9 +496,10 @@ export default function VariabelTerpaduDasarPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Padankan tipe data ke komponen dashboard kendaraan: kecepatan
-                  utama (int), odometer/trip desimal (float), indikator gigi
-                  satu huruf (char), dan lampu status hidup/mati (boolean).
+                  Ayo bantu dashboard speedometer bekerja dengan benar! 🚘
+                  Lengkapi tipe data yang tepat agar sistem dapat membaca nilai,
+                  menampilkan indikator, dan memproses status kendaraan secara
+                  akurat.
                 </p>
               </div>
             </div>
@@ -437,14 +518,14 @@ export default function VariabelTerpaduDasarPage() {
                     Berhasil! Level dasar selesai
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Kunci benar: int, float, char, boolean.
+                    Kunci benar: int, float, char, boolean, string.
                   </p>
                 </div>
               </motion.section>
             )}
           </AnimatePresence>
 
-          <div className="flex flex-1 gap-5 overflow-hidden px-6 pb-6">
+          <div className="flex min-h-0 flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
                 <div className="flex items-center gap-3">
@@ -459,14 +540,25 @@ export default function VariabelTerpaduDasarPage() {
 
               <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
                 <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
-                  {Array.from({ length: totalDisplayLines }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-[26px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
+                  {Array.from({ length: totalDisplayLines }).map((_, i) =>
+                    // Highlight line number red when selected command is wrong.
+                    (() => {
+                      const isWrongLineSelection =
+                        i < lineConfigs.length &&
+                        !!selectedCommands[i] &&
+                        selectedCommands[i] !== lineConfigs[i].expected;
+                      const showWrongState =
+                        (isRunning || errorLine !== -1) && isWrongLineSelection;
+                      return (
+                        <div
+                          key={i}
+                          className={`h-[26px] transition-all ${activeLine === i ? `scale-110 pr-1 font-black ${showWrongState ? "text-rose-700" : "text-emerald-700"}` : ""}`}
+                        >
+                          {i + 1}
+                        </div>
+                      );
+                    })(),
+                  )}
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
@@ -474,6 +566,10 @@ export default function VariabelTerpaduDasarPage() {
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[i];
                       const isActive = activeLine === i;
+                      const isWrongSelection =
+                        !!selected && selected !== line.expected;
+                      const showWrongState =
+                        (isRunning || errorLine !== -1) && isWrongSelection;
 
                       return (
                         <div
@@ -483,7 +579,13 @@ export default function VariabelTerpaduDasarPage() {
                           {isActive && (
                             <motion.div
                               layoutId="lineHighlightDasar"
-                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${isRunning ? "border-emerald-500 bg-emerald-50" : "border-emerald-200 bg-emerald-50/30"}`}
+                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                                showWrongState || errorLine === i
+                                  ? "border-rose-500 bg-rose-50"
+                                  : isRunning
+                                    ? "border-emerald-500 bg-emerald-50"
+                                    : "border-emerald-200 bg-emerald-50/30"
+                              }`}
                             />
                           )}
 
@@ -512,7 +614,7 @@ export default function VariabelTerpaduDasarPage() {
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
                         PILIH TOKEN BARIS {openSelectorLine + 1}
                       </p>
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
                         {lineConfigs[openSelectorLine].choices.map((choice) => (
                           <button
                             key={`${openSelectorLine}-${choice}`}
@@ -563,38 +665,34 @@ export default function VariabelTerpaduDasarPage() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,#1e293b_0%,#020617_58%)]" />
                 <div className="absolute inset-0 opacity-15 [background-image:linear-gradient(to_right,rgba(148,163,184,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.2)_1px,transparent_1px)] [background-size:30px_30px]" />
 
-                <div className="relative z-10 px-5 pt-5">
-                  <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2">
-                    <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      <span>Status Validasi</span>
-                      <span className="text-emerald-300">
-                        {completedCount}/4
-                      </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                      <motion.div
-                        animate={{ width: `${(completedCount / 4) * 100}%` }}
-                        transition={{ duration: 0.45, ease: "easeOut" }}
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <div
+                  className={`relative z-10 flex-1 px-5 pt-2 ${showSuccessCard ? "min-h-[286px]" : "min-h-[320px]"}`}
+                >
+                  <div className="absolute inset-x-5 bottom-10 z-10 h-30 rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-950 shadow-2xl" />
 
-                <div className="relative z-10 mt-4 flex-1 px-5">
-                  <div className="absolute inset-x-5 bottom-12 h-36 rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 to-slate-950 shadow-2xl" />
-
-                  <div className="absolute left-1/2 top-6 h-48 w-48 -translate-x-1/2 rounded-full border border-cyan-400/30 bg-slate-950/70 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+                  <div className="absolute left-1/2 top-4 z-30 h-40 w-40 -translate-x-1/2 rounded-full border border-cyan-400/30 bg-slate-950/70 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
                     <div className="absolute inset-3 rounded-full border border-slate-700" />
+                    {Array.from({ length: 9 }).map((_, index) => {
+                      const angle = -120 + index * 30;
+                      return (
+                        <div
+                          key={`tick-${index}`}
+                          className="absolute left-1/2 top-1/2 h-[2px] w-[76px] origin-left -translate-y-1/2"
+                          style={{ transform: `rotate(${angle}deg)` }}
+                        >
+                          <span className="absolute right-0 top-1/2 h-2 w-[2px] -translate-y-1/2 bg-cyan-300/55" />
+                        </div>
+                      );
+                    })}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
                           Kecepatan
                         </p>
-                        <p className="mt-1 text-5xl font-black leading-none text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
+                        <p className="mt-1 text-3xl font-black leading-none text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
                           {labPreview.umur ?? "--"}
                         </p>
-                        <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+                        <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-cyan-300">
                           KM/H
                         </p>
                       </div>
@@ -602,47 +700,168 @@ export default function VariabelTerpaduDasarPage() {
 
                     <motion.div
                       animate={{
-                        rotate:
-                          labPreview.umur !== null
-                            ? (labPreview.umur - 12) * 5
-                            : -20,
+                        rotate: isSpeedBroken
+                          ? [speedometerAngle, speedometerAngle + 360]
+                          : speedometerAngle,
                       }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="absolute left-1/2 top-1/2 h-[2px] w-[72px] origin-left -translate-y-1/2 bg-gradient-to-r from-rose-400 to-orange-300"
+                      transition={{
+                        ...(isSpeedBroken
+                          ? {
+                              duration: 0.55,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }
+                          : {
+                              type: "spring",
+                              stiffness: 90,
+                              damping: 14,
+                            }),
+                      }}
+                      className="absolute left-1/2 top-1/2 h-[3px] w-[62px] origin-left -translate-y-1/2 bg-gradient-to-r from-rose-400 to-orange-300 shadow-[0_0_10px_rgba(251,146,60,0.45)]"
                     />
                     <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-300" />
                   </div>
 
-                  <div className="absolute left-6 right-6 bottom-[76px] rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2">
+                  <AnimatePresence>
+                    {isModeChaos && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 360 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{
+                          opacity: { duration: 0.2 },
+                          scale: { duration: 0.2 },
+                          rotate: {
+                            duration: 2.4,
+                            repeat: Infinity,
+                            ease: "linear",
+                          },
+                        }}
+                        className="pointer-events-none absolute left-1/2 top-24 z-40 h-48 w-48 -translate-x-1/2 -translate-y-1/2"
+                      >
+                        {MODE_OPTIONS.map((mode, index) => {
+                          const angle = (360 / MODE_OPTIONS.length) * index;
+                          return (
+                            <div
+                              key={`mode-chaos-${mode}`}
+                              className="absolute left-1/2 top-1/2"
+                              style={{ transform: `rotate(${angle}deg)` }}
+                            >
+                              <span className="absolute -translate-y-[86px] rounded-md border border-rose-300/70 bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-900 shadow-md">
+                                {mode}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.div
+                    animate={
+                      isTripGlitch
+                        ? {
+                            x: [0, -3, 4, -5, 2, 0],
+                            y: [0, 2, -2, 1, -1, 0],
+                            rotate: [0, -0.6, 0.6, -0.4, 0.3, 0],
+                          }
+                        : { x: 0, y: 0, rotate: 0 }
+                    }
+                    transition={
+                      isTripGlitch
+                        ? { duration: 0.18, repeat: Infinity, ease: "linear" }
+                        : { duration: 0.2 }
+                    }
+                    className="absolute left-6 right-6 bottom-[64px] z-20 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2"
+                  >
                     <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
                       <span>Trip Odometer</span>
                       <span className="text-sky-300">Float</span>
                     </div>
-                    <p className="mt-1 font-mono text-xl font-black tracking-wider text-sky-300">
-                      {labPreview.tinggi !== null
-                        ? labPreview.tinggi.toFixed(1)
-                        : "---.-"}
+                    <motion.p
+                      animate={
+                        isTripGlitch
+                          ? {
+                              textShadow: [
+                                "0 0 0px rgba(56,189,248,0)",
+                                "2px 0 0 rgba(244,114,182,0.9)",
+                                "-2px 0 0 rgba(34,211,238,0.9)",
+                                "0 0 0px rgba(56,189,248,0)",
+                              ],
+                            }
+                          : { textShadow: "0 0 0px rgba(56,189,248,0)" }
+                      }
+                      transition={
+                        isTripGlitch
+                          ? { duration: 0.22, repeat: Infinity, ease: "linear" }
+                          : { duration: 0.2 }
+                      }
+                      className="mt-1 font-mono text-3xl font-black tracking-wider text-sky-300"
+                    >
+                      {isTripGlitch
+                        ? "###.#"
+                        : labPreview.tinggi !== null
+                          ? labPreview.tinggi.toFixed(1)
+                          : "---.-"}
                       <span className="ml-1 text-[10px] text-slate-400">
                         KM
                       </span>
-                    </p>
-                  </div>
+                    </motion.p>
+                  </motion.div>
 
-                  <div className="absolute left-8 bottom-6 flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2">
+                  <div className="absolute bottom-4 left-8 z-20 flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-1.5">
                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
                       Gear
                     </span>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-amber-300/70 bg-amber-100 text-sm font-black text-amber-900">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-amber-300/70 bg-amber-100 text-sm font-black text-amber-900">
                       {labPreview.inisial || "-"}
                     </div>
                   </div>
 
-                  <div className="absolute right-8 bottom-6 flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2">
+                  <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-1.5">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Mode
+                    </span>
+                    <span className="rounded-md border border-rose-300/70 bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-900">
+                      {labPreview.mode || "-"}
+                    </span>
+                  </div>
+
+                  <div className="absolute right-8 bottom-4 z-20 flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-1.5">
                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
                       Ready
                     </span>
-                    <div
-                      className={`h-3 w-3 rounded-full ${labPreview.aktif ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-slate-600"}`}
+                    <motion.div
+                      animate={
+                        isReadyDisco
+                          ? {
+                              backgroundColor: [
+                                "#ef4444",
+                                "#f59e0b",
+                                "#22c55e",
+                                "#06b6d4",
+                                "#3b82f6",
+                                "#a855f7",
+                                "#ef4444",
+                              ],
+                              boxShadow: [
+                                "0 0 6px #ef4444",
+                                "0 0 8px #f59e0b",
+                                "0 0 8px #22c55e",
+                                "0 0 8px #06b6d4",
+                                "0 0 8px #3b82f6",
+                                "0 0 8px #a855f7",
+                                "0 0 6px #ef4444",
+                              ],
+                            }
+                          : {}
+                      }
+                      transition={
+                        isReadyDisco
+                          ? { duration: 0.6, repeat: Infinity, ease: "linear" }
+                          : { duration: 0.2 }
+                      }
+                      className={`h-3 w-3 rounded-full ${!isReadyDisco && (labPreview.aktif ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-slate-600")}`}
                     />
                   </div>
                 </div>
