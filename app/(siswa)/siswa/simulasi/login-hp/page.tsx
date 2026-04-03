@@ -637,8 +637,10 @@ export default function LoginHPSimulation() {
                   </h2>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed max-w-4xl font-medium">
-                  Lengkapi pseudocode agar sistem login HP dapat memeriksa PIN,
-                  lalu menampilkan hasil akses terbuka atau PIN salah.
+                  Ayo bantu sistem keamanan HP memeriksa akses! 📱
+                  <br />
+                  Lengkapi struktur percabangan agar sistem dapat memvalidasi
+                  PIN.
                 </p>
               </div>
             </div>

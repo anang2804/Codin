@@ -86,7 +86,7 @@ const COMMAND_DETAILS: Record<
     color: "bg-rose-50 border-rose-200",
   },
   default: {
-    title: "MENENGAH",
+    title: "SIAP MENULIS",
     desc: "Gabungkan variabel dengan operator aritmatika dan pembanding.",
     color: "bg-slate-50 border-slate-200",
   },
@@ -319,7 +319,7 @@ export default function VariabelTerpaduMenengahPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Konsep Aktif
+              Deskripsi Perintah
             </h2>
           </div>
 

@@ -393,7 +393,7 @@ export default function VariabelTerpaduLanjutanPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Konsep Aktif
+              Deskripsi Perintah
             </h2>
           </div>
 

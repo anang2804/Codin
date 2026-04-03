@@ -75,6 +75,15 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function shuffle<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 function createChallenge(): ChallengeData {
   const tinggiBulat = randomInt(150, 178);
   const tinggiDecimal = randomInt(1, 9);
@@ -125,31 +134,31 @@ export default function VariabelTerpaduDasarPage() {
       before: "",
       after: ` kecepatan = ${challenge.umur};`,
       expected: "int",
-      choices: ["int", "float", "char", "boolean", "string"],
+      choices: shuffle(["int", "float", "char", "boolean", "string"]),
     },
     {
       before: "",
       after: ` trip_meter = ${challenge.tinggi.toFixed(1)};`,
       expected: "float",
-      choices: ["int", "float", "char", "boolean", "string"],
+      choices: shuffle(["int", "float", "char", "boolean", "string"]),
     },
     {
       before: "",
       after: ` gigi = '${challenge.inisial}';`,
       expected: "char",
-      choices: ["int", "float", "char", "boolean", "string"],
+      choices: shuffle(["int", "float", "char", "boolean", "string"]),
     },
     {
       before: "",
       after: ` ready = ${challenge.aktif};`,
       expected: "boolean",
-      choices: ["int", "float", "char", "boolean", "string"],
+      choices: shuffle(["int", "float", "char", "boolean", "string"]),
     },
     {
       before: "",
       after: ` mode = "${challenge.mode}";`,
       expected: "string",
-      choices: ["int", "float", "char", "boolean", "string"],
+      choices: shuffle(["int", "float", "char", "boolean", "string"]),
     },
   ];
 
@@ -402,7 +411,7 @@ export default function VariabelTerpaduDasarPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Konsep Aktif
+              Deskripsi Perintah
             </h2>
           </div>
 
@@ -457,7 +466,7 @@ export default function VariabelTerpaduDasarPage() {
             </div>
 
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
                 errorLine !== -1
                   ? "text-rose-700 bg-rose-100/60"
                   : "text-foreground bg-muted"
@@ -482,13 +491,13 @@ export default function VariabelTerpaduDasarPage() {
 
         <div className="flex min-w-0 flex-1 flex-col bg-transparent">
           <section className="px-6 pb-2 pt-4">
-            <div className="flex items-start gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-lime-50 p-4 shadow-sm">
-              <div className="rounded-xl bg-white p-2 text-emerald-700 shadow-sm">
+            <div className="flex items-start gap-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 shadow-sm">
+              <div className="rounded-xl bg-background p-2 text-primary shadow-sm">
                 <Lightbulb size={20} className="animate-pulse" />
               </div>
               <div className="flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="rounded bg-emerald-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                  <span className="rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
                     Misi
                   </span>
                   <h2 className="text-[15px] font-black uppercase tracking-tight text-foreground">
@@ -518,7 +527,11 @@ export default function VariabelTerpaduDasarPage() {
                     Berhasil! Level dasar selesai
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Kunci benar: int, float, char, boolean, string.
+                    Tipe data sudah dipilih dengan tepat pada setiap variabel
+                    dashboard.
+                    <br />
+                    Dashboard speedometer berhasil menampilkan data kendaraan
+                    dengan benar.
                   </p>
                 </div>
               </motion.section>
@@ -622,7 +635,7 @@ export default function VariabelTerpaduDasarPage() {
                             onClick={() =>
                               handleSelectCommand(openSelectorLine, choice)
                             }
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-700 hover:bg-emerald-100"
+                            className={`rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide ${COMMAND_DETAILS[choice]?.color || COMMAND_DETAILS.default.color}`}
                           >
                             {choice}
                           </button>

@@ -156,15 +156,26 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         accent: "border-teal-500",
       },
       {
-        title: "Menengah (Varian): Kasir Mini",
+        title: "Buku Rekap Nilai",
         description:
-          "Variasi visual level menengah untuk latihan aritmatika dan pembanding berbasis data transaksi sederhana.",
-        href: "/siswa/simulasi/variabel-terpadu-menengah-kasir",
-        slug: "variabel-terpadu-menengah-kasir",
+          "Lengkapi tipe data dan ekspresi pada rekap nilai siswa untuk menghitung total, rata-rata, dan menentukan status kelulusan.",
+        href: "/siswa/simulasi/variabel-rekap-nilai",
+        slug: "variabel-rekap-nilai",
         level: "Menengah",
         gradient: "from-amber-100 to-orange-200",
         emoji: "🧾",
         accent: "border-amber-500",
+      },
+      {
+        title: "Food Delivery Express",
+        description:
+          "Lengkapi tipe data dan ekspresi pada aplikasi pesan antar makanan untuk menghitung total ongkir dan status gratis ongkir.",
+        href: "/siswa/simulasi/variabel-food-delivery-menengah",
+        slug: "variabel-food-delivery-menengah",
+        level: "Menengah",
+        gradient: "from-orange-100 to-rose-200",
+        emoji: "\ud83c\udf54",
+        accent: "border-orange-500",
       },
       {
         title: "Lanjutan (Varian): Smart Class",
@@ -176,6 +187,17 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         gradient: "from-fuchsia-100 to-pink-200",
         emoji: "🏫",
         accent: "border-fuchsia-500",
+      },
+      {
+        title: "Indikator Baterai Smartphone",
+        description:
+          "Lengkapi tipe data, ekspresi, dan pembanding untuk menghitung sisa daya baterai dan status pengisian selesai.",
+        href: "/siswa/simulasi/variabel-indikator-baterai-lanjutan",
+        slug: "variabel-indikator-baterai-lanjutan",
+        level: "Lanjutan",
+        gradient: "from-lime-100 to-emerald-200",
+        emoji: "🔋",
+        accent: "border-lime-500",
       },
     ],
   },

@@ -40,22 +40,22 @@ const COMMAND_DETAILS: Record<
 > = {
   string: {
     title: "STRING",
-    desc: "Digunakan untuk teks panjang seperti nama lengkap penumpang.",
+    desc: "Digunakan untuk teks panjang.",
     color: "bg-rose-50 border-rose-200",
   },
   char: {
     title: "CHAR",
-    desc: "Digunakan untuk satu karakter kode singkat, seperti kelas penerbangan.",
+    desc: "Digunakan untuk satu karakter kode singkat.",
     color: "bg-amber-50 border-amber-200",
   },
   int: {
     title: "INT",
-    desc: "Digunakan untuk bilangan bulat tanpa desimal, seperti nomor kursi.",
+    desc: "Digunakan untuk bilangan bulat tanpa desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
   float: {
     title: "FLOAT",
-    desc: "Digunakan untuk angka desimal presisi, seperti berat bagasi.",
+    desc: "Digunakan untuk angka desimal presisi.",
     color: "bg-sky-50 border-sky-200",
   },
   boolean: {
@@ -72,6 +72,15 @@ const COMMAND_DETAILS: Record<
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 function createChallenge(): ChallengeData {
@@ -106,7 +115,9 @@ export default function VariabelTerpaduDasarTravelPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
-  const [feedback, setFeedback] = useState("Sistem siap menjalankan simulasi.");
+  const [feedback, setFeedback] = useState(
+    "Sistem siap menjalankan algoritma.",
+  );
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,41 +141,40 @@ export default function VariabelTerpaduDasarTravelPage() {
       before: "",
       after: ` namaLengkap = \"${challenge.namaLengkap}\";`,
       expected: "string",
-      choices: ["string", "char", "int", "float", "boolean"],
+      choices: shuffle(["string", "char", "int", "float", "boolean"]),
     },
     {
       before: "",
       after: ` kelasPenerbangan = '${challenge.kelasPenerbangan}';`,
       expected: "char",
-      choices: ["string", "char", "int", "float", "boolean"],
+      choices: shuffle(["string", "char", "int", "float", "boolean"]),
     },
     {
       before: "",
       after: ` nomorKursi = ${challenge.nomorKursi};`,
       expected: "int",
-      choices: ["string", "char", "int", "float", "boolean"],
+      choices: shuffle(["string", "char", "int", "float", "boolean"]),
     },
     {
       before: "",
       after: ` beratBagasi = ${challenge.beratBagasi.toFixed(1)};`,
       expected: "float",
-      choices: ["string", "char", "int", "float", "boolean"],
+      choices: shuffle(["string", "char", "int", "float", "boolean"]),
     },
     {
       before: "",
       after: ` sudahCheckIn = ${challenge.sudahCheckIn};`,
       expected: "boolean",
-      choices: ["string", "char", "int", "float", "boolean"],
+      choices: shuffle(["string", "char", "int", "float", "boolean"]),
     },
   ];
 
   const feedbackHints: Record<CommandChoice, string> = {
-    string:
-      "Cek apakah nilai baris ini berupa teks panjang atau kumpulan kata.",
-    char: "Periksa apakah nilai baris ini cukup satu karakter tunggal.",
-    int: "Pastikan nilainya bilangan bulat tanpa desimal.",
-    float: "Perhatikan apakah nilai membutuhkan angka desimal.",
-    boolean: "Tentukan apakah baris ini berupa kondisi true/false.",
+    int: "Cek kembali apakah nilainya berupa bilangan bulat tanpa desimal.",
+    float: "Perhatikan apakah variabel ini membutuhkan angka desimal.",
+    char: "Periksa apakah variabel ini hanya membutuhkan satu karakter.",
+    boolean: "Pastikan variabel ini memang bertipe kondisi true/false.",
+    string: "Cek apakah variabel ini berisi teks (kumpulan karakter).",
   };
 
   const currentChoice =
@@ -249,7 +259,7 @@ export default function VariabelTerpaduDasarTravelPage() {
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
-    setFeedback("Sistem siap menjalankan simulasi.");
+    setFeedback("Sistem siap menjalankan algoritma.");
     setPreview({
       namaLengkap: "",
       kelasPenerbangan: "",
@@ -270,7 +280,7 @@ export default function VariabelTerpaduDasarTravelPage() {
       setActiveLine(-1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua tipe data sudah sesuai.\n\nDokumen perjalanan berhasil ditampilkan dengan benar, mulai dari nama, kelas, kursi, bagasi, hingga status check-in.",
+        "Berhasil! Semua tipe data sudah sesuai.\n\nDashboard menampilkan data dengan benar dari kecepatan, trip meter, gear, ready, hingga mode berkendara.\n\nUrutan konsep yang dipakai: int -> float -> char -> boolean -> string.",
       );
       return;
     }
@@ -317,7 +327,7 @@ export default function VariabelTerpaduDasarTravelPage() {
     }
 
     setFeedback(
-      `Baris ${index + 1} benar.\n\nDeklarasi \"${expected}\" sudah sesuai dan berhasil dibaca sistem perjalanan.`,
+      `Baris ${index + 1} benar.\n\nDeklarasi \"${expected}\" sudah sesuai dan berhasil dibaca sistem dashboard.`,
     );
     timerRef.current = setTimeout(() => executeStep(index + 1), 850);
   };
@@ -329,6 +339,43 @@ export default function VariabelTerpaduDasarTravelPage() {
   };
 
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
+
+  const processTone =
+    errorLine !== -1
+      ? {
+          panel: "bg-rose-50/95 border-rose-200",
+          divider: "border-rose-200",
+          title: "text-rose-600",
+          body: "text-rose-700 bg-rose-100/60",
+          icon: <AlertTriangle size={13} className="text-rose-500" />,
+        }
+      : isRunning
+        ? {
+            panel: "bg-emerald-50/95 border-emerald-200",
+            divider: "border-emerald-200",
+            title: "text-emerald-700",
+            body: "text-emerald-900 bg-emerald-100/60",
+            icon: (
+              <Activity size={13} className="animate-pulse text-emerald-600" />
+            ),
+          }
+        : showSuccessCard
+          ? {
+              panel: "bg-emerald-50/95 border-emerald-200",
+              divider: "border-emerald-200",
+              title: "text-emerald-700",
+              body: "text-emerald-900 bg-emerald-100/60",
+              icon: <CheckCircle2 size={12} className="text-emerald-500" />,
+            }
+          : {
+              panel: "bg-card border-border",
+              divider: "border-border",
+              title: "text-muted-foreground",
+              body: "text-foreground bg-muted",
+              icon: (
+                <CheckCircle2 size={12} className="text-muted-foreground" />
+              ),
+            };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-lime-50 text-foreground">
@@ -390,7 +437,7 @@ export default function VariabelTerpaduDasarTravelPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Konsep Aktif
+              Deskripsi Perintah
             </h2>
           </div>
 
@@ -412,44 +459,21 @@ export default function VariabelTerpaduDasarTravelPage() {
           </AnimatePresence>
 
           <div
-            className={`p-3 rounded-2xl border transition-all duration-300 ${
-              errorLine !== -1
-                ? "bg-rose-50/95 border-rose-200"
-                : "bg-card border-border"
-            }`}
+            className={`rounded-2xl border p-3 transition-all duration-300 ${processTone.panel}`}
           >
             <div
-              className={`flex items-center gap-2 pb-2 border-b ${
-                errorLine !== -1 ? "border-rose-200" : "border-border"
-              }`}
+              className={`flex items-center gap-2 border-b pb-2 ${processTone.divider}`}
             >
-              {errorLine !== -1 ? (
-                <AlertTriangle size={13} className="text-rose-500" />
-              ) : (
-                <CheckCircle2
-                  size={12}
-                  className={
-                    showSuccessCard
-                      ? "text-emerald-500"
-                      : "text-muted-foreground"
-                  }
-                />
-              )}
+              {processTone.icon}
               <span
-                className={`text-[10px] font-black uppercase tracking-widest ${
-                  errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
-                }`}
+                className={`text-[10px] font-black uppercase tracking-widest ${processTone.title}`}
               >
                 CATATAN PROSES
               </span>
             </div>
 
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
-                errorLine !== -1
-                  ? "text-rose-700 bg-rose-100/60"
-                  : "text-foreground bg-muted"
-              }`}
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line transition-all duration-300 ${processTone.body}`}
             >
               {feedback}
             </div>
@@ -470,13 +494,13 @@ export default function VariabelTerpaduDasarTravelPage() {
 
         <div className="flex min-w-0 flex-1 flex-col bg-transparent">
           <section className="px-6 pb-2 pt-4">
-            <div className="flex items-start gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-lime-50 p-4 shadow-sm">
-              <div className="rounded-xl bg-white p-2 text-emerald-700 shadow-sm">
+            <div className="flex items-start gap-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 shadow-sm">
+              <div className="rounded-xl bg-background p-2 text-primary shadow-sm">
                 <Lightbulb size={20} className="animate-pulse" />
               </div>
               <div className="flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="rounded bg-emerald-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                  <span className="rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
                     Misi
                   </span>
                   <h2 className="text-[15px] font-black uppercase tracking-tight text-foreground">
@@ -484,9 +508,9 @@ export default function VariabelTerpaduDasarTravelPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Lengkapi tipe data agar sistem tiket digital dapat menampilkan
-                  dokumen perjalanan dengan akurat dari nama, kelas, kursi,
-                  bagasi, dan status check-in.
+                  Ayo bantu sistem bandara menerbitkan tiket digital! ✈️
+                  Lengkapi tipe data dan status check-in agar dokumen perjalanan
+                  nama, kelas, kursi, dan bagasi penumpang tampil dengan akurat.
                 </p>
               </div>
             </div>
@@ -505,7 +529,11 @@ export default function VariabelTerpaduDasarTravelPage() {
                     Berhasil! Level dasar selesai
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Kunci benar: string, char, int, float, boolean.
+                    Tipe data sudah dipilih dengan tepat pada setiap data
+                    perjalanan.
+                    <br />
+                    Tiket dan paspor digital berhasil menampilkan dokumen
+                    perjalanan dengan benar.
                   </p>
                 </div>
               </motion.section>
@@ -606,7 +634,7 @@ export default function VariabelTerpaduDasarTravelPage() {
                             onClick={() =>
                               handleSelectCommand(openSelectorLine, choice)
                             }
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-700 hover:bg-emerald-100"
+                            className={`rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide ${COMMAND_DETAILS[choice]?.color || COMMAND_DETAILS.default.color}`}
                           >
                             {choice}
                           </button>

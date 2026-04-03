@@ -777,8 +777,10 @@ const MesinCuciSimulation = () => {
                   </h2>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed max-w-4xl font-medium">
-                  Lengkapi pseudocode IPO mesin cuci: baca input pakaian, air,
-                  dan deterjen, lalu jalankan process hingga menghasilkan output
+                  Ayo bantu mesin cuci menyelesaikan tugasnya! 🧺
+                  <br />
+                  Lengkapi alur IPO agar mesin dapat membaca pakaian, air, dan
+                  deterjen, melakukan pencucian, hingga menghasilkan
                   pakaian_bersih.
                 </p>
               </div>

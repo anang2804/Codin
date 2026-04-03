@@ -577,8 +577,10 @@ export default function BeliDiKasirSimulation() {
                   </h2>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed max-w-4xl font-medium">
-                  Lengkapi pseudocode agar sistem kasir bisa membaca harga dan
-                  jumlah barang, lalu menghitung total belanja dengan benar.
+                  Ayo bantu sistem kasir memberikan diskon! 🛒
+                  <br />
+                  Lengkapi struktur percabangan agar sistem dapat mengecek total
+                  belanja.
                 </p>
               </div>
             </div>
