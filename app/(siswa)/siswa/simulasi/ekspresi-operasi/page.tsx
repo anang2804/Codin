@@ -418,7 +418,7 @@ export default function EkspresiOperasiPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
-                className="px-6 pb-2"
+                className="absolute left-6 right-6 top-[96px] z-20 px-0 pb-0"
               >
                 <div className="rounded-2xl border border-emerald-200 bg-card px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black tracking-tight text-emerald-700">
@@ -433,7 +433,7 @@ export default function EkspresiOperasiPage() {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-1 gap-5 overflow-hidden px-6 pb-6">
+          <div className="relative flex flex-1 gap-5 overflow-hidden px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-3">
                 <div className="flex items-center gap-3">

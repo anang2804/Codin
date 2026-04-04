@@ -101,39 +101,6 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
     badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
     items: [
       {
-        title: "Dasar: Tipe Data Variabel",
-        description:
-          "Pelajari relasi tipe data, variabel, dan operator penugasan (=) dengan int, float, char, dan boolean.",
-        href: "/siswa/simulasi/variabel-terpadu-dasar",
-        slug: "variabel-terpadu-dasar",
-        level: "Dasar",
-        gradient: "from-emerald-100 to-lime-200",
-        emoji: "🎓",
-        accent: "border-emerald-500",
-      },
-      {
-        title: "Menengah: Ekspresi Aritmatika",
-        description:
-          "Gunakan variabel dengan operator aritmatika (+, -, *, /) dan pembanding dasar untuk menentukan hasil.",
-        href: "/siswa/simulasi/variabel-terpadu-menengah",
-        slug: "variabel-terpadu-menengah",
-        level: "Menengah",
-        gradient: "from-cyan-100 to-sky-200",
-        emoji: "🔢",
-        accent: "border-cyan-500",
-      },
-      {
-        title: "Lanjutan: Logika Keputusan",
-        description:
-          "Gabungkan variabel, aritmatika, operator pembanding, dan boolean logic untuk menghasilkan keputusan akhir.",
-        href: "/siswa/simulasi/variabel-terpadu-lanjutan",
-        slug: "variabel-terpadu-lanjutan",
-        level: "Lanjutan",
-        gradient: "from-violet-100 to-indigo-200",
-        emoji: "🧠",
-        accent: "border-violet-500",
-      },
-      {
         title: "Dashboard Speedometer",
         description:
           "Susun tipe data variabel yang tepat menggunakan int, float, char, dan boolean.",
@@ -178,26 +145,26 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         accent: "border-orange-500",
       },
       {
-        title: "Lanjutan (Varian): Smart Class",
-        description:
-          "Variasi visual level lanjutan untuk melatih keputusan berbasis operator pembanding dan boolean logic.",
-        href: "/siswa/simulasi/variabel-terpadu-lanjutan-smartclass",
-        slug: "variabel-terpadu-lanjutan-smartclass",
-        level: "Lanjutan",
-        gradient: "from-fuchsia-100 to-pink-200",
-        emoji: "🏫",
-        accent: "border-fuchsia-500",
-      },
-      {
         title: "Indikator Baterai Smartphone",
         description:
-          "Lengkapi tipe data, ekspresi, dan pembanding untuk menghitung sisa daya baterai dan status pengisian selesai.",
+          "Lengkapi tipe data dan ekspresi untuk menghitung sisa daya baterai dan status pengisian selesai.",
         href: "/siswa/simulasi/variabel-indikator-baterai-lanjutan",
         slug: "variabel-indikator-baterai-lanjutan",
         level: "Lanjutan",
         gradient: "from-lime-100 to-emerald-200",
         emoji: "🔋",
         accent: "border-lime-500",
+      },
+      {
+        title: "Indikator Bensin Digital",
+        description:
+          "Lengkapi tipe data dan ekspresi untuk menghitung kebutuhan bensin dan menentukan status perlu isi BBM.",
+        href: "/siswa/simulasi/variabel-indikator-bensin-digital-lanjutan",
+        slug: "variabel-indikator-bensin-digital-lanjutan",
+        level: "Lanjutan",
+        gradient: "from-amber-100 to-orange-200",
+        emoji: "⛽",
+        accent: "border-amber-500",
       },
     ],
   },

@@ -589,7 +589,7 @@ export default function SimulasiKasirKantin() {
         </aside>
 
         {/* WORKSPACE - EDITOR */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background">
+        <div className="relative flex-1 flex flex-col min-w-0 bg-background">
           <section className="px-6 pt-5 pb-3">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
               <div className="bg-background p-2.5 rounded-xl shadow-sm text-primary">
@@ -613,26 +613,32 @@ export default function SimulasiKasirKantin() {
               </div>
             </div>
 
-            {showSuccessCard && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3"
-              >
-                <p className="text-base font-bold text-emerald-700 leading-tight">
-                  🎉 Berhasil! Algoritma benar
-                </p>
-                <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">
-                  Algoritma berjalan sesuai urutan input → proses → output.
-                </p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Simulasi kasir kantin berjalan dengan benar.
-                </p>
-              </motion.div>
-            )}
+            <AnimatePresence>
+              {showSuccessCard && (
+                <motion.section
+                  key="success-card"
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute left-6 right-6 top-[84px] z-20 px-0 pb-0"
+                >
+                  <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
+                    <h3 className="text-sm font-black text-emerald-700 tracking-tight">
+                      🎉 Berhasil! Algoritma benar
+                    </h3>
+                    <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
+                      Algoritma berjalan sesuai urutan input → proses → output.
+                      <br />
+                      Simulasi kasir kantin berjalan dengan benar.
+                    </p>
+                  </div>
+                </motion.section>
+              )}
+            </AnimatePresence>
           </section>
 
-          <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
+          <div className="relative flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
             <section className="flex-1 min-w-[500px] bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden relative">
               <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">

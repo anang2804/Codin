@@ -612,7 +612,7 @@ export default function SimulasiParkirOtomatis() {
         </aside>
 
         {/* WORKSPACE - EDITOR */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background">
+        <div className="relative flex-1 flex flex-col min-w-0 bg-background">
           <section className="px-6 pt-5 pb-3">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
               <div className="bg-background p-2.5 rounded-xl shadow-sm text-primary">
@@ -647,7 +647,7 @@ export default function SimulasiParkirOtomatis() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
-                className="px-6 pb-2"
+                className="absolute left-6 right-6 top-[84px] z-20 px-0 pb-0"
               >
                 <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black text-emerald-700 tracking-tight">
@@ -663,7 +663,7 @@ export default function SimulasiParkirOtomatis() {
             )}
           </AnimatePresence>
 
-          <div className="flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
+          <div className="relative flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
             <section className="flex-1 min-w-[500px] bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden relative">
               <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">

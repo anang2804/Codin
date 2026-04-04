@@ -492,7 +492,7 @@ export default function VariabelTerpaduDasarTravelPage() {
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col bg-transparent">
+        <div className="relative flex min-w-0 flex-1 flex-col bg-transparent">
           <section className="px-6 pb-2 pt-4">
             <div className="flex items-start gap-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 shadow-sm">
               <div className="rounded-xl bg-background p-2 text-primary shadow-sm">
@@ -522,7 +522,7 @@ export default function VariabelTerpaduDasarTravelPage() {
                 initial={{ opacity: 0, y: -8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                className="px-6 pb-2"
+                className="absolute left-6 right-6 top-[96px] z-20 px-0 pb-0"
               >
                 <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black tracking-tight text-emerald-700">
@@ -540,7 +540,7 @@ export default function VariabelTerpaduDasarTravelPage() {
             )}
           </AnimatePresence>
 
-          <div className="flex min-h-0 flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
+          <div className="relative flex min-h-0 flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
                 <div className="flex items-center gap-3">
