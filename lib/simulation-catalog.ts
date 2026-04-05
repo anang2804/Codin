@@ -97,6 +97,45 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
     ],
   },
   {
+    title: "Struktur Kontrol",
+    badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+    items: [
+      {
+        title: "Percabangan: Lampu Tidur Otomatis 🌙a",
+        description:
+          "Lengkapi struktur kontrol dasar untuk menyalakan lampu tidur saat sensor cahaya berada di bawah batas gelap.",
+        href: "/siswa/simulasi/struktur-kontrol-lampu-tidur-dasar",
+        slug: "struktur-kontrol-lampu-tidur-dasar",
+        level: "Dasar",
+        gradient: "from-emerald-100 to-lime-200",
+        emoji: "💡",
+        accent: "border-emerald-500",
+      },
+      {
+        title: "Perulangan: Kirim Pesan Massal",
+        description:
+          "Lengkapi keyword struktur kontrol untuk mengirim pesan berulang ke beberapa penerima hingga selesai.",
+        href: "/siswa/simulasi/struktur-kontrol-kirim-pesan-massal-dasar",
+        slug: "struktur-kontrol-kirim-pesan-massal-dasar",
+        level: "Dasar",
+        gradient: "from-cyan-100 to-sky-200",
+        emoji: "📨",
+        accent: "border-cyan-500",
+      },
+      {
+        title: "Perulangan: Pengisian Galon Air 💧",
+        description:
+          "Lengkapi keyword struktur kontrol untuk mengisi galon air bertahap sampai kapasitas maksimal.",
+        href: "/siswa/simulasi/struktur-kontrol-pengisian-galon-air-dasar",
+        slug: "struktur-kontrol-pengisian-galon-air-dasar",
+        level: "Dasar",
+        gradient: "from-cyan-100 to-emerald-200",
+        emoji: "💧",
+        accent: "border-cyan-500",
+      },
+    ],
+  },
+  {
     title: "Variabel Terpadu",
     badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
     items: [
@@ -172,17 +211,6 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
     title: "Pseudocode",
     badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
     items: [
-      {
-        title: "Login HP",
-        description:
-          "Lengkapi pseudocode login HP untuk memeriksa PIN dengan struktur IF-ELSE.",
-        href: "/siswa/simulasi/login-hp",
-        slug: "login-hp",
-        level: "Dasar",
-        gradient: "from-teal-100 to-emerald-200",
-        emoji: "📱",
-        accent: "border-teal-500",
-      },
       {
         title: "Koneksi Sensor & Pintu",
         description:

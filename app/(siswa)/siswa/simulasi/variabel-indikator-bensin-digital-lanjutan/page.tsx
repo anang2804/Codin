@@ -608,9 +608,14 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
-          <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-            Indikator Bensin Digital
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+              Indikator Bensin Digital
+            </h1>
+            <span className="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-violet-600">
+              Lanjutan
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -762,7 +767,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                     className={`h-2 w-2 rounded-full ${isRunning ? "animate-pulse bg-emerald-500" : errorLine !== -1 ? "bg-red-500" : "bg-emerald-500"}`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    ALGORITMA LANJUTAN
+                    Algortima dan Pemrograman
                   </span>
                 </div>
               </div>

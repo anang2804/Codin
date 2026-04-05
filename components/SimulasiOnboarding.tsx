@@ -9,7 +9,6 @@ const ONBOARDING_KEY_PREFIX = "simulasi-onboarding-seen:v2";
 const BASIC_LEVEL_PATHS = new Set([
   "/siswa/simulasi/traffic-logic",
   "/siswa/simulasi/kasir-kantin",
-  "/siswa/simulasi/login-hp",
   "/siswa/simulasi/beli-di-kasir",
 ]);
 
@@ -17,7 +16,6 @@ const MATERIAL_BY_PATH: Record<string, "diagram-alir" | "ipo" | "pseudocode"> =
   {
     "/siswa/simulasi/traffic-logic": "diagram-alir",
     "/siswa/simulasi/kasir-kantin": "ipo",
-    "/siswa/simulasi/login-hp": "pseudocode",
     "/siswa/simulasi/beli-di-kasir": "pseudocode",
   };
 
@@ -31,11 +29,6 @@ const MATERIAL_COPY: Record<string, { intro: string; focus: string }> = {
     intro: "Materi aktif saat ini: Struktur Program (IPO).",
     focus:
       "Lengkapi bagian Input, Process, dan Output pada simulasi kasir kantin secara berurutan.",
-  },
-  "/siswa/simulasi/login-hp": {
-    intro: "Materi aktif saat ini: Pseudocode Dasar.",
-    focus:
-      "Selesaikan langkah pseudocode login HP menggunakan logika kondisi yang benar.",
   },
   "/siswa/simulasi/beli-di-kasir": {
     intro: "Materi aktif saat ini: Pseudocode Dasar.",
@@ -72,18 +65,6 @@ const TUTORIAL_STEPS_BY_PATH: Record<string, TutorialStep[]> = {
       kind: "run",
       instruction:
         "Bagus. Sekarang tekan tombol Jalankan untuk mengecek hasil simulasi.",
-    },
-  ],
-  "/siswa/simulasi/login-hp": [
-    {
-      kind: "fill-blank",
-      instruction:
-        "Isi bagian kosong (_____) terlebih dahulu sesuai alur IF/ELSE yang benar.",
-    },
-    {
-      kind: "run",
-      instruction:
-        "Sekarang tekan tombol Jalankan untuk melihat apakah algoritma login sudah tepat.",
     },
   ],
   "/siswa/simulasi/beli-di-kasir": [

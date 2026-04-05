@@ -665,7 +665,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
                     className={`h-2 w-2 rounded-full ${isRunning ? "animate-pulse bg-emerald-500" : errorLine !== -1 ? "bg-red-500" : "bg-emerald-500"}`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    ALGORITMA MENENGAH
+                    Algortima dan Pemrograman
                   </span>
                 </div>
               </div>
