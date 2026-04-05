@@ -736,10 +736,13 @@ export default function VariabelDataSiswaPage() {
             <Terminal size={20} />
           </div>
 
-          <div>
+          <div className="flex items-center gap-2">
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
               Variabel Terpadu Siswa
             </h1>
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              Level Dasar
+            </span>
           </div>
         </div>
 

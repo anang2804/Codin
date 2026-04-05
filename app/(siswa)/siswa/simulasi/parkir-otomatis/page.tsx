@@ -32,16 +32,7 @@ const EXPECTED_SOLUTION = [
   "end",
 ];
 
-const INITIAL_TEMPLATE = [
-  "______ ",
-  "______ kendaraan",
-  "______ kapasitas",
-  "______ kapasitas > 0",
-  "______ parkir_tersedia",
-  "______ ",
-  "______ parkir_penuh",
-  "end",
-];
+const INITIAL_TEMPLATE = [] as const;
 
 const COMMAND_GLOSSARY: Record<string, string> = {
   input:
@@ -484,8 +475,8 @@ export default function SimulasiParkirOtomatis() {
                 Sistem Parkir Otomatis
               </h1>
             </div>
-            <span className="text-[8px] text-red-600 font-bold tracking-widest uppercase italic bg-red-50 px-2 py-0.5 rounded border border-red-200">
-              Lanjutan
+            <span className="rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+              Level Lanjutan
             </span>
           </div>
         </div>

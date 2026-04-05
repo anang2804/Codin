@@ -367,9 +367,14 @@ export default function VariabelTerpaduDasarPage() {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
-          <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-            Dashboard Digital
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+              Dashboard Digital
+            </h1>
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              Level Dasar
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

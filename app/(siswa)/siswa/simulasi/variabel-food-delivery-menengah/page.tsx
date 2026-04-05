@@ -20,6 +20,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 const SIMULASI_SLUG = "variabel-food-delivery-menengah";
+const SIMULATION_LEVEL = "Menengah";
+
+function getLevelBadgeClass(level: string) {
+  switch (level) {
+    case "Dasar":
+      return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+    case "Menengah":
+      return "bg-sky-50 text-sky-700 border border-sky-100";
+    case "Lanjutan":
+      return "bg-rose-50 text-rose-700 border border-rose-100";
+    default:
+      return "bg-muted text-muted-foreground border border-border";
+  }
+}
 
 // Hitung posisi pada cubic Bezier curve
 function cubicBezier(
@@ -509,9 +523,18 @@ export default function VariabelFoodDeliveryMenengahPage() {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
-          <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-            Aplikasi Pesan Antar Makanan
-          </h1>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+                Aplikasi Pesan Antar Makanan
+              </h1>
+              <span
+                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${getLevelBadgeClass(SIMULATION_LEVEL)}`}
+              >
+                Level {SIMULATION_LEVEL}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -657,7 +680,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
             )}
           </AnimatePresence>
 
-          <div className="relative flex flex-1 gap-5 overflow-hidden px-6 pb-6">
+          <div className="relative flex min-h-0 flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
                 <div className="flex items-center gap-3">
@@ -762,14 +785,14 @@ export default function VariabelFoodDeliveryMenengahPage() {
               </div>
             </section>
 
-            <aside className="relative flex w-[340px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-700 bg-slate-900/80 px-5 py-3">
+            <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-700 bg-slate-900/80 px-6 py-4">
                 <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-200">
-                  FOOD DELIVERY APP
+                  MONITOR PESANAN
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                    Live
+                    Status
                   </span>
                   <div
                     className={`h-2.5 w-2.5 rounded-full ${isRunning ? "animate-pulse bg-emerald-500" : errorLine !== -1 ? "bg-rose-500" : "bg-slate-400"}`}
@@ -777,7 +800,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
                 </div>
               </div>
 
-              <div className="relative flex flex-1 flex-col overflow-hidden p-3">
+              <div className="relative flex flex-1 flex-col overflow-hidden p-5">
                 <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(148,163,184,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.2)_1px,transparent_1px)] [background-size:24px_24px]" />
 
                 <div className="relative mx-auto w-full max-w-[286px] rounded-[26px] border border-slate-700 bg-slate-950 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">

@@ -447,9 +447,14 @@ export default function VariabelTerpaduMenengahPage() {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
-          <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
-            Buku Rekap Nilai
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+              Buku Rekap Nilai
+            </h1>
+            <span className="rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+              Level Menengah
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

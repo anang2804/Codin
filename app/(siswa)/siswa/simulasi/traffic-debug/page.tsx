@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   Play,
   RotateCcw,
-  Info,
+  BookOpen,
   Trash2,
   ArrowDown,
-  CheckCircle2,
   HelpCircle,
   Zap,
   Terminal,
   MousePointerClick,
-  AlertOctagon,
   ArrowLeft,
   Activity,
   Lightbulb,
@@ -50,6 +48,58 @@ const SYMBOL_TYPES = {
     color: "bg-amber-500",
     shape: "w-6 h-6 rotate-45",
     group: "decision",
+  },
+};
+
+type SymbolTypeKey = keyof typeof SYMBOL_TYPES;
+
+const SYMBOL_MEANINGS: Record<SymbolTypeKey, { title: string; desc: string }> =
+  {
+    TERMINATOR: {
+      title: "START / END",
+      desc: "Menandai titik awal atau akhir algoritma pada flowchart.",
+    },
+    IO: {
+      title: "INPUT / OUTPUT",
+      desc: "Digunakan untuk membaca data lampu atau menampilkan hasil transisi.",
+    },
+    PROCESS: {
+      title: "PROSES",
+      desc: "Menunjukkan langkah aksi, misalnya jeda 2 detik sebelum lampu berubah.",
+    },
+    DECISION: {
+      title: "KEPUTUSAN",
+      desc: "Mengecek kondisi dan menentukan cabang alur YA atau TIDAK.",
+    },
+  };
+
+const SYMBOL_MEANING_STYLES: Record<
+  SymbolTypeKey,
+  { card: string; title: string; desc: string; icon: string }
+> = {
+  TERMINATOR: {
+    card: "border-emerald-200 bg-emerald-50/80",
+    title: "text-emerald-800",
+    desc: "text-emerald-700",
+    icon: "text-emerald-600/80",
+  },
+  IO: {
+    card: "border-sky-200 bg-sky-50/80",
+    title: "text-sky-800",
+    desc: "text-sky-700",
+    icon: "text-sky-600/80",
+  },
+  PROCESS: {
+    card: "border-orange-200 bg-orange-50/80",
+    title: "text-orange-800",
+    desc: "text-orange-700",
+    icon: "text-orange-600/80",
+  },
+  DECISION: {
+    card: "border-amber-200 bg-amber-50/80",
+    title: "text-amber-800",
+    desc: "text-amber-700",
+    icon: "text-amber-600/80",
   },
 };
 
@@ -106,6 +156,8 @@ export default function TrafficDebugPage() {
   const [simulationStatus, setSimulationStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
   const [draggedType, setDraggedType] = useState<string | null>(null);
+  const [selectedSymbolType, setSelectedSymbolType] =
+    useState<SymbolTypeKey | null>(null);
   const [carAPosition, setCarAPosition] = useState(2);
   const [isHardLocked, setIsHardLocked] = useState(true);
   const [hardwareBroken, setHardwareBroken] = useState(false);
@@ -119,17 +171,36 @@ export default function TrafficDebugPage() {
       return;
     }
     setDraggedType(typeKey);
+    setSelectedSymbolType(typeKey as SymbolTypeKey);
   };
 
   const handleDrop = (e: React.DragEvent, slotId: string) => {
     e.preventDefault();
     if (!draggedType) return;
+    const selectedType = draggedType as SymbolTypeKey;
+    setSelectedSymbolType(selectedType);
     setWorkspace((prev) => ({
       ...prev,
-      [slotId]: { ...SYMBOL_TYPES[draggedType as keyof typeof SYMBOL_TYPES] },
+      [slotId]: { ...SYMBOL_TYPES[selectedType] },
     }));
     setDraggedType(null);
   };
+
+  const selectedMeaning = selectedSymbolType
+    ? SYMBOL_MEANINGS[selectedSymbolType]
+    : {
+        title: "SIAP MENYUSUN",
+        desc: "Pilih atau drag simbol dari Bank Simbol untuk melihat arti simbolnya.",
+      };
+
+  const selectedMeaningStyle = selectedSymbolType
+    ? SYMBOL_MEANING_STYLES[selectedSymbolType]
+    : {
+        card: "border-border bg-muted/40",
+        title: "text-foreground",
+        desc: "text-muted-foreground",
+        icon: "text-emerald-600/70",
+      };
 
   const removeSymbol = (slotId: string) => {
     const isFixed =
@@ -320,71 +391,76 @@ export default function TrafficDebugPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans text-sm">
       {/* Header */}
-      <header className="bg-background border-b border-border px-6 py-3 flex justify-between items-center shadow-sm z-30 shrink-0">
-        <div className="flex items-center gap-2">
+      <header className="bg-background border-b border-border px-6 py-3 flex justify-between items-center z-40 shrink-0 shadow-sm">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-1 hover:bg-muted rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
           >
-            <ArrowLeft size={16} className="text-muted-foreground" />
+            <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="bg-amber-500 p-1 rounded-lg text-white shadow-sm">
-            <Zap size={16} fill="currentColor" />
+          <div className="w-px h-6 bg-border" />
+          <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
+            <Terminal size={20} />
           </div>
-          <div>
-            <h1 className="text-sm font-black tracking-tight text-foreground uppercase leading-none italic">
-              Transisi Lampu Bertahap
-            </h1>
-            <span className="text-[8px] text-amber-600 font-bold tracking-widest uppercase italic">
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
+                Transisi Lampu Bertahap
+              </h1>
+            </div>
+            <span className="text-[8px] text-sky-600 font-bold tracking-widest uppercase italic bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
               Menengah
             </span>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-1 px-3 py-2 text-[10px] font-bold bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] border border-[#e2e8f0] rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
-            <RotateCcw size={12} /> RESET
+            <RotateCcw size={14} /> Reset
           </button>
+          <MarkCompletedButton simulasiSlug="traffic-debug" />
           <button
             onClick={runSimulation}
             disabled={isSimulating && simulationStatus !== "error"}
-            className={`flex items-center gap-1 px-4 py-2 text-[10px] font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
               isSimulating && simulationStatus !== "error"
                 ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
-            <Play size={12} fill="currentColor" /> JALANKAN
+            <Play size={14} fill={isSimulating ? "none" : "white"} /> Jalankan
           </button>
-          <MarkCompletedButton simulasiSlug="traffic-debug" />
         </div>
       </header>
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI */}
         <aside className="w-72 border-r border-border bg-card flex flex-col z-20 shrink-0 shadow-sm overflow-y-auto">
-          <div className="p-2 border-b bg-muted/40 overflow-y-auto max-h-[30%]">
-            <h2 className="text-[9px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Info size={10} className="text-blue-500" /> DESKRIPSI PERINTAH
-            </h2>
-            <div className="space-y-1.5 text-justify">
-              <p className="text-[10px] text-muted-foreground leading-snug font-medium">
-                Diagram alir (flowchart) adalah gambar yang menunjukkan urutan
-                langkah dan keputusan dalam suatu sistem. Pada lampu lalu
-                lintas, flowchart membantu kita memahami bagaimana sistem
-                membaca warna lampu, memproses perubahan, lalu menentukan
-                hasilnya secara berurutan.
+          <div className="p-4 border-b border-border bg-card">
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} className={selectedMeaningStyle.icon} />
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Deskripsi Perintah
+              </h2>
+            </div>
+
+            <div
+              className={`mt-4 rounded-2xl border p-4 shadow-sm transition-all duration-200 ${selectedMeaningStyle.card}`}
+            >
+              <h3
+                className={`text-xs font-black uppercase tracking-tight ${selectedMeaningStyle.title}`}
+              >
+                {selectedMeaning.title}
+              </h3>
+              <p
+                className={`mt-2 text-[11px] leading-relaxed ${selectedMeaningStyle.desc}`}
+              >
+                {selectedMeaning.desc}
               </p>
-              <div className="bg-blue-50 p-1.5 rounded-lg border border-blue-100 shadow-sm">
-                <p className="text-[10px] text-blue-800 font-bold leading-tight italic">
-                  Tugas: Buatlah diagram alir yang menunjukkan bagaimana lampu
-                  lalu lintas dapat berubah dari Merah → Kuning → Hijau secara
-                  bertahap (dengan proses tunggu 2 detik sebelum menjadi hijau).
-                </p>
-              </div>
             </div>
           </div>
 
@@ -436,7 +512,7 @@ export default function TrafficDebugPage() {
             <h2 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1.5 text-center">
               BANK SIMBOL
             </h2>
-            <div className="grid grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {Object.entries(SYMBOL_TYPES)
                 .filter(([k]) => k !== "TERMINATOR")
                 .map(([key, data]) => (
@@ -444,7 +520,7 @@ export default function TrafficDebugPage() {
                     key={key}
                     draggable={!isSimulating}
                     onDragStart={(e) => handleDragStart(e, key)}
-                    className={`flex flex-col items-center p-1 bg-card border border-border rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-amber-400 group ${
+                    className={`flex flex-col items-center p-1 bg-card border border-border rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 group ${
                       isSimulating && simulationStatus !== "error"
                         ? "opacity-50 grayscale"
                         : ""
@@ -453,7 +529,7 @@ export default function TrafficDebugPage() {
                     <div
                       className={`${data.shape} ${data.color} mb-0.5 shadow-sm group-hover:scale-105 transition-transform scale-75`}
                     ></div>
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter">
+                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter text-center leading-tight">
                       {data.label}
                     </span>
                   </div>
@@ -475,7 +551,11 @@ export default function TrafficDebugPage() {
         </aside>
 
         {/* PANEL TENGAH */}
-        <section className="flex-1 bg-background relative overflow-hidden p-2 flex flex-col items-center z-10 border-r border-border shadow-inner">
+        <section
+          className={`relative flex min-w-[500px] flex-1 flex-col overflow-auto rounded-3xl border border-emerald-100 bg-white py-4 shadow-sm z-10 transition-all duration-300 mx-5 my-4 ${
+            simulationStatus === "success" ? "pt-24" : "pt-4"
+          }`}
+        >
           <div className="w-full px-4 pt-3 pb-2">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
               <div className="bg-background p-2 rounded-xl shadow-sm text-primary">
@@ -490,7 +570,7 @@ export default function TrafficDebugPage() {
                     Transisi Lampu Bertahap
                   </h2>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                <p className="max-w-4xl text-[11px] text-muted-foreground leading-relaxed font-medium">
                   Susun diagram alir agar lampu lalu lintas dapat bertransisi
                   dari merah ke kuning lalu hijau secara bertahap.
                 </p>
@@ -506,66 +586,31 @@ export default function TrafficDebugPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
-                className="w-full px-4 pb-2"
+                className="pointer-events-none absolute left-4 right-4 top-2 z-30"
               >
-                <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
-                  <h3 className="text-sm font-black text-emerald-700 tracking-tight">
-                    🎉 Berhasil! Diagram alir benar
+                <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
+                  <h3 className="text-sm font-black tracking-tight text-emerald-700">
+                    Berhasil! Flowchart kamu sudah tepat
                   </h3>
-                  <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
-                    Alur logika berjalan sesuai urutan keputusan.
+                  <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
+                    Sistem berhasil membaca alur transisi lampu bertahap.
                     <br />
-                    Lampu berhasil transisi dari merah → kuning → hijau,
-                    kemudian kendaraan dapat melintas.
+                    Keputusan dan proses sudah berjalan sesuai flowchart.
                   </p>
                 </div>
               </motion.section>
             )}
           </AnimatePresence>
 
-          <div className="w-full px-4 pb-2">
-            <div className="px-5 py-3 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isSimulating
-                      ? "bg-rose-500 animate-pulse"
-                      : simulationStatus === "error"
-                        ? "bg-red-500 shadow-[0_0_5px_red]"
-                        : "bg-emerald-500"
-                  }`}
-                />
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic font-mono">
-                  ALGORITMA TRANSISI LAMPU
-                </span>
-              </div>
-              <div
-                className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${
-                  isSimulating
-                    ? "bg-rose-500 text-white"
-                    : simulationStatus === "error"
-                      ? "bg-red-500 text-white border-red-600 shadow-sm"
-                      : "bg-background text-muted-foreground border-border"
-                }`}
-              >
-                {isSimulating
-                  ? "RUNNING"
-                  : simulationStatus === "error"
-                    ? "ERROR"
-                    : "SIAP MENULIS"}
-              </div>
-            </div>
-          </div>
-
           <div
-            className="absolute inset-0 opacity-[0.1] pointer-events-none"
+            className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{
-              backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
+              backgroundImage: "radial-gradient(#64748b 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
             }}
           ></div>
 
-          <div className="w-full max-w-[380px] flex flex-col items-center scale-[0.8] origin-top">
+          <div className="relative w-full max-w-[420px] flex flex-col items-center mx-auto scale-[0.9] origin-top">
             {FLOW_MAP.header.map((step, idx) => (
               <React.Fragment key={step.id}>
                 <div className="">{renderSlot(step, "w-full")}</div>
@@ -580,8 +625,8 @@ export default function TrafficDebugPage() {
               <div className="flex-1 flex flex-col items-center">
                 <div className="flex items-center w-full mb-1">
                   <div className="h-[2px] bg-border flex-1"></div>
-                  <span className="px-2 text-[9px] font-black text-muted-foreground uppercase">
-                    YA
+                  <span className="px-2 text-[10px] font-black text-blue-500 uppercase">
+                    Ya
                   </span>
                 </div>
                 {FLOW_MAP.pathYa.map((step, idx) => (
@@ -598,8 +643,8 @@ export default function TrafficDebugPage() {
               </div>
               <div className="flex-1 flex flex-col items-center">
                 <div className="flex items-center w-full mb-1">
-                  <span className="px-2 text-[9px] font-black text-muted-foreground uppercase">
-                    TIDAK
+                  <span className="px-2 text-[10px] font-black text-muted-foreground uppercase">
+                    Tidak
                   </span>
                   <div className="h-[2px] bg-border flex-1"></div>
                 </div>
@@ -612,9 +657,9 @@ export default function TrafficDebugPage() {
               </div>
             </div>
 
-            <div className="flex w-full justify-around mt-1 opacity-20">
-              <ArrowDown size={16} className="text-muted-foreground/60" />
-              <ArrowDown size={16} className="text-muted-foreground/60" />
+            <div className="flex w-full justify-around mt-1">
+              <ArrowDown size={14} className="text-muted-foreground/60" />
+              <ArrowDown size={14} className="text-muted-foreground/60" />
             </div>
             <div className="w-full mt-1">
               {renderSlot(FLOW_MAP.footer[0], "w-full")}
@@ -623,12 +668,17 @@ export default function TrafficDebugPage() {
         </section>
 
         {/* PANEL KANAN: HARDWARE SIMULATOR */}
-        <aside className="w-[420px] bg-[#020617] flex flex-col z-20 shrink-0 shadow-2xl border-l border-slate-800">
-          <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">
-              VISUALISASI
-            </span>
-            <div className="flex items-center gap-1.5">
+        <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 shadow-2xl z-20 mr-5 my-4">
+          <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-5">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+                <Activity size={14} />
+              </div>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                Simulation Preview
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <div
                 className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)] 
                 ${
@@ -641,17 +691,13 @@ export default function TrafficDebugPage() {
                         : "bg-green-500"
                 }`}
               ></div>
-              <span
-                className={`text-[8px] font-black uppercase tracking-tighter ${
-                  hardwareBroken ? "text-red-400" : "text-slate-300"
-                }`}
-              >
-                {hardwareBroken ? "SYSTEM ERROR" : lightColor.toUpperCase()}
+              <span className="text-[8px] font-black uppercase tracking-tighter text-slate-300">
+                {hardwareBroken ? "Error" : lightColor.toUpperCase()}
               </span>
             </div>
           </div>
 
-          <div className="flex-1 bg-[#1a0f1a] relative overflow-hidden flex items-center justify-center shadow-inner">
+          <div className="flex-1 bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)] relative overflow-hidden flex items-center justify-center">
             <div className="absolute w-44 h-full bg-[#241724] border-x-4 border-slate-900/40 shadow-inner"></div>
             <div className="absolute h-44 w-full bg-[#241724] border-y-4 border-slate-900/40 shadow-inner"></div>
 
@@ -806,63 +852,28 @@ export default function TrafficDebugPage() {
               </AnimatePresence>
             </div>
           </div>
-
-          <div
-            className={`p-3 border-t h-20 flex flex-col justify-center transition-colors duration-500 shrink-0 ${
-              simulationStatus === "success"
-                ? "bg-green-50/80 border-green-100"
-                : simulationStatus === "error"
-                  ? "bg-red-50"
-                  : "bg-card"
-            }`}
-          >
-            <div className="flex items-center gap-2 px-2">
-              <div
-                className={`shrink-0 p-1.5 rounded-xl shadow-sm ${
-                  simulationStatus === "success"
-                    ? "bg-card text-green-600 shadow-md"
-                    : simulationStatus === "error"
-                      ? "bg-card text-red-500 shadow-md"
-                      : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {simulationStatus === "success" ? (
-                  <CheckCircle2 size={20} />
-                ) : simulationStatus === "error" ? (
-                  <Zap size={20} />
-                ) : (
-                  <HelpCircle size={20} />
-                )}
-              </div>
-              <div className="flex flex-col min-w-0 text-left">
-                <h3 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-0.5">
-                  Laporan Logika
-                </h3>
-                <p
-                  className={`text-[9px] font-bold leading-tight ${
-                    simulationStatus === "success"
-                      ? "text-green-900"
-                      : simulationStatus === "error"
-                        ? "text-red-900"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {feedback ||
-                    "Lengkapi alur dan tekan JALANKAN untuk melihat apakah logika sistem stabil."}
-                </p>
-              </div>
-            </div>
-          </div>
         </aside>
       </main>
 
-      <footer className="bg-background border-t border-border px-3 py-0.5 text-[7px] font-bold text-muted-foreground flex justify-between items-center shrink-0 uppercase tracking-widest opacity-60 italic">
-        <div className="flex gap-2 items-center font-black text-muted-foreground">
-          <span>STABLE ENGINE v6.1s</span>
-          <span className="text-muted-foreground/40">|</span>
-          <span>HARDWARE MALFUNCTION SIMULATION</span>
+      <footer className="px-8 py-3 bg-background border-t border-border flex items-center justify-between shrink-0 text-[10px]">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <span className="font-black uppercase tracking-widest">
+            STATUS SISTEM
+          </span>
+          <span className="w-px h-3 bg-border"></span>
+          <span className="font-medium italic">
+            Workspace siap menerima flowchart
+          </span>
         </div>
-        <span>TRAFFIC LAB ACADEMY</span>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground font-medium">
+            MODE: DRAG & DROP FLOWCHART
+          </span>
+          <span className="w-px h-3 bg-border"></span>
+          <span className="font-black text-emerald-600 uppercase tracking-wide italic">
+            CODIN • INTERACTIVE ALGORITHM LEARNING
+          </span>
+        </div>
       </footer>
     </div>
   );

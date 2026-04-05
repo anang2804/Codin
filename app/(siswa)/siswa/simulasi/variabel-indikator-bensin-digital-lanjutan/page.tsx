@@ -612,8 +612,8 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
               Indikator Bensin Digital
             </h1>
-            <span className="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-violet-600">
-              Lanjutan
+            <span className="rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+              Level Lanjutan
             </span>
           </div>
         </div>

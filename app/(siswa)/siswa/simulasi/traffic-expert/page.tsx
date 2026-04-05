@@ -5,16 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   Play,
   RotateCcw,
-  Info,
+  BookOpen,
   Trash2,
   ArrowDown,
-  CheckCircle2,
   HelpCircle,
   Zap,
   MousePointerClick,
   Siren,
-  ShieldAlert,
-  AlertTriangle,
   Search,
   ArrowLeft,
   Activity,
@@ -53,6 +50,58 @@ const SYMBOL_TYPES = {
     color: "bg-amber-500",
     shape: "w-6 h-6 rotate-45",
     group: "decision",
+  },
+};
+
+type SymbolTypeKey = keyof typeof SYMBOL_TYPES;
+
+const SYMBOL_MEANINGS: Record<SymbolTypeKey, { title: string; desc: string }> =
+  {
+    TERMINATOR: {
+      title: "START / END",
+      desc: "Menandai titik awal atau akhir algoritma pada flowchart.",
+    },
+    IO: {
+      title: "INPUT / OUTPUT",
+      desc: "Mewakili langkah membaca sensor atau menampilkan status lalu lintas.",
+    },
+    PROCESS: {
+      title: "PROSES",
+      desc: "Digunakan untuk aksi sistem, seperti menghentikan atau menjalankan kendaraan.",
+    },
+    DECISION: {
+      title: "KEPUTUSAN",
+      desc: "Digunakan untuk percabangan logika prioritas berdasarkan kondisi sensor.",
+    },
+  };
+
+const SYMBOL_MEANING_STYLES: Record<
+  SymbolTypeKey,
+  { card: string; title: string; desc: string; icon: string }
+> = {
+  TERMINATOR: {
+    card: "border-emerald-200 bg-emerald-50/80",
+    title: "text-emerald-800",
+    desc: "text-emerald-700",
+    icon: "text-emerald-600/80",
+  },
+  IO: {
+    card: "border-sky-200 bg-sky-50/80",
+    title: "text-sky-800",
+    desc: "text-sky-700",
+    icon: "text-sky-600/80",
+  },
+  PROCESS: {
+    card: "border-orange-200 bg-orange-50/80",
+    title: "text-orange-800",
+    desc: "text-orange-700",
+    icon: "text-orange-600/80",
+  },
+  DECISION: {
+    card: "border-amber-200 bg-amber-50/80",
+    title: "text-amber-800",
+    desc: "text-amber-700",
+    icon: "text-amber-600/80",
   },
 };
 
@@ -95,6 +144,8 @@ export default function TrafficExpertPage() {
   const [simulationStatus, setSimulationStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
   const [draggedType, setDraggedType] = useState<string | null>(null);
+  const [selectedSymbolType, setSelectedSymbolType] =
+    useState<SymbolTypeKey | null>(null);
 
   // Posisi Kendaraan
   const [carAPosition, setCarAPosition] = useState(2);
@@ -129,17 +180,36 @@ export default function TrafficExpertPage() {
   const handleDragStart = (e: React.DragEvent, typeKey: string) => {
     if (isSimulating) return;
     setDraggedType(typeKey);
+    setSelectedSymbolType(typeKey as SymbolTypeKey);
   };
 
   const handleDrop = (e: React.DragEvent, slotId: string) => {
     e.preventDefault();
     if (!draggedType) return;
+    const selectedType = draggedType as SymbolTypeKey;
+    setSelectedSymbolType(selectedType);
     setWorkspace((prev) => ({
       ...prev,
-      [slotId]: { ...SYMBOL_TYPES[draggedType as keyof typeof SYMBOL_TYPES] },
+      [slotId]: { ...SYMBOL_TYPES[selectedType] },
     }));
     setDraggedType(null);
   };
+
+  const selectedMeaning = selectedSymbolType
+    ? SYMBOL_MEANINGS[selectedSymbolType]
+    : {
+        title: "SIAP MENYUSUN",
+        desc: "Pilih atau drag simbol dari Bank Simbol untuk melihat arti simbolnya.",
+      };
+
+  const selectedMeaningStyle = selectedSymbolType
+    ? SYMBOL_MEANING_STYLES[selectedSymbolType]
+    : {
+        card: "border-border bg-muted/40",
+        title: "text-foreground",
+        desc: "text-muted-foreground",
+        icon: "text-emerald-600/70",
+      };
 
   const removeSymbol = (slotId: string) => {
     if (isSimulating) return;
@@ -383,16 +453,16 @@ export default function TrafficExpertPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans text-sm">
       {/* Header Panel */}
-      <header className="px-8 py-4 bg-background border-b border-border flex items-center justify-between shrink-0 shadow-sm z-30">
-        <div className="flex items-center gap-4">
+      <header className="bg-background border-b border-border px-6 py-3 flex justify-between items-center z-40 shrink-0 shadow-sm">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted-foreground hover:bg-muted rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-border"></div>
-          <div className="bg-rose-600 p-2 rounded-xl text-white shadow-rose-100 shadow-lg">
+          <div className="w-px h-6 bg-border" />
+          <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
             <Terminal size={20} />
           </div>
           <div className="flex items-center gap-2">
@@ -401,7 +471,7 @@ export default function TrafficExpertPage() {
                 Prioritas Tiga Kendaraan
               </h1>
             </div>
-            <span className="text-[8px] text-red-600 font-bold tracking-widest uppercase italic bg-red-50 px-2 py-0.5 rounded border border-red-200">
+            <span className="text-[8px] text-rose-600 font-bold tracking-widest uppercase italic bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
               Lanjutan
             </span>
           </div>
@@ -410,44 +480,49 @@ export default function TrafficExpertPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-1 px-3 py-2 text-[10px] font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
           >
-            <RotateCcw size={12} /> RESET
+            <RotateCcw size={14} /> Reset
           </button>
+          <MarkCompletedButton simulasiSlug="traffic-expert" />
           <button
             onClick={runSimulation}
             disabled={isSimulating && !hardwareBroken}
-            className={`flex items-center gap-1 px-4 py-2 text-[10px] font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
               isSimulating && !hardwareBroken
                 ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
                 : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
             }`}
           >
-            <Play size={12} fill="currentColor" /> JALANKAN
+            <Play size={14} fill={isSimulating ? "none" : "white"} /> Jalankan
           </button>
-          <MarkCompletedButton simulasiSlug="traffic-expert" />
         </div>
       </header>
 
       <main className="flex flex-1 min-h-0 overflow-hidden">
         {/* PANEL KIRI: BANK SIMBOL */}
         <aside className="w-72 border-r border-border bg-card flex flex-col z-20 shrink-0 shadow-sm overflow-y-auto">
-          <div className="p-2 border-b bg-muted/40 overflow-y-auto max-h-[30%]">
-            <h2 className="text-[9px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Info size={10} className="text-blue-500" /> DESKRIPSI PERINTAH
-            </h2>
-            <div className="space-y-1.5 text-justify">
-              <p className="text-[10px] text-muted-foreground leading-snug font-medium">
-                Diagram alir nested (bersarang) menunjukkan percabangan dalam
-                percabangan. Simulasi ini mengatur 3 kendaraan dengan sistem
-                prioritas: ambulans → lampu lalu lintas → kendaraan biasa.
+          <div className="p-4 border-b border-border bg-card">
+            <div className="flex items-center gap-2">
+              <BookOpen size={16} className={selectedMeaningStyle.icon} />
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Deskripsi Perintah
+              </h2>
+            </div>
+
+            <div
+              className={`mt-4 rounded-2xl border p-4 shadow-sm transition-all duration-200 ${selectedMeaningStyle.card}`}
+            >
+              <h3
+                className={`text-xs font-black uppercase tracking-tight ${selectedMeaningStyle.title}`}
+              >
+                {selectedMeaning.title}
+              </h3>
+              <p
+                className={`mt-2 text-[11px] leading-relaxed ${selectedMeaningStyle.desc}`}
+              >
+                {selectedMeaning.desc}
               </p>
-              <div className="bg-blue-50 p-1.5 rounded-lg border border-blue-100 shadow-sm">
-                <p className="text-[10px] text-blue-800 font-bold leading-tight italic">
-                  Tugas: Buatlah diagram alir bercabang yang memeriksa ambulans
-                  terlebih dahulu, lalu warna lampu untuk mengatur 3 kendaraan.
-                </p>
-              </div>
             </div>
           </div>
 
@@ -500,13 +575,13 @@ export default function TrafficExpertPage() {
             <h2 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1.5 text-center">
               BANK SIMBOL
             </h2>
-            <div className="grid grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {Object.entries(SYMBOL_TYPES).map(([key, data]) => (
                 <div
                   key={key}
                   draggable={!isSimulating}
                   onDragStart={(e) => handleDragStart(e, key)}
-                  className={`flex flex-col items-center p-1 bg-card border border-border rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-red-400 group ${
+                  className={`flex flex-col items-center p-1 bg-card border border-border rounded-lg transition-all shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 group ${
                     isSimulating && !hardwareBroken
                       ? "opacity-50 grayscale"
                       : ""
@@ -515,7 +590,7 @@ export default function TrafficExpertPage() {
                   <div
                     className={`${data.shape} ${data.color} mb-0.5 shadow-sm group-hover:scale-105 transition-transform scale-75`}
                   ></div>
-                  <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter">
+                  <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter text-center leading-tight">
                     {data.label}
                   </span>
                 </div>
@@ -537,7 +612,11 @@ export default function TrafficExpertPage() {
         </aside>
 
         {/* PANEL TENGAH: WORKSPACE */}
-        <section className="flex-1 bg-background relative overflow-hidden p-2 flex flex-col items-center z-10 border-r border-border shadow-inner text-foreground">
+        <section
+          className={`relative flex min-w-[500px] flex-1 flex-col overflow-auto rounded-3xl border border-emerald-100 bg-white py-4 shadow-sm z-10 transition-all duration-300 mx-5 my-4 ${
+            simulationStatus === "success" ? "pt-24" : "pt-4"
+          }`}
+        >
           <div className="w-full px-4 pt-3 pb-2 z-20">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
               <div className="bg-background p-2 rounded-xl shadow-sm text-primary">
@@ -552,7 +631,7 @@ export default function TrafficExpertPage() {
                     Prioritas Tiga Kendaraan
                   </h2>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                <p className="max-w-4xl text-[11px] text-muted-foreground leading-relaxed font-medium">
                   Susun diagram alir bercabang untuk memprioritaskan ambulans,
                   lalu sinkronkan warna lampu agar pergerakan tiga kendaraan
                   berjalan aman.
@@ -569,67 +648,32 @@ export default function TrafficExpertPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
-                className="w-full px-4 pb-2 z-20"
+                className="pointer-events-none absolute left-4 right-4 top-2 z-30"
               >
-                <div className="bg-card border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm">
-                  <h3 className="text-sm font-black text-emerald-700 tracking-tight">
-                    🎉 Berhasil! Diagram alir benar
+                <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
+                  <h3 className="text-sm font-black tracking-tight text-emerald-700">
+                    Berhasil! Flowchart kamu sudah tepat
                   </h3>
-                  <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
-                    Alur prioritas berjalan sesuai urutan keputusan.
+                  <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
+                    Sistem berhasil membaca alur prioritas kendaraan.
                     <br />
-                    Sistem berhasil menyinkronkan ambulans, lampu, dan
-                    pergerakan kendaraan.
+                    Keputusan sensor dan proses berjalan sesuai flowchart.
                   </p>
                 </div>
               </motion.section>
             )}
           </AnimatePresence>
 
-          <div className="w-full px-4 pb-2 z-20">
-            <div className="px-5 py-3 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isSimulating
-                      ? "bg-rose-500 animate-pulse"
-                      : simulationStatus === "error"
-                        ? "bg-red-500 shadow-[0_0_5px_red]"
-                        : "bg-emerald-500"
-                  }`}
-                />
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic font-mono">
-                  ALGORITMA PRIORITAS KENDARAAN
-                </span>
-              </div>
-              <div
-                className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest ${
-                  isSimulating
-                    ? "bg-rose-500 text-white"
-                    : simulationStatus === "error"
-                      ? "bg-red-500 text-white border-red-600 shadow-sm"
-                      : "bg-background text-muted-foreground border-border"
-                }`}
-              >
-                {isSimulating
-                  ? "RUNNING"
-                  : simulationStatus === "error"
-                    ? "ERROR"
-                    : "SIAP MENULIS"}
-              </div>
-            </div>
-          </div>
-
           <div
-            className="absolute inset-0 opacity-[0.05] pointer-events-none"
+            className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{
-              backgroundImage: "radial-gradient(#000 1px, transparent 1px)",
-              backgroundSize: "24px 24px",
+              backgroundImage: "radial-gradient(#64748b 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
             }}
           ></div>
 
           <div className="w-full flex-1 min-h-0 overflow-auto flex items-start justify-center z-20">
-            <div className="w-full max-w-[600px] flex flex-col items-center scale-[0.8] origin-top font-black">
+            <div className="w-full max-w-[600px] flex flex-col items-center scale-[0.85] origin-top font-black">
               <div className="w-36">{renderSlot(HARD_STRUCTURE.top[0])}</div>
               <ArrowDown className="text-muted-foreground/60 my-1" size={16} />
               <div className="w-48">{renderSlot(HARD_STRUCTURE.top[1])}</div>
@@ -642,8 +686,8 @@ export default function TrafficExpertPage() {
                 <div className="flex-1 flex flex-col items-center pt-1.5">
                   <div className="flex items-center w-full mb-1 text-blue-500">
                     <div className="h-[2px] bg-blue-500/20 flex-1"></div>
-                    <span className="px-2 text-[9px] uppercase font-black">
-                      YA
+                    <span className="px-2 text-[10px] uppercase font-black">
+                      Ya
                     </span>
                   </div>
                   <div className="w-full">
@@ -654,8 +698,8 @@ export default function TrafficExpertPage() {
 
                 <div className="flex-[2.2] flex flex-col items-center border-l border-border pl-4">
                   <div className="flex items-center w-full mb-1 text-muted-foreground">
-                    <span className="px-2 text-[9px] uppercase font-black">
-                      TIDAK
+                    <span className="px-2 text-[10px] uppercase font-black">
+                      Tidak
                     </span>
                     <div className="h-[2px] bg-border flex-1"></div>
                   </div>
@@ -675,7 +719,7 @@ export default function TrafficExpertPage() {
                       <div className="flex items-center w-full mb-1 text-muted-foreground">
                         <div className="h-[1px] bg-border flex-1"></div>
                         <span className="px-1.5 text-[8px] font-bold uppercase">
-                          YA
+                          Ya
                         </span>
                       </div>
                       <div className="w-full">
@@ -686,7 +730,7 @@ export default function TrafficExpertPage() {
                     <div className="flex-1 flex flex-col items-center">
                       <div className="flex items-center w-full mb-1 text-muted-foreground">
                         <span className="px-1.5 text-[8px] font-bold uppercase">
-                          TIDAK
+                          Tidak
                         </span>
                         <div className="h-[1px] bg-border flex-1"></div>
                       </div>
@@ -709,14 +753,17 @@ export default function TrafficExpertPage() {
         </section>
 
         {/* PANEL KANAN: SIMULATOR PERSIMPANGAN */}
-        <aside className="w-[420px] bg-[#020617] flex flex-col z-20 shrink-0 shadow-2xl border-l border-slate-800">
-          <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">
-                VISUALISASI
+        <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 shadow-2xl z-20 mr-5 my-4">
+          <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-5">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+                <Activity size={14} />
+              </div>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                Simulation Preview
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div
                 className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)] ${
                   hardwareBroken
@@ -730,13 +777,9 @@ export default function TrafficExpertPage() {
                           : "bg-slate-700"
                 }`}
               ></div>
-              <span
-                className={`text-[8px] font-black uppercase tracking-tighter ${
-                  hardwareBroken ? "text-red-400" : "text-slate-300"
-                }`}
-              >
+              <span className="text-[8px] font-black uppercase tracking-tighter text-slate-300">
                 {hardwareBroken
-                  ? "SYSTEM ERROR"
+                  ? "Error"
                   : ambulanceActive
                     ? "PRIORITAS AMBULANS"
                     : lightColor.toUpperCase()}
@@ -744,7 +787,7 @@ export default function TrafficExpertPage() {
             </div>
           </div>
 
-          <div className="flex-1 bg-[#0f0a0f] relative overflow-hidden flex items-center justify-center shadow-inner">
+          <div className="flex-1 bg-[radial-gradient(circle_at_center,_#0f172a_0%,_#020617_100%)] relative overflow-hidden flex items-center justify-center">
             {/* AREA JALAN PERSIMPANGAN */}
             <div className="absolute w-44 h-full bg-[#1a151a] border-x-2 border-slate-800 shadow-inner"></div>
             <div className="absolute h-44 w-full bg-[#1a151a] border-y-2 border-slate-800 shadow-inner"></div>
@@ -968,74 +1011,28 @@ export default function TrafficExpertPage() {
               <div className="w-1 h-12 bg-slate-900 mx-auto"></div>
             </div>
           </div>
-
-          {/* LAPORAN LOGIKA */}
-          <div
-            className={`p-2 border-t h-16 flex flex-col justify-center transition-colors duration-500 shrink-0 ${
-              simulationStatus === "success"
-                ? "bg-green-50/80 border-green-100"
-                : simulationStatus === "error"
-                  ? "bg-red-50"
-                  : awaitingDecision || isScanning
-                    ? "bg-amber-50"
-                    : "bg-card"
-            }`}
-          >
-            <div className="flex items-center gap-2 px-2">
-              <div
-                className={`shrink-0 p-1.5 rounded-xl shadow-sm ${
-                  simulationStatus === "success"
-                    ? "bg-card text-green-600 shadow-md"
-                    : simulationStatus === "error"
-                      ? "bg-card text-red-500 shadow-md"
-                      : isScanning
-                        ? "bg-card text-blue-500 shadow-md"
-                        : awaitingDecision
-                          ? "bg-card text-amber-500 shadow-md"
-                          : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {simulationStatus === "success" ? (
-                  <CheckCircle2 size={20} />
-                ) : simulationStatus === "error" ? (
-                  <AlertTriangle size={20} />
-                ) : isScanning ? (
-                  <Search size={20} className="animate-spin" />
-                ) : awaitingDecision ? (
-                  <MousePointerClick size={20} />
-                ) : (
-                  <HelpCircle size={20} />
-                )}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <h3 className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-0.5">
-                  Laporan Logika
-                </h3>
-                <p
-                  className={`text-[9px] font-bold leading-tight ${
-                    simulationStatus === "success"
-                      ? "text-green-900"
-                      : simulationStatus === "error"
-                        ? "text-red-900"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {feedback ||
-                    "Susun alur Expert. Mobil C akan melaju otomatis dari arah atas jika sensor mendeteksi Lampu Merah (A/B Berhenti)."}
-                </p>
-              </div>
-            </div>
-          </div>
         </aside>
       </main>
 
-      <footer className="bg-background border-t border-border px-3 py-0.5 text-[7px] font-bold text-muted-foreground flex justify-between items-center shrink-0 uppercase tracking-widest italic">
-        <div className="flex gap-2 items-center font-black">
-          <span className="text-red-500">STABLE ENGINE v12.5-EXPERT</span>
-          <span className="text-muted-foreground/40">|</span>
-          <span>NESTED CROSSROAD LOGIC SYNC</span>
+      <footer className="px-8 py-3 bg-background border-t border-border flex items-center justify-between shrink-0 text-[10px]">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <span className="font-black uppercase tracking-widest">
+            STATUS SISTEM
+          </span>
+          <span className="w-px h-3 bg-border"></span>
+          <span className="font-medium italic">
+            Workspace siap menerima flowchart
+          </span>
         </div>
-        <span>TRAFFIC LAB ACADEMY</span>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground font-medium">
+            MODE: DRAG & DROP FLOWCHART
+          </span>
+          <span className="w-px h-3 bg-border"></span>
+          <span className="font-black text-emerald-600 uppercase tracking-wide italic">
+            CODIN • INTERACTIVE ALGORITHM LEARNING
+          </span>
+        </div>
       </footer>
     </div>
   );

@@ -34,16 +34,7 @@ const EXPECTED_SOLUTION = [
 ];
 
 // --- Template Awal (Ghost Template) dengan Placeholder ---
-const INITIAL_TEMPLATE = [
-  "start",
-  "_____ sensor",
-  "if sensor = aktif then",
-  "_____ pintu_terbuka",
-  "_____",
-  "_____ pintu_tertutup",
-  "end if",
-  "end",
-];
+const INITIAL_TEMPLATE = [] as const;
 
 // --- Kamus Penjelasan Perintah untuk Pesan Kesalahan Edukatif ---
 const COMMAND_GLOSSARY: Record<string, string> = {

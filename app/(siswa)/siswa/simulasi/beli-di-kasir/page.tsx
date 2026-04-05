@@ -31,16 +31,7 @@ const EXPECTED_SOLUTION = [
   "end",
 ] as const;
 
-const INITIAL_TEMPLATE = [
-  "start",
-  "input harga_barang",
-  "_____ jumlah_barang",
-  "",
-  "total = harga_barang * jumlah_barang",
-  "",
-  "_____ total",
-  "end",
-] as const;
+const INITIAL_TEMPLATE = [] as const;
 
 const COMMAND_GLOSSARY: Record<string, string> = {
   input:
@@ -440,8 +431,8 @@ export default function BeliDiKasirSimulation() {
                 Beli di Kasir
               </h1>
             </div>
-            <span className="text-[8px] text-emerald-600 font-bold tracking-widest uppercase italic bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Dasar
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              Level Dasar
             </span>
           </div>
         </div>

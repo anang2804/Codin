@@ -217,8 +217,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
               Pengisian Galon Air
             </h1>
-            <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-emerald-600">
-              Dasar
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              Level Dasar
             </span>
           </div>
         </div>
@@ -336,8 +336,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Lengkapi keyword struktur kontrol agar sistem bisa mengisi
-                  galon dari 0 liter hingga kapasitas maksimal 5 liter.
+                  Ayo bantu sistem dispenser ini mengisi galon selama airnya
+                  belum mencapai 5 liter!
                 </p>
               </div>
             </div>
