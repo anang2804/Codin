@@ -180,7 +180,7 @@ export default function UserQuickMenu({
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            Keluar
           </Button>
         </div>
       </DropdownMenuContent>

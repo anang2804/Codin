@@ -63,6 +63,11 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Kelola Kuis", href: "/guru/asesmen", icon: ClipboardList },
       { label: "Kelola Nilai", href: "/guru/nilai", icon: BarChart3 },
       {
+        label: "Progress Materi",
+        href: "/guru/materi-progress",
+        icon: Target,
+      },
+      {
         label: "Progress Simulasi",
         href: "/guru/simulasi-progress",
         icon: Microscope,
