@@ -80,18 +80,6 @@ export default function GuruLayout({
     <div className="flex">
       <Sidebar role="guru" />
       <main className="flex-1 layout-with-sidebar bg-muted/20 min-h-screen">
-        {hideHeader && (
-          <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-            <UserQuickMenu
-              role="guru"
-              variant="avatar"
-              avatarUrl={profile?.avatar_url || null}
-              fullName={profile?.full_name || null}
-              email={profile?.email || null}
-            />
-          </div>
-        )}
-
         {!hideHeader && (
           <div className="sticky top-0 z-50 bg-gradient-to-r from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950/80 border-b border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
             <div className="flex items-center justify-between px-4 md:px-8 py-4">
@@ -111,11 +99,7 @@ export default function GuruLayout({
           </div>
         )}
 
-        <div
-          className={
-            hideHeader ? "p-4 md:p-8 pt-16 md:pt-20" : "p-4 md:p-8 pt-0 md:pt-0"
-          }
-        >
+        <div className={hideHeader ? "p-4 md:p-8" : "p-4 md:p-8 pt-0 md:pt-0"}>
           {children}
         </div>
       </main>

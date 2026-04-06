@@ -89,17 +89,15 @@ export default function SiswaLayout({
       <main
         className={`flex-1 ${!hideSidebar ? "layout-with-sidebar bg-muted/20" : ""} min-h-screen`}
       >
-        {hideHeader && (
+        {showFloatingProfileMenu && (
           <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-            {showFloatingProfileMenu && (
-              <UserQuickMenu
-                role="siswa"
-                variant="avatar"
-                avatarUrl={profile?.avatar_url || null}
-                fullName={profile?.full_name || null}
-                email={profile?.email || null}
-              />
-            )}
+            <UserQuickMenu
+              role="siswa"
+              variant="avatar"
+              avatarUrl={profile?.avatar_url || null}
+              fullName={profile?.full_name || null}
+              email={profile?.email || null}
+            />
           </div>
         )}
         {/* Header - Sticky */}
@@ -122,7 +120,15 @@ export default function SiswaLayout({
           </div>
         )}
 
-        <div className={!hideSidebar ? "p-4 md:p-8 pt-0 md:pt-0" : ""}>
+        <div
+          className={
+            !hideSidebar
+              ? hideHeader
+                ? "p-4 md:p-8"
+                : "p-4 md:p-8 pt-0 md:pt-0"
+              : ""
+          }
+        >
           {children}
         </div>
       </main>
