@@ -516,10 +516,9 @@ export async function PUT(req: Request) {
         console.error("profiles password save error:", profilePasswordError);
         return NextResponse.json(
           {
-            error:
-              /current_password|password_updated_at|column/i.test(msg)
-                ? "Kolom password tracking belum ada di database production. Jalankan script 003_add_password_tracking.sql"
-                : msg || "Failed to save password tracking",
+            error: /current_password|password_updated_at|column/i.test(msg)
+              ? "Kolom password tracking belum ada di database production. Jalankan script 003_add_password_tracking.sql"
+              : msg || "Failed to save password tracking",
           },
           { status: 500 },
         );
