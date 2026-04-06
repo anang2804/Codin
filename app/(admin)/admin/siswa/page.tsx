@@ -769,28 +769,40 @@ export default function AdminSiswaPage() {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
 
+        const normalizeHeader = (value: string) =>
+          String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+
+        const getByAliases = (row: any, aliases: string[]) => {
+          const entries = Object.entries(row || {});
+          const normalizedAliasSet = new Set(aliases.map(normalizeHeader));
+          for (const [key, val] of entries) {
+            if (normalizedAliasSet.has(normalizeHeader(key))) {
+              return val;
+            }
+          }
+          return "";
+        };
+
         // Validate data structure
         const validatedData = data.map((row: any, index) => {
           const rowNum = index + 2; // Excel row number (header is row 1)
           return {
-            full_name: row["Nama"] || row["nama"] || row["NAMA"] || "",
-            email:
-              row["Email"] ||
-              row["email"] ||
-              row["EMAIL"] ||
-              row["Akun"] ||
-              row["akun"] ||
-              "",
-            password:
-              row["Password"] || row["password"] || row["PASSWORD"] || "",
-            no_telepon:
-              row["No Telepon"] ||
-              row["no_telepon"] ||
-              row["NO_TELEPON"] ||
-              row["Telepon"] ||
-              row["telepon"] ||
-              "",
-            kelas: row["Kelas"] || row["kelas"] || row["KELAS"] || "",
+            full_name: getByAliases(row, ["nama", "full name", "full_name"]),
+            email: getByAliases(row, ["email", "akun"]),
+            password: getByAliases(row, ["password", "kata sandi", "sandi"]),
+            no_telepon: getByAliases(row, [
+              "no telepon",
+              "nomor telepon",
+              "no hp",
+              "nomor hp",
+              "telepon",
+              "phone",
+              "no_telepon",
+            ]),
+            kelas: getByAliases(row, ["kelas", "class"]),
             rowNum,
           };
         });
@@ -833,8 +845,14 @@ export default function AdminSiswaPage() {
       const row = excelData[i];
       setUploadProgress(Math.round(((i + 1) / excelData.length) * 100));
 
+      const fullName = String(row.full_name ?? "").trim();
+      const email = String(row.email ?? "").trim();
+      const password = String(row.password ?? "").trim();
+      const noTelepon = String(row.no_telepon ?? "").trim();
+      const kelas = String(row.kelas ?? "").trim();
+
       // Validate required fields
-      if (!row.full_name || !row.email || !row.password) {
+      if (!fullName || !email || !password) {
         results.failed++;
         results.errors.push(
           `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, dan Password harus diisi)`,
@@ -847,11 +865,11 @@ export default function AdminSiswaPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: row.email.trim(),
-            full_name: row.full_name.trim(),
-            password: row.password.trim(),
-            no_telepon: row.no_telepon?.trim() || null,
-            kelas: row.kelas?.trim() || null,
+            email,
+            full_name: fullName,
+            password,
+            no_telepon: noTelepon || null,
+            kelas: kelas || null,
             sendEmail: false,
           }),
         });
@@ -875,9 +893,9 @@ export default function AdminSiswaPage() {
         results.success++;
         newAccounts.push({
           id: data.id,
-          full_name: row.full_name.trim(),
-          email: data.email || row.email,
-          temporaryPassword: row.password.trim(),
+          full_name: fullName,
+          email: data.email || email,
+          temporaryPassword: password,
         });
       } catch (err: any) {
         results.failed++;
