@@ -24,8 +24,11 @@ export default function GuruLayout({
     if (!profile) return "Guru";
     const fullName = profile.full_name || "Guru";
     const firstName = fullName.split(" ")[0];
-    if (profile.jenis_kelamin === "L") return `Pak ${firstName}`;
-    if (profile.jenis_kelamin === "P") return `Bu ${firstName}`;
+    const gender = String(profile.jenis_kelamin || "")
+      .trim()
+      .toLowerCase();
+    if (gender === "l" || gender === "laki-laki") return `Pak ${firstName}`;
+    if (gender === "p" || gender === "perempuan") return `Bu ${firstName}`;
     return firstName;
   };
 

@@ -6,10 +6,9 @@ import {
   CheckCircle2,
   Loader2,
   Search,
-  TrendingUp,
   Users,
   ChevronRight,
-  Eye,
+  RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +49,7 @@ interface Summary {
 
 export default function GuruMateriProgressPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [summary, setSummary] = useState<Summary>({
@@ -65,7 +65,10 @@ export default function GuruMateriProgressPage() {
     fetchProgress();
   }, []);
 
-  const fetchProgress = async () => {
+  const fetchProgress = async (options?: { showRefreshState?: boolean }) => {
+    if (options?.showRefreshState) {
+      setIsRefreshing(true);
+    }
     try {
       const response = await fetch(
         `/api/guru/materi-progress?t=${Date.now()}`,
@@ -82,6 +85,7 @@ export default function GuruMateriProgressPage() {
       console.error("Error fetching materi progress:", error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -125,7 +129,7 @@ export default function GuruMateriProgressPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border border-gray-100 bg-gray-50/80 p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
             <Users size={13} />
@@ -153,16 +157,6 @@ export default function GuruMateriProgressPage() {
           </div>
           <p className="text-3xl font-semibold text-green-700">
             {summary.completed_siswa}
-          </p>
-        </Card>
-
-        <Card className="border border-gray-200 bg-gray-50/60 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-            <TrendingUp size={13} />
-            Rata-rata
-          </div>
-          <p className="text-3xl font-semibold text-gray-700">
-            {summary.overall_average}%
           </p>
         </Card>
       </div>
@@ -197,11 +191,15 @@ export default function GuruMateriProgressPage() {
 
           <Button
             variant="outline"
-            onClick={fetchProgress}
-            className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            onClick={() => fetchProgress({ showRefreshState: true })}
+            disabled={isRefreshing}
+            className="border-gray-200 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <Eye size={15} className="mr-1.5" />
-            Refresh
+            <RefreshCw
+              size={15}
+              className={`mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {isRefreshing ? "Memuat..." : "Refresh"}
           </Button>
         </div>
       </Card>

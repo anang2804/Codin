@@ -49,6 +49,21 @@ export default function GuruProfilePage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const normalizeGender = (value?: string | null) => {
+    if (!value) return "";
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "l" || normalized === "laki-laki") return "L";
+    if (normalized === "p" || normalized === "perempuan") return "P";
+    return value;
+  };
+
+  const displayGender = (value?: string | null) => {
+    const normalized = normalizeGender(value);
+    if (normalized === "L") return "Laki-laki";
+    if (normalized === "P") return "Perempuan";
+    return value || "-";
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
@@ -355,7 +370,7 @@ export default function GuruProfilePage() {
                     </label>
                     <select
                       className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-green-500 text-sm text-foreground transition-all appearance-none"
-                      value={formData.jenis_kelamin || ""}
+                      value={normalizeGender(formData.jenis_kelamin)}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -403,13 +418,7 @@ export default function GuruProfilePage() {
                 <ItemStatic label="Email" value={profile.email} />
                 <ItemStatic
                   label="Jenis Kelamin"
-                  value={
-                    profile.jenis_kelamin === "L"
-                      ? "Laki-laki"
-                      : profile.jenis_kelamin === "P"
-                        ? "Perempuan"
-                        : "-"
-                  }
+                  value={displayGender(profile.jenis_kelamin)}
                 />
                 <ItemStatic label="No Telepon" value={profile.no_telepon} />
                 <ItemStatic
