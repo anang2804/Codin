@@ -1486,7 +1486,7 @@ export default function AdminGuruPage() {
                     onChange={(e) =>
                       setAddForm({ ...addForm, email: e.target.value })
                     }
-                    placeholder="email@guru.com"
+                    placeholder="email@gmail.com"
                     className="pl-9 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
                   />
                 </div>
