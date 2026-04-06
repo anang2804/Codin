@@ -288,13 +288,27 @@ export async function PUT(req: Request) {
         );
       }
       // Save current_password to profiles
-      await supabaseAdmin
+      const { error: profilePasswordError } = await supabaseAdmin
         .from("profiles")
         .update({
           current_password: password,
           password_updated_at: new Date().toISOString(),
         })
         .eq("id", id);
+
+      if (profilePasswordError) {
+        const msg = String(profilePasswordError.message || "");
+        console.error("profiles password save error:", profilePasswordError);
+        return NextResponse.json(
+          {
+            error:
+              /current_password|password_updated_at|column/i.test(msg)
+                ? "Kolom password tracking belum ada di database production. Jalankan script 003_add_password_tracking.sql"
+                : msg || "Failed to save password tracking",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     return NextResponse.json({ ok: true });
