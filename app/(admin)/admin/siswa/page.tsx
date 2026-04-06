@@ -623,6 +623,16 @@ export default function AdminSiswaPage() {
   async function saveEdit() {
     if (!editingId) return;
 
+    // Client-side validation for optional new password
+    if (
+      editForm.password &&
+      editForm.password.trim().length > 0 &&
+      editForm.password.trim().length < 6
+    ) {
+      toast.error("Password baru minimal 6 karakter");
+      return;
+    }
+
     setSaving(true);
     try {
       const updateData: any = {
@@ -975,6 +985,11 @@ export default function AdminSiswaPage() {
       setLoadingProgress(false);
     }
   }
+
+  const isEditPasswordTooShort =
+    !!editForm.password &&
+    editForm.password.trim().length > 0 &&
+    editForm.password.trim().length < 6;
 
   return (
     <div>
@@ -1359,7 +1374,11 @@ export default function AdminSiswaPage() {
                               })
                             }
                             placeholder="Min. 6 karakter"
-                            className="h-8 text-sm pl-7 pr-8 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                            className={`h-8 text-sm pl-7 pr-8 transition ${
+                              isEditPasswordTooShort
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
                           />
                           <button
                             type="button"
@@ -1375,6 +1394,11 @@ export default function AdminSiswaPage() {
                             )}
                           </button>
                         </div>
+                        {isEditPasswordTooShort && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            Password minimal 6 karakter.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
