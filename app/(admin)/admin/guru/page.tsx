@@ -330,12 +330,19 @@ export default function AdminGuruPage() {
       });
 
       if (!res.ok) {
-        const errorBody = await res.json().catch(() => ({}));
-        console.error("Error response getting user password:", {
-          userId,
-          status: res.status,
-          error: errorBody?.error,
-        });
+        const errorText = await res.text();
+        let parsedError: any = null;
+        try {
+          parsedError = errorText ? JSON.parse(errorText) : null;
+        } catch {
+          parsedError = null;
+        }
+        console.error(
+          "Error response getting user password:",
+          `userId=${userId}`,
+          `status=${res.status}`,
+          `error=${parsedError?.error || errorText || "unknown"}`,
+        );
         return;
       }
 
