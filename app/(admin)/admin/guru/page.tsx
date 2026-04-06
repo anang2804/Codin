@@ -875,13 +875,16 @@ export default function AdminGuruPage() {
     return list;
   })();
 
+  const isEditPasswordTooShort =
+    !!editForm.password &&
+    editForm.password.trim().length > 0 &&
+    editForm.password.trim().length < 6;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Kelola Guru & Akun
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Kelola Guru</h1>
           <p className="text-sm text-gray-500 mt-1">
             Total{" "}
             <span className="font-semibold text-green-600">{guru.length}</span>{" "}
@@ -1113,7 +1116,11 @@ export default function AdminGuruPage() {
                               })
                             }
                             placeholder="Min. 6 karakter"
-                            className="h-8 text-sm pl-7 pr-8 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                            className={`h-8 text-sm pl-7 pr-8 transition ${
+                              isEditPasswordTooShort
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
                           />
                           <button
                             type="button"
@@ -1129,6 +1136,11 @@ export default function AdminGuruPage() {
                             )}
                           </button>
                         </div>
+                        {isEditPasswordTooShort && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            Password minimal 6 karakter.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
