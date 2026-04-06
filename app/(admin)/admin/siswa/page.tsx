@@ -162,6 +162,9 @@ export default function AdminSiswaPage() {
   const [userPasswords, setUserPasswords] = useState<
     Map<string, { password: string; updatedAt: string }>
   >(new Map());
+  const [passwordLoadingUsers, setPasswordLoadingUsers] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Helper functions for password management
   const normalizeEmail = (e?: string) =>
@@ -330,6 +333,14 @@ export default function AdminSiswaPage() {
 
   // Get user password
   const getUserPassword = async (userId: string) => {
+    if (passwordLoadingUsers.has(userId)) return;
+
+    setPasswordLoadingUsers((prev) => {
+      const next = new Set(prev);
+      next.add(userId);
+      return next;
+    });
+
     try {
       const res = await fetch("/api/admin/get-user-password?t=" + Date.now(), {
         method: "POST",
@@ -341,19 +352,47 @@ export default function AdminSiswaPage() {
         body: JSON.stringify({ userId }),
         cache: "no-store",
       });
-      if (res.ok) {
-        const json = await res.json();
-        setUserPasswords((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(userId, {
-            password: json.password || "",
-            updatedAt: json.updatedAt || "",
-          });
-          return newMap;
-        });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        let parsedError: any = null;
+        try {
+          parsedError = errorText ? JSON.parse(errorText) : null;
+        } catch {
+          parsedError = null;
+        }
+        console.error(
+          "Error response getting user password:",
+          `userId=${userId}`,
+          `status=${res.status}`,
+          `error=${parsedError?.error || errorText || "unknown"}`,
+        );
+        return;
       }
+
+      const json = await res.json();
+      setUserPasswords((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(userId, {
+          password: json.password || "",
+          updatedAt: json.updatedAt || "",
+        });
+        return newMap;
+      });
     } catch (error) {
       console.error(`Error getting user password:`, error);
+    } finally {
+      setUserPasswords((prev) => {
+        if (prev.has(userId)) return prev;
+        const newMap = new Map(prev);
+        newMap.set(userId, { password: "", updatedAt: "" });
+        return newMap;
+      });
+      setPasswordLoadingUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     }
   };
 
@@ -1521,11 +1560,25 @@ export default function AdminSiswaPage() {
                                   </span>
                                 )
                               )
-                            ) : (
+                            ) : passwordLoadingUsers.has(s.id) ? (
                               !hasPassword && (
                                 <span className="text-xs text-gray-300">
                                   Memuat...
                                 </span>
+                              )
+                            ) : (
+                              !hasPassword && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-300">
+                                    Tidak ada password tersimpan
+                                  </span>
+                                  <button
+                                    onClick={() => getUserPassword(s.id)}
+                                    className="text-xs text-green-600 hover:underline"
+                                  >
+                                    Coba lagi
+                                  </button>
+                                </div>
                               )
                             )}
                           </div>
