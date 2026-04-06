@@ -49,6 +49,7 @@ interface Guru {
   id: string;
   email: string;
   full_name: string;
+  jenis_kelamin?: string | null;
   no_telepon?: string;
   alamat?: string;
   created_at: string;
@@ -398,7 +399,13 @@ export default function AdminGuruPage() {
 
   const fetchGuru = async () => {
     try {
-      const res = await fetch("/api/admin/guru");
+      const res = await fetch(`/api/admin/guru?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to fetch guru");
       setGuru(json.data || []);
@@ -654,6 +661,7 @@ export default function AdminGuruPage() {
 
   async function saveEdit() {
     if (!editingId) return;
+    const targetId = editingId;
 
     // Client-side validation
     if (
@@ -670,6 +678,7 @@ export default function AdminGuruPage() {
       const updateData: any = {
         id: editingId,
         full_name: editForm.full_name,
+        jenis_kelamin: editForm.jenis_kelamin ?? null,
         no_telepon: editForm.no_telepon ?? null,
         alamat: editForm.alamat ?? null,
       };
@@ -679,18 +688,44 @@ export default function AdminGuruPage() {
         updateData.password = editForm.password;
       }
 
-      const [response] = await Promise.all([
-        fetch("/api/admin/guru", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateData),
-        }),
-        new Promise((res) => setTimeout(res, 700)), // minimum loading duration
-      ]);
+      const response = await fetch("/api/admin/guru", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
       const json = await response.json();
       if (!response.ok) {
         throw new Error(json.error || "Failed to update guru");
       }
+
+      // Optimistic UI update so changes appear immediately.
+      setGuru((prev) =>
+        prev.map((g) =>
+          g.id === targetId
+            ? {
+                ...g,
+                full_name: editForm.full_name ?? g.full_name,
+                no_telepon: editForm.no_telepon ?? undefined,
+                alamat: editForm.alamat ?? undefined,
+                jenis_kelamin: editForm.jenis_kelamin ?? null,
+              }
+            : g,
+        ),
+      );
+      setFilteredGuru((prev) =>
+        prev.map((g) =>
+          g.id === targetId
+            ? {
+                ...g,
+                full_name: editForm.full_name ?? g.full_name,
+                no_telepon: editForm.no_telepon ?? undefined,
+                alamat: editForm.alamat ?? undefined,
+                jenis_kelamin: editForm.jenis_kelamin ?? null,
+              }
+            : g,
+        ),
+      );
+
       toast.success("Data guru berhasil diupdate");
       setEditingId(null);
       setEditForm({});
@@ -1030,8 +1065,26 @@ export default function AdminGuruPage() {
                         />
                       </div>
                     </div>
-                    {/* Placeholder col to keep grid balanced */}
-                    <div />
+                    {/* Jenis Kelamin */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        Jenis Kelamin
+                      </label>
+                      <select
+                        value={editForm.jenis_kelamin || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            jenis_kelamin: e.target.value || null,
+                          })
+                        }
+                        className="h-8 w-full text-sm px-2.5 rounded-md border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition bg-white"
+                      >
+                        <option value="">Pilih jenis kelamin</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                      </select>
+                    </div>
                     {/* Alamat — full width */}
                     <div className="col-span-2">
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">

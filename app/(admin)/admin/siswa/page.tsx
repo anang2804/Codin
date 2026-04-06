@@ -547,7 +547,13 @@ export default function AdminSiswaPage() {
 
   async function fetchSiswa() {
     try {
-      const response = await fetch("/api/admin/siswa");
+      const response = await fetch(`/api/admin/siswa?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
       const json = await response.json();
 
       if (!response.ok) {
@@ -622,6 +628,7 @@ export default function AdminSiswaPage() {
 
   async function saveEdit() {
     if (!editingId) return;
+    const targetId = editingId;
 
     // Client-side validation for optional new password
     if (
@@ -661,6 +668,38 @@ export default function AdminSiswaPage() {
       if (!response.ok) {
         throw new Error(json.error || "Failed to update siswa");
       }
+
+      // Optimistic UI update so edited data appears immediately.
+      setSiswa((prev) =>
+        prev.map((s) =>
+          s.id === targetId
+            ? {
+                ...s,
+                full_name: editForm.full_name ?? s.full_name,
+                kelas: editForm.kelas ?? undefined,
+                tanggal_lahir: editForm.tanggal_lahir ?? undefined,
+                jenis_kelamin: editForm.jenis_kelamin ?? undefined,
+                no_telepon: editForm.no_telepon ?? undefined,
+                alamat: editForm.alamat ?? undefined,
+              }
+            : s,
+        ),
+      );
+      setFilteredSiswa((prev) =>
+        prev.map((s) =>
+          s.id === targetId
+            ? {
+                ...s,
+                full_name: editForm.full_name ?? s.full_name,
+                kelas: editForm.kelas ?? undefined,
+                tanggal_lahir: editForm.tanggal_lahir ?? undefined,
+                jenis_kelamin: editForm.jenis_kelamin ?? undefined,
+                no_telepon: editForm.no_telepon ?? undefined,
+                alamat: editForm.alamat ?? undefined,
+              }
+            : s,
+        ),
+      );
 
       toast.success("Data siswa berhasil diupdate");
       setEditingId(null);

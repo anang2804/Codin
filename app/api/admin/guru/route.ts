@@ -121,14 +121,12 @@ export async function POST(req: Request) {
         email,
         full_name,
         role: "guru",
-        phone: no_telepon || null,
       },
       create: {
         id: created.user.id,
         email,
         full_name,
         role: "guru",
-        phone: no_telepon || null,
       },
     });
 
@@ -136,6 +134,7 @@ export async function POST(req: Request) {
     await supabaseAdmin
       .from("profiles")
       .update({
+        no_telepon: no_telepon || null,
         current_password: generatedPassword,
         password_updated_at: new Date().toISOString(),
       })
@@ -157,6 +156,14 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const supabaseAdmin = getAdminClient();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: "Server credentials not configured" },
+      { status: 500 },
+    );
+  }
+
   // Check admin authentication
   try {
     const serverSupabase = await createServerClient();
@@ -178,30 +185,32 @@ export async function GET(req: Request) {
   }
 
   try {
-    const guru = await prisma.profile.findMany({
-      where: { role: "guru" },
-      select: {
-        id: true,
-        email: true,
-        full_name: true,
-        phone: true,
-        address: true,
-        created_at: true,
-      },
-      orderBy: { created_at: "desc" },
-    });
+    const { data: rows, error: fetchError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("role", "guru")
+      .order("created_at", { ascending: false });
 
-    const mapped = guru.map((g) => ({
-      ...g,
-      no_telepon: g.phone ?? null,
-      alamat: g.address ?? null,
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    const mapped = (rows || []).map((g: any) => ({
+      id: g.id,
+      email: g.email,
+      full_name: g.full_name,
+      created_at: g.created_at,
+      jenis_kelamin: g.jenis_kelamin ?? null,
+      no_telepon: g.no_telepon ?? null,
+      alamat: g.alamat ?? null,
     }));
 
     return NextResponse.json(
       { data: mapped },
       {
         headers: {
-          "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
         },
       },
     );
@@ -244,21 +253,79 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, email, full_name, password, no_telepon, alamat } = body;
+    const {
+      id,
+      email,
+      full_name,
+      jenis_kelamin,
+      password,
+      no_telepon,
+      alamat,
+    } = body;
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    // Update profiles table with Prisma
-    const updates: any = {};
-    if (full_name !== undefined) updates.full_name = full_name;
-    if (email !== undefined) updates.email = email;
-    if (no_telepon !== undefined) updates.phone = no_telepon || null;
-    if (alamat !== undefined) updates.address = alamat || null;
+    const baseUpdates: any = {};
+    if (full_name !== undefined) baseUpdates.full_name = full_name;
+    if (email !== undefined) baseUpdates.email = email;
 
-    await prisma.profile.update({
-      where: { id },
-      data: updates,
-    });
+    if (Object.keys(baseUpdates).length > 0) {
+      const { error: baseError } = await supabaseAdmin
+        .from("profiles")
+        .update(baseUpdates)
+        .eq("id", id);
+
+      if (baseError) {
+        return NextResponse.json(
+          { error: baseError.message || "Failed to update profile" },
+          { status: 500 },
+        );
+      }
+    }
+
+    const contactUpdates: any = {};
+    if (no_telepon !== undefined)
+      contactUpdates.no_telepon = no_telepon || null;
+    if (alamat !== undefined) contactUpdates.alamat = alamat || null;
+
+    if (Object.keys(contactUpdates).length > 0) {
+      const { error: contactError } = await supabaseAdmin
+        .from("profiles")
+        .update(contactUpdates)
+        .eq("id", id);
+
+      if (contactError) {
+        return NextResponse.json(
+          {
+            error: contactError.message || "Failed to update no_telepon/alamat",
+          },
+          { status: 500 },
+        );
+      }
+    }
+
+    if (jenis_kelamin !== undefined) {
+      try {
+        const { error: genderError } = await supabaseAdmin
+          .from("profiles")
+          .update({ jenis_kelamin: jenis_kelamin || null })
+          .eq("id", id);
+
+        if (genderError) {
+          throw genderError;
+        }
+      } catch (genderErr: any) {
+        const msg = String(genderErr?.message || "");
+        return NextResponse.json(
+          {
+            error: /jenis_kelamin|column/i.test(msg)
+              ? "Kolom jenis_kelamin belum ada di database production. Jalankan script 003_add_profile_fields.sql"
+              : msg || "Failed to update jenis_kelamin",
+          },
+          { status: 500 },
+        );
+      }
+    }
 
     // If email changed, update auth user email
     if (email !== undefined) {
