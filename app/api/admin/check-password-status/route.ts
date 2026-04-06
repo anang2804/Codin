@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const getAdminClient = () => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for check-password-status API",
+    );
+    return null;
+  }
+
+  return createServiceClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
 
 // Disable caching for this route
 export const dynamic = "force-dynamic";
@@ -7,6 +28,14 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getAdminClient();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Server credentials not configured" },
+        { status: 500 },
+      );
+    }
+
     const supabase = await createClient();
 
     // Check if user is admin
@@ -34,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json(
         { error: "userIds array is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +73,7 @@ export async function POST(request: NextRequest) {
       userIds.map(async (userId: string) => {
         try {
           const { data: targetUser, error } =
-            await supabase.auth.admin.getUserById(userId);
+            await supabaseAdmin.auth.admin.getUserById(userId);
 
           if (error || !targetUser) {
             return {
@@ -73,7 +102,7 @@ export async function POST(request: NextRequest) {
             error: "Failed to check status",
           };
         }
-      })
+      }),
     );
 
     const response = NextResponse.json({ results });
@@ -81,7 +110,7 @@ export async function POST(request: NextRequest) {
     // Add no-cache headers
     response.headers.set(
       "Cache-Control",
-      "no-store, no-cache, must-revalidate, proxy-revalidate"
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
     );
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
@@ -91,7 +120,7 @@ export async function POST(request: NextRequest) {
     console.error("Error checking password status:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

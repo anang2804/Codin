@@ -125,6 +125,12 @@ export default function AdminGuruPage() {
   const [userPasswords, setUserPasswords] = useState<
     Map<string, { password: string; updatedAt: string }>
   >(new Map());
+  const [passwordLoadingUsers, setPasswordLoadingUsers] = useState<Set<string>>(
+    new Set(),
+  );
+  const [passwordRequestedUsers, setPasswordRequestedUsers] = useState<
+    Set<string>
+  >(new Set());
 
   // Helper functions for password management
   const normalizeEmail = (e?: string) =>
@@ -303,6 +309,14 @@ export default function AdminGuruPage() {
 
   // Get user password
   const getUserPassword = async (userId: string) => {
+    if (passwordLoadingUsers.has(userId)) return;
+
+    setPasswordLoadingUsers((prev) => {
+      const next = new Set(prev);
+      next.add(userId);
+      return next;
+    });
+
     try {
       const res = await fetch("/api/admin/get-user-password?t=" + Date.now(), {
         method: "POST",
@@ -314,8 +328,19 @@ export default function AdminGuruPage() {
         body: JSON.stringify({ userId }),
         cache: "no-store",
       });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({}));
+        console.error("Error response getting user password:", {
+          userId,
+          status: res.status,
+          error: errorBody?.error,
+        });
+        return;
+      }
+
+      const json = await res.json();
       if (res.ok) {
-        const json = await res.json();
         if (json.password) {
           setUserPasswords((prev) => {
             const newMap = new Map(prev);
@@ -329,6 +354,17 @@ export default function AdminGuruPage() {
       }
     } catch (error) {
       console.error(`Error getting user password:`, error);
+    } finally {
+      setPasswordRequestedUsers((prev) => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
+      setPasswordLoadingUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     }
   };
 
@@ -1248,7 +1284,8 @@ export default function AdminGuruPage() {
                                     🔄
                                   </Button>
                                 </div>
-                              ) : (
+                              ) : passwordLoadingUsers.has(g.id) ||
+                                !passwordRequestedUsers.has(g.id) ? (
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-gray-400">
                                     Loading...
@@ -1260,6 +1297,20 @@ export default function AdminGuruPage() {
                                     className="text-xs h-6 px-2"
                                   >
                                     Muat
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400">
+                                    Tidak ada password tersimpan
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => getUserPassword(g.id)}
+                                    className="text-xs h-6 px-2"
+                                  >
+                                    Coba lagi
                                   </Button>
                                 </div>
                               )}
