@@ -97,9 +97,21 @@ export default function AdminSiswaPage() {
   const [editForm, setEditForm] = useState<
     Partial<Siswa> & { password?: string }
   >({});
+  const [editValidationErrors, setEditValidationErrors] = useState<
+    Record<string, boolean>
+  >({});
   const [saving, setSaving] = useState(false);
   const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([]);
   const [showEditPassword, setShowEditPassword] = useState(false);
+
+  const clearEditValidationError = (field: string) => {
+    setEditValidationErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   // Add form state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -625,16 +637,51 @@ export default function AdminSiswaPage() {
   function startEdit(siswa: Siswa) {
     setEditingId(siswa.id);
     setEditForm({ ...siswa });
+    setEditValidationErrors({});
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditForm({});
+    setEditValidationErrors({});
   }
 
   async function saveEdit() {
     if (!editingId) return;
     const targetId = editingId;
+
+    const normalizedEditData = {
+      full_name: String(editForm.full_name ?? "").trim(),
+      kelas: String(editForm.kelas ?? "").trim(),
+      tanggal_lahir: String(editForm.tanggal_lahir ?? "").trim(),
+      jenis_kelamin: String(editForm.jenis_kelamin ?? "").trim(),
+      no_telepon: String(editForm.no_telepon ?? "").trim(),
+      alamat: String(editForm.alamat ?? "").trim(),
+    };
+
+    const requiredFields = [
+      { key: "full_name", label: "Nama lengkap" },
+      { key: "kelas", label: "Kelas" },
+      { key: "tanggal_lahir", label: "Tanggal lahir" },
+      { key: "jenis_kelamin", label: "Jenis kelamin" },
+      { key: "no_telepon", label: "No. Telepon" },
+      { key: "alamat", label: "Alamat" },
+    ];
+
+    const nextErrors: Record<string, boolean> = {};
+    requiredFields.forEach((field) => {
+      if (!normalizedEditData[field.key as keyof typeof normalizedEditData]) {
+        nextErrors[field.key] = true;
+      }
+    });
+
+    if (Object.keys(nextErrors).length > 0) {
+      setEditValidationErrors(nextErrors);
+      toast.error("Lengkapi semua field wajib sebelum menyimpan");
+      return;
+    }
+
+    setEditValidationErrors({});
 
     // Client-side validation for optional new password
     if (
@@ -650,12 +697,12 @@ export default function AdminSiswaPage() {
     try {
       const updateData: any = {
         id: editingId,
-        full_name: editForm.full_name,
-        kelas: editForm.kelas || null,
-        tanggal_lahir: editForm.tanggal_lahir || null,
-        jenis_kelamin: editForm.jenis_kelamin || null,
-        no_telepon: editForm.no_telepon || null,
-        alamat: editForm.alamat || null,
+        full_name: normalizedEditData.full_name,
+        kelas: normalizedEditData.kelas,
+        tanggal_lahir: normalizedEditData.tanggal_lahir,
+        jenis_kelamin: normalizedEditData.jenis_kelamin,
+        no_telepon: normalizedEditData.no_telepon,
+        alamat: normalizedEditData.alamat,
       };
 
       // Only include password if it's been provided
@@ -681,12 +728,12 @@ export default function AdminSiswaPage() {
           s.id === targetId
             ? {
                 ...s,
-                full_name: editForm.full_name ?? s.full_name,
-                kelas: editForm.kelas ?? undefined,
-                tanggal_lahir: editForm.tanggal_lahir ?? undefined,
-                jenis_kelamin: editForm.jenis_kelamin ?? undefined,
-                no_telepon: editForm.no_telepon ?? undefined,
-                alamat: editForm.alamat ?? undefined,
+                full_name: normalizedEditData.full_name,
+                kelas: normalizedEditData.kelas,
+                tanggal_lahir: normalizedEditData.tanggal_lahir,
+                jenis_kelamin: normalizedEditData.jenis_kelamin,
+                no_telepon: normalizedEditData.no_telepon,
+                alamat: normalizedEditData.alamat,
               }
             : s,
         ),
@@ -696,12 +743,12 @@ export default function AdminSiswaPage() {
           s.id === targetId
             ? {
                 ...s,
-                full_name: editForm.full_name ?? s.full_name,
-                kelas: editForm.kelas ?? undefined,
-                tanggal_lahir: editForm.tanggal_lahir ?? undefined,
-                jenis_kelamin: editForm.jenis_kelamin ?? undefined,
-                no_telepon: editForm.no_telepon ?? undefined,
-                alamat: editForm.alamat ?? undefined,
+                full_name: normalizedEditData.full_name,
+                kelas: normalizedEditData.kelas,
+                tanggal_lahir: normalizedEditData.tanggal_lahir,
+                jenis_kelamin: normalizedEditData.jenis_kelamin,
+                no_telepon: normalizedEditData.no_telepon,
+                alamat: normalizedEditData.alamat,
               }
             : s,
         ),
@@ -710,6 +757,7 @@ export default function AdminSiswaPage() {
       toast.success("Data siswa berhasil diupdate");
       setEditingId(null);
       setEditForm({});
+      setEditValidationErrors({});
       setShowEditPassword(false);
       fetchSiswa();
     } catch (err: any) {
@@ -1251,16 +1299,26 @@ export default function AdminSiswaPage() {
                         />
                         <Input
                           value={editForm.full_name || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               full_name: e.target.value,
-                            })
-                          }
+                            });
+                            clearEditValidationError("full_name");
+                          }}
                           placeholder="Nama lengkap"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.full_name
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.full_name && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Nama lengkap wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Email */}
                     <div>
@@ -1291,10 +1349,15 @@ export default function AdminSiswaPage() {
                         />
                         <select
                           value={editForm.kelas || ""}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, kelas: e.target.value })
-                          }
-                          className="w-full pl-7 pr-2 h-8 rounded-md border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          onChange={(e) => {
+                            setEditForm({ ...editForm, kelas: e.target.value });
+                            clearEditValidationError("kelas");
+                          }}
+                          className={`w-full pl-7 pr-2 h-8 rounded-md border bg-white text-sm text-gray-700 focus:outline-none transition ${
+                            editValidationErrors.kelas
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         >
                           <option value="">Pilih Kelas</option>
                           {kelasOptions.map((kelas) => (
@@ -1304,6 +1367,11 @@ export default function AdminSiswaPage() {
                           ))}
                         </select>
                       </div>
+                      {editValidationErrors.kelas && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Kelas wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Tanggal Lahir */}
                     <div>
@@ -1318,15 +1386,25 @@ export default function AdminSiswaPage() {
                         <Input
                           type="date"
                           value={editForm.tanggal_lahir || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               tanggal_lahir: e.target.value,
-                            })
-                          }
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                            });
+                            clearEditValidationError("tanggal_lahir");
+                          }}
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.tanggal_lahir
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.tanggal_lahir && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Tanggal lahir wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Jenis Kelamin */}
                     <div>
@@ -1340,19 +1418,29 @@ export default function AdminSiswaPage() {
                         />
                         <select
                           value={editForm.jenis_kelamin || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               jenis_kelamin: e.target.value,
-                            })
-                          }
-                          className="w-full pl-7 pr-2 h-8 rounded-md border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                            });
+                            clearEditValidationError("jenis_kelamin");
+                          }}
+                          className={`w-full pl-7 pr-2 h-8 rounded-md border bg-white text-sm text-gray-700 focus:outline-none transition ${
+                            editValidationErrors.jenis_kelamin
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         >
                           <option value="">Pilih jenis kelamin</option>
                           <option value="L">Laki-laki</option>
                           <option value="P">Perempuan</option>
                         </select>
                       </div>
+                      {editValidationErrors.jenis_kelamin && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Jenis kelamin wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* No. Telepon */}
                     <div>
@@ -1366,16 +1454,26 @@ export default function AdminSiswaPage() {
                         />
                         <Input
                           value={editForm.no_telepon || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               no_telepon: e.target.value,
-                            })
-                          }
+                            });
+                            clearEditValidationError("no_telepon");
+                          }}
                           placeholder="08xxxxxxxxxx"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.no_telepon
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.no_telepon && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          No. Telepon wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Alamat — full width */}
                     <div className="col-span-2">
@@ -1389,13 +1487,26 @@ export default function AdminSiswaPage() {
                         />
                         <Input
                           value={editForm.alamat || ""}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, alamat: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setEditForm({
+                              ...editForm,
+                              alamat: e.target.value,
+                            });
+                            clearEditValidationError("alamat");
+                          }}
                           placeholder="Alamat lengkap"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.alamat
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.alamat && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Alamat wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Password row — current pw left, new pw right */}
                     <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">

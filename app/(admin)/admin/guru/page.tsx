@@ -100,8 +100,20 @@ export default function AdminGuruPage() {
   const [editForm, setEditForm] = useState<
     Partial<Guru> & { password?: string }
   >({});
+  const [editValidationErrors, setEditValidationErrors] = useState<
+    Record<string, boolean>
+  >({});
   const [saving, setSaving] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
+
+  const clearEditValidationError = (field: string) => {
+    setEditValidationErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   // Password management state
   const [createdAccounts, setCreatedAccounts] = useState<
@@ -669,16 +681,47 @@ export default function AdminGuruPage() {
   function startEdit(guru: Guru) {
     setEditingId(guru.id);
     setEditForm({ ...guru });
+    setEditValidationErrors({});
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditForm({});
+    setEditValidationErrors({});
   }
 
   async function saveEdit() {
     if (!editingId) return;
     const targetId = editingId;
+
+    const normalizedEditData = {
+      full_name: String(editForm.full_name ?? "").trim(),
+      jenis_kelamin: String(editForm.jenis_kelamin ?? "").trim(),
+      no_telepon: String(editForm.no_telepon ?? "").trim(),
+      alamat: String(editForm.alamat ?? "").trim(),
+    };
+
+    const requiredFields = [
+      { key: "full_name", label: "Nama lengkap" },
+      { key: "jenis_kelamin", label: "Jenis kelamin" },
+      { key: "no_telepon", label: "No. Telepon" },
+      { key: "alamat", label: "Alamat" },
+    ];
+
+    const nextErrors: Record<string, boolean> = {};
+    requiredFields.forEach((field) => {
+      if (!normalizedEditData[field.key as keyof typeof normalizedEditData]) {
+        nextErrors[field.key] = true;
+      }
+    });
+
+    if (Object.keys(nextErrors).length > 0) {
+      setEditValidationErrors(nextErrors);
+      toast.error("Lengkapi semua field wajib sebelum menyimpan");
+      return;
+    }
+
+    setEditValidationErrors({});
 
     // Client-side validation
     if (
@@ -694,10 +737,10 @@ export default function AdminGuruPage() {
     try {
       const updateData: any = {
         id: editingId,
-        full_name: editForm.full_name,
-        jenis_kelamin: editForm.jenis_kelamin ?? null,
-        no_telepon: editForm.no_telepon ?? null,
-        alamat: editForm.alamat ?? null,
+        full_name: normalizedEditData.full_name,
+        jenis_kelamin: normalizedEditData.jenis_kelamin,
+        no_telepon: normalizedEditData.no_telepon,
+        alamat: normalizedEditData.alamat,
       };
 
       // Only include password if it's been provided
@@ -721,10 +764,10 @@ export default function AdminGuruPage() {
           g.id === targetId
             ? {
                 ...g,
-                full_name: editForm.full_name ?? g.full_name,
-                no_telepon: editForm.no_telepon ?? undefined,
-                alamat: editForm.alamat ?? undefined,
-                jenis_kelamin: editForm.jenis_kelamin ?? null,
+                full_name: normalizedEditData.full_name,
+                no_telepon: normalizedEditData.no_telepon,
+                alamat: normalizedEditData.alamat,
+                jenis_kelamin: normalizedEditData.jenis_kelamin,
               }
             : g,
         ),
@@ -734,10 +777,10 @@ export default function AdminGuruPage() {
           g.id === targetId
             ? {
                 ...g,
-                full_name: editForm.full_name ?? g.full_name,
-                no_telepon: editForm.no_telepon ?? undefined,
-                alamat: editForm.alamat ?? undefined,
-                jenis_kelamin: editForm.jenis_kelamin ?? null,
+                full_name: normalizedEditData.full_name,
+                no_telepon: normalizedEditData.no_telepon,
+                alamat: normalizedEditData.alamat,
+                jenis_kelamin: normalizedEditData.jenis_kelamin,
               }
             : g,
         ),
@@ -746,6 +789,7 @@ export default function AdminGuruPage() {
       toast.success("Data guru berhasil diupdate");
       setEditingId(null);
       setEditForm({});
+      setEditValidationErrors({});
       setShowEditPassword(false);
       fetchGuru();
     } catch (err: any) {
@@ -1031,16 +1075,26 @@ export default function AdminGuruPage() {
                         />
                         <Input
                           value={editForm.full_name || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               full_name: e.target.value,
-                            })
-                          }
+                            });
+                            clearEditValidationError("full_name");
+                          }}
                           placeholder="Nama lengkap"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.full_name
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.full_name && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Nama lengkap wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Email */}
                     <div>
@@ -1071,16 +1125,26 @@ export default function AdminGuruPage() {
                         />
                         <Input
                           value={editForm.no_telepon || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setEditForm({
                               ...editForm,
                               no_telepon: e.target.value,
-                            })
-                          }
+                            });
+                            clearEditValidationError("no_telepon");
+                          }}
                           placeholder="08xxxxxxxxxx"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.no_telepon
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.no_telepon && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          No. Telepon wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Jenis Kelamin */}
                     <div>
@@ -1089,18 +1153,28 @@ export default function AdminGuruPage() {
                       </label>
                       <select
                         value={editForm.jenis_kelamin || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setEditForm({
                             ...editForm,
                             jenis_kelamin: e.target.value || null,
-                          })
-                        }
-                        className="h-8 w-full text-sm px-2.5 rounded-md border border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition bg-white"
+                          });
+                          clearEditValidationError("jenis_kelamin");
+                        }}
+                        className={`h-8 w-full text-sm px-2.5 rounded-md border transition bg-white ${
+                          editValidationErrors.jenis_kelamin
+                            ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                            : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                        }`}
                       >
                         <option value="">Pilih jenis kelamin</option>
                         <option value="Laki-laki">Laki-laki</option>
                         <option value="Perempuan">Perempuan</option>
                       </select>
+                      {editValidationErrors.jenis_kelamin && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Jenis kelamin wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Alamat — full width */}
                     <div className="col-span-2">
@@ -1114,13 +1188,26 @@ export default function AdminGuruPage() {
                         />
                         <Input
                           value={editForm.alamat || ""}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, alamat: e.target.value })
-                          }
+                          onChange={(e) => {
+                            setEditForm({
+                              ...editForm,
+                              alamat: e.target.value,
+                            });
+                            clearEditValidationError("alamat");
+                          }}
                           placeholder="Alamat lengkap"
-                          className="h-8 text-sm pl-7 border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.alamat
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.alamat && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Alamat wajib diisi.
+                        </p>
+                      )}
                     </div>
                     {/* Password row — current pw left, new pw right */}
                     <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
