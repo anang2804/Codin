@@ -101,6 +101,9 @@ export default function AdminGuruPage() {
   const [editForm, setEditForm] = useState<
     Partial<Guru> & { password?: string }
   >({});
+  const [originalEditForm, setOriginalEditForm] = useState<
+    Partial<Guru> & { password?: string }
+  >({});
   const [editValidationErrors, setEditValidationErrors] = useState<
     Record<string, boolean>
   >({});
@@ -695,6 +698,7 @@ export default function AdminGuruPage() {
   function startEdit(guru: Guru) {
     setEditingId(guru.id);
     setEditForm({ ...guru });
+    setOriginalEditForm({ ...guru });
     setEditValidationErrors({});
     setEditPhoneError("");
     setShowEditPasswordError(false);
@@ -728,8 +732,15 @@ export default function AdminGuruPage() {
 
     const nextErrors: Record<string, boolean> = {};
     requiredFields.forEach((field) => {
-      if (!normalizedEditData[field.key as keyof typeof normalizedEditData]) {
-        nextErrors[field.key] = true;
+      const key = field.key as keyof typeof normalizedEditData;
+      const currentValue = normalizedEditData[key];
+      const originalValue = String(
+        originalEditForm[key as keyof typeof originalEditForm] ?? "",
+      ).trim();
+
+      // Hanya tampilkan error jika field awalnya ada isinya tapi kemudian dihapus
+      if (originalValue && !currentValue) {
+        nextErrors[key] = true;
       }
     });
 
