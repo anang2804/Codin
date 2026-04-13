@@ -6,7 +6,6 @@ import {
   Users,
   Mail,
   Calendar,
-  UserCog,
   Plus,
   Search,
   Trash2,
@@ -16,13 +15,12 @@ import {
   EyeOff,
   Copy,
   Check,
+  User,
   Edit,
   Save,
   X,
   Upload,
   FileSpreadsheet,
-  AlertCircle,
-  User,
   Lock,
   Phone,
   MapPin,
@@ -56,6 +54,8 @@ interface Guru {
 }
 
 export default function AdminGuruPage() {
+  const PHONE_NUMBER_REGEX = /^\d+$/;
+
   const [guru, setGuru] = useState<Guru[]>([]);
   const [filteredGuru, setFilteredGuru] = useState<Guru[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +77,7 @@ export default function AdminGuruPage() {
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showAddPassword, setShowAddPassword] = useState(false);
+  const [addPhoneError, setAddPhoneError] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Bulk upload state
@@ -103,6 +104,7 @@ export default function AdminGuruPage() {
   const [editValidationErrors, setEditValidationErrors] = useState<
     Record<string, boolean>
   >({});
+  const [editPhoneError, setEditPhoneError] = useState("");
   const [saving, setSaving] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
 
@@ -618,6 +620,8 @@ export default function AdminGuruPage() {
   };
 
   async function handleAddGuru() {
+    const normalizedPhone = String(addForm.no_telepon ?? "").trim();
+
     if (
       !addForm.full_name.trim() ||
       !addForm.email.trim() ||
@@ -626,6 +630,14 @@ export default function AdminGuruPage() {
       toast.error("Nama, email, dan password harus diisi");
       return;
     }
+
+    if (normalizedPhone && !PHONE_NUMBER_REGEX.test(normalizedPhone)) {
+      setAddPhoneError("No. Telepon hanya boleh berisi angka.");
+      toast.error("No. Telepon hanya boleh berisi angka");
+      return;
+    }
+
+    setAddPhoneError("");
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/admin/guru", {
@@ -635,7 +647,7 @@ export default function AdminGuruPage() {
           email: addForm.email.trim(),
           full_name: addForm.full_name.trim(),
           password: addForm.password.trim(),
-          no_telepon: addForm.no_telepon?.trim() || null,
+          no_telepon: normalizedPhone || null,
           sendEmail: false,
         }),
       });
@@ -667,6 +679,7 @@ export default function AdminGuruPage() {
       setSessionCreatedAccounts((prev) => [newEntry, ...prev]);
       toast.success("Guru berhasil ditambahkan!");
       setAddForm({ full_name: "", email: "", password: "", no_telepon: "" });
+      setAddPhoneError("");
       setTimeout(() => {
         fetchGuru();
       }, 500);
@@ -682,12 +695,14 @@ export default function AdminGuruPage() {
     setEditingId(guru.id);
     setEditForm({ ...guru });
     setEditValidationErrors({});
+    setEditPhoneError("");
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditForm({});
     setEditValidationErrors({});
+    setEditPhoneError("");
   }
 
   async function saveEdit() {
@@ -721,7 +736,15 @@ export default function AdminGuruPage() {
       return;
     }
 
+    if (!PHONE_NUMBER_REGEX.test(normalizedEditData.no_telepon)) {
+      setEditValidationErrors((prev) => ({ ...prev, no_telepon: true }));
+      setEditPhoneError("No. Telepon hanya boleh berisi angka.");
+      toast.error("No. Telepon hanya boleh berisi angka");
+      return;
+    }
+
     setEditValidationErrors({});
+    setEditPhoneError("");
 
     // Client-side validation
     if (
@@ -790,6 +813,7 @@ export default function AdminGuruPage() {
       setEditingId(null);
       setEditForm({});
       setEditValidationErrors({});
+      setEditPhoneError("");
       setShowEditPassword(false);
       fetchGuru();
     } catch (err: any) {
@@ -990,9 +1014,9 @@ export default function AdminGuruPage() {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowAddDialog(true)}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
           >
-            <Plus size={20} className="mr-2" />
+            <Plus size={16} className="mr-2" />
             Tambah Guru
           </Button>
         </div>
@@ -1126,12 +1150,23 @@ export default function AdminGuruPage() {
                         <Input
                           value={editForm.no_telepon || ""}
                           onChange={(e) => {
+                            const value = e.target.value;
+                            if (value && /\D/.test(value)) {
+                              setEditPhoneError(
+                                "No. Telepon hanya boleh berisi angka.",
+                              );
+                            } else {
+                              setEditPhoneError("");
+                            }
                             setEditForm({
                               ...editForm,
-                              no_telepon: e.target.value,
+                              no_telepon: value,
                             });
-                            clearEditValidationError("no_telepon");
+                            if (value.trim()) {
+                              clearEditValidationError("no_telepon");
+                            }
                           }}
+                          inputMode="numeric"
                           placeholder="08xxxxxxxxxx"
                           className={`h-8 text-sm pl-7 transition ${
                             editValidationErrors.no_telepon
@@ -1140,9 +1175,10 @@ export default function AdminGuruPage() {
                           }`}
                         />
                       </div>
-                      {editValidationErrors.no_telepon && (
+                      {(editValidationErrors.no_telepon ||
+                        !!editPhoneError) && (
                         <p className="mt-1 text-[11px] text-red-600">
-                          No. Telepon wajib diisi.
+                          {editPhoneError || "No. Telepon wajib diisi."}
                         </p>
                       )}
                     </div>
@@ -1756,13 +1792,29 @@ export default function AdminGuruPage() {
                   />
                   <Input
                     value={addForm.no_telepon}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, no_telepon: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && /\D/.test(value)) {
+                        setAddPhoneError(
+                          "No. Telepon hanya boleh berisi angka.",
+                        );
+                      } else {
+                        setAddPhoneError("");
+                      }
+                      setAddForm({ ...addForm, no_telepon: value });
+                    }}
+                    inputMode="numeric"
                     placeholder="08xxxxxxxxxx"
-                    className="pl-9 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                    className={`pl-9 transition py-2.5 ${
+                      addPhoneError
+                        ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    }`}
                   />
                 </div>
+                {addPhoneError && (
+                  <p className="mt-1 text-xs text-red-600">{addPhoneError}</p>
+                )}
               </div>
               <div className="flex gap-3 pt-1">
                 <Button
@@ -1775,6 +1827,7 @@ export default function AdminGuruPage() {
                       password: "",
                       no_telepon: "",
                     });
+                    setAddPhoneError("");
                   }}
                   className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >

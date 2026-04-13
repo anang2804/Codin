@@ -34,6 +34,13 @@ const getAdminClient = () => {
   });
 };
 
+const normalizePhoneNumber = (value: unknown) => String(value ?? "").trim();
+
+const isValidPhoneNumber = (value: unknown) => {
+  const normalized = normalizePhoneNumber(value);
+  return normalized.length === 0 || /^\d+$/.test(normalized);
+};
+
 // Email transporter (SMTP) - optional but required for sending password emails
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT
@@ -102,6 +109,14 @@ export async function POST(req: Request) {
       kelas,
       no_telepon,
     } = body;
+    const normalizedPhone = normalizePhoneNumber(no_telepon);
+
+    if (!isValidPhoneNumber(no_telepon)) {
+      return NextResponse.json(
+        { error: "No. Telepon hanya boleh berisi angka" },
+        { status: 400 },
+      );
+    }
 
     // If email is not provided by admin, auto-generate one using the student's name
     // Domain can be configured via DEFAULT_STUDENT_EMAIL_DOMAIN in .env.local, otherwise use 'students.example.test'
@@ -269,7 +284,7 @@ export async function POST(req: Request) {
     await supabaseAdmin
       .from("profiles")
       .update({
-        no_telepon: no_telepon || null,
+        no_telepon: normalizedPhone || null,
         current_password: generatedPassword,
         password_updated_at: new Date().toISOString(),
       })
@@ -475,8 +490,16 @@ export async function PUT(req: Request) {
       alamat,
       password,
     } = body;
+    const normalizedPhone = normalizePhoneNumber(no_telepon);
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
+
+    if (no_telepon !== undefined && !isValidPhoneNumber(no_telepon)) {
+      return NextResponse.json(
+        { error: "No. Telepon hanya boleh berisi angka" },
+        { status: 400 },
+      );
+    }
 
     const baseUpdates: any = {};
     if (full_name !== undefined) baseUpdates.full_name = full_name;
@@ -503,7 +526,7 @@ export async function PUT(req: Request) {
 
     const contactUpdates: any = {};
     if (no_telepon !== undefined)
-      contactUpdates.no_telepon = no_telepon || null;
+      contactUpdates.no_telepon = normalizedPhone || null;
     if (alamat !== undefined) contactUpdates.alamat = alamat || null;
 
     if (Object.keys(contactUpdates).length > 0) {
