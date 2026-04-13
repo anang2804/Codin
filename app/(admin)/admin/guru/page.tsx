@@ -105,6 +105,7 @@ export default function AdminGuruPage() {
     Record<string, boolean>
   >({});
   const [editPhoneError, setEditPhoneError] = useState("");
+  const [showEditPasswordError, setShowEditPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
 
@@ -696,6 +697,7 @@ export default function AdminGuruPage() {
     setEditForm({ ...guru });
     setEditValidationErrors({});
     setEditPhoneError("");
+    setShowEditPasswordError(false);
   }
 
   function cancelEdit() {
@@ -703,6 +705,7 @@ export default function AdminGuruPage() {
     setEditForm({});
     setEditValidationErrors({});
     setEditPhoneError("");
+    setShowEditPasswordError(false);
   }
 
   async function saveEdit() {
@@ -752,9 +755,12 @@ export default function AdminGuruPage() {
       editForm.password.trim().length > 0 &&
       editForm.password.trim().length < 6
     ) {
+      setShowEditPasswordError(true);
       toast.error("Password baru minimal 6 karakter");
       return;
     }
+
+    setShowEditPasswordError(false);
 
     setSaving(true);
     try {
@@ -814,6 +820,7 @@ export default function AdminGuruPage() {
       setEditForm({});
       setEditValidationErrors({});
       setEditPhoneError("");
+      setShowEditPasswordError(false);
       setShowEditPassword(false);
       fetchGuru();
     } catch (err: any) {
@@ -996,6 +1003,7 @@ export default function AdminGuruPage() {
   })();
 
   const isEditPasswordTooShort =
+    showEditPasswordError &&
     !!editForm.password &&
     editForm.password.trim().length > 0 &&
     editForm.password.trim().length < 6;
@@ -1302,12 +1310,19 @@ export default function AdminGuruPage() {
                           <Input
                             type={showEditPassword ? "text" : "password"}
                             value={editForm.password || ""}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const password = e.target.value;
                               setEditForm({
                                 ...editForm,
-                                password: e.target.value,
-                              })
-                            }
+                                password,
+                              });
+                              if (
+                                !password.trim() ||
+                                password.trim().length >= 6
+                              ) {
+                                setShowEditPasswordError(false);
+                              }
+                            }}
                             placeholder="Min. 6 karakter"
                             className={`h-8 text-sm pl-7 pr-8 transition ${
                               isEditPasswordTooShort
