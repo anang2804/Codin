@@ -764,10 +764,10 @@ export default function AdminGuruPage() {
     if (
       editForm.password &&
       editForm.password.trim().length > 0 &&
-      editForm.password.trim().length < 6
+      editForm.password.trim().length < 8
     ) {
       setShowEditPasswordError(true);
-      toast.error("Password baru minimal 6 karakter");
+      toast.error("Password baru minimal 8 karakter");
       return;
     }
 
@@ -1017,7 +1017,7 @@ export default function AdminGuruPage() {
     showEditPasswordError &&
     !!editForm.password &&
     editForm.password.trim().length > 0 &&
-    editForm.password.trim().length < 6;
+    editForm.password.trim().length < 8;
 
   return (
     <div>
@@ -1329,12 +1329,12 @@ export default function AdminGuruPage() {
                               });
                               if (
                                 !password.trim() ||
-                                password.trim().length >= 6
+                                password.trim().length >= 8
                               ) {
                                 setShowEditPasswordError(false);
                               }
                             }}
-                            placeholder="Min. 6 karakter"
+                            placeholder="Min. 8 karakter"
                             className={`h-8 text-sm pl-7 pr-8 transition ${
                               isEditPasswordTooShort
                                 ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
@@ -1357,7 +1357,7 @@ export default function AdminGuruPage() {
                         </div>
                         {isEditPasswordTooShort && (
                           <p className="mt-1 text-[11px] text-red-600">
-                            Password minimal 6 karakter.
+                            Password minimal 8 karakter.
                           </p>
                         )}
                       </div>

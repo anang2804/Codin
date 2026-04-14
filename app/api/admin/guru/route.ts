@@ -362,9 +362,9 @@ export async function PUT(req: Request) {
 
     // If password provided, update it
     if (password && password.trim()) {
-      if (password.length < 6) {
+      if (password.length < 8) {
         return NextResponse.json(
-          { error: "Password minimal 6 karakter" },
+          { error: "Password minimal 8 karakter" },
           { status: 400 },
         );
       }

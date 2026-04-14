@@ -6,13 +6,9 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
   RefreshCw,
-  CheckCircle,
-  XCircle,
   History,
   Users,
   ClipboardCheck,
-  BadgeCheck,
-  AlertCircle,
   FileBarChart,
   Download,
 } from "lucide-react";
@@ -212,12 +208,6 @@ export default function GuruNilaiDetailPage({
         )
       : 0;
 
-  const passedCount = nilai.filter(
-    (n) => n.score !== null && n.score >= (asesmen?.passing_score || 70),
-  ).length;
-
-  const failedCount = completedCount - passedCount;
-
   const handleDownloadExcel = () => {
     if (nilai.length === 0) {
       toast.info("Belum ada data siswa yang dapat diunduh.");
@@ -304,7 +294,7 @@ export default function GuruNilaiDetailPage({
         </div>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card className="border border-gray-100 bg-gray-50/80 p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
             <Users size={14} />
@@ -321,22 +311,6 @@ export default function GuruNilaiDetailPage({
           <p className="text-3xl font-semibold text-blue-700">
             {completedCount}
           </p>
-        </Card>
-
-        <Card className="border border-green-100 bg-green-50/70 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-400">
-            <BadgeCheck size={14} />
-            Lulus
-          </div>
-          <p className="text-3xl font-semibold text-green-700">{passedCount}</p>
-        </Card>
-
-        <Card className="border border-red-100 bg-red-50/70 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-red-400">
-            <AlertCircle size={14} />
-            Belum Lulus
-          </div>
-          <p className="text-3xl font-semibold text-red-700">{failedCount}</p>
         </Card>
       </div>
 
@@ -396,9 +370,6 @@ export default function GuruNilaiDetailPage({
                         Nilai
                       </th>
                       <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
-                        Status
-                      </th>
-                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
                         Waktu Selesai
                       </th>
                       <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
@@ -409,8 +380,6 @@ export default function GuruNilaiDetailPage({
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {nilai.map((n, index) => {
                       const hasScore = n.score !== null;
-                      const isPassed =
-                        hasScore && n.score >= (asesmen?.passing_score || 70);
                       return (
                         <tr
                           key={`${n.siswa_id}-${index}`}
@@ -425,11 +394,7 @@ export default function GuruNilaiDetailPage({
                           <td className="px-4 py-4 text-center">
                             {hasScore ? (
                               <div className="flex items-center justify-center gap-2">
-                                <span
-                                  className={`text-lg font-semibold ${
-                                    isPassed ? "text-green-700" : "text-red-700"
-                                  }`}
-                                >
+                                <span className="text-lg font-semibold text-gray-900">
                                   {n.score}
                                 </span>
                                 {n.attempt_count > 1 && (
@@ -440,25 +405,6 @@ export default function GuruNilaiDetailPage({
                               </div>
                             ) : (
                               <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            {hasScore ? (
-                              isPassed ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 ring-1 ring-green-100">
-                                  <CheckCircle size={12} />
-                                  Lulus
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-red-100">
-                                  <XCircle size={12} />
-                                  Tidak Lulus
-                                </span>
-                              )
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
-                                Belum Mengerjakan
-                              </span>
                             )}
                           </td>
                           <td className="px-4 py-4 text-center text-sm text-gray-600">
@@ -535,17 +481,12 @@ export default function GuruNilaiDetailPage({
                     Nilai
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border">
                     Waktu
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {historyDialog.attempts.map((attempt, index) => {
-                  const isPassed =
-                    attempt.score >= (asesmen?.passing_score || 70);
                   return (
                     <tr key={attempt.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900 border">
@@ -557,26 +498,9 @@ export default function GuruNilaiDetailPage({
                         )}
                       </td>
                       <td className="px-4 py-3 text-center border">
-                        <span
-                          className={`text-lg font-bold ${
-                            isPassed ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
+                        <span className="text-lg font-bold text-gray-900">
                           {attempt.score}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-center border">
-                        {isPassed ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                            <CheckCircle size={12} />
-                            Lulus
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                            <XCircle size={12} />
-                            Tidak Lulus
-                          </span>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-center text-sm text-gray-600 border">
                         {new Date(attempt.completed_at).toLocaleString("id-ID")}

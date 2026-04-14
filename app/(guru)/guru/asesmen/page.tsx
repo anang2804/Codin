@@ -21,7 +21,6 @@ import {
   Eye,
   BookOpen,
   Layers,
-  CircleCheck,
   Loader2,
   AlertTriangle,
 } from "lucide-react";
@@ -33,7 +32,6 @@ type FormErrors = {
   title?: string;
   mapel_id?: string;
   kelas_id?: string;
-  passing_score?: string;
   duration?: string;
 };
 
@@ -46,7 +44,6 @@ export default function GuruAsesmenPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    passing_score: Number.NaN,
     duration: Number.NaN,
     kelas_id: "",
     mapel_id: "",
@@ -76,14 +73,6 @@ export default function GuruAsesmenPage() {
 
     if (!data.kelas_id) {
       errors.kelas_id = "Kelas wajib dipilih";
-    }
-
-    if (
-      Number.isNaN(data.passing_score) ||
-      data.passing_score < 0 ||
-      data.passing_score > 100
-    ) {
-      errors.passing_score = "Nilai minimum harus antara 0-100";
     }
 
     if (Number.isNaN(data.duration) || data.duration <= 0) {
@@ -215,7 +204,6 @@ export default function GuruAsesmenPage() {
         .insert({
           title: formData.title,
           description: formData.description,
-          passing_score: formData.passing_score,
           duration: formData.duration,
           kelas_id: formData.kelas_id || null,
           mapel_id: formData.mapel_id || null,
@@ -229,7 +217,6 @@ export default function GuruAsesmenPage() {
       setFormData({
         title: "",
         description: "",
-        passing_score: Number.NaN,
         duration: Number.NaN,
         kelas_id: "",
         mapel_id: "",
@@ -426,45 +413,6 @@ export default function GuruAsesmenPage() {
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-gray-700">
-                    Nilai Minimum <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="70"
-                    value={
-                      Number.isNaN(formData.passing_score)
-                        ? ""
-                        : formData.passing_score
-                    }
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        passing_score:
-                          e.target.value === ""
-                            ? Number.NaN
-                            : Number.parseInt(e.target.value),
-                      })
-                    }
-                    onBlur={() =>
-                      setTouchedFields((prev) => ({
-                        ...prev,
-                        passing_score: true,
-                      }))
-                    }
-                    className="border-gray-200 rounded-lg focus-visible:border-green-500 focus-visible:ring-green-500/30 transition-all duration-150"
-                  />
-                  {(submitAttempted || touchedFields.passing_score) &&
-                    formErrors.passing_score && (
-                      <p className="text-xs text-red-500">
-                        {formErrors.passing_score}
-                      </p>
-                    )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-gray-700">
                     Waktu Pengerjaan (menit){" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -578,10 +526,6 @@ export default function GuruAsesmenPage() {
                     <p className="flex items-center gap-2">
                       <ClipboardList size={14} className="text-gray-400" />
                       <span>Jumlah soal: {a.soal_count || 0}</span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <CircleCheck size={14} className="text-gray-400" />
-                      <span>Nilai minimum: {a.passing_score}</span>
                     </p>
                   </div>
                 </div>
