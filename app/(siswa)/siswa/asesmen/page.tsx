@@ -9,8 +9,8 @@ import {
   Play,
   Clock,
   FileText,
-  Award,
   BookOpen,
+  CalendarClock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -19,6 +19,32 @@ export default function SiswaAsesmenPage() {
   const [asesmen, setAsesmen] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [animateCards, setAnimateCards] = useState(false);
+
+  const getScheduleStatus = (
+    startAt?: string | null,
+    endAt?: string | null,
+  ) => {
+    const now = Date.now();
+    const startMs = startAt ? new Date(startAt).getTime() : Number.NaN;
+    const endMs = endAt ? new Date(endAt).getTime() : Number.NaN;
+
+    if (!Number.isNaN(startMs) && now < startMs) return "upcoming" as const;
+    if (!Number.isNaN(endMs) && now > endMs) return "closed" as const;
+    return "open" as const;
+  };
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
 
   useEffect(() => {
     const fetchAsesmen = async () => {
@@ -118,6 +144,10 @@ export default function SiswaAsesmenPage() {
                     mapel: mapelData,
                     nilai: nilaiData,
                     is_completed: isCompleted,
+                    schedule_status: getScheduleStatus(
+                      a.waktu_mulai,
+                      a.waktu_selesai,
+                    ),
                   };
                 }),
               );
@@ -227,11 +257,12 @@ export default function SiswaAsesmenPage() {
 
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Award size={14} className="text-green-600" />
-                    <span className="text-xs">Nilai Minimum</span>
+                    <CalendarClock size={14} className="text-green-600" />
+                    <span className="text-xs">Jadwal</span>
                   </div>
-                  <span className="font-semibold text-foreground text-xs">
-                    {a.passing_score}
+                  <span className="font-semibold text-foreground text-[11px] text-right ml-2">
+                    {formatDateTime(a.waktu_mulai)} -{" "}
+                    {formatDateTime(a.waktu_selesai)}
                   </span>
                 </div>
 
@@ -240,6 +271,14 @@ export default function SiswaAsesmenPage() {
                   {a.is_completed ? (
                     <Badge className="bg-green-50 text-green-700 hover:bg-green-50 border border-green-200 text-[11px] px-2 py-0.5 rounded-full">
                       Selesai
+                    </Badge>
+                  ) : a.schedule_status === "upcoming" ? (
+                    <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border border-blue-200 text-[11px] px-2 py-0.5 rounded-full">
+                      Belum Mulai
+                    </Badge>
+                  ) : a.schedule_status === "closed" ? (
+                    <Badge className="bg-red-50 text-red-700 hover:bg-red-50 border border-red-200 text-[11px] px-2 py-0.5 rounded-full">
+                      Ditutup
                     </Badge>
                   ) : (
                     <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200 text-[11px] px-2 py-0.5 rounded-full">
@@ -253,7 +292,7 @@ export default function SiswaAsesmenPage() {
                       Nilai
                     </span>
                     <span className="font-bold text-green-600 text-sm">
-                      {a.nilai.score}
+                      {a.nilai.score}/100
                     </span>
                   </div>
                 )}
@@ -268,6 +307,22 @@ export default function SiswaAsesmenPage() {
                     className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
                   >
                     Sudah Dikerjakan
+                  </Button>
+                ) : a.schedule_status === "upcoming" ? (
+                  <Button
+                    disabled
+                    size="sm"
+                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
+                  >
+                    Belum Mulai
+                  </Button>
+                ) : a.schedule_status === "closed" ? (
+                  <Button
+                    disabled
+                    size="sm"
+                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
+                  >
+                    Sudah Ditutup
                   </Button>
                 ) : (
                   <Link href={`/siswa/asesmen/${a.id}`} className="block">

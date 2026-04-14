@@ -240,6 +240,8 @@ model Asesmen {
   total_questions Int      @default(0)
   passing_score   Int      @default(70)
   duration        Int      @default(60)
+  waktu_mulai     DateTime? @db.Timestamptz(6)
+  waktu_selesai   DateTime? @db.Timestamptz(6)
   created_at      DateTime @default(now()) @db.Timestamptz(6)
   updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   

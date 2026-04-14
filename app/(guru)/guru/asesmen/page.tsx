@@ -21,6 +21,7 @@ import {
   Eye,
   BookOpen,
   Layers,
+  Clock,
   Loader2,
   AlertTriangle,
 } from "lucide-react";
@@ -32,6 +33,8 @@ type FormErrors = {
   title?: string;
   mapel_id?: string;
   kelas_id?: string;
+  waktu_mulai?: string;
+  waktu_selesai?: string;
   duration?: string;
 };
 
@@ -45,6 +48,8 @@ export default function GuruAsesmenPage() {
     title: "",
     description: "",
     duration: Number.NaN,
+    waktu_mulai: "",
+    waktu_selesai: "",
     kelas_id: "",
     mapel_id: "",
   });
@@ -75,6 +80,22 @@ export default function GuruAsesmenPage() {
       errors.kelas_id = "Kelas wajib dipilih";
     }
 
+    if (!data.waktu_mulai) {
+      errors.waktu_mulai = "Tanggal & waktu mulai wajib diisi";
+    }
+
+    if (!data.waktu_selesai) {
+      errors.waktu_selesai = "Tanggal & waktu selesai wajib diisi";
+    }
+
+    if (data.waktu_mulai && data.waktu_selesai) {
+      const startAt = new Date(data.waktu_mulai).getTime();
+      const endAt = new Date(data.waktu_selesai).getTime();
+      if (Number.isNaN(startAt) || Number.isNaN(endAt) || endAt <= startAt) {
+        errors.waktu_selesai = "Waktu selesai harus setelah waktu mulai";
+      }
+    }
+
     if (Number.isNaN(data.duration) || data.duration <= 0) {
       errors.duration = "Waktu pengerjaan harus lebih dari 0";
     }
@@ -84,6 +105,19 @@ export default function GuruAsesmenPage() {
 
   const formErrors = validateForm(formData);
   const isFormValid = Object.keys(formErrors).length === 0;
+
+  const formatScheduleDateTime = (value?: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -208,6 +242,8 @@ export default function GuruAsesmenPage() {
           kelas_id: formData.kelas_id || null,
           mapel_id: formData.mapel_id || null,
           created_by: user.id,
+          waktu_mulai: new Date(formData.waktu_mulai).toISOString(),
+          waktu_selesai: new Date(formData.waktu_selesai).toISOString(),
         })
         .select();
 
@@ -220,6 +256,8 @@ export default function GuruAsesmenPage() {
         duration: Number.NaN,
         kelas_id: "",
         mapel_id: "",
+        waktu_mulai: "",
+        waktu_selesai: "",
       });
       setTouchedFields({});
       setSubmitAttempted(false);
@@ -444,6 +482,61 @@ export default function GuruAsesmenPage() {
                       </p>
                     )}
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Mulai Kuis <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.waktu_mulai}
+                    onChange={(e) =>
+                      setFormData({ ...formData, waktu_mulai: e.target.value })
+                    }
+                    onBlur={() =>
+                      setTouchedFields((prev) => ({
+                        ...prev,
+                        waktu_mulai: true,
+                      }))
+                    }
+                    className="border-gray-200 rounded-lg focus-visible:border-green-500 focus-visible:ring-green-500/30 transition-all duration-150"
+                  />
+                  {(submitAttempted || touchedFields.waktu_mulai) &&
+                    formErrors.waktu_mulai && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.waktu_mulai}
+                      </p>
+                    )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Selesai Kuis <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.waktu_selesai}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        waktu_selesai: e.target.value,
+                      })
+                    }
+                    onBlur={() =>
+                      setTouchedFields((prev) => ({
+                        ...prev,
+                        waktu_selesai: true,
+                      }))
+                    }
+                    className="border-gray-200 rounded-lg focus-visible:border-green-500 focus-visible:ring-green-500/30 transition-all duration-150"
+                  />
+                  {(submitAttempted || touchedFields.waktu_selesai) &&
+                    formErrors.waktu_selesai && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.waktu_selesai}
+                      </p>
+                    )}
+                </div>
               </div>
             </div>
 
@@ -526,6 +619,13 @@ export default function GuruAsesmenPage() {
                     <p className="flex items-center gap-2">
                       <ClipboardList size={14} className="text-gray-400" />
                       <span>Jumlah soal: {a.soal_count || 0}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Clock size={14} className="text-gray-400" />
+                      <span>
+                        Jadwal: {formatScheduleDateTime(a.waktu_mulai)} -{" "}
+                        {formatScheduleDateTime(a.waktu_selesai)}
+                      </span>
                     </p>
                   </div>
                 </div>

@@ -455,8 +455,6 @@ export default function AsesmenDetailPage({
           </span>
           <span>•</span>
           <span>{soals.length} Soal</span>
-          <span>•</span>
-          <span>Nilai Minimum {asesmen?.passing_score ?? "-"}</span>
         </div>
       </Card>
 

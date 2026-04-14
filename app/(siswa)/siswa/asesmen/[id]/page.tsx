@@ -187,12 +187,40 @@ export default function SiswaAsesmenDetailPage({
         .eq("id", id)
         .single();
 
+      const nowMs = Date.now();
+      const startMs = asesmenData?.waktu_mulai
+        ? new Date(asesmenData.waktu_mulai).getTime()
+        : Number.NaN;
+      const endMs = asesmenData?.waktu_selesai
+        ? new Date(asesmenData.waktu_selesai).getTime()
+        : Number.NaN;
+
+      if (!Number.isNaN(startMs) && nowMs < startMs) {
+        toast.error("Kuis belum dibuka sesuai jadwal.");
+        router.push("/siswa/asesmen");
+        return;
+      }
+
+      if (!Number.isNaN(endMs) && nowMs > endMs) {
+        toast.error("Waktu pengerjaan kuis sudah ditutup.");
+        router.push("/siswa/asesmen");
+        return;
+      }
+
       setAsesmen(asesmenData);
 
       // Set timer based on asesmen duration (convert minutes to seconds)
-      if (asesmenData?.duration) {
-        setTimeLeft(asesmenData.duration * 60);
+      let nextTimeLeft = asesmenData?.duration
+        ? asesmenData.duration * 60
+        : 3600;
+      if (!Number.isNaN(endMs)) {
+        const secondsUntilEnd = Math.max(
+          0,
+          Math.floor((endMs - Date.now()) / 1000),
+        );
+        nextTimeLeft = Math.min(nextTimeLeft, secondsUntilEnd);
       }
+      setTimeLeft(nextTimeLeft);
 
       // Fetch soals
       const { data: soalsData } = await supabase
@@ -357,7 +385,7 @@ export default function SiswaAsesmenDetailPage({
       if (nilaiError) throw nilaiError;
 
       clearQuizDraft();
-      toast.success(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}`);
+      toast.success(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}/100`);
       router.push("/siswa/asesmen");
     } catch (error: any) {
       console.error("Error submitting answers:", error);
