@@ -17,6 +17,7 @@ import {
   UserCircle,
   MessageCircle,
   Microscope,
+  School,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -81,10 +82,10 @@ export function Sidebar({ role }: SidebarProps) {
     ],
     admin: [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-      { label: "Mata Pelajaran", href: "/admin/mapel", icon: BookOpen },
-      { label: "Kelas", href: "/admin/kelas", icon: Users },
       { label: "Guru", href: "/admin/guru", icon: Users },
       { label: "Siswa", href: "/admin/siswa", icon: Users },
+      { label: "Mata Pelajaran", href: "/admin/mapel", icon: BookOpen },
+      { label: "Kelas", href: "/admin/kelas", icon: School },
     ],
   };
 
