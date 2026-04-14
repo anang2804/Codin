@@ -12,6 +12,8 @@ import {
   Briefcase,
   Phone,
   MapPin,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -120,8 +122,12 @@ export default function GuruProfilePage() {
 
   // Password change states
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
 
@@ -264,6 +270,11 @@ export default function GuruProfilePage() {
     setPasswordError("");
     setPasswordSuccess("");
 
+    if (!oldPassword) {
+      setPasswordError("Password saat ini wajib diisi");
+      return;
+    }
+
     if (newPassword.length < 8) {
       setPasswordError("Password minimal 8 karakter");
       return;
@@ -281,13 +292,17 @@ export default function GuruProfilePage() {
       const res = await fetch("/api/auth/update-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({
+          currentPassword: oldPassword,
+          password: newPassword,
+        }),
       });
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal mengubah password");
 
       setPasswordSuccess("Password berhasil diubah!");
+      setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordForm(false);
@@ -411,7 +426,7 @@ export default function GuruProfilePage() {
                   }}
                   className={`px-4 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
                     editMode
-                      ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                       : "bg-emerald-600 text-white hover:bg-emerald-700"
                   }`}
                 >
@@ -559,21 +574,82 @@ export default function GuruProfilePage() {
                 </button>
               ) : (
                 <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <input
-                      type="password"
-                      placeholder="Password baru"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
-                    />
-                    <input
-                      type="password"
-                      placeholder="Konfirmasi password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="relative">
+                      <input
+                        type={showOldPassword ? "text" : "password"}
+                        placeholder="Password saat ini"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="w-full h-11 px-4 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOldPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+                        aria-label={
+                          showOldPassword
+                            ? "Sembunyikan password"
+                            : "Tampilkan password"
+                        }
+                      >
+                        {showOldPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="Password baru"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full h-11 px-4 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+                        aria-label={
+                          showNewPassword
+                            ? "Sembunyikan password"
+                            : "Tampilkan password"
+                        }
+                      >
+                        {showNewPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Konfirmasi password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full h-11 px-4 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Sembunyikan password"
+                            : "Tampilkan password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   {passwordError && (
                     <p className="text-xs text-red-500">{passwordError}</p>
@@ -590,11 +666,12 @@ export default function GuruProfilePage() {
                       type="button"
                       onClick={() => {
                         setShowPasswordForm(false);
+                        setOldPassword("");
                         setNewPassword("");
                         setConfirmPassword("");
                         setPasswordError("");
                       }}
-                      className="px-5 text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
+                      className="px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-sm font-medium transition-colors"
                     >
                       Batal
                     </button>
