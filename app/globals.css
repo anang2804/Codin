@@ -180,7 +180,7 @@
   }
 
   .sidebar-shell .sidebar-label {
-    margin-left: 0.5rem;
+    margin-left: 1rem;
     white-space: nowrap;
     transition:
       opacity 150ms ease,
