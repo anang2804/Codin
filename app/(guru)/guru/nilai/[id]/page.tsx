@@ -429,7 +429,7 @@ export default function GuruNilaiDetailPage({
                                   className="border-blue-200 text-blue-600 hover:bg-blue-50"
                                 >
                                   <History size={14} className="mr-1" />
-                                  History
+                                  Riwayat
                                 </Button>
                               )}
                               {hasScore && (
@@ -468,7 +468,7 @@ export default function GuruNilaiDetailPage({
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>History Nilai - {historyDialog.siswaName}</DialogTitle>
+            <DialogTitle>Riwayat Nilai - {historyDialog.siswaName}</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             <table className="w-full border-collapse">

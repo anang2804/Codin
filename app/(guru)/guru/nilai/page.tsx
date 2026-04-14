@@ -3,22 +3,12 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  BarChart3,
-  BookOpen,
-  Eye,
-  LineChart,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { BarChart3, BookOpen, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 interface AsesmenCard {
   id: string;
-  title: string;
-  passing_score?: number | null;
-  created_at?: string;
   kelas?: {
     id: string;
     name: string;
@@ -28,17 +18,7 @@ interface AsesmenCard {
     name: string;
   } | null;
   participant_count: number;
-  average_score: number | null;
-  highest_score: number | null;
-  lowest_score: number | null;
 }
-
-const formatScore = (value: number | null) =>
-  value === null
-    ? "-"
-    : Number.isInteger(value)
-      ? `${value}`
-      : value.toFixed(1);
 
 export default function GuruNilaiPage() {
   const [asesmen, setAsesmen] = useState<AsesmenCard[]>([]);
@@ -148,38 +128,15 @@ export default function GuruNilaiPage() {
               (item) => item.completed_at !== null && item.score !== null,
             );
 
-            const completedScores = completedAttempts.map(
-              (item) => item.score as number,
-            );
-
             const participantCount = new Set(
               completedAttempts.map((item) => item.siswa_id),
             ).size;
-
-            const averageScore =
-              completedScores.length > 0
-                ? Number(
-                    (
-                      completedScores.reduce((sum, score) => sum + score, 0) /
-                      completedScores.length
-                    ).toFixed(1),
-                  )
-                : null;
-
-            const highestScore =
-              completedScores.length > 0 ? Math.max(...completedScores) : null;
-
-            const lowestScore =
-              completedScores.length > 0 ? Math.min(...completedScores) : null;
 
             return {
               ...a,
               kelas: kelasData,
               mapel: mapelData,
               participant_count: participantCount,
-              average_score: averageScore,
-              highest_score: highestScore,
-              lowest_score: lowestScore,
             };
           }),
         );
@@ -231,92 +188,58 @@ export default function GuruNilaiPage() {
           {asesmen.map((a) => (
             <Card
               key={a.id}
-              className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 flex-1 space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="text-xl font-semibold text-gray-900">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                       {a.title}
                     </h3>
 
-                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600">
-                      <BookOpen size={14} />
-                      Soal Pilihan Ganda
-                    </div>
-
-                    <div className="text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-medium text-gray-600">
+                        <BookOpen size={14} />
+                        Soal Pilihan Ganda
+                      </span>
                       <span className="font-medium text-gray-700">
                         {a.mapel?.name || "-"}
                       </span>
-                      <span className="mx-2 text-gray-300">•</span>
+                      <span className="text-gray-300">•</span>
                       <span className="font-medium text-gray-700">
                         {a.kelas?.name || "-"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                        <BarChart3 size={14} />
+                  <div className="flex items-start justify-end lg:w-auto">
+                    <Link href={`/guru/nilai/${a.id}`}>
+                      <Button className="h-10 bg-green-600 px-4 hover:bg-green-700">
+                        <Eye size={16} className="mr-2" />
+                        Lihat Nilai
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                    <BarChart3 size={14} className="text-gray-400" />
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                         Partisipasi
-                      </div>
-                      <p className="text-base font-semibold text-gray-900">
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900">
                         {a.participant_count} siswa
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                        <LineChart size={14} />
-                        Rata-rata
-                      </div>
-                      <p className="text-base font-semibold text-gray-900">
-                        {formatScore(a.average_score)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                        <TrendingUp size={14} />
-                        Tertinggi
-                      </div>
-                      <p className="text-base font-semibold text-gray-900">
-                        {formatScore(a.highest_score)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                        <TrendingDown size={14} />
-                        Terendah
-                      </div>
-                      <p className="text-base font-semibold text-gray-900">
-                        {formatScore(a.lowest_score)}
                       </p>
                     </div>
                   </div>
 
                   {a.participant_count === 0 && (
-                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-                      <p className="font-medium text-gray-700">
-                        Belum ada siswa yang mengerjakan kuis ini.
-                      </p>
-                      <p className="mt-1 text-gray-500">
-                        Nilai akan muncul setelah siswa menyelesaikan kuis.
-                      </p>
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                      Belum ada siswa yang mengerjakan kuis ini.
                     </div>
                   )}
-                </div>
-
-                <div className="flex items-center justify-end lg:w-auto">
-                  <Link href={`/guru/nilai/${a.id}`}>
-                    <Button className="h-11 bg-green-600 px-5 hover:bg-green-700">
-                      <Eye size={16} className="mr-2" />
-                      Lihat Nilai
-                    </Button>
-                  </Link>
                 </div>
               </div>
             </Card>
