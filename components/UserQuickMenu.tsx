@@ -155,7 +155,7 @@ export default function UserQuickMenu({
           {profilePath && (
             <DropdownMenuItem onSelect={handleGoProfile}>
               <UserCircle className="h-4 w-4" />
-              View profile
+              Lihat Profil
             </DropdownMenuItem>
           )}
 

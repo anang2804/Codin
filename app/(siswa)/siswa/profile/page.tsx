@@ -41,6 +41,19 @@ export default function SiswaProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
+  const [profileErrors, setProfileErrors] = useState<
+    Partial<
+      Record<
+        | "full_name"
+        | "kelas"
+        | "tanggal_lahir"
+        | "jenis_kelamin"
+        | "no_telepon"
+        | "alamat",
+        string
+      >
+    >
+  >({});
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -103,6 +116,11 @@ export default function SiswaProfilePage() {
     }
   };
 
+  const isValidPhoneNumber = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    return /^\d+$/.test(normalized);
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
@@ -162,6 +180,48 @@ export default function SiswaProfilePage() {
   const handleSaveProfile = async () => {
     if (!profile) return;
 
+    const nextErrors: Partial<
+      Record<
+        | "full_name"
+        | "kelas"
+        | "tanggal_lahir"
+        | "jenis_kelamin"
+        | "no_telepon"
+        | "alamat",
+        string
+      >
+    > = {};
+
+    if (!formData.full_name?.trim()) {
+      nextErrors.full_name = "Nama lengkap wajib diisi.";
+    }
+
+    if (!formData.kelas?.trim()) {
+      nextErrors.kelas = "Kelas wajib dipilih.";
+    }
+
+    if (!formData.tanggal_lahir?.trim()) {
+      nextErrors.tanggal_lahir = "Tanggal lahir wajib diisi.";
+    }
+
+    if (!formData.jenis_kelamin?.trim()) {
+      nextErrors.jenis_kelamin = "Jenis kelamin wajib dipilih.";
+    }
+
+    if (!isValidPhoneNumber(formData.no_telepon)) {
+      nextErrors.no_telepon = "No telepon hanya boleh berisi angka.";
+    }
+
+    if (!formData.alamat?.trim()) {
+      nextErrors.alamat = "Alamat wajib diisi.";
+    }
+
+    setProfileErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     try {
       setSaving(true);
       const supabase = createClient();
@@ -181,6 +241,7 @@ export default function SiswaProfilePage() {
       if (error) throw error;
 
       setProfile({ ...profile, ...formData } as Profile);
+      setProfileErrors({});
       setEditMode(false);
       toast.success("Profil berhasil diperbarui");
     } catch (error) {
@@ -189,6 +250,65 @@ export default function SiswaProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setProfileErrors({});
+    setFormData({ ...profile });
+    setEditMode(false);
+  };
+
+  const handleBack = () => {
+    if (editMode) {
+      const nextErrors: Partial<
+        Record<
+          | "full_name"
+          | "kelas"
+          | "tanggal_lahir"
+          | "jenis_kelamin"
+          | "no_telepon"
+          | "alamat",
+          string
+        >
+      > = {};
+
+      if (!formData.full_name?.trim()) {
+        nextErrors.full_name = "Nama lengkap wajib diisi.";
+      }
+
+      if (!formData.kelas?.trim()) {
+        nextErrors.kelas = "Kelas wajib dipilih.";
+      }
+
+      if (!formData.tanggal_lahir?.trim()) {
+        nextErrors.tanggal_lahir = "Tanggal lahir wajib diisi.";
+      }
+
+      if (!formData.jenis_kelamin?.trim()) {
+        nextErrors.jenis_kelamin = "Jenis kelamin wajib dipilih.";
+      }
+
+      if (!isValidPhoneNumber(formData.no_telepon)) {
+        nextErrors.no_telepon = "No telepon hanya boleh berisi angka.";
+      }
+
+      if (!formData.alamat?.trim()) {
+        nextErrors.alamat = "Alamat wajib diisi.";
+      }
+
+      setProfileErrors(nextErrors);
+
+      if (Object.keys(nextErrors).length > 0) {
+        return;
+      }
+    }
+
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/siswa/dashboard");
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -261,14 +381,6 @@ export default function SiswaProfilePage() {
   }
 
   if (!profile) return null;
-
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/siswa/dashboard");
-  };
 
   return (
     <div className="bg-muted/20 pb-6">
@@ -359,9 +471,13 @@ export default function SiswaProfilePage() {
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
-                    if (editMode) setFormData({ ...profile });
-                    setEditMode(!editMode);
+                    if (editMode) {
+                      handleCancelEdit();
+                      return;
+                    }
+                    setEditMode(true);
                   }}
                   className={`px-4 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 ${
                     editMode
@@ -379,6 +495,7 @@ export default function SiswaProfilePage() {
                     <InputMinimal
                       label="Nama Lengkap"
                       value={formData.full_name || ""}
+                      error={profileErrors.full_name}
                       onChange={(v) =>
                         setFormData({ ...formData, full_name: v })
                       }
@@ -388,7 +505,11 @@ export default function SiswaProfilePage() {
                         Kelas
                       </label>
                       <select
-                        className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none"
+                        className={`w-full h-11 px-4 bg-background border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none ${
+                          profileErrors.kelas
+                            ? "border-red-500"
+                            : "border-border"
+                        }`}
                         value={formData.kelas || ""}
                         onChange={(e) =>
                           setFormData({ ...formData, kelas: e.target.value })
@@ -401,11 +522,17 @@ export default function SiswaProfilePage() {
                           </option>
                         ))}
                       </select>
+                      {profileErrors.kelas ? (
+                        <p className="text-xs text-red-500 mt-1">
+                          {profileErrors.kelas}
+                        </p>
+                      ) : null}
                     </div>
                     <InputMinimal
                       label="Tanggal Lahir"
                       type="date"
                       value={formData.tanggal_lahir || ""}
+                      error={profileErrors.tanggal_lahir}
                       onChange={(v) =>
                         setFormData({ ...formData, tanggal_lahir: v })
                       }
@@ -415,7 +542,11 @@ export default function SiswaProfilePage() {
                         Jenis Kelamin
                       </label>
                       <select
-                        className="w-full h-11 px-4 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none"
+                        className={`w-full h-11 px-4 bg-background border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all appearance-none ${
+                          profileErrors.jenis_kelamin
+                            ? "border-red-500"
+                            : "border-border"
+                        }`}
                         value={formData.jenis_kelamin || ""}
                         onChange={(e) =>
                           setFormData({
@@ -428,10 +559,16 @@ export default function SiswaProfilePage() {
                         <option value="L">Laki-laki</option>
                         <option value="P">Perempuan</option>
                       </select>
+                      {profileErrors.jenis_kelamin ? (
+                        <p className="text-xs text-red-500 mt-1">
+                          {profileErrors.jenis_kelamin}
+                        </p>
+                      ) : null}
                     </div>
                     <InputMinimal
                       label="No Telepon"
                       value={formData.no_telepon || ""}
+                      error={profileErrors.no_telepon}
                       onChange={(v) =>
                         setFormData({ ...formData, no_telepon: v })
                       }
@@ -443,16 +580,26 @@ export default function SiswaProfilePage() {
                       Alamat
                     </label>
                     <textarea
-                      className="w-full p-3 bg-background border border-border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all resize-none"
+                      className={`w-full p-3 bg-background border rounded-xl outline-none focus:border-emerald-500 text-sm text-foreground transition-all resize-none ${
+                        profileErrors.alamat
+                          ? "border-red-500"
+                          : "border-border"
+                      }`}
                       rows={3}
                       value={formData.alamat || ""}
                       onChange={(e) =>
                         setFormData({ ...formData, alamat: e.target.value })
                       }
                     />
+                    {profileErrors.alamat ? (
+                      <p className="text-xs text-red-500 mt-1">
+                        {profileErrors.alamat}
+                      </p>
+                    ) : null}
                   </div>
 
                   <button
+                    type="button"
                     onClick={handleSaveProfile}
                     disabled={saving}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
@@ -620,11 +767,13 @@ function InputMinimal({
   value,
   onChange,
   type = "text",
+  error,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: string;
 }) {
   return (
     <div className="space-y-1.5">
@@ -633,10 +782,13 @@ function InputMinimal({
       </label>
       <input
         type={type}
-        className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 focus:bg-white text-sm text-gray-700 transition-all"
+        className={`w-full h-11 px-4 bg-gray-50 border rounded-xl outline-none focus:border-emerald-500 focus:bg-white text-sm text-gray-700 transition-all ${
+          error ? "border-red-500" : "border-gray-200"
+        }`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
+      {error ? <p className="text-xs text-red-500">{error}</p> : null}
     </div>
   );
 }
