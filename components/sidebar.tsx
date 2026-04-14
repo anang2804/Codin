@@ -145,7 +145,7 @@ export function Sidebar({ role }: SidebarProps) {
                 <Link key={item.href} href={item.href}>
                   <button
                     onClick={() => setOpen(false)}
-                    className={`sidebar-item w-full flex items-center px-4 py-3 rounded-full transition-all duration-200 ease-out ${
+                    className={`sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200 ease-out ${
                       isActive
                         ? "bg-green-600/10 text-green-700 border border-green-200"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground md:hover:translate-x-1"
