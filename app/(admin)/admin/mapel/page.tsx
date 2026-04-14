@@ -49,6 +49,15 @@ function generateMapelCode(name: string) {
   return baseCode.replace(/[^A-Z0-9]/g, "") || "MAP";
 }
 
+function formatMapelName(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export default function AdminMapelPage() {
   const { data: mapel, isLoading: loading, error } = useMapel();
   const { data: guruList } = useGuru();
@@ -85,12 +94,14 @@ export default function AdminMapelPage() {
   const handleAddMapel = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const normalizedName = formatMapelName(formData.name);
+
     const codeValue = editingId
       ? formData.code.trim().toUpperCase()
-      : generateMapelCode(formData.name);
+      : generateMapelCode(normalizedName);
 
     const nextErrors = {
-      name: formData.name.trim() ? "" : "Nama mata pelajaran wajib diisi.",
+      name: normalizedName ? "" : "Nama mata pelajaran wajib diisi.",
       guru_id: formData.guru_id ? "" : "Guru pengampu wajib dipilih.",
     };
 
@@ -109,7 +120,7 @@ export default function AdminMapelPage() {
       if (editingId) {
         await updateMapel.mutateAsync({
           id: editingId,
-          name: formData.name,
+          name: normalizedName,
           code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
@@ -121,7 +132,7 @@ export default function AdminMapelPage() {
         setEditingId(null);
       } else {
         await createMapel.mutateAsync({
-          name: formData.name,
+          name: normalizedName,
           code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
@@ -251,6 +262,12 @@ export default function AdminMapelPage() {
                       setFormErrors((prev) => ({ ...prev, name: "" }));
                     }
                   }}
+                  onBlur={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      name: formatMapelName(prev.name),
+                    }))
+                  }
                   className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
                 />
                 {formErrors.name && (
@@ -427,7 +444,7 @@ export default function AdminMapelPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-base font-semibold text-gray-900">
-                          {m.name}
+                          {formatMapelName(m.name)}
                         </h3>
                         <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
                           {m.code}

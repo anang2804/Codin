@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
 
+function normalizeMapelName(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function generateMapelCodeBase(name: string) {
   const normalized = name
     .toUpperCase()
@@ -136,7 +145,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, code, description, guru_id } = body;
 
-    if (!name?.trim()) {
+    const normalizedName = normalizeMapelName(
+      typeof name === "string" ? name : "",
+    );
+
+    if (!normalizedName) {
       return NextResponse.json(
         { error: "Nama mata pelajaran wajib diisi" },
         { status: 400 },
@@ -145,11 +158,12 @@ export async function POST(request: NextRequest) {
 
     const normalizedCode =
       typeof code === "string" ? code.trim().toUpperCase() : "";
-    const finalCode = normalizedCode || (await generateUniqueMapelCode(name));
+    const finalCode =
+      normalizedCode || (await generateUniqueMapelCode(normalizedName));
 
     const newMapel = await prisma.mapel.create({
       data: {
-        name: name.trim(),
+        name: normalizedName,
         code: finalCode,
         description,
         guru_id: guru_id || null,
@@ -190,6 +204,9 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, name, code, description, guru_id } = body;
 
+    const normalizedName =
+      typeof name === "string" ? normalizeMapelName(name) : "";
+
     const existingMapel = await prisma.mapel.findUnique({
       where: { id },
       select: { code: true },
@@ -203,7 +220,7 @@ export async function PUT(request: NextRequest) {
     const updatedMapel = await prisma.mapel.update({
       where: { id },
       data: {
-        name: name?.trim(),
+        ...(normalizedName ? { name: normalizedName } : {}),
         ...(finalCode ? { code: finalCode } : {}),
         description,
         guru_id: guru_id || null,
