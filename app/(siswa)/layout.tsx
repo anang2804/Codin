@@ -23,11 +23,6 @@ export default function SiswaLayout({
     pathname === "/siswa/profile" ||
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
     (pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi");
-  const isSimulasiDetail =
-    pathname?.includes("/simulasi/") && pathname !== "/siswa/simulasi";
-
-  const showFloatingProfileMenu =
-    hideHeader && pathname !== "/siswa/profile" && !isSimulasiDetail;
 
   const hideSidebar =
     (pathname?.includes("/asesmen/") && pathname !== "/siswa/asesmen") ||
@@ -89,17 +84,6 @@ export default function SiswaLayout({
       <main
         className={`flex-1 ${!hideSidebar ? "layout-with-sidebar bg-muted/20" : ""} min-h-screen`}
       >
-        {showFloatingProfileMenu && (
-          <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
-            <UserQuickMenu
-              role="siswa"
-              variant="avatar"
-              avatarUrl={profile?.avatar_url || null}
-              fullName={profile?.full_name || null}
-              email={profile?.email || null}
-            />
-          </div>
-        )}
         {/* Header - Sticky */}
         {!hideHeader && (
           <div className="sticky top-0 z-50 bg-gradient-to-r from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950/80 border-b border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">

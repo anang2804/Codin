@@ -65,6 +65,26 @@ export default function GuruAsesmenPage() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const formatDateTimeLocalValue = (value?: string | null) => {
+    if (!value) return "";
+
+    const directMatch = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/);
+    if (directMatch) {
+      return value.slice(0, 16);
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const validateForm = (data: typeof formData): FormErrors => {
     const errors: FormErrors = {};
 
@@ -488,9 +508,13 @@ export default function GuruAsesmenPage() {
                   </label>
                   <Input
                     type="datetime-local"
-                    value={formData.waktu_mulai}
+                    step={60}
+                    value={formatDateTimeLocalValue(formData.waktu_mulai)}
                     onChange={(e) =>
-                      setFormData({ ...formData, waktu_mulai: e.target.value })
+                      setFormData({
+                        ...formData,
+                        waktu_mulai: formatDateTimeLocalValue(e.target.value),
+                      })
                     }
                     onBlur={() =>
                       setTouchedFields((prev) => ({
@@ -514,13 +538,16 @@ export default function GuruAsesmenPage() {
                   </label>
                   <Input
                     type="datetime-local"
-                    value={formData.waktu_selesai}
-                    onChange={(e) =>
+                    step={60}
+                    value={formatDateTimeLocalValue(formData.waktu_selesai)}
+                    onChange={(e) => {
+                      const inputElement = e.currentTarget;
                       setFormData({
                         ...formData,
-                        waktu_selesai: e.target.value,
-                      })
-                    }
+                        waktu_selesai: formatDateTimeLocalValue(e.target.value),
+                      });
+                      requestAnimationFrame(() => inputElement.blur());
+                    }}
                     onBlur={() =>
                       setTouchedFields((prev) => ({
                         ...prev,

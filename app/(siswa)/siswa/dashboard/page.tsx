@@ -49,9 +49,33 @@ export default function SiswaDashboard() {
       if (!isActive) return;
 
       try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("kelas")
+          .eq("id", userId)
+          .single();
+
+        const kelasName = profile?.kelas || null;
+
+        let kelasId: string | null = null;
+        if (kelasName) {
+          const { data: kelasData } = await supabase
+            .from("kelas")
+            .select("id")
+            .eq("name", kelasName)
+            .maybeSingle();
+
+          kelasId = kelasData?.id || null;
+        }
+
         const [materiRes, asesmenRes] = await Promise.all([
           supabase.from("materi").select("*", { count: "exact" }),
-          supabase.from("asesmen").select("*", { count: "exact" }),
+          kelasId
+            ? supabase
+                .from("asesmen")
+                .select("*", { count: "exact" })
+                .eq("kelas_id", kelasId)
+            : Promise.resolve({ count: 0, data: [] as any[] }),
         ]);
 
         setStats((prev) => ({
@@ -69,11 +93,17 @@ export default function SiswaDashboard() {
               .select("simulasi_id", { count: "exact" })
               .eq("siswa_id", userId)
               .eq("completed", true),
-            supabase
-              .from("nilai_asesmen")
-              .select("asesmen_id")
-              .eq("siswa_id", userId)
-              .not("completed_at", "is", null),
+            kelasId && asesmenRes.data && asesmenRes.data.length > 0
+              ? supabase
+                  .from("nilai")
+                  .select("asesmen_id, completed_at, score")
+                  .eq("siswa_id", userId)
+                  .not("completed_at", "is", null)
+                  .in(
+                    "asesmen_id",
+                    asesmenRes.data.map((item: { id: string }) => item.id),
+                  )
+              : Promise.resolve({ data: [] as any[] }),
           ]);
 
         let materiAveragePercent = 0;
@@ -112,7 +142,7 @@ export default function SiswaDashboard() {
           simulasiCompleted: simulasiDoneRes.count || 0,
           simulasiTotal: SIMULASI_MENU_TOTAL,
           kuisCompleted: kuisCompletedUnique,
-          kuisTotal: asesmenRes.count || 0,
+          kuisTotal: kelasId ? asesmenRes.count || 0 : 0,
         });
 
         const { data: materiData } = await supabase
@@ -125,6 +155,7 @@ export default function SiswaDashboard() {
         const { data: asesmenData } = await supabase
           .from("asesmen")
           .select("*")
+          .eq("kelas_id", kelasId || "")
           .order("created_at", { ascending: false })
           .limit(1);
 
@@ -134,18 +165,31 @@ export default function SiswaDashboard() {
             .select("id", { count: "exact", head: true })
             .eq("asesmen_id", asesmenData[0].id);
 
-          const { data: nilaiData } = await supabase
-            .from("nilai_asesmen")
-            .select("id, nilai, completed_at, asesmen_id")
-            .eq("siswa_id", userId)
-            .eq("asesmen_id", asesmenData[0].id)
-            .maybeSingle();
+          const [{ data: nilaiData }, { data: jawabanData }] =
+            await Promise.all([
+              supabase
+                .from("nilai")
+                .select("id, score, completed_at, asesmen_id")
+                .eq("siswa_id", userId)
+                .eq("asesmen_id", asesmenData[0].id)
+                .maybeSingle(),
+              supabase
+                .from("jawaban_siswa")
+                .select("id")
+                .eq("siswa_id", userId)
+                .eq("asesmen_id", asesmenData[0].id)
+                .limit(1),
+            ]);
 
           setRecentAsesmen([
             {
               ...asesmenData[0],
               question_count: soalCount ?? asesmenData[0].total_questions ?? 0,
-              nilai_asesmen: nilaiData ? [nilaiData] : [],
+              nilai: nilaiData ? [nilaiData] : [],
+              is_completed:
+                Boolean(nilaiData?.completed_at) ||
+                Boolean(nilaiData) ||
+                (jawabanData?.length || 0) > 0,
             },
           ]);
         } else {
@@ -209,7 +253,7 @@ export default function SiswaDashboard() {
           {
             event: "*",
             schema: "public",
-            table: "nilai_asesmen",
+            table: "nilai",
             filter: `siswa_id=eq.${user.id}`,
           },
           () => scheduleRefresh(user.id),
@@ -493,7 +537,8 @@ export default function SiswaDashboard() {
             {recentAsesmen.length > 0 ? (
               recentAsesmen.map((asesmen) => {
                 const isCompleted =
-                  asesmen.nilai_asesmen && asesmen.nilai_asesmen.length > 0;
+                  Boolean(asesmen.is_completed) ||
+                  Boolean(asesmen.nilai && asesmen.nilai.length > 0);
 
                 return (
                   <Card
