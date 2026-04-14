@@ -21,7 +21,7 @@ export function useMapel() {
   return useQuery({
     queryKey: ["mapel"],
     queryFn: async (): Promise<Mapel[]> => {
-      const response = await fetch("/api/admin/mapel");
+      const response = await fetch("/api/admin/mapel", { cache: "no-store" });
       if (!response.ok) throw new Error("Failed to fetch mapel");
       const result = await response.json();
       return result.data || result || [];
@@ -92,7 +92,12 @@ export function useDeleteMapel() {
       if (!response.ok) throw new Error("Failed to delete mapel");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_result, id) => {
+      queryClient.setQueryData<Mapel[]>(["mapel"], (old) =>
+        old ? old.filter((item) => item.id !== id) : [],
+      );
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["mapel"] });
     },
   });

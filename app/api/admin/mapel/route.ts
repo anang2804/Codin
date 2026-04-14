@@ -2,6 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
 
+function generateMapelCodeBase(name: string) {
+  const normalized = name
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return "MAP";
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const baseCode =
+    words.length > 1
+      ? words.map((word) => word[0]).join("")
+      : words[0].slice(0, 3);
+
+  return baseCode.replace(/[^A-Z0-9]/g, "") || "MAP";
+}
+
+async function generateUniqueMapelCode(name: string) {
+  const baseCode = generateMapelCodeBase(name);
+
+  const existingMapel = await prisma.mapel.findMany({
+    where: {
+      code: {
+        startsWith: baseCode,
+      },
+    },
+    select: {
+      code: true,
+    },
+  });
+
+  const existingCodes = new Set(existingMapel.map((item) => item.code));
+
+  if (!existingCodes.has(baseCode)) {
+    return baseCode;
+  }
+
+  let suffix = 2;
+  while (existingCodes.has(`${baseCode}${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseCode}${suffix}`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -55,13 +102,13 @@ export async function GET(request: NextRequest) {
         headers: {
           "Cache-Control": "private, max-age=10, stale-while-revalidate=30",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Error fetching mapel:", error);
     return NextResponse.json(
       { error: "Failed to fetch mapel" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,10 +136,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, code, description, guru_id } = body;
 
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: "Nama mata pelajaran wajib diisi" },
+        { status: 400 },
+      );
+    }
+
+    const normalizedCode =
+      typeof code === "string" ? code.trim().toUpperCase() : "";
+    const finalCode = normalizedCode || (await generateUniqueMapelCode(name));
+
     const newMapel = await prisma.mapel.create({
       data: {
-        name,
-        code,
+        name: name.trim(),
+        code: finalCode,
         description,
         guru_id: guru_id || null,
         created_by: user.id,
@@ -104,7 +162,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating mapel:", error);
     return NextResponse.json(
       { error: error.message || "Failed to create mapel" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -132,11 +190,21 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, name, code, description, guru_id } = body;
 
+    const existingMapel = await prisma.mapel.findUnique({
+      where: { id },
+      select: { code: true },
+    });
+
+    const finalCode =
+      typeof code === "string" && code.trim()
+        ? code.trim().toUpperCase()
+        : existingMapel?.code;
+
     const updatedMapel = await prisma.mapel.update({
       where: { id },
       data: {
-        name,
-        code,
+        name: name?.trim(),
+        ...(finalCode ? { code: finalCode } : {}),
         description,
         guru_id: guru_id || null,
       },
@@ -147,7 +215,7 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating mapel:", error);
     return NextResponse.json(
       { error: error.message || "Failed to update mapel" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -188,7 +256,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting mapel:", error);
     return NextResponse.json(
       { error: error.message || "Failed to delete mapel" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

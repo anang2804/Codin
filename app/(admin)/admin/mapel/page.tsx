@@ -30,6 +30,25 @@ import {
 import { useGuru } from "@/lib/hooks/use-guru";
 import { useToast } from "@/hooks/use-toast";
 
+function generateMapelCode(name: string) {
+  const normalized = name
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return "MAP";
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const baseCode =
+    words.length > 1
+      ? words.map((word) => word[0]).join("")
+      : words[0].slice(0, 3);
+
+  return baseCode.replace(/[^A-Z0-9]/g, "") || "MAP";
+}
+
 export default function AdminMapelPage() {
   const { data: mapel, isLoading: loading, error } = useMapel();
   const { data: guruList } = useGuru();
@@ -37,12 +56,17 @@ export default function AdminMapelPage() {
   const updateMapel = useUpdateMapel();
   const deleteMapel = useDeleteMapel();
   const { toast } = useToast();
+  const isSavingMapel = createMapel.isPending || updateMapel.isPending;
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     code: "",
     description: "",
+    guru_id: "",
+  });
+  const [formErrors, setFormErrors] = useState({
+    name: "",
     guru_id: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,12 +85,32 @@ export default function AdminMapelPage() {
   const handleAddMapel = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const codeValue = editingId
+      ? formData.code.trim().toUpperCase()
+      : generateMapelCode(formData.name);
+
+    const nextErrors = {
+      name: formData.name.trim() ? "" : "Nama mata pelajaran wajib diisi.",
+      guru_id: formData.guru_id ? "" : "Guru pengampu wajib dipilih.",
+    };
+
+    setFormErrors(nextErrors);
+
+    if (nextErrors.name || nextErrors.guru_id) {
+      toast({
+        title: "Periksa kembali form",
+        description: "Lengkapi field yang wajib diisi sebelum menyimpan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       if (editingId) {
         await updateMapel.mutateAsync({
           id: editingId,
           name: formData.name,
-          code: formData.code,
+          code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
         });
@@ -78,7 +122,7 @@ export default function AdminMapelPage() {
       } else {
         await createMapel.mutateAsync({
           name: formData.name,
-          code: formData.code,
+          code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
         });
@@ -89,6 +133,7 @@ export default function AdminMapelPage() {
       }
 
       setFormData({ name: "", code: "", description: "", guru_id: "" });
+      setFormErrors({ name: "", guru_id: "" });
       setShowForm(false);
     } catch (error) {
       toast({
@@ -144,6 +189,7 @@ export default function AdminMapelPage() {
   const handleCancelForm = () => {
     setShowForm(false);
     setFormData({ name: "", code: "", description: "", guru_id: "" });
+    setFormErrors({ name: "", guru_id: "" });
     setEditingId(null);
   };
 
@@ -164,7 +210,7 @@ export default function AdminMapelPage() {
           className="bg-green-600 hover:bg-green-700 gap-2"
         >
           <Plus size={20} />
-          Tambah Mapel
+          Tambah Mata Pelajaran
         </Button>
       </div>
 
@@ -192,27 +238,35 @@ export default function AdminMapelPage() {
                   type="text"
                   placeholder="Contoh: Matematika"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({
+                      ...formData,
+                      name: value,
+                      code: editingId
+                        ? formData.code
+                        : generateMapelCode(value),
+                    });
+                    if (formErrors.name) {
+                      setFormErrors((prev) => ({ ...prev, name: "" }));
+                    }
+                  }}
                   className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
                 />
+                {formErrors.name && (
+                  <p className="mt-1 text-xs text-red-500">{formErrors.name}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Kode Mapel <span className="text-red-500">*</span>
+                  Kode Mapel Otomatis
                 </label>
-                <Input
-                  type="text"
-                  placeholder="Contoh: MTK"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
-                  }
-                  required
-                  className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
-                />
+                <p className="mb-1 text-xs text-gray-400">
+                  Kode dibuat otomatis dari nama mata pelajaran.
+                </p>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
+                  {editingId ? formData.code : generateMapelCode(formData.name)}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -237,10 +291,13 @@ export default function AdminMapelPage() {
                 </label>
                 <select
                   value={formData.guru_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, guru_id: e.target.value })
-                  }
-                  required
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, guru_id: value });
+                    if (formErrors.guru_id) {
+                      setFormErrors({ ...formErrors, guru_id: "" });
+                    }
+                  }}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
                 >
                   <option value="" disabled>
@@ -252,18 +309,32 @@ export default function AdminMapelPage() {
                     </option>
                   ))}
                 </select>
+                {formErrors.guru_id && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {formErrors.guru_id}
+                  </p>
+                )}
               </div>
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
+                  disabled={isSavingMapel}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 rounded-lg transition"
                 >
-                  {editingId ? "Update" : "Simpan"}
+                  {isSavingMapel ? (
+                    <>
+                      <Loader2 size={15} className="mr-2 animate-spin" />
+                      {editingId ? "Menyimpan..." : "Menyimpan..."}
+                    </>
+                  ) : (
+                    <>{editingId ? "Update" : "Simpan"}</>
+                  )}
                 </Button>
                 <Button
                   type="button"
                   onClick={handleCancelForm}
                   variant="outline"
+                  disabled={isSavingMapel}
                   className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"
                 >
                   Batal

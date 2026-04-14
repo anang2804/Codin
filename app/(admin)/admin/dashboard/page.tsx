@@ -75,7 +75,7 @@ export default function AdminDashboard() {
       color: "bg-green-100 text-green-600",
     },
     {
-      label: "Total Mapel",
+      label: "Total Mata Pelajaran",
       value: stats.totalMapel,
       icon: BookOpen,
       color: "bg-green-100 text-green-600",
