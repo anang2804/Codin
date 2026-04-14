@@ -385,6 +385,20 @@ export default function SiswaMateriDetailPage() {
     }
   }
 
+  async function handleNextClick() {
+    if (selectedSubBab?.content_type === "file") {
+      await handleMarkCompleteAndNext();
+      return;
+    }
+
+    if (getNextSubBab()) {
+      handleNavigateNext();
+      return;
+    }
+
+    await handleMarkCompleteAndNext();
+  }
+
   function renderContent() {
     if (!selectedSubBab) {
       return (
@@ -587,13 +601,7 @@ export default function SiswaMateriDetailPage() {
               <Button
                 size="lg"
                 className="min-w-[200px] bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all rounded-lg"
-                onClick={() => {
-                  if (getNextSubBab()) {
-                    handleNavigateNext();
-                    return;
-                  }
-                  handleMarkCompleteAndNext();
-                }}
+                onClick={handleNextClick}
                 disabled={selectedSubBab?.completed && !getNextSubBab()}
               >
                 {getNextSubBab() ? (
