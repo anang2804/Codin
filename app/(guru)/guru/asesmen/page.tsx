@@ -104,7 +104,6 @@ export default function GuruAsesmenPage() {
   };
 
   const formErrors = validateForm(formData);
-  const isFormValid = Object.keys(formErrors).length === 0;
 
   const formatScheduleDateTime = (value?: string | null) => {
     if (!value) return "-";
@@ -543,7 +542,7 @@ export default function GuruAsesmenPage() {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={!isFormValid || isSaving}
+                disabled={isSaving}
                 className="bg-green-600 hover:bg-green-700 hover:-translate-y-px transition-all duration-150 disabled:opacity-70 disabled:transform-none"
               >
                 {isSaving ? (
