@@ -1462,96 +1462,85 @@ export default function AdminGuruPage() {
                       email: g.email,
                     });
                     const hasPassword = tempPassword.length > 0;
-                    const passwordStatus = passwordChangedStatus.get(g.id);
                     const currentPassword = userPasswords.get(g.id);
-                    const hasChangedPassword =
-                      passwordStatus?.changed ||
-                      (currentPassword &&
-                        currentPassword.password &&
-                        currentPassword.password !== tempPassword);
+                    const displayPassword =
+                      currentPassword?.password ||
+                      (hasPassword ? tempPassword : "");
+                    const isDatabasePassword = Boolean(
+                      currentPassword?.password,
+                    );
 
                     return (
                       <div className="border-t border-gray-100 mt-4 pt-3">
                         <div className="flex items-center gap-2 mb-2">
                           <Key size={13} className="text-gray-400" />
                           <span className="text-xs font-medium text-gray-500">
-                            Manajemen Password
+                            Password
                           </span>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <div>
-                            {hasPassword ? (
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <code className="text-xs font-mono bg-green-50 text-green-700 px-2 py-1 rounded border border-green-200">
-                                  {tempPassword}
-                                </code>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          {(hasChangedPassword || currentPassword) && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">
-                                {currentPassword &&
-                                currentPassword.password !== tempPassword
-                                  ? "Password Terbaru"
-                                  : "Password dari Database"}
-                              </p>
-                              {currentPassword ? (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <code className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200">
-                                    {currentPassword.password}
-                                  </code>
-                                  {currentPassword.updatedAt && (
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(
-                                        currentPassword.updatedAt,
-                                      ).toLocaleString("id-ID", {
-                                        dateStyle: "short",
-                                        timeStyle: "short",
-                                      })}
-                                    </span>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => getUserPassword(g.id)}
-                                    className="text-xs h-6 px-2"
-                                    title="Refresh password"
-                                  >
-                                    🔄
-                                  </Button>
-                                </div>
-                              ) : passwordLoadingUsers.has(g.id) ||
-                                !passwordRequestedUsers.has(g.id) ? (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-400">
-                                    Loading...
+                          {displayPassword ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <code
+                                className={`text-xs font-mono px-2 py-1 rounded border ${
+                                  isDatabasePassword
+                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    : "bg-green-50 text-green-700 border-green-200"
+                                }`}
+                              >
+                                {displayPassword}
+                              </code>
+                              {isDatabasePassword &&
+                                currentPassword?.updatedAt && (
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(
+                                      currentPassword.updatedAt,
+                                    ).toLocaleString("id-ID", {
+                                      dateStyle: "short",
+                                      timeStyle: "short",
+                                    })}
                                   </span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => getUserPassword(g.id)}
-                                    className="text-xs h-6 px-2"
-                                  >
-                                    Muat
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-400">
-                                    Tidak ada password tersimpan
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => getUserPassword(g.id)}
-                                    className="text-xs h-6 px-2"
-                                  >
-                                    Coba lagi
-                                  </Button>
-                                </div>
-                              )}
+                                )}
+                              <Button
+                                size="sm"
+                                variant={
+                                  isDatabasePassword ? "ghost" : "outline"
+                                }
+                                onClick={() => getUserPassword(g.id)}
+                                className="text-xs h-6 px-2"
+                                title="Refresh password"
+                              >
+                                🔄
+                              </Button>
+                            </div>
+                          ) : passwordLoadingUsers.has(g.id) ||
+                            !passwordRequestedUsers.has(g.id) ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">
+                                Loading...
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => getUserPassword(g.id)}
+                                className="text-xs h-6 px-2"
+                              >
+                                Muat
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">
+                                Tidak ada password tersimpan
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => getUserPassword(g.id)}
+                                className="text-xs h-6 px-2"
+                              >
+                                Coba lagi
+                              </Button>
                             </div>
                           )}
                         </div>
