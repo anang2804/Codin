@@ -46,20 +46,29 @@ export default function AdminKelasPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [nameError, setNameError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const normalizedName = formData.name.trim();
+    if (!normalizedName) {
+      setNameError("Nama kelas wajib diisi.");
+      return;
+    }
+
+    setNameError("");
 
     try {
       if (isEditing) {
         await updateKelas.mutateAsync({
           id: formData.id,
-          name: formData.name,
+          name: normalizedName,
         });
         toast.success("Kelas berhasil diupdate");
       } else {
         await createKelas.mutateAsync({
-          name: formData.name,
+          name: normalizedName,
         });
         toast.success("Kelas berhasil ditambahkan");
       }
@@ -68,6 +77,7 @@ export default function AdminKelasPage() {
         id: "",
         name: "",
       });
+      setNameError("");
       setShowForm(false);
       setIsEditing(false);
     } catch (error: any) {
@@ -104,6 +114,7 @@ export default function AdminKelasPage() {
       id: kelasItem.id,
       name: kelasItem.name,
     });
+    setNameError("");
     setIsEditing(true);
     setShowForm(true);
   };
@@ -113,6 +124,7 @@ export default function AdminKelasPage() {
       id: "",
       name: "",
     });
+    setNameError("");
     setIsEditing(false);
     setShowForm(true);
   };
@@ -142,7 +154,7 @@ export default function AdminKelasPage() {
                 : "Isi nama kelas yang ingin ditambahkan."}
             </p>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-5 mt-1">
+          <form onSubmit={handleSubmit} className="space-y-5 mt-1" noValidate>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Nama Kelas <span className="text-red-500">*</span>
@@ -150,12 +162,22 @@ export default function AdminKelasPage() {
               <Input
                 type="text"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                required
-                className="border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, name: value });
+                  if (nameError && value.trim()) {
+                    setNameError("");
+                  }
+                }}
+                className={`transition ${
+                  nameError
+                    ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                    : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                }`}
               />
+              {nameError && (
+                <p className="mt-1 text-xs text-red-600">{nameError}</p>
+              )}
             </div>
             <div className="flex gap-3 pt-1">
               <Button
@@ -169,6 +191,7 @@ export default function AdminKelasPage() {
                 onClick={() => {
                   setShowForm(false);
                   setIsEditing(false);
+                  setNameError("");
                 }}
                 variant="outline"
                 className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"

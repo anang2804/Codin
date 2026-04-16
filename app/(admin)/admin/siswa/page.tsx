@@ -89,6 +89,7 @@ interface MateriProgress {
 
 export default function AdminSiswaPage() {
   const PHONE_NUMBER_REGEX = /^\d+$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const supabase = createClient();
   const [siswa, setSiswa] = useState<Siswa[]>([]);
@@ -138,6 +139,7 @@ export default function AdminSiswaPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showAddPassword, setShowAddPassword] = useState(false);
   const [addPhoneError, setAddPhoneError] = useState("");
+  const [addPasswordError, setAddPasswordError] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Bulk upload state
@@ -1047,14 +1049,25 @@ export default function AdminSiswaPage() {
   };
 
   async function handleAddSiswa() {
+    const normalizedEmail = String(addForm.email ?? "")
+      .trim()
+      .toLowerCase();
     const normalizedPhone = String(addForm.no_telepon ?? "").trim();
+    const normalizedPassword = String(addForm.password ?? "").trim();
 
-    if (
-      !addForm.full_name.trim() ||
-      !addForm.email.trim() ||
-      !addForm.password.trim()
-    ) {
+    if (!addForm.full_name.trim() || !normalizedEmail || !normalizedPassword) {
       toast.error("Nama, email, dan password harus diisi");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      toast.error("Format email tidak valid");
+      return;
+    }
+
+    if (normalizedPassword.length < 8) {
+      setAddPasswordError("Password minimal 8 karakter.");
+      toast.error("Password minimal 8 karakter");
       return;
     }
 
@@ -1065,6 +1078,7 @@ export default function AdminSiswaPage() {
     }
 
     setAddPhoneError("");
+    setAddPasswordError("");
 
     setIsSubmitting(true);
     try {
@@ -1072,9 +1086,9 @@ export default function AdminSiswaPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: addForm.email.trim(),
+          email: normalizedEmail,
           full_name: addForm.full_name.trim(),
-          password: addForm.password.trim(),
+          password: normalizedPassword,
           no_telepon: normalizedPhone || null,
           kelas: addForm.kelas || null,
           sendEmail: false,
@@ -1087,12 +1101,18 @@ export default function AdminSiswaPage() {
         if (data.error === "email_exists") {
           throw new Error("Email sudah terdaftar");
         }
+        if (
+          typeof data.error === "string" &&
+          data.error.toLowerCase().includes("invalid format")
+        ) {
+          throw new Error("Format email tidak valid");
+        }
         throw new Error(data.error || "Gagal menambahkan siswa");
       }
 
       setCreatedAccount({
         email: data.email,
-        password: addForm.password.trim(),
+        password: normalizedPassword,
       });
 
       // Save to created accounts state
@@ -1100,7 +1120,7 @@ export default function AdminSiswaPage() {
         id: data.id,
         full_name: addForm.full_name.trim(),
         email: data.email || "",
-        temporaryPassword: addForm.password.trim(),
+        temporaryPassword: normalizedPassword,
       };
       setCreatedAccounts((prev) => {
         const next = [newEntry, ...prev];
@@ -1121,13 +1141,22 @@ export default function AdminSiswaPage() {
         kelas: "",
       });
       setAddPhoneError("");
+      setAddPasswordError("");
 
       setTimeout(() => {
         fetchSiswa();
       }, 500);
     } catch (err: any) {
-      console.error("Error adding siswa:", err);
-      toast.error(err.message || "Gagal menambahkan siswa");
+      const message = err?.message || "Gagal menambahkan siswa";
+      const expectedValidationError =
+        message === "Email sudah terdaftar" ||
+        message === "Format email tidak valid";
+
+      if (!expectedValidationError) {
+        console.error("Error adding siswa:", err);
+      }
+
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -1892,6 +1921,7 @@ export default function AdminSiswaPage() {
             setAddMode("single");
             setShowAddPassword(false);
             setIsDragOver(false);
+            setAddPasswordError("");
           }
         }}
       >
@@ -2111,11 +2141,21 @@ export default function AdminSiswaPage() {
                   <Input
                     type={showAddPassword ? "text" : "password"}
                     value={addForm.password}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.trim().length > 0 && value.trim().length < 8) {
+                        setAddPasswordError("Password minimal 8 karakter.");
+                      } else {
+                        setAddPasswordError("");
+                      }
+                      setAddForm({ ...addForm, password: value });
+                    }}
                     placeholder="Password untuk siswa"
-                    className="pl-9 pr-10 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                    className={`pl-9 pr-10 transition py-2.5 ${
+                      addPasswordError
+                        ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    }`}
                   />
                   <button
                     type="button"
@@ -2125,6 +2165,11 @@ export default function AdminSiswaPage() {
                     {showAddPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                {addPasswordError && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {addPasswordError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -2193,6 +2238,7 @@ export default function AdminSiswaPage() {
                       kelas: "",
                     });
                     setAddPhoneError("");
+                    setAddPasswordError("");
                     setShowAddPassword(false);
                   }}
                   className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"

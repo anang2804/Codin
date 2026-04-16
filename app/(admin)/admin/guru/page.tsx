@@ -47,6 +47,7 @@ interface Guru {
   id: string;
   email: string;
   full_name: string;
+  nuptk?: string | null;
   jenis_kelamin?: string | null;
   no_telepon?: string;
   alamat?: string;
@@ -55,6 +56,7 @@ interface Guru {
 
 export default function AdminGuruPage() {
   const PHONE_NUMBER_REGEX = /^\d+$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const [guru, setGuru] = useState<Guru[]>([]);
   const [filteredGuru, setFilteredGuru] = useState<Guru[]>([]);
@@ -68,6 +70,7 @@ export default function AdminGuruPage() {
     full_name: "",
     email: "",
     password: "",
+    nuptk: "",
     no_telepon: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,7 +80,9 @@ export default function AdminGuruPage() {
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showAddPassword, setShowAddPassword] = useState(false);
+  const [addNuptkError, setAddNuptkError] = useState("");
   const [addPhoneError, setAddPhoneError] = useState("");
+  const [addPasswordError, setAddPasswordError] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Bulk upload state
@@ -476,6 +481,7 @@ export default function AdminGuruPage() {
             full_name: getByAliases(row, ["nama", "full name", "full_name"]),
             email: getByAliases(row, ["email", "akun"]),
             password: getByAliases(row, ["password", "kata sandi", "sandi"]),
+            nuptk: getByAliases(row, ["nuptk"]),
             no_telepon: getByAliases(row, [
               "no telepon",
               "nomor telepon",
@@ -503,10 +509,22 @@ export default function AdminGuruPage() {
   // Handle template download
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Nama", "Email", "Password", "No Telepon"],
-      ["Contoh Guru", "guru@sekolah.com", "password123", "08123456789"],
+      ["Nama", "Email", "Password", "NUPTK", "No Telepon"],
+      [
+        "Contoh Guru",
+        "guru@sekolah.com",
+        "password123",
+        "1234567890",
+        "08123456789",
+      ],
     ]);
-    ws["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 16 }];
+    ws["!cols"] = [
+      { wch: 24 },
+      { wch: 28 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 16 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template Guru");
     XLSX.writeFile(wb, "template_import_guru.xlsx");
@@ -542,13 +560,20 @@ export default function AdminGuruPage() {
       const fullName = String(row.full_name ?? "").trim();
       const email = String(row.email ?? "").trim();
       const password = String(row.password ?? "").trim();
+      const nuptk = String(row.nuptk ?? "").trim();
       const noTelepon = String(row.no_telepon ?? "").trim();
 
-      if (!fullName || !email || !password) {
+      if (!fullName || !email || !password || !nuptk) {
         results.failed++;
         results.errors.push(
-          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, dan Password harus diisi)`,
+          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, Password, dan NUPTK harus diisi)`,
         );
+        continue;
+      }
+
+      if (!/^\d+$/.test(nuptk)) {
+        results.failed++;
+        results.errors.push(`Baris ${row.rowNum}: NUPTK harus berisi angka`);
         continue;
       }
 
@@ -560,6 +585,7 @@ export default function AdminGuruPage() {
             email,
             full_name: fullName,
             password,
+            nuptk,
             no_telepon: noTelepon || null,
             sendEmail: false,
           }),
@@ -624,14 +650,37 @@ export default function AdminGuruPage() {
   };
 
   async function handleAddGuru() {
+    const normalizedEmail = String(addForm.email ?? "")
+      .trim()
+      .toLowerCase();
+    const normalizedNuptk = String(addForm.nuptk ?? "").trim();
     const normalizedPhone = String(addForm.no_telepon ?? "").trim();
+    const normalizedPassword = String(addForm.password ?? "").trim();
 
     if (
       !addForm.full_name.trim() ||
-      !addForm.email.trim() ||
-      !addForm.password.trim()
+      !normalizedEmail ||
+      !normalizedPassword ||
+      !normalizedNuptk
     ) {
-      toast.error("Nama, email, dan password harus diisi");
+      toast.error("Nama, email, password, dan NUPTK harus diisi");
+      return;
+    }
+
+    if (!/^\d+$/.test(normalizedNuptk)) {
+      setAddNuptkError("NUPTK harus berisi angka.");
+      toast.error("NUPTK harus berisi angka");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      toast.error("Format email tidak valid");
+      return;
+    }
+
+    if (normalizedPassword.length < 8) {
+      setAddPasswordError("Password minimal 8 karakter.");
+      toast.error("Password minimal 8 karakter");
       return;
     }
 
@@ -642,15 +691,18 @@ export default function AdminGuruPage() {
     }
 
     setAddPhoneError("");
+    setAddNuptkError("");
+    setAddPasswordError("");
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/admin/guru", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: addForm.email.trim(),
+          email: normalizedEmail,
           full_name: addForm.full_name.trim(),
-          password: addForm.password.trim(),
+          password: normalizedPassword,
+          nuptk: normalizedNuptk,
           no_telepon: normalizedPhone || null,
           sendEmail: false,
         }),
@@ -660,17 +712,23 @@ export default function AdminGuruPage() {
         if (data.error === "email_exists") {
           throw new Error("Email sudah terdaftar");
         }
+        if (
+          typeof data.error === "string" &&
+          data.error.toLowerCase().includes("invalid format")
+        ) {
+          throw new Error("Format email tidak valid");
+        }
         throw new Error(data.error || "Gagal menambahkan guru");
       }
       setCreatedAccount({
         email: data.email,
-        password: addForm.password.trim(),
+        password: normalizedPassword,
       });
       const newEntry = {
         id: data.id,
         full_name: addForm.full_name.trim(),
         email: data.email || "",
-        temporaryPassword: addForm.password.trim(),
+        temporaryPassword: normalizedPassword,
       };
       setCreatedAccounts((prev) => {
         const next = [newEntry, ...prev];
@@ -682,14 +740,31 @@ export default function AdminGuruPage() {
       });
       setSessionCreatedAccounts((prev) => [newEntry, ...prev]);
       toast.success("Guru berhasil ditambahkan!");
-      setAddForm({ full_name: "", email: "", password: "", no_telepon: "" });
+      setAddForm({
+        full_name: "",
+        email: "",
+        password: "",
+        nuptk: "",
+        no_telepon: "",
+      });
+      setAddNuptkError("");
       setAddPhoneError("");
+      setAddPasswordError("");
       setTimeout(() => {
         fetchGuru();
       }, 500);
     } catch (err: any) {
-      console.error("Error adding guru:", err);
-      toast.error(err.message || "Gagal menambahkan guru");
+      const message = err?.message || "Gagal menambahkan guru";
+      const expectedValidationError =
+        message === "Email sudah terdaftar" ||
+        message === "Format email tidak valid" ||
+        message === "NUPTK harus berisi angka";
+
+      if (!expectedValidationError) {
+        console.error("Error adding guru:", err);
+      }
+
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -718,6 +793,7 @@ export default function AdminGuruPage() {
 
     const normalizedEditData = {
       full_name: String(editForm.full_name ?? "").trim(),
+      nuptk: String(editForm.nuptk ?? "").trim(),
       jenis_kelamin: String(editForm.jenis_kelamin ?? "").trim(),
       no_telepon: String(editForm.no_telepon ?? "").trim(),
       alamat: String(editForm.alamat ?? "").trim(),
@@ -725,8 +801,8 @@ export default function AdminGuruPage() {
 
     const requiredFields = [
       { key: "full_name", label: "Nama lengkap" },
+      { key: "nuptk", label: "NUPTK" },
       { key: "jenis_kelamin", label: "Jenis kelamin" },
-      { key: "no_telepon", label: "No. Telepon" },
       { key: "alamat", label: "Alamat" },
     ];
 
@@ -750,10 +826,19 @@ export default function AdminGuruPage() {
       return;
     }
 
-    if (!PHONE_NUMBER_REGEX.test(normalizedEditData.no_telepon)) {
+    if (
+      normalizedEditData.no_telepon &&
+      !PHONE_NUMBER_REGEX.test(normalizedEditData.no_telepon)
+    ) {
       setEditValidationErrors((prev) => ({ ...prev, no_telepon: true }));
       setEditPhoneError("No. Telepon hanya boleh berisi angka.");
       toast.error("No. Telepon hanya boleh berisi angka");
+      return;
+    }
+
+    if (normalizedEditData.nuptk && !/^\d+$/.test(normalizedEditData.nuptk)) {
+      setEditValidationErrors((prev) => ({ ...prev, nuptk: true }));
+      toast.error("NUPTK harus berisi angka");
       return;
     }
 
@@ -778,6 +863,7 @@ export default function AdminGuruPage() {
       const updateData: any = {
         id: editingId,
         full_name: normalizedEditData.full_name,
+        nuptk: normalizedEditData.nuptk,
         jenis_kelamin: normalizedEditData.jenis_kelamin,
         no_telepon: normalizedEditData.no_telepon,
         alamat: normalizedEditData.alamat,
@@ -805,6 +891,7 @@ export default function AdminGuruPage() {
             ? {
                 ...g,
                 full_name: normalizedEditData.full_name,
+                nuptk: normalizedEditData.nuptk,
                 no_telepon: normalizedEditData.no_telepon,
                 alamat: normalizedEditData.alamat,
                 jenis_kelamin: normalizedEditData.jenis_kelamin,
@@ -818,6 +905,7 @@ export default function AdminGuruPage() {
             ? {
                 ...g,
                 full_name: normalizedEditData.full_name,
+                nuptk: normalizedEditData.nuptk,
                 no_telepon: normalizedEditData.no_telepon,
                 alamat: normalizedEditData.alamat,
                 jenis_kelamin: normalizedEditData.jenis_kelamin,
@@ -1176,14 +1264,12 @@ export default function AdminGuruPage() {
                               );
                             } else {
                               setEditPhoneError("");
+                              clearEditValidationError("no_telepon");
                             }
                             setEditForm({
                               ...editForm,
                               no_telepon: value,
                             });
-                            if (value.trim()) {
-                              clearEditValidationError("no_telepon");
-                            }
                           }}
                           inputMode="numeric"
                           placeholder="08xxxxxxxxxx"
@@ -1197,7 +1283,49 @@ export default function AdminGuruPage() {
                       {(editValidationErrors.no_telepon ||
                         !!editPhoneError) && (
                         <p className="mt-1 text-[11px] text-red-600">
-                          {editPhoneError || "No. Telepon wajib diisi."}
+                          {editPhoneError}
+                        </p>
+                      )}
+                    </div>
+                    {/* NUPTK */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        NUPTK
+                      </label>
+                      <div className="relative">
+                        <Key
+                          size={12}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
+                        <Input
+                          value={editForm.nuptk || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value && /\D/.test(value)) {
+                              setEditValidationErrors((prev) => ({
+                                ...prev,
+                                nuptk: true,
+                              }));
+                            } else {
+                              clearEditValidationError("nuptk");
+                            }
+                            setEditForm({
+                              ...editForm,
+                              nuptk: value,
+                            });
+                          }}
+                          inputMode="numeric"
+                          placeholder="NUPTK guru"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.nuptk
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
+                        />
+                      </div>
+                      {editValidationErrors.nuptk && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          NUPTK wajib diisi dan hanya boleh berisi angka.
                         </p>
                       )}
                     </div>
@@ -1566,6 +1694,8 @@ export default function AdminGuruPage() {
             setExcelFile(null);
             setUploadProgress(0);
             setAddMode("single");
+            setAddNuptkError("");
+            setAddPasswordError("");
           }
         }}
       >
@@ -1771,6 +1901,35 @@ export default function AdminGuruPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  NUPTK <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    value={addForm.nuptk}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && /\D/.test(value)) {
+                        setAddNuptkError("NUPTK hanya boleh berisi angka.");
+                      } else {
+                        setAddNuptkError("");
+                      }
+                      setAddForm({ ...addForm, nuptk: value });
+                    }}
+                    inputMode="numeric"
+                    placeholder="NUPTK guru"
+                    className={`transition py-2.5 ${
+                      addNuptkError
+                        ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    }`}
+                  />
+                </div>
+                {addNuptkError && (
+                  <p className="mt-1 text-xs text-red-600">{addNuptkError}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -1781,11 +1940,21 @@ export default function AdminGuruPage() {
                   <Input
                     type={showAddPassword ? "text" : "password"}
                     value={addForm.password}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.trim().length > 0 && value.trim().length < 8) {
+                        setAddPasswordError("Password minimal 8 karakter.");
+                      } else {
+                        setAddPasswordError("");
+                      }
+                      setAddForm({ ...addForm, password: value });
+                    }}
                     placeholder="Password untuk guru"
-                    className="pl-9 pr-10 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition py-2.5"
+                    className={`pl-9 pr-10 transition py-2.5 ${
+                      addPasswordError
+                        ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    }`}
                   />
                   <button
                     type="button"
@@ -1795,6 +1964,11 @@ export default function AdminGuruPage() {
                     {showAddPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                {addPasswordError && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {addPasswordError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1840,9 +2014,12 @@ export default function AdminGuruPage() {
                       full_name: "",
                       email: "",
                       password: "",
+                      nuptk: "",
                       no_telepon: "",
                     });
                     setAddPhoneError("");
+                    setAddNuptkError("");
+                    setAddPasswordError("");
                   }}
                   className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
@@ -1885,6 +2062,11 @@ export default function AdminGuruPage() {
                           {
                             col: "Password",
                             note: "Password akun",
+                            required: true,
+                          },
+                          {
+                            col: "NUPTK",
+                            note: "Nomor unik pendidik",
                             required: true,
                           },
                           {
@@ -2043,16 +2225,21 @@ export default function AdminGuruPage() {
                     <table className="w-full text-xs">
                       <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
                         <tr>
-                          {["#", "Nama", "Email", "Password", "Telepon"].map(
-                            (h) => (
-                              <th
-                                key={h}
-                                className="px-3 py-2 text-left font-medium text-gray-500"
-                              >
-                                {h}
-                              </th>
-                            ),
-                          )}
+                          {[
+                            "#",
+                            "Nama",
+                            "Email",
+                            "Password",
+                            "NUPTK",
+                            "Telepon",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="px-3 py-2 text-left font-medium text-gray-500"
+                            >
+                              {h}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -2078,6 +2265,9 @@ export default function AdminGuruPage() {
                               ) : (
                                 <span className="text-red-400">—</span>
                               )}
+                            </td>
+                            <td className="px-3 py-2 text-gray-500">
+                              {row.nuptk || "—"}
                             </td>
                             <td className="px-3 py-2 text-gray-500">
                               {row.no_telepon || "—"}

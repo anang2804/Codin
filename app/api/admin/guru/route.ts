@@ -61,8 +61,26 @@ export async function POST(req: Request) {
   // Create new guru
   try {
     const body = await req.json();
-    let { email, password: providedPassword, full_name, no_telepon } = body;
+    let {
+      email,
+      password: providedPassword,
+      full_name,
+      no_telepon,
+      nuptk,
+    } = body;
     const normalizedPhone = normalizePhoneNumber(no_telepon);
+    const normalizedNuptk = String(nuptk ?? "").trim();
+
+    if (!normalizedNuptk) {
+      return NextResponse.json({ error: "NUPTK harus diisi" }, { status: 400 });
+    }
+
+    if (!/^\d+$/.test(normalizedNuptk)) {
+      return NextResponse.json(
+        { error: "NUPTK harus berisi angka" },
+        { status: 400 },
+      );
+    }
 
     if (!isValidPhoneNumber(no_telepon)) {
       return NextResponse.json(
@@ -149,6 +167,7 @@ export async function POST(req: Request) {
     await supabaseAdmin
       .from("profiles")
       .update({
+        nuptk: normalizedNuptk,
         no_telepon: normalizedPhone || null,
         current_password: generatedPassword,
         password_updated_at: new Date().toISOString(),
@@ -214,6 +233,7 @@ export async function GET(req: Request) {
       id: g.id,
       email: g.email,
       full_name: g.full_name,
+      nuptk: g.nuptk ?? null,
       created_at: g.created_at,
       jenis_kelamin: g.jenis_kelamin ?? null,
       no_telepon: g.no_telepon ?? null,
@@ -276,8 +296,11 @@ export async function PUT(req: Request) {
       password,
       no_telepon,
       alamat,
+      nuptk,
     } = body;
     const normalizedPhone = normalizePhoneNumber(no_telepon);
+    const normalizedNuptk =
+      nuptk !== undefined ? String(nuptk ?? "").trim() : undefined;
     if (!id)
       return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -288,9 +311,25 @@ export async function PUT(req: Request) {
       );
     }
 
+    if (nuptk !== undefined) {
+      if (!normalizedNuptk) {
+        return NextResponse.json(
+          { error: "NUPTK harus diisi" },
+          { status: 400 },
+        );
+      }
+      if (!/^\d+$/.test(normalizedNuptk)) {
+        return NextResponse.json(
+          { error: "NUPTK harus berisi angka" },
+          { status: 400 },
+        );
+      }
+    }
+
     const baseUpdates: any = {};
     if (full_name !== undefined) baseUpdates.full_name = full_name;
     if (email !== undefined) baseUpdates.email = email;
+    if (nuptk !== undefined) baseUpdates.nuptk = normalizedNuptk || null;
 
     if (Object.keys(baseUpdates).length > 0) {
       const { error: baseError } = await supabaseAdmin
