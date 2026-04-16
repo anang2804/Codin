@@ -280,13 +280,42 @@ export default function SiswaMateriDetailPage() {
   async function handleMarkCompleteAndNext() {
     if (!selectedSubBab) return;
 
+    const currentSubBab = selectedSubBab;
+    const nextSubBab = getNextSubBab();
+    const wasCompleted = !!currentSubBab.completed;
+
+    // Optimistic UI: mark complete locally immediately.
+    if (!wasCompleted) {
+      setSubBabs((prev) => {
+        const newSubBabs = { ...prev };
+        Object.keys(newSubBabs).forEach((babId) => {
+          newSubBabs[babId] = newSubBabs[babId].map((sb) =>
+            sb.id === currentSubBab.id ? { ...sb, completed: true } : sb,
+          );
+        });
+        return newSubBabs;
+      });
+    }
+
+    // Navigate immediately so button feels responsive.
+    if (nextSubBab) {
+      setSelectedSubBab(nextSubBab);
+      const nextBabId = Object.keys(subBabs).find((babId) =>
+        subBabs[babId].some((sb) => sb.id === nextSubBab.id),
+      );
+      if (nextBabId) {
+        setExpandedBabs((prev) => new Set([...prev, nextBabId]));
+      }
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
     try {
       // Call API to mark sub-bab as complete
       const response = await fetch("/api/siswa/materi-progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sub_bab_id: selectedSubBab.id,
+          sub_bab_id: currentSubBab.id,
           completed: true,
         }),
       });
@@ -297,56 +326,30 @@ export default function SiswaMateriDetailPage() {
         throw new Error(data.error || "Gagal menyimpan progress");
       }
 
-      // Update local state
-      setSubBabs((prev) => {
-        const newSubBabs = { ...prev };
-        Object.keys(newSubBabs).forEach((babId) => {
-          newSubBabs[babId] = newSubBabs[babId].map((sb) =>
-            sb.id === selectedSubBab.id ? { ...sb, completed: true } : sb,
-          );
-        });
-        return newSubBabs;
-      });
-
-      toast.success("Sub-bab ditandai selesai! ✓");
-
       // Notify list page that progress has been updated
       localStorage.setItem("materi_progress_updated", Date.now().toString());
       // Trigger storage event manually for same-page communication
       window.dispatchEvent(new Event("storage"));
 
-      // Show progress info
-      if (data.materi_progress) {
-        const { completed_sub_bab, total_sub_bab, progress_percentage } =
-          data.materi_progress;
-        toast.info(
-          `Progress: ${completed_sub_bab}/${total_sub_bab} sub-bab (${progress_percentage}%)`,
-          { duration: 3000 },
-        );
-      }
-
-      // Navigate to next sub-bab if available
-      const nextSubBab = getNextSubBab();
-      if (nextSubBab) {
-        setTimeout(() => {
-          setSelectedSubBab(nextSubBab);
-          // Auto-expand the bab that contains the next sub-bab
-          const nextBabId = Object.keys(subBabs).find((babId) =>
-            subBabs[babId].some((sb) => sb.id === nextSubBab.id),
-          );
-          if (nextBabId) {
-            setExpandedBabs((prev) => new Set([...prev, nextBabId]));
-          }
-          // Scroll to top of content
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }, 1000);
-      } else {
+      if (!nextSubBab) {
         // All sub-babs completed
         toast.success("🎉 Selamat! Anda telah menyelesaikan semua materi!", {
           duration: 5000,
         });
       }
     } catch (error: any) {
+      if (!wasCompleted) {
+        // Roll back optimistic state on failure.
+        setSubBabs((prev) => {
+          const newSubBabs = { ...prev };
+          Object.keys(newSubBabs).forEach((babId) => {
+            newSubBabs[babId] = newSubBabs[babId].map((sb) =>
+              sb.id === currentSubBab.id ? { ...sb, completed: false } : sb,
+            );
+          });
+          return newSubBabs;
+        });
+      }
       console.error("Error marking complete:", error);
       toast.error(error.message || "Gagal menyimpan progress");
     }
@@ -365,7 +368,7 @@ export default function SiswaMateriDetailPage() {
         setExpandedBabs((prev) => new Set([...prev, prevBabId]));
       }
       // Scroll to top
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     } else {
       toast.info("Ini adalah sub-bab pertama");
     }
@@ -381,12 +384,15 @@ export default function SiswaMateriDetailPage() {
       if (nextBabId) {
         setExpandedBabs((prev) => new Set([...prev, nextBabId]));
       }
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     }
   }
 
   async function handleNextClick() {
-    if (selectedSubBab?.content_type === "file") {
+    if (
+      selectedSubBab?.content_type === "file" ||
+      selectedSubBab?.content_type === "link"
+    ) {
       await handleMarkCompleteAndNext();
       return;
     }

@@ -24,9 +24,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure database connection
-    await prisma.$connect();
-
     // Upsert sub_bab_progress with Prisma
     const progress = await prisma.subBabProgress.upsert({
       where: {
@@ -121,14 +118,6 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Error in update progress API:", error);
-
-    // Disconnect and reconnect on error
-    try {
-      await prisma.$disconnect();
-      await prisma.$connect();
-    } catch (reconnectError) {
-      console.error("Failed to reconnect:", reconnectError);
-    }
 
     // Provide user-friendly error message
     let errorMessage = "Gagal menyimpan progress";
