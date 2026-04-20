@@ -409,7 +409,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca kebutuhan tipe data atau operasi pada baris tersebut, lalu pilih token yang paling sesuai.`,
+        `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
       );
       return;
     }
@@ -418,7 +418,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum tepat.\n\n${feedbackHints[expected]}\n\nPetunjuk: pahami fungsi tokennya dulu, lalu pilih operator atau tipe data yang paling sesuai.`,
+        `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
       );
       return;
     }

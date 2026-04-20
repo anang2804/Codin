@@ -309,6 +309,27 @@ function renderFuelCodeSuffix(lineIndex: number) {
   return <span />;
 }
 
+function getLineGuideMessage(lineIndex: number) {
+  switch (lineIndex) {
+    case 0:
+      return 'Variabel jenisBBM memiliki nilai "Pertalite", maka bertipe data _______';
+    case 1:
+      return "Variabel kapasitasTangki memiliki nilai 50.0, maka bertipe data _______";
+    case 2:
+      return "Variabel literSekarang memiliki nilai 1.4, maka bertipe data _______";
+    case 3:
+      return "Variabel jarakTempuh memiliki nilai 12550, maka bertipe data _______";
+    case 4:
+      return "Variabel mesinAktif memiliki nilai false, maka bertipe data _______";
+    case 5:
+      return "Variabel butuhBensin digunakan untuk menghitung selisih antara kapasitasTangki dan literSekarang, maka operator yang digunakan adalah _______ dan hasilnya bertipe data _______";
+    case 6:
+      return "Nilai 20% dari kapasitasTangki dihitung terlebih dahulu, kemudian dibandingkan dengan literSekarang, sehingga operator yang digunakan adalah _______ dan _______ serta hasilnya bertipe data _______";
+    default:
+      return "Sistem siap menjalankan algoritma.";
+  }
+}
+
 export default function VariabelIndikatorBensinDigitalLanjutanPage() {
   const [challenge, setChallenge] = useState<ChallengeData>(() =>
     createChallenge(),
@@ -526,7 +547,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca kebutuhan tipe data atau operasi pada baris tersebut, lalu pilih token yang paling sesuai.`,
+        `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
       );
       return;
     }
@@ -535,7 +556,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum tepat.\n\nToken pada baris ini belum sesuai konteks algoritma.\n\nPetunjuk: baca ulang tujuan barisnya, lalu pilih token yang perannya paling tepat.`,
+        `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
       );
       return;
     }
@@ -547,7 +568,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum lengkap.\n\nToken operator pada baris ini belum dipilih.\n\nPetunjuk: pilih operator yang paling sesuai dengan ekspresi pada baris tersebut.`,
+          `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
         );
         return;
       }
@@ -555,7 +576,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum tepat.\n\nOperator pada ekspresi ini belum sesuai konteks perhitungan.\n\nPetunjuk: cek kembali hubungan antar nilai pada baris tersebut.`,
+          `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
         );
         return;
       }
@@ -568,7 +589,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum lengkap.\n\nToken ketiga pada baris ini belum dipilih.\n\nPetunjuk: lengkapi tipe data hasil ekspresi pada baris tersebut.`,
+          `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
         );
         return;
       }
@@ -576,7 +597,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum tepat.\n\nToken ketiga pada ekspresi ini belum sesuai konteks.\n\nPetunjuk: tentukan tipe data hasil akhir ekspresi pada baris tersebut.`,
+          `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
         );
         return;
       }
@@ -681,37 +702,57 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
   const processTone =
     errorLine !== -1
       ? {
-          panel: "bg-rose-50/95 border-rose-200",
-          divider: "border-rose-200",
-          title: "text-rose-600",
-          body: "text-rose-700 bg-rose-100/60",
-          icon: <AlertTriangle size={13} className="text-rose-500" />,
+          panel:
+            "border-rose-300 bg-gradient-to-br from-rose-100 via-orange-100 to-amber-100 dark:border-rose-700/70 dark:from-rose-900/35 dark:via-orange-900/30 dark:to-amber-900/25",
+          divider: "border-rose-300/90 dark:border-rose-700/70",
+          title: "text-rose-800 dark:text-rose-200",
+          body: "bg-rose-50/80 text-rose-900 dark:bg-rose-950/55 dark:text-rose-100",
+          icon: (
+            <AlertTriangle
+              size={13}
+              className="text-rose-600 dark:text-rose-400"
+            />
+          ),
         }
       : isRunning
         ? {
-            panel: "bg-emerald-50/95 border-emerald-200",
-            divider: "border-emerald-200",
-            title: "text-emerald-700",
-            body: "text-emerald-900 bg-emerald-100/60",
+            panel:
+              "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+            divider: "border-emerald-300/90 dark:border-emerald-700/70",
+            title: "text-emerald-800 dark:text-emerald-200",
+            body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
             icon: (
-              <Activity size={13} className="animate-pulse text-emerald-600" />
+              <Activity
+                size={13}
+                className="animate-pulse text-emerald-600 dark:text-emerald-400"
+              />
             ),
           }
         : showSuccessCard
           ? {
-              panel: "bg-emerald-50/95 border-emerald-200",
-              divider: "border-emerald-200",
-              title: "text-emerald-700",
-              body: "text-emerald-900 bg-emerald-100/60",
-              icon: <CheckCircle2 size={12} className="text-emerald-500" />,
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
+              icon: (
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+              ),
             }
           : {
-              panel: "bg-card border-border",
-              divider: "border-border",
-              title: "text-muted-foreground",
-              body: "text-foreground bg-muted",
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
               icon: (
-                <CheckCircle2 size={12} className="text-muted-foreground" />
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
               ),
             };
 
@@ -952,6 +993,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                               onClick={() => {
                                 setOpenSelectorLine({ line: i, slot: 1 });
                                 setActiveLine(i);
+                                setFeedback(getLineGuideMessage(i));
                               }}
                               className={`rounded-md border px-1.5 py-0 transition-all ${selected ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
@@ -966,6 +1008,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                                   onClick={() => {
                                     setOpenSelectorLine({ line: i, slot: 2 });
                                     setActiveLine(i);
+                                    setFeedback(getLineGuideMessage(i));
                                   }}
                                   className={`rounded-md border px-1.5 py-0 transition-all ${selectedSecond ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                                 >
@@ -981,6 +1024,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                                 onClick={() => {
                                   setOpenSelectorLine({ line: i, slot: 3 });
                                   setActiveLine(i);
+                                  setFeedback(getLineGuideMessage(i));
                                 }}
                                 className={`rounded-md border px-1.5 py-0 transition-all ${selectedThird ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >

@@ -301,7 +301,7 @@ export default function VariabelTerpaduDasarPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum lengkap.\n\nLengkapi terlebih dahulu tipe data pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca karakteristik nilai variabelnya, lalu pilih tipe data yang paling sesuai.`,
+        `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
       );
       return;
     }
@@ -310,7 +310,7 @@ export default function VariabelTerpaduDasarPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum tepat.\n\n${feedbackHints[expected]}\n\nPetunjuk: pahami karakteristik datanya dulu, lalu pilih tipe data yang paling sesuai.`,
+        `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
       );
       return;
     }

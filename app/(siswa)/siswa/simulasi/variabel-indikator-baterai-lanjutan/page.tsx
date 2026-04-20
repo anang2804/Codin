@@ -508,7 +508,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca kebutuhan tipe data atau operasi pada baris tersebut, lalu pilih token yang paling sesuai.`,
+        `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
       );
       return;
     }
@@ -517,7 +517,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
       setIsRunning(false);
       setErrorLine(index);
       setFeedback(
-        `Baris ${index + 1} belum tepat.\n\nToken pada baris ini belum sesuai konteks algoritma.\n\nPetunjuk: baca ulang tujuan barisnya, lalu pilih token yang perannya paling tepat.`,
+        `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
       );
       return;
     }
@@ -529,7 +529,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum lengkap.\n\nToken operator pada baris ini belum dipilih.\n\nPetunjuk: pilih operator yang paling sesuai dengan ekspresi pada baris tersebut.`,
+          `Baris ${index + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
         );
         return;
       }
@@ -537,7 +537,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
         setIsRunning(false);
         setErrorLine(index);
         setFeedback(
-          `Baris ${index + 1} belum tepat.\n\nOperator pada ekspresi ini belum sesuai konteks perhitungan.\n\nPetunjuk: cek kembali hubungan antar nilai pada baris tersebut.`,
+          `Baris ${index + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
         );
         return;
       }
