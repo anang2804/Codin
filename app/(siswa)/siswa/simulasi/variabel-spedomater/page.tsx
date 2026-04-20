@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const SIMULASI_SLUG = "variabel-spedomater";
 const MODE_OPTIONS = ["Eco", "Sport", "Normal", "Comfort"] as const;
 
-type CommandChoice = "int" | "float" | "char" | "boolean" | "string";
+type CommandChoice = "Number" | "String" | "Boolean" | "Array" | "Object";
 
 type ChallengeData = {
   umur: number;
@@ -39,29 +39,29 @@ const COMMAND_DETAILS: Record<
   CommandChoice | "default",
   { title: string; desc: string; color: string }
 > = {
-  int: {
-    title: "INT",
-    desc: "adalah tipe data yang digunakan untuk menyimpan bilangan bulat, baik positif maupun negatif, tanpa komponen desimal.",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "digunakan untuk menyimpan angka dengan komponen desimal (pecahan). ",
-    color: "bg-sky-50 border-sky-200",
-  },
-  char: {
-    title: "CHAR",
-    desc: "digunakan untuk menyimpan satu karakter tunggal ",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
     color: "bg-amber-50 border-amber-200",
   },
-  boolean: {
+  Boolean: {
     title: "BOOLEAN",
-    desc: "adalah tipe data yang hanya memiliki dua nilai: true atau false",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
     color: "bg-violet-50 border-violet-200",
   },
-  string: {
-    title: "STRING",
-    desc: "digunakan untuk menyimpan kumpulan karakter berupa teks.",
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
+    color: "bg-sky-50 border-sky-200",
+  },
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut",
     color: "bg-rose-50 border-rose-200",
   },
   default: {
@@ -85,15 +85,12 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function createChallenge(): ChallengeData {
-  const tinggiBulat = randomInt(150, 178);
-  const tinggiDecimal = randomInt(1, 9);
-  const modeOptions = ["Eco", "Sport", "Normal", "Comfort"];
   return {
-    umur: randomInt(15, 18),
-    tinggi: Number(`${tinggiBulat}.${tinggiDecimal}`),
-    inisial: ["A", "B", "C", "D"][randomInt(0, 3)] as "A" | "B" | "C" | "D",
-    aktif: Math.random() > 0.5,
-    mode: modeOptions[randomInt(0, modeOptions.length - 1)],
+    umur: 18,
+    tinggi: 164.3,
+    inisial: "B",
+    aktif: true,
+    mode: "Sport",
   };
 }
 
@@ -131,34 +128,34 @@ export default function VariabelTerpaduDasarPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` kecepatan = ${challenge.umur};`,
-      expected: "int",
-      choices: shuffle(["int", "float", "char", "boolean", "string"]),
+      before: `let kecepatan = ${challenge.umur};      // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` trip_meter = ${challenge.tinggi.toFixed(1)};`,
-      expected: "float",
-      choices: shuffle(["int", "float", "char", "boolean", "string"]),
+      before: `let trip_meter = ${challenge.tinggi.toFixed(1)};  // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` gigi = '${challenge.inisial}';`,
-      expected: "char",
-      choices: shuffle(["int", "float", "char", "boolean", "string"]),
+      before: `let gigi = '${challenge.inisial}';          // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` ready = ${challenge.aktif};`,
-      expected: "boolean",
-      choices: shuffle(["int", "float", "char", "boolean", "string"]),
+      before: `let ready = ${challenge.aktif};        // tipe data: `,
+      after: "",
+      expected: "Boolean",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` mode = "${challenge.mode}";`,
-      expected: "string",
-      choices: shuffle(["int", "float", "char", "boolean", "string"]),
+      before: `let mode = "${challenge.mode}";      // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
   ];
 
@@ -254,11 +251,12 @@ export default function VariabelTerpaduDasarPage() {
   };
 
   const feedbackHints: Record<CommandChoice, string> = {
-    int: "Cek kembali apakah nilainya berupa bilangan bulat tanpa desimal.",
-    float: "Perhatikan apakah variabel ini membutuhkan angka desimal.",
-    char: "Periksa apakah variabel ini hanya membutuhkan satu karakter.",
-    boolean: "Pastikan variabel ini memang bertipe kondisi true/false.",
-    string: "Cek apakah variabel ini berisi teks (kumpulan karakter).",
+    Number:
+      "Cek kembali apakah nilainya berupa angka (bisa bulat atau desimal).",
+    String: "Cek apakah variabel ini berisi teks/karakter dalam tanda kutip.",
+    Boolean: "Pastikan variabel ini bertipe kondisi true/false.",
+    Array: "Array dipakai untuk kumpulan nilai dalam tanda kurung siku [].",
+    Object: "Object dipakai untuk pasangan key-value dalam kurung kurawal {}.",
   };
 
   const executeStep = (index: number) => {
@@ -267,7 +265,7 @@ export default function VariabelTerpaduDasarPage() {
       setActiveLine(-1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua tipe data sudah sesuai.\n\nDashboard menampilkan data dengan benar dari kecepatan, trip meter, gear, ready, hingga mode berkendara.\n\nUrutan konsep yang dipakai: int -> float -> char -> boolean -> string.",
+        "Berhasil! Semua tipe data sudah sesuai.\n\nDashboard menampilkan data dengan benar dari kecepatan, trip meter, gear, ready, hingga mode berkendara.\n\nUrutan konsep yang dipakai: Number -> Number -> String -> Boolean -> String.",
       );
       return;
     }
@@ -323,6 +321,84 @@ export default function VariabelTerpaduDasarPage() {
   };
 
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
+  const renderCodePrefix = (lineIndex: number) => {
+    const kwClass = "text-violet-700 dark:text-violet-300";
+    const varClass = "text-blue-700 dark:text-blue-300";
+    const opClass = "text-slate-700 dark:text-slate-300";
+    const numberClass = "text-orange-700 dark:text-orange-300";
+    const stringClass = "text-emerald-700 dark:text-emerald-300";
+    const booleanClass = "text-amber-700 dark:text-amber-300";
+    const commentClass = "text-slate-500 dark:text-slate-400";
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>kecepatan</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.umur}</span>
+          <span className={opClass}>;</span>
+          {"      "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>trip_meter</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.tinggi.toFixed(1)}</span>
+          <span className={opClass}>;</span>
+          {"  "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>gigi</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={stringClass}>'{challenge.inisial}'</span>
+          <span className={opClass}>;</span>
+          {"          "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 3) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>ready</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={booleanClass}>{String(challenge.aktif)}</span>
+          <span className={opClass}>;</span>
+          {"        "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className={kwClass}>let</span>{" "}
+        <span className={varClass}>mode</span>{" "}
+        <span className={opClass}>=</span>{" "}
+        <span className={stringClass}>"{challenge.mode}"</span>
+        <span className={opClass}>;</span>
+        {"      "}
+        <span className={commentClass}>// tipe data: </span>
+      </>
+    );
+  };
+
   const umurLevel =
     labPreview.umur === null
       ? 8
@@ -557,7 +633,7 @@ export default function VariabelTerpaduDasarPage() {
               </div>
 
               <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
+                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/40 pt-5 pr-4 text-right text-muted-foreground dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
                   {Array.from({ length: totalDisplayLines }).map((_, i) =>
                     // Highlight line number red when selected command is wrong.
                     (() => {
@@ -579,7 +655,7 @@ export default function VariabelTerpaduDasarPage() {
                   )}
                 </div>
 
-                <div className="relative flex-1 overflow-hidden bg-card">
+                <div className="relative flex-1 overflow-hidden bg-slate-50 dark:bg-slate-950/80">
                   <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[i];
@@ -599,16 +675,16 @@ export default function VariabelTerpaduDasarPage() {
                               layoutId="lineHighlightDasar"
                               className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
                                 showWrongState || errorLine === i
-                                  ? "border-rose-500 bg-rose-50"
+                                  ? "border-rose-500 bg-rose-100/70 dark:bg-rose-500/10"
                                   : isRunning
-                                    ? "border-emerald-500 bg-emerald-50"
-                                    : "border-emerald-200 bg-emerald-50/30"
+                                    ? "border-emerald-500 bg-emerald-100/70 dark:bg-emerald-500/10"
+                                    : "border-sky-300 bg-sky-50/70 dark:border-sky-500/40 dark:bg-slate-800/50"
                               }`}
                             />
                           )}
 
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 whitespace-pre font-mono text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+                            <span>{renderCodePrefix(i)}</span>
                             <button
                               type="button"
                               disabled={isRunning}
@@ -616,11 +692,13 @@ export default function VariabelTerpaduDasarPage() {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded border px-1.5 py-0.5 font-mono text-[13px] transition-all ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
-                            <span>{line.after}</span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {line.after}
+                            </span>
                           </div>
                         </div>
                       );
@@ -794,7 +872,7 @@ export default function VariabelTerpaduDasarPage() {
                   >
                     <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
                       <span>Trip Odometer</span>
-                      <span className="text-sky-300">Float</span>
+                      <span className="text-sky-300">Number</span>
                     </div>
                     <motion.p
                       animate={
