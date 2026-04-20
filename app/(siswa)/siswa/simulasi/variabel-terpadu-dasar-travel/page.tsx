@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 const SIMULASI_SLUG = "variabel-terpadu-dasar-travel";
 
-type CommandChoice = "string" | "char" | "int" | "float" | "boolean";
+type CommandChoice = "Number" | "String" | "Boolean" | "Array" | "Object";
 
 type ChallengeData = {
   namaLengkap: string;
@@ -38,30 +38,30 @@ const COMMAND_DETAILS: Record<
   CommandChoice | "default",
   { title: string; desc: string; color: string }
 > = {
-  string: {
-    title: "STRING",
-    desc: "Digunakan untuk teks panjang.",
-    color: "bg-rose-50 border-rose-200",
-  },
-  char: {
-    title: "CHAR",
-    desc: "Digunakan untuk satu karakter kode singkat.",
-    color: "bg-amber-50 border-amber-200",
-  },
-  int: {
-    title: "INT",
-    desc: "Digunakan untuk bilangan bulat tanpa desimal.",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "Digunakan untuk angka desimal presisi.",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
+    color: "bg-amber-50 border-amber-200",
+  },
+  Boolean: {
+    title: "BOOLEAN",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
+    color: "bg-violet-50 border-violet-200",
+  },
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
     color: "bg-sky-50 border-sky-200",
   },
-  boolean: {
-    title: "BOOLEAN",
-    desc: "Digunakan untuk status dua kondisi: true atau false.",
-    color: "bg-violet-50 border-violet-200",
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut",
+    color: "bg-rose-50 border-rose-200",
   },
   default: {
     title: "DASAR",
@@ -84,22 +84,12 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function createChallenge(): ChallengeData {
-  const names = [
-    "Gusti Ngurah Nugraha",
-    "Ayu Putri Maheswari",
-    "Bagus Pratama Saputra",
-    "Kadek Surya Wibawa",
-  ];
-  const classes: Array<"E" | "B" | "F" | "P"> = ["E", "B", "F", "P"];
-  const bagInt = randomInt(12, 28);
-  const bagDec = randomInt(1, 9);
-
   return {
-    namaLengkap: names[randomInt(0, names.length - 1)],
-    kelasPenerbangan: classes[randomInt(0, classes.length - 1)],
-    nomorKursi: randomInt(1, 40),
-    beratBagasi: Number(`${bagInt}.${bagDec}`),
-    sudahCheckIn: Math.random() > 0.5,
+    namaLengkap: "Kadek Surya Wibawa",
+    kelasPenerbangan: "P",
+    nomorKursi: 17,
+    beratBagasi: 21.2,
+    sudahCheckIn: true,
   };
 }
 
@@ -138,43 +128,44 @@ export default function VariabelTerpaduDasarTravelPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` namaLengkap = \"${challenge.namaLengkap}\";`,
-      expected: "string",
-      choices: shuffle(["string", "char", "int", "float", "boolean"]),
+      before: `let namaLengkap = "${challenge.namaLengkap}"; // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` kelasPenerbangan = '${challenge.kelasPenerbangan}';`,
-      expected: "char",
-      choices: shuffle(["string", "char", "int", "float", "boolean"]),
+      before: `let kelasPenerbangan = '${challenge.kelasPenerbangan}';             // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` nomorKursi = ${challenge.nomorKursi};`,
-      expected: "int",
-      choices: shuffle(["string", "char", "int", "float", "boolean"]),
+      before: `let nomorKursi = ${challenge.nomorKursi};                    // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` beratBagasi = ${challenge.beratBagasi.toFixed(1)};`,
-      expected: "float",
-      choices: shuffle(["string", "char", "int", "float", "boolean"]),
+      before: `let beratBagasi = ${challenge.beratBagasi.toFixed(1)};                 // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` sudahCheckIn = ${challenge.sudahCheckIn};`,
-      expected: "boolean",
-      choices: shuffle(["string", "char", "int", "float", "boolean"]),
+      before: `let sudahCheckIn = ${challenge.sudahCheckIn};                // tipe data: `,
+      after: "",
+      expected: "Boolean",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
   ];
 
   const feedbackHints: Record<CommandChoice, string> = {
-    int: "Cek kembali apakah nilainya berupa bilangan bulat tanpa desimal.",
-    float: "Perhatikan apakah variabel ini membutuhkan angka desimal.",
-    char: "Periksa apakah variabel ini hanya membutuhkan satu karakter.",
-    boolean: "Pastikan variabel ini memang bertipe kondisi true/false.",
-    string: "Cek apakah variabel ini berisi teks (kumpulan karakter).",
+    Number:
+      "Cek kembali apakah nilainya berupa angka (bisa bulat atau desimal).",
+    String: "Cek apakah variabel ini berisi teks/karakter dalam tanda kutip.",
+    Boolean: "Pastikan variabel ini bertipe kondisi true/false.",
+    Array: "Array dipakai untuk kumpulan nilai dalam tanda kurung siku [].",
+    Object: "Object dipakai untuk pasangan key-value dalam kurung kurawal {}.",
   };
 
   const currentChoice =
@@ -280,7 +271,7 @@ export default function VariabelTerpaduDasarTravelPage() {
       setActiveLine(-1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua tipe data sudah sesuai.\n\nDashboard menampilkan data dengan benar dari kecepatan, trip meter, gear, ready, hingga mode berkendara.\n\nUrutan konsep yang dipakai: int -> float -> char -> boolean -> string.",
+        "Berhasil! Semua tipe data sudah sesuai.\n\nSistem travel berhasil menampilkan data penumpang dan check-in dengan benar.\n\nUrutan konsep yang dipakai: String -> String -> Number -> Number -> Boolean.",
       );
       return;
     }
@@ -339,6 +330,80 @@ export default function VariabelTerpaduDasarTravelPage() {
   };
 
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
+  const renderCodePrefix = (lineIndex: number) => {
+    const kwClass = "text-violet-700 dark:text-violet-300";
+    const varClass = "text-blue-700 dark:text-blue-300";
+    const opClass = "text-slate-700 dark:text-slate-300";
+    const numberClass = "text-orange-700 dark:text-orange-300";
+    const stringClass = "text-emerald-700 dark:text-emerald-300";
+    const booleanClass = "text-amber-700 dark:text-amber-300";
+    const commentClass = "text-slate-500 dark:text-slate-400";
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>namaLengkap</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={stringClass}>"{challenge.namaLengkap}"</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>kelasPenerbangan</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={stringClass}>'{challenge.kelasPenerbangan}'</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>nomorKursi</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.nomorKursi}</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 3) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>beratBagasi</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>
+            {challenge.beratBagasi.toFixed(1)}
+          </span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className={kwClass}>let</span>{" "}
+        <span className={varClass}>sudahCheckIn</span>{" "}
+        <span className={opClass}>=</span>{" "}
+        <span className={booleanClass}>{String(challenge.sudahCheckIn)}</span>
+        <span className={opClass}>;</span>{" "}
+        <span className={commentClass}>// tipe data: </span>
+      </>
+    );
+  };
 
   const processTone =
     errorLine !== -1
@@ -559,7 +624,7 @@ export default function VariabelTerpaduDasarTravelPage() {
               </div>
 
               <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
+                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/40 pt-5 pr-4 text-right text-muted-foreground dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
                   {Array.from({ length: totalDisplayLines }).map((_, i) => {
                     const isWrongLineSelection =
                       i < lineConfigs.length &&
@@ -578,7 +643,7 @@ export default function VariabelTerpaduDasarTravelPage() {
                   })}
                 </div>
 
-                <div className="relative flex-1 overflow-hidden bg-card">
+                <div className="relative flex-1 overflow-hidden bg-slate-50 dark:bg-slate-950/80">
                   <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[i];
@@ -598,16 +663,16 @@ export default function VariabelTerpaduDasarTravelPage() {
                               layoutId="lineHighlightTravel"
                               className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
                                 showWrongState || errorLine === i
-                                  ? "border-rose-500 bg-rose-50"
+                                  ? "border-rose-500 bg-rose-100/70 dark:bg-rose-500/10"
                                   : isRunning
-                                    ? "border-emerald-500 bg-emerald-50"
-                                    : "border-emerald-200 bg-emerald-50/30"
+                                    ? "border-emerald-500 bg-emerald-100/70 dark:bg-emerald-500/10"
+                                    : "border-sky-300 bg-sky-50/70 dark:border-sky-500/40 dark:bg-slate-800/50"
                               }`}
                             />
                           )}
 
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 whitespace-pre font-mono text-[12px] font-semibold text-slate-900 dark:text-slate-100 lg:text-[13px]">
+                            <span>{renderCodePrefix(i)}</span>
                             <button
                               type="button"
                               disabled={isRunning}
@@ -615,11 +680,13 @@ export default function VariabelTerpaduDasarTravelPage() {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded border px-1 py-0.5 font-mono text-[10px] transition-all lg:text-[11px] ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
-                            <span>{line.after}</span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {line.after}
+                            </span>
                           </div>
                         </div>
                       );
