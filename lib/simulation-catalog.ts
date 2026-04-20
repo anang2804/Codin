@@ -103,7 +103,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Dashboard Speedometer",
         description:
-          "Susun tipe data variabel yang tepat menggunakan int, float, char, dan boolean.",
+          "Amati nilai pada setiap variabel, lalu tentukan tipe data yang sesuai.",
         href: "/siswa/simulasi/variabel-spedomater",
         slug: "variabel-spedomater",
         level: "Dasar",
@@ -114,7 +114,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Tiket & Paspor Perjalanan",
         description:
-          "Susun tipe data variabel yang tepat menggunakan string, char, int, float, dan boolean.",
+          "Amati nilai pada setiap variabel, lalu tentukan tipe data yang sesuai.",
         href: "/siswa/simulasi/variabel-terpadu-dasar-travel",
         slug: "variabel-terpadu-dasar-travel",
         level: "Dasar",
@@ -125,7 +125,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Buku Rekap Nilai",
         description:
-          "Lengkapi tipe data dan ekspresi pada rekap nilai siswa untuk menghitung total, rata-rata, dan menentukan status kelulusan.",
+          "Amati nilai dan proses pada setiap variabel, lalu tentukan tipe data dan operator yang sesuai.",
         href: "/siswa/simulasi/variabel-rekap-nilai",
         slug: "variabel-rekap-nilai",
         level: "Menengah",
@@ -136,7 +136,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Food Delivery Express",
         description:
-          "Lengkapi tipe data dan ekspresi pada aplikasi pesan antar makanan untuk menghitung total ongkir dan status gratis ongkir.",
+          "Perhatikan data dan proses perhitungan ongkir, lalu tentukan tipe data dan operator yang tepat.",
         href: "/siswa/simulasi/variabel-food-delivery-menengah",
         slug: "variabel-food-delivery-menengah",
         level: "Menengah",
@@ -147,7 +147,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Indikator Baterai Smartphone",
         description:
-          "Lengkapi tipe data dan ekspresi untuk menghitung sisa daya baterai dan status pengisian selesai.",
+          "Analisis data dan proses pada sistem baterai, lalu tentukan tipe data dan operator yang sesuai.",
         href: "/siswa/simulasi/variabel-indikator-baterai-lanjutan",
         slug: "variabel-indikator-baterai-lanjutan",
         level: "Lanjutan",
@@ -158,7 +158,7 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
       {
         title: "Indikator Bensin Digital",
         description:
-          "Lengkapi tipe data dan ekspresi untuk menghitung kebutuhan bensin dan menentukan status perlu isi BBM.",
+          "Amati data dan kondisi bahan bakar, lalu tentukan tipe data dan operator yang tepat.",
         href: "/siswa/simulasi/variabel-indikator-bensin-digital-lanjutan",
         slug: "variabel-indikator-bensin-digital-lanjutan",
         level: "Lanjutan",
