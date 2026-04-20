@@ -21,16 +21,19 @@ import { toast } from "sonner";
 const SIMULASI_SLUG = "variabel-indikator-baterai-lanjutan";
 
 type CommandChoice =
-  | "int"
-  | "float"
-  | "char"
-  | "boolean"
-  | "string"
+  | "Number"
+  | "String"
+  | "Boolean"
+  | "Array"
+  | "Object"
   | "+"
   | "-"
   | "*"
   | "/"
+  | "%"
+  | "**"
   | ">"
+  | "!="
   | ">="
   | "<"
   | "<="
@@ -63,14 +66,11 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function createChallenge(): ChallengeData {
-  const dayaAcak = Number((Math.random() * 70 + 20).toFixed(1));
-  const modeHematAcak = Math.random() < 0.5;
-
   return {
     statusBaterai: "MENGISI",
-    dayaSekarang: dayaAcak,
-    targetPenuh: 100.0,
-    modeHemat: modeHematAcak,
+    dayaSekarang: 21.7,
+    targetPenuh: 100,
+    modeHemat: false,
   };
 }
 
@@ -78,82 +78,195 @@ const COMMAND_DETAILS: Record<
   string,
   { title: string; desc: string; color: string }
 > = {
-  int: {
-    title: "INT",
-    desc: "Tipe data bilangan bulat",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "Tipe data bilangan desimal",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
     color: "bg-sky-50 border-sky-200",
   },
-  char: {
-    title: "CHAR",
-    desc: "Tipe data satu karakter",
+  Boolean: {
+    title: "BOOLEAN",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
     color: "bg-lime-50 border-lime-200",
   },
-  boolean: {
-    title: "BOOLEAN",
-    desc: "Tipe data true atau false",
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
     color: "bg-violet-50 border-violet-200",
   },
-  string: {
-    title: "STRING",
-    desc: "Tipe data teks/kumpulan karakter",
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut (pasangan nama dan nilai).",
     color: "bg-rose-50 border-rose-200",
   },
   "+": {
-    title: "PLUS (+)",
-    desc: "Operator penjumlahan",
+    title: "PENJUMLAHAN (+)",
+    desc: "Penjumlahan (menambah nilai)",
     color: "bg-sky-50 border-sky-200",
   },
   "-": {
-    title: "MINUS (-)",
-    desc: "Operator pengurangan",
+    title: "PENGURANGAN (-)",
+    desc: "Pengurangan (mengurangi nilai)",
     color: "bg-lime-50 border-lime-200",
   },
   "*": {
-    title: "KALI (*)",
-    desc: "Operator perkalian",
+    title: "PERKALIAN (*)",
+    desc: "Perkalian (mengalikan nilai)",
     color: "bg-violet-50 border-violet-200",
   },
   "/": {
-    title: "BAGI (/)",
-    desc: "Operator pembagian",
+    title: "PEMBAGIAN (/)",
+    desc: "Pembagian (membagi nilai)",
     color: "bg-emerald-50 border-emerald-200",
   },
+  "%": {
+    title: "SISA BAGI (%)",
+    desc: "Sisa bagi (menghasilkan sisa dari pembagian)",
+    color: "bg-emerald-50 border-emerald-200",
+  },
+  "**": {
+    title: "PANGKAT (**)",
+    desc: "Pangkat (menghitung perpangkatan)",
+    color: "bg-violet-50 border-violet-200",
+  },
   ">": {
-    title: "PEMBANDING (>)",
-    desc: "Mengecek nilai lebih besar dari",
+    title: "LEBIH BESAR DARI (>)",
+    desc: "Lebih besar dari",
+    color: "bg-lime-50 border-lime-200",
+  },
+  "!=": {
+    title: "TIDAK SAMA DENGAN (!=)",
+    desc: "Tidak sama dengan",
     color: "bg-lime-50 border-lime-200",
   },
   ">=": {
-    title: "PEMBANDING (>=)",
-    desc: "Mengecek nilai lebih besar atau sama dengan",
+    title: "LEBIH BESAR ATAU SAMA DENGAN (>=)",
+    desc: "Lebih besar atau sama dengan",
     color: "bg-lime-50 border-lime-200",
   },
   "<": {
-    title: "PEMBANDING (<)",
-    desc: "Mengecek nilai lebih kecil dari",
+    title: "LEBIH KECIL DARI (<)",
+    desc: "Lebih kecil dari",
     color: "bg-emerald-50 border-emerald-200",
   },
   "<=": {
-    title: "PEMBANDING (<=)",
-    desc: "Mengecek nilai lebih kecil atau sama dengan",
+    title: "LEBIH KECIL ATAU SAMA DENGAN (<=)",
+    desc: "Lebih kecil atau sama dengan",
     color: "bg-emerald-50 border-emerald-200",
   },
   "==": {
-    title: "PEMBANDING (==)",
-    desc: "Mengecek apakah dua nilai sama",
+    title: "SAMA DENGAN (==)",
+    desc: "Sama dengan (membandingkan apakah nilainya sama)",
     color: "bg-rose-50 border-rose-200",
   },
   default: {
     title: "SIAP MENULIS",
-    desc: "Lengkapi token tipe data, ekspresi, dan pembanding.",
+    desc: "Lengkapi token tipe data dan operator.",
     color: "bg-slate-50 border-slate-200",
   },
 };
+
+function getLineGuideMessage(lineIndex: number) {
+  switch (lineIndex) {
+    case 0:
+      return 'Variabel statusBaterai memiliki nilai "MENGISI", maka bertipe data _______';
+    case 1:
+      return "Variabel dayaSekarang memiliki nilai 21.7, maka bertipe data _______";
+    case 2:
+      return "Variabel targetPenuh memiliki nilai 100, maka bertipe data _______";
+    case 3:
+      return "Variabel modeHemat memiliki nilai false, maka bertipe data _______";
+    case 4:
+      return "Variabel butuhDaya digunakan untuk menghitung selisih antara targetPenuh dan dayaSekarang, maka operator yang digunakan adalah _______ dan hasilnya bertipe data _______";
+    case 5:
+      return "Variabel pengisianSelesai digunakan untuk mengecek apakah daya sudah mencapai atau melebihi target, maka operator yang digunakan adalah _______ dan hasilnya bertipe data _______";
+    default:
+      return "Sistem siap menjalankan algoritma.";
+  }
+}
+
+function renderBatteryCodePrefix(lineIndex: number) {
+  const keywordClass = "text-violet-700 dark:text-violet-300";
+  const variableClass = "text-blue-700 dark:text-blue-300";
+  const accentVariableClass = "text-violet-700 dark:text-violet-300";
+  const numberClass = "text-orange-700 dark:text-orange-300";
+  const stringClass = "text-emerald-700 dark:text-emerald-300";
+  const commentClass = "text-slate-500 dark:text-slate-400";
+  const operatorClass = "text-slate-700 dark:text-slate-300";
+
+  switch (lineIndex) {
+    case 0:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>statusBaterai</span>
+          <span className={operatorClass}> = </span>
+          <span className={stringClass}>"MENGISI"</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 1:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>dayaSekarang</span>
+          <span className={operatorClass}> = </span>
+          <span className={numberClass}>21.7</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 2:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>targetPenuh</span>
+          <span className={operatorClass}> = </span>
+          <span className={numberClass}>100</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 3:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>modeHemat</span>
+          <span className={operatorClass}> = </span>
+          <span className={keywordClass}>false</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 4:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>butuhDaya</span>
+          <span className={operatorClass}> = </span>
+          <span className={accentVariableClass}>targetPenuh</span>
+          <span className={operatorClass}> </span>
+        </>
+      );
+    case 5:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>pengisianSelesai</span>
+          <span className={operatorClass}> = </span>
+          <span className={accentVariableClass}>dayaSekarang</span>
+          <span className={operatorClass}> </span>
+        </>
+      );
+    default:
+      return null;
+  }
+}
 
 export default function VariabelIndikatorBateraiLanjutanPage() {
   const [challenge, setChallenge] = useState<ChallengeData>(() =>
@@ -198,91 +311,84 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` statusBaterai = \"${challenge.statusBaterai}\";`,
-      expected: "string",
-      choices: shuffle([
-        "string",
-        "char",
-        "int",
-        "float",
-        "boolean",
-        "+",
-        "-",
-        "<",
-      ]),
+      before: 'let statusBaterai = "MENGISI"; // tipe data: ',
+      after: "",
+      expected: "String",
+      choices: shuffle(["String", "Number", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` dayaSekarang = ${challenge.dayaSekarang.toFixed(1)};`,
-      expected: "float",
+      before: "let dayaSekarang = 21.7; // tipe data: ",
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let targetPenuh = 100; // tipe data: ",
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let modeHemat = false; // tipe data: ",
+      after: "",
+      expected: "Boolean",
+      choices: shuffle(["Boolean", "Number", "String", "Array", "Object"]),
+    },
+    {
+      before: "let butuhDaya = targetPenuh ",
+      middle: " dayaSekarang; // tipe data: ",
+      after: "",
+      expected: "-",
       choices: shuffle([
-        "float",
-        "int",
-        "string",
-        "boolean",
         "+",
         "-",
         "*",
-        "==",
-      ]),
-    },
-    {
-      before: "",
-      after: ` targetPenuh = ${challenge.targetPenuh.toFixed(1)};`,
-      expected: "float",
-      choices: shuffle(["float", "int", "string", "char", "/", "-", "*", "<="]),
-    },
-    {
-      before: "",
-      after: ` modeHemat = ${challenge.modeHemat};`,
-      expected: "boolean",
-      choices: shuffle([
-        "boolean",
-        "float",
-        "int",
-        "string",
-        "char",
-        "-",
-        "+",
-        "==",
-      ]),
-    },
-    {
-      before: "",
-      middle: "  butuhDaya = targetPenuh ",
-      after: " dayaSekarang;",
-      expected: "float",
-      choices: shuffle([
-        "float",
-        "boolean",
-        "int",
-        "string",
-        "char",
-        "<",
+        "/",
+        "%",
+        "**",
         ">",
+        "!=",
+        ">=",
+        "<",
+        "<=",
         "==",
       ]),
-      expectedSecond: "-",
-      choicesSecond: shuffle(["-", "+", "*", "/", "<", ">", "<=", ">="]),
+      expectedSecond: "Number",
+      choicesSecond: shuffle([
+        "Number",
+        "String",
+        "Boolean",
+        "Array",
+        "Object",
+      ]),
     },
     {
-      before: "",
-      middle: "  pengisianSelesai = dayaSekarang ",
-      after: " targetPenuh;",
-      expected: "boolean",
+      before: "let pengisianSelesai = dayaSekarang ",
+      middle: " targetPenuh; // tipe data: ",
+      after: "",
+      expected: ">=",
       choices: shuffle([
-        "boolean",
-        "float",
-        "int",
-        "string",
-        "char",
-        "-",
         "+",
+        "-",
         "*",
+        "/",
+        "%",
+        "**",
+        ">",
+        "!=",
+        ">=",
+        "<",
+        "<=",
+        "==",
       ]),
-      expectedSecond: ">=",
-      choicesSecond: shuffle(["<", ">", ">=", "<=", "==", "-", "+", "/"]),
+      expectedSecond: "Boolean",
+      choicesSecond: shuffle([
+        "Number",
+        "String",
+        "Boolean",
+        "Array",
+        "Object",
+      ]),
     },
   ];
 
@@ -389,7 +495,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
       setActiveLine(lineConfigs.length - 1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua token sudah sesuai.\n\nSimulasi indikator baterai menampilkan status, daya saat ini, target penuh, mode hemat, sisa daya yang dibutuhkan, dan status pengisian selesai.\n\nUrutan konsep yang dipakai: string -> float -> float -> boolean -> float -> boolean.",
+        "Berhasil! Semua token sudah sesuai.\n\nSimulasi indikator baterai menampilkan status, daya saat ini, target penuh, mode hemat, sisa daya yang dibutuhkan, dan status pengisian selesai.\n\nUrutan konsep yang dipakai: String -> Number -> Number -> Boolean -> Number -> Boolean.",
       );
       return;
     }
@@ -524,37 +630,57 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
   const processTone =
     errorLine !== -1
       ? {
-          panel: "bg-rose-50/95 border-rose-200",
-          divider: "border-rose-200",
-          title: "text-rose-600",
-          body: "text-rose-700 bg-rose-100/60",
-          icon: <AlertTriangle size={13} className="text-rose-500" />,
+          panel:
+            "border-rose-300 bg-gradient-to-br from-rose-100 via-orange-100 to-amber-100 dark:border-rose-700/70 dark:from-rose-900/35 dark:via-orange-900/30 dark:to-amber-900/25",
+          divider: "border-rose-300/90 dark:border-rose-700/70",
+          title: "text-rose-800 dark:text-rose-200",
+          body: "bg-rose-50/80 text-rose-900 dark:bg-rose-950/55 dark:text-rose-100",
+          icon: (
+            <AlertTriangle
+              size={13}
+              className="text-rose-600 dark:text-rose-400"
+            />
+          ),
         }
       : isRunning
         ? {
-            panel: "bg-emerald-50/95 border-emerald-200",
-            divider: "border-emerald-200",
-            title: "text-emerald-700",
-            body: "text-emerald-900 bg-emerald-100/60",
+            panel:
+              "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+            divider: "border-emerald-300/90 dark:border-emerald-700/70",
+            title: "text-emerald-800 dark:text-emerald-200",
+            body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
             icon: (
-              <Activity size={13} className="animate-pulse text-emerald-600" />
+              <Activity
+                size={13}
+                className="animate-pulse text-emerald-600 dark:text-emerald-400"
+              />
             ),
           }
         : showSuccessCard
           ? {
-              panel: "bg-emerald-50/95 border-emerald-200",
-              divider: "border-emerald-200",
-              title: "text-emerald-700",
-              body: "text-emerald-900 bg-emerald-100/60",
-              icon: <CheckCircle2 size={12} className="text-emerald-500" />,
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
+              icon: (
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+              ),
             }
           : {
-              panel: "bg-card border-border",
-              divider: "border-border",
-              title: "text-muted-foreground",
-              body: "text-foreground bg-muted",
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
               icon: (
-                <CheckCircle2 size={12} className="text-muted-foreground" />
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
               ),
             };
 
@@ -738,12 +864,12 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
                 </div>
               </div>
 
-              <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
+              <div className="relative flex flex-1 overflow-hidden font-mono text-[11px] leading-[21px]">
+                <div className="w-10 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-4 pr-3 text-right text-muted-foreground">
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
                       key={i}
-                      className={`h-[26px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
+                      className={`h-[21px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
                     >
                       {i + 1}
                     </div>
@@ -751,7 +877,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
-                  <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
+                  <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-4 pt-4">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[keyFor(i, 1)];
                       const selectedSecond = selectedCommands[keyFor(i, 2)];
@@ -778,38 +904,74 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
                       return (
                         <div
                           key={i}
-                          className="relative flex h-[26px] items-center"
+                          className="relative flex h-[21px] items-center"
                         >
                           {isActive && (
                             <motion.div
                               layoutId="lineHighlightBattery"
-                              className={`absolute inset-0 -mx-5 -my-1 z-0 ${highlightClass}`}
+                              className={`absolute inset-0 -mx-4 -my-1 z-0 ${highlightClass}`}
                             />
                           )}
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 whitespace-pre font-bold text-slate-900 dark:text-slate-100">
+                            {renderBatteryCodePrefix(i)}
                             <button
                               type="button"
                               disabled={isRunning}
                               onClick={() => {
                                 setOpenSelectorLine({ line: i, slot: 1 });
                                 setActiveLine(i);
+                                setFeedback(getLineGuideMessage(i));
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded-md border px-2 py-0.5 transition-all ${selected ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
                             {line.middle ? (
                               <>
-                                <span>{line.middle}</span>
+                                {i === 4 ? (
+                                  <>
+                                    <span className="text-slate-700 dark:text-slate-300">
+                                      {" "}
+                                    </span>
+                                    <span className="text-violet-700 dark:text-violet-300">
+                                      dayaSekarang
+                                    </span>
+                                    <span className="text-slate-700 dark:text-slate-300">
+                                      ;{" "}
+                                    </span>
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                      // tipe data:
+                                    </span>
+                                  </>
+                                ) : i === 5 ? (
+                                  <>
+                                    <span className="text-slate-700 dark:text-slate-300">
+                                      {" "}
+                                    </span>
+                                    <span className="text-violet-700 dark:text-violet-300">
+                                      targetPenuh
+                                    </span>
+                                    <span className="text-slate-700 dark:text-slate-300">
+                                      ;{" "}
+                                    </span>
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                      // tipe data:
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-slate-700 dark:text-slate-300">
+                                    {line.middle}
+                                  </span>
+                                )}
                                 <button
                                   type="button"
                                   disabled={isRunning}
                                   onClick={() => {
                                     setOpenSelectorLine({ line: i, slot: 2 });
                                     setActiveLine(i);
+                                    setFeedback(getLineGuideMessage(i));
                                   }}
-                                  className={`rounded px-1.5 py-0.5 transition-all ${selectedSecond ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                  className={`rounded-md border px-2 py-0.5 transition-all ${selectedSecond ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                                 >
                                   {selectedSecond ?? "_____"}
                                 </button>
@@ -843,7 +1005,7 @@ export default function VariabelIndikatorBateraiLanjutanPage() {
                                 choice,
                               )
                             }
-                            className={`rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-wide ${COMMAND_DETAILS[choice]?.color || COMMAND_DETAILS.default.color}`}
+                            className={`rounded-lg border px-3 py-1.5 text-[11px] font-semibold tracking-normal ${COMMAND_DETAILS[choice]?.color || COMMAND_DETAILS.default.color}`}
                           >
                             {choice}
                           </button>
