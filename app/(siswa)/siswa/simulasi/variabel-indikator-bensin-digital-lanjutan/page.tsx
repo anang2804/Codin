@@ -19,16 +19,19 @@ import { toast } from "sonner";
 const SIMULASI_SLUG = "variabel-indikator-bensin-digital-lanjutan";
 
 type CommandChoice =
-  | "int"
-  | "float"
-  | "char"
-  | "boolean"
-  | "string"
+  | "Number"
+  | "String"
+  | "Boolean"
+  | "Array"
+  | "Object"
   | "+"
   | "-"
   | "*"
   | "/"
+  | "%"
+  | "**"
   | ">"
+  | "!="
   | ">="
   | "<"
   | "<="
@@ -50,6 +53,8 @@ type LineConfig = {
   choices: CommandChoice[];
   expectedSecond?: CommandChoice;
   choicesSecond?: CommandChoice[];
+  expectedThird?: CommandChoice;
+  choicesThird?: CommandChoice[];
 };
 
 function shuffle<T>(array: T[]): T[] {
@@ -62,21 +67,12 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function createChallenge(): ChallengeData {
-  const fuelTypes = ["Pertamax", "Pertalite"];
-  const selectedFuel = fuelTypes[Math.floor(Math.random() * fuelTypes.length)];
-  const randomLiter = parseFloat(
-    (Math.random() < 0.35 ? Math.random() * 4.5 : Math.random() * 50).toFixed(
-      1,
-    ),
-  );
-  const randomMesinAktif = Math.random() >= 0.5;
-
   return {
-    jenisBBM: selectedFuel,
+    jenisBBM: "Pertalite",
     kapasitasTangki: 50.0,
-    literSekarang: randomLiter,
+    literSekarang: 1.4,
     jarakTempuh: 12550,
-    mesinAktif: randomMesinAktif,
+    mesinAktif: false,
   };
 }
 
@@ -84,82 +80,234 @@ const COMMAND_DETAILS: Record<
   string,
   { title: string; desc: string; color: string }
 > = {
-  int: {
-    title: "INT",
-    desc: "Tipe data bilangan bulat",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "Tipe data bilangan desimal",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
     color: "bg-sky-50 border-sky-200",
   },
-  char: {
-    title: "CHAR",
-    desc: "Tipe data satu karakter",
+  Boolean: {
+    title: "BOOLEAN",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
     color: "bg-lime-50 border-lime-200",
   },
-  boolean: {
-    title: "BOOLEAN",
-    desc: "Tipe data true atau false",
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
     color: "bg-violet-50 border-violet-200",
   },
-  string: {
-    title: "STRING",
-    desc: "Tipe data teks/kumpulan karakter",
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut (pasangan nama dan nilai).",
     color: "bg-rose-50 border-rose-200",
   },
   "+": {
-    title: "PLUS (+)",
-    desc: "Operator penjumlahan",
+    title: "PENJUMLAHAN (+)",
+    desc: "Penjumlahan (menambah nilai)",
     color: "bg-sky-50 border-sky-200",
   },
   "-": {
-    title: "MINUS (-)",
-    desc: "Operator pengurangan",
+    title: "PENGURANGAN (-)",
+    desc: "Pengurangan (mengurangi nilai)",
     color: "bg-lime-50 border-lime-200",
   },
   "*": {
-    title: "KALI (*)",
-    desc: "Operator perkalian",
+    title: "PERKALIAN (*)",
+    desc: "Perkalian (mengalikan nilai)",
     color: "bg-violet-50 border-violet-200",
   },
   "/": {
-    title: "BAGI (/)",
-    desc: "Operator pembagian",
+    title: "PEMBAGIAN (/)",
+    desc: "Pembagian (membagi nilai)",
     color: "bg-emerald-50 border-emerald-200",
   },
+  "%": {
+    title: "SISA BAGI (%)",
+    desc: "Sisa bagi (menghasilkan sisa dari pembagian)",
+    color: "bg-emerald-50 border-emerald-200",
+  },
+  "**": {
+    title: "PANGKAT (**)",
+    desc: "Pangkat (menghitung perpangkatan)",
+    color: "bg-violet-50 border-violet-200",
+  },
   ">": {
-    title: "PEMBANDING (>)",
-    desc: "Mengecek nilai lebih besar dari",
+    title: "LEBIH BESAR DARI (>)",
+    desc: "Lebih besar dari",
+    color: "bg-lime-50 border-lime-200",
+  },
+  "!=": {
+    title: "TIDAK SAMA DENGAN (!=)",
+    desc: "Tidak sama dengan",
     color: "bg-lime-50 border-lime-200",
   },
   ">=": {
-    title: "PEMBANDING (>=)",
-    desc: "Mengecek nilai lebih besar atau sama dengan",
+    title: "LEBIH BESAR ATAU SAMA DENGAN (>=)",
+    desc: "Lebih besar atau sama dengan",
     color: "bg-lime-50 border-lime-200",
   },
   "<": {
-    title: "PEMBANDING (<)",
-    desc: "Mengecek nilai lebih kecil dari",
+    title: "LEBIH KECIL DARI (<)",
+    desc: "Lebih kecil dari",
     color: "bg-emerald-50 border-emerald-200",
   },
   "<=": {
-    title: "PEMBANDING (<=)",
-    desc: "Mengecek nilai lebih kecil atau sama dengan",
+    title: "LEBIH KECIL ATAU SAMA DENGAN (<=)",
+    desc: "Lebih kecil atau sama dengan",
     color: "bg-emerald-50 border-emerald-200",
   },
   "==": {
-    title: "PEMBANDING (==)",
-    desc: "Mengecek apakah dua nilai sama",
+    title: "SAMA DENGAN (==)",
+    desc: "Sama dengan (membandingkan apakah nilainya sama)",
     color: "bg-rose-50 border-rose-200",
   },
   default: {
     title: "SIAP MENULIS",
-    desc: "Lengkapi token tipe data, ekspresi, dan pembanding.",
+    desc: "Lengkapi token tipe data, operasi, dan pembanding.",
     color: "bg-slate-50 border-slate-200",
   },
 };
+
+function renderFuelCodePrefix(lineIndex: number) {
+  const keywordClass = "text-violet-700 dark:text-violet-300";
+  const variableClass = "text-blue-700 dark:text-blue-300";
+  const numberClass = "text-orange-700 dark:text-orange-300";
+  const stringClass = "text-emerald-700 dark:text-emerald-300";
+  const commentClass = "text-slate-500 dark:text-slate-400";
+  const operatorClass = "text-slate-700 dark:text-slate-300";
+
+  switch (lineIndex) {
+    case 0:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>jenisBBM</span>
+          <span className={operatorClass}> = </span>
+          <span className={stringClass}>"Pertalite"</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 1:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>kapasitasTangki</span>
+          <span className={operatorClass}> = </span>
+          <span className={numberClass}>50.0</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 2:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>literSekarang</span>
+          <span className={operatorClass}> = </span>
+          <span className={numberClass}>1.4</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 3:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>jarakTempuh</span>
+          <span className={operatorClass}> = </span>
+          <span className={numberClass}>12550</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 4:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>mesinAktif</span>
+          <span className={operatorClass}> = </span>
+          <span className={keywordClass}>false</span>
+          <span className={operatorClass}>; </span>
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    case 5:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>butuhBensin</span>
+          <span className={operatorClass}> = </span>
+          <span className={variableClass}>kapasitasTangki</span>
+          <span className={operatorClass}> </span>
+        </>
+      );
+    case 6:
+      return (
+        <>
+          <span className={keywordClass}>let</span>{" "}
+          <span className={variableClass}>perluIsiBBM</span>
+          <span className={operatorClass}> = </span>
+          <span className={variableClass}>literSekarang</span>
+          <span className={operatorClass}> </span>
+        </>
+      );
+    default:
+      return null;
+  }
+}
+
+function renderFuelCodeMiddle(lineIndex: number) {
+  const variableClass = "text-blue-700 dark:text-blue-300";
+  const operatorClass = "text-slate-700 dark:text-slate-300";
+  const commentClass = "text-slate-500 dark:text-slate-400";
+
+  if (lineIndex === 5) {
+    return (
+      <>
+        <span className={operatorClass}> </span>
+        <span className={variableClass}>literSekarang</span>
+        <span className={operatorClass}>; </span>
+        <span className={commentClass}>// tipe data: </span>
+      </>
+    );
+  }
+
+  if (lineIndex === 6) {
+    return (
+      <>
+        <span className={operatorClass}> (</span>
+        <span className={variableClass}>kapasitasTangki</span>
+        <span className={operatorClass}> </span>
+      </>
+    );
+  }
+
+  return null;
+}
+
+function renderFuelCodeSuffix(lineIndex: number) {
+  const numberClass = "text-orange-700 dark:text-orange-300";
+  const operatorClass = "text-slate-700 dark:text-slate-300";
+  const commentClass = "text-slate-500 dark:text-slate-400";
+
+  if (lineIndex === 6) {
+    return (
+      <>
+        <span className={operatorClass}> </span>
+        <span className={numberClass}>0.2</span>
+        <span className={operatorClass}>); </span>
+        <span className={commentClass}>// tipe data: </span>
+      </>
+    );
+  }
+
+  return <span />;
+}
 
 export default function VariabelIndikatorBensinDigitalLanjutanPage() {
   const [challenge, setChallenge] = useState<ChallengeData>(() =>
@@ -170,7 +318,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
   >({});
   const [openSelectorLine, setOpenSelectorLine] = useState<{
     line: number;
-    slot: 1 | 2;
+    slot: 1 | 2 | 3;
   } | null>(null);
   const [activeLine, setActiveLine] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
@@ -205,110 +353,64 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` jenisBBM = \"${challenge.jenisBBM}\";`,
-      expected: "string",
-      choices: shuffle([
-        "string",
-        "char",
-        "int",
-        "float",
-        "boolean",
-        "+",
-        "-",
-        "<",
+      before: 'let jenisBBM = "Pertalite"; // tipe data: ',
+      after: "",
+      expected: "String",
+      choices: shuffle(["String", "Number", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let kapasitasTangki = 50.0; // tipe data: ",
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let literSekarang = 1.4; // tipe data: ",
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let jarakTempuh = 12550; // tipe data: ",
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
+    },
+    {
+      before: "let mesinAktif = false; // tipe data: ",
+      after: "",
+      expected: "Boolean",
+      choices: shuffle(["Boolean", "Number", "String", "Array", "Object"]),
+    },
+    {
+      before: "let butuhBensin = kapasitasTangki ",
+      middle: " literSekarang; // tipe data: ",
+      after: "",
+      expected: "-",
+      choices: shuffle(["+", "-", "*", "/", "<", ">", "<=", ">=", "=="]),
+      expectedSecond: "Number",
+      choicesSecond: shuffle([
+        "Number",
+        "String",
+        "Boolean",
+        "Array",
+        "Object",
       ]),
     },
     {
-      before: "",
-      after: ` kapasitasTangki = ${challenge.kapasitasTangki.toFixed(1)};`,
-      expected: "float",
-      choices: shuffle([
-        "float",
-        "int",
-        "string",
-        "boolean",
-        "+",
-        "-",
-        "*",
-        "==",
-      ]),
-    },
-    {
-      before: "",
-      after: ` literSekarang = ${challenge.literSekarang.toFixed(1)};`,
-      expected: "float",
-      choices: shuffle(["float", "int", "string", "char", "/", "-", "*", "<="]),
-    },
-    {
-      before: "",
-      after: ` jarakTempuh = ${challenge.jarakTempuh};`,
-      expected: "int",
-      choices: shuffle([
-        "int",
-        "float",
-        "boolean",
-        "string",
-        "char",
-        "-",
-        "+",
-        "==",
-      ]),
-    },
-    {
-      before: "",
-      after: ` mesinAktif = ${challenge.mesinAktif};`,
-      expected: "boolean",
-      choices: shuffle([
-        "boolean",
-        "float",
-        "int",
-        "string",
-        "char",
-        "-",
-        "+",
-        "==",
-      ]),
-    },
-    {
-      before: "",
-      middle: " butuhBensin = kapasitasTangki ",
-      after: " literSekarang;",
-      expected: "float",
-      choices: shuffle([
-        "float",
-        "boolean",
-        "int",
-        "string",
-        "char",
-        "<",
-        ">",
-        "==",
-      ]),
-      expectedSecond: "-",
-      choicesSecond: shuffle(["-", "+", "*", "/", "<", ">", "<=", ">="]),
-    },
-    {
-      before: "",
-      middle: " perluIsiBBM = literSekarang < (kapasitasTangki ",
-      after: " 0.2);",
-      expected: "boolean",
-      choices: shuffle([
-        "boolean",
-        "float",
-        "int",
-        "string",
-        "char",
-        "-",
-        "+",
-        "*",
-      ]),
+      before: "let perluIsiBBM = literSekarang ",
+      middle: " (kapasitasTangki ",
+      after: " 0.2); // tipe data: ",
+      expected: "<",
+      choices: shuffle(["+", "-", "*", "/", "<", ">", "<=", ">=", "=="]),
       expectedSecond: "*",
-      choicesSecond: shuffle(["<", ">", ">=", "<=", "==", "-", "+", "*"]),
+      choicesSecond: shuffle(["+", "-", "*", "/", "<", ">", "<=", ">=", "=="]),
+      expectedThird: "Boolean",
+      choicesThird: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
   ];
 
-  const keyFor = (lineIndex: number, slot: 1 | 2) => `${lineIndex}-${slot}`;
+  const keyFor = (lineIndex: number, slot: 1 | 2 | 3) => `${lineIndex}-${slot}`;
 
   const currentChoice =
     activeLine !== -1 ? selectedCommands[keyFor(activeLine, 1)] : undefined;
@@ -368,7 +470,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
 
   const handleSelectCommand = (
     lineIndex: number,
-    slot: 1 | 2,
+    slot: 1 | 2 | 3,
     command: CommandChoice,
   ) => {
     if (isRunning) return;
@@ -411,7 +513,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
       setActiveLine(lineConfigs.length - 1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua token sudah sesuai.\n\nSimulasi indikator bensin digital menampilkan jenis BBM, kapasitas tangki, liter saat ini, jarak tempuh, status mesin, kebutuhan bensin, dan status perlu isi BBM.\n\nUrutan konsep yang dipakai: string -> float -> float -> int -> boolean -> float -> boolean.",
+        "Berhasil! Semua token sudah sesuai.\n\nSimulasi indikator bensin digital menampilkan jenis BBM, kapasitas tangki, liter saat ini, jarak tempuh, status mesin, kebutuhan bensin, dan status perlu isi BBM.\n\nUrutan konsep yang dipakai: String -> Number -> Number -> Number -> Boolean -> Number -> Boolean.",
       );
       return;
     }
@@ -454,6 +556,27 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
         setErrorLine(index);
         setFeedback(
           `Baris ${index + 1} belum tepat.\n\nOperator pada ekspresi ini belum sesuai konteks perhitungan.\n\nPetunjuk: cek kembali hubungan antar nilai pada baris tersebut.`,
+        );
+        return;
+      }
+    }
+
+    const expectedThird = lineConfigs[index].expectedThird;
+    if (expectedThird) {
+      const chosenThird = selectedCommands[keyFor(index, 3)];
+      if (!chosenThird) {
+        setIsRunning(false);
+        setErrorLine(index);
+        setFeedback(
+          `Baris ${index + 1} belum lengkap.\n\nToken ketiga pada baris ini belum dipilih.\n\nPetunjuk: lengkapi tipe data hasil ekspresi pada baris tersebut.`,
+        );
+        return;
+      }
+      if (chosenThird !== expectedThird) {
+        setIsRunning(false);
+        setErrorLine(index);
+        setFeedback(
+          `Baris ${index + 1} belum tepat.\n\nToken ketiga pada ekspresi ini belum sesuai konteks.\n\nPetunjuk: tentukan tipe data hasil akhir ekspresi pada baris tersebut.`,
         );
         return;
       }
@@ -760,7 +883,7 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
           </AnimatePresence>
 
           <div className="flex flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
-            <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+            <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
                 <div className="flex items-center gap-3">
                   <div
@@ -772,12 +895,12 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                 </div>
               </div>
 
-              <div className="relative flex flex-1 overflow-hidden font-mono text-[12px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
+              <div className="relative flex flex-1 overflow-hidden font-mono text-[10px] leading-[18px]">
+                <div className="w-9 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-3 pr-2 text-right text-muted-foreground">
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
                       key={i}
-                      className={`h-[26px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
+                      className={`h-[18px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
                     >
                       {i + 1}
                     </div>
@@ -785,10 +908,11 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
-                  <div className="absolute inset-0 z-10 overflow-x-auto overflow-y-hidden whitespace-pre p-5 pt-5">
+                  <div className="absolute inset-0 z-10 overflow-x-auto overflow-y-hidden whitespace-pre p-3 pt-3">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[keyFor(i, 1)];
                       const selectedSecond = selectedCommands[keyFor(i, 2)];
+                      const selectedThird = selectedCommands[keyFor(i, 3)];
                       const isActive = activeLine === i;
                       const isCorrect = selected === line.expected;
                       const isWrong = errorLine === i;
@@ -812,16 +936,16 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                       return (
                         <div
                           key={i}
-                          className="relative flex h-[26px] min-w-full items-center"
+                          className="relative flex h-[18px] min-w-full items-center"
                         >
                           {isActive && (
                             <motion.div
                               layoutId="lineHighlightBattery"
-                              className={`absolute inset-0 -mx-5 -my-1 z-0 ${highlightClass}`}
+                              className={`absolute inset-0 -mx-3 -my-1 z-0 ${highlightClass}`}
                             />
                           )}
-                          <div className="relative z-10 w-max whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 w-max whitespace-pre font-bold text-slate-900 dark:text-slate-100">
+                            {renderFuelCodePrefix(i)}
                             <button
                               type="button"
                               disabled={isRunning}
@@ -829,13 +953,13 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                                 setOpenSelectorLine({ line: i, slot: 1 });
                                 setActiveLine(i);
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded-md border px-1.5 py-0 transition-all ${selected ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
                             {line.middle ? (
                               <>
-                                <span>{line.middle}</span>
+                                {renderFuelCodeMiddle(i)}
                                 <button
                                   type="button"
                                   disabled={isRunning}
@@ -843,13 +967,26 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                                     setOpenSelectorLine({ line: i, slot: 2 });
                                     setActiveLine(i);
                                   }}
-                                  className={`rounded px-1.5 py-0.5 transition-all ${selectedSecond ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                  className={`rounded-md border px-1.5 py-0 transition-all ${selectedSecond ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                                 >
                                   {selectedSecond ?? "_____"}
                                 </button>
                               </>
                             ) : null}
-                            <span>{line.after}</span>
+                            {renderFuelCodeSuffix(i)}
+                            {line.expectedThird ? (
+                              <button
+                                type="button"
+                                disabled={isRunning}
+                                onClick={() => {
+                                  setOpenSelectorLine({ line: i, slot: 3 });
+                                  setActiveLine(i);
+                                }}
+                                className={`rounded-md border px-1.5 py-0 transition-all ${selectedThird ? "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-700 dark:bg-sky-900/35 dark:text-sky-200" : "border-transparent italic text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {selectedThird ?? "_____"}
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       );
@@ -864,8 +1001,13 @@ export default function VariabelIndikatorBensinDigitalLanjutanPage() {
                       <div className="grid grid-cols-4 gap-2">
                         {(openSelectorLine.slot === 1
                           ? lineConfigs[openSelectorLine.line].choices
-                          : (lineConfigs[openSelectorLine.line].choicesSecond ??
-                            lineConfigs[openSelectorLine.line].choices)
+                          : openSelectorLine.slot === 2
+                            ? (lineConfigs[openSelectorLine.line]
+                                .choicesSecond ??
+                              lineConfigs[openSelectorLine.line].choices)
+                            : (lineConfigs[openSelectorLine.line]
+                                .choicesThird ??
+                              lineConfigs[openSelectorLine.line].choices)
                         ).map((choice) => (
                           <button
                             key={`${openSelectorLine.line}-${openSelectorLine.slot}-${choice}`}
