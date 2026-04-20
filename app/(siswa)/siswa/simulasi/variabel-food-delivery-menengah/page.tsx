@@ -62,11 +62,11 @@ function getPositionOnPath(progress: number) {
 }
 
 type CommandChoice =
-  | "int"
-  | "float"
-  | "char"
-  | "boolean"
-  | "string"
+  | "Number"
+  | "String"
+  | "Boolean"
+  | "Array"
+  | "Object"
   | "+"
   | "-"
   | "*"
@@ -112,29 +112,29 @@ const COMMAND_DETAILS: Record<
   string,
   { title: string; desc: string; color: string }
 > = {
-  int: {
-    title: "INT",
-    desc: "Tipe data bilangan bulat",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "Tipe data bilangan desimal",
-    color: "bg-sky-50 border-sky-200",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
+    color: "bg-amber-50 border-amber-200",
   },
-  char: {
-    title: "CHAR",
-    desc: "Tipe data untuk satu karakter",
-    color: "bg-lime-50 border-lime-200",
-  },
-  boolean: {
+  Boolean: {
     title: "BOOLEAN",
-    desc: "Tipe data true atau false",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
     color: "bg-violet-50 border-violet-200",
   },
-  string: {
-    title: "STRING",
-    desc: "Tipe data teks/kumpulan karakter",
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
+    color: "bg-sky-50 border-sky-200",
+  },
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut",
     color: "bg-rose-50 border-rose-200",
   },
   "+": {
@@ -223,76 +223,40 @@ export default function VariabelFoodDeliveryMenengahPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` resto = \"${challenge.resto}\";`,
-      expected: "string",
-      choices: shuffle([
-        "string",
-        "char",
-        "int",
-        "float",
-        "boolean",
-        "+",
-        "*",
-        ">",
-      ]),
+      before: `let resto = "${challenge.resto}"; // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` jarakKM = ${challenge.jarakKM};`,
-      expected: "float",
-      choices: shuffle([
-        "float",
-        "int",
-        "string",
-        "boolean",
-        "+",
-        "-",
-        "*",
-        "==",
-      ]),
+      before: `let jarakKM = ${challenge.jarakKM}; // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` ongkirPerKM = ${challenge.ongkirPerKM};`,
-      expected: "float",
-      choices: shuffle(["float", "int", "string", "char", "/", "-", "*", "<="]),
+      before: `let ongkirPerKM = ${challenge.ongkirPerKM}; // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` kodePromo = '${challenge.kodePromo}';`,
-      expected: "char",
-      choices: shuffle([
-        "char",
-        "string",
-        "float",
-        "boolean",
-        "int",
-        "+",
-        "==",
-        "*",
-      ]),
+      before: `let kodePromo = '${challenge.kodePromo}'; // tipe data: `,
+      after: "",
+      expected: "String",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "float totalOngkir = jarakKM ",
+      before: "let totalOngkir = jarakKM ",
       after: " ongkirPerKM;",
       expected: "*",
-      choices: shuffle([
-        "*",
-        "+",
-        "-",
-        "/",
-        "float",
-        "int",
-        "boolean",
-        "string",
-      ]),
+      choices: shuffle(["+", "-", "*", "/", "%", "**"]),
     },
     {
-      before: "boolean gratisOngkir = totalOngkir ",
-      after: " 10000.0;",
+      before: "let gratisOngkir = totalOngkir ",
+      after: " 10000;",
       expected: ">",
-      choices: shuffle([">", ">=", "<=", "==", "-", "+", "float", "char"]),
+      choices: shuffle(["==", "!=", ">", "<", ">=", "<="]),
     },
   ];
 
@@ -352,6 +316,31 @@ export default function VariabelFoodDeliveryMenengahPage() {
     }
   };
 
+  const getLineGuideMessage = (lineIndex: number, selected?: CommandChoice) => {
+    const token = selected ?? "_______";
+
+    if (lineIndex === 0) {
+      return `Variabel resto memiliki nilai "Ayam Geprek Mantap", maka bertipe data ${token}`;
+    }
+    if (lineIndex === 1) {
+      return `Variabel jarakKM memiliki nilai 4.5, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 2) {
+      return `Variabel ongkirPerKM memiliki nilai 2500.5, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 3) {
+      return `Variabel kodePromo memiliki nilai 'S', maka bertipe data ${token}`;
+    }
+    if (lineIndex === 4) {
+      return `Variabel totalOngkir dihitung dari hasil perkalian antara jarakKM dan ongkirPerKM, maka operator yang digunakan adalah ${token}`;
+    }
+    if (lineIndex === 5) {
+      return `Variabel gratisOngkir digunakan untuk mengecek apakah totalOngkir lebih dari 10000, maka operator yang digunakan adalah ${token}`;
+    }
+
+    return "Sistem siap menjalankan algoritma.";
+  };
+
   const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
     if (isRunning) return;
     setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
@@ -359,6 +348,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
     setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
+    setFeedback(getLineGuideMessage(lineIndex, command));
   };
 
   const resetSim = (regenerateChallenge: boolean) => {
@@ -384,13 +374,12 @@ export default function VariabelFoodDeliveryMenengahPage() {
   };
 
   const feedbackHints: Record<CommandChoice, string> = {
-    int: "Pastikan token ini mendeklarasikan nilai bulat (angka tanpa desimal).",
-    float:
-      "Gunakan float untuk nilai desimal seperti jarak dan ongkir per kilometer.",
-    char: "Char digunakan untuk satu karakter, cocok untuk kode promo seperti 'S'.",
-    boolean: "Boolean digunakan untuk menyimpan hasil logika true atau false.",
-    string:
-      "String digunakan untuk teks atau kumpulan karakter seperti nama restoran.",
+    Number:
+      "Cek kembali apakah nilainya berupa angka (bisa bulat atau desimal).",
+    String: "Cek apakah variabel ini berisi teks/karakter dalam tanda kutip.",
+    Boolean: "Pastikan variabel ini bertipe kondisi true/false.",
+    Array: "Array dipakai untuk kumpulan nilai dalam tanda kurung siku [].",
+    Object: "Object dipakai untuk pasangan key-value dalam kurung kurawal {}.",
     "+": "Perhatikan operasi penjumlahan untuk menggabungkan dua nilai.",
     "-": "Token ini dipakai saat operasi pengurangan nilai.",
     "*": "Perhatikan operasi perkalian untuk menghitung total ongkir.",
@@ -407,7 +396,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
       setActiveLine(lineConfigs.length - 1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua token sudah sesuai.\n\nSimulasi food delivery menampilkan data dengan benar dari nama restoran, jarak, ongkir per kilometer, total ongkir, hingga status gratis ongkir.\n\nUrutan konsep yang dipakai: string -> float -> float -> char -> * -> >.",
+        "Berhasil! Semua token sudah sesuai.\n\nSimulasi food delivery menampilkan data dengan benar dari nama restoran, jarak, ongkir per kilometer, total ongkir, hingga status gratis ongkir.\n\nUrutan konsep yang dipakai: String -> Number -> Number -> String -> * -> >.",
       );
       return;
     }
@@ -470,6 +459,87 @@ export default function VariabelFoodDeliveryMenengahPage() {
   const riderXPercent = (pathPos.x / 320) * 100;
   const riderYPercent = (pathPos.y / 160) * 100;
 
+  const renderCodePrefix = (lineIndex: number) => {
+    const kwClass = "text-violet-700 dark:text-violet-300";
+    const varClass = "text-blue-700 dark:text-blue-300";
+    const opClass = "text-slate-700 dark:text-slate-300";
+    const numberClass = "text-orange-700 dark:text-orange-300";
+    const stringClass = "text-emerald-700 dark:text-emerald-300";
+    const commentClass = "text-slate-500 dark:text-slate-400";
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>resto</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={stringClass}>"{challenge.resto}"</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>jarakKM</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.jarakKM}</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>ongkirPerKM</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.ongkirPerKM}</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 3) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>kodePromo</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={stringClass}>'{challenge.kodePromo}'</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 4) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>totalOngkir</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={varClass}>jarakKM</span>{" "}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className={kwClass}>let</span>{" "}
+        <span className={varClass}>gratisOngkir</span>{" "}
+        <span className={opClass}>=</span>{" "}
+        <span className={varClass}>totalOngkir</span>{" "}
+      </>
+    );
+  };
+
   const processTone =
     errorLine !== -1
       ? {
@@ -498,12 +568,16 @@ export default function VariabelFoodDeliveryMenengahPage() {
               icon: <CheckCircle2 size={12} className="text-emerald-500" />,
             }
           : {
-              panel: "bg-card border-border",
-              divider: "border-border",
-              title: "text-muted-foreground",
-              body: "text-foreground bg-muted",
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
               icon: (
-                <CheckCircle2 size={12} className="text-muted-foreground" />
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
               ),
             };
 
@@ -694,7 +768,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
               </div>
 
               <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
+                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/40 pt-5 pr-4 text-right text-muted-foreground dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
                       key={i}
@@ -705,7 +779,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
                   ))}
                 </div>
 
-                <div className="relative flex-1 overflow-hidden bg-card">
+                <div className="relative flex-1 overflow-hidden bg-slate-50 dark:bg-slate-950/80">
                   <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[i];
@@ -714,19 +788,19 @@ export default function VariabelFoodDeliveryMenengahPage() {
                       const isWrong = errorLine === i;
 
                       let highlightClass =
-                        "border-emerald-200 bg-emerald-50/30";
+                        "border-sky-300 bg-sky-50/70 dark:border-sky-500/40 dark:bg-slate-800/50";
                       if (isWrong) {
                         highlightClass =
-                          "border-l-4 border-red-600 bg-red-100/50";
+                          "border-l-4 border-red-500 bg-red-100/70 dark:bg-red-500/15";
                       } else if (isActive && isRunning && isCorrect) {
                         highlightClass =
-                          "border-l-4 border-green-600 bg-green-100/60";
+                          "border-l-4 border-green-500 bg-green-100/70 dark:bg-green-500/15";
                       } else if (isActive && isRunning) {
                         highlightClass =
-                          "border-l-4 border-emerald-500 bg-emerald-50";
+                          "border-l-4 border-emerald-500 bg-emerald-100/70 dark:bg-emerald-500/10";
                       } else if (isActive) {
                         highlightClass =
-                          "border-l-4 border-emerald-200 bg-emerald-50/30";
+                          "border-l-4 border-sky-300 bg-sky-50/70 dark:border-sky-400/70 dark:bg-slate-800/55";
                       }
 
                       return (
@@ -740,20 +814,25 @@ export default function VariabelFoodDeliveryMenengahPage() {
                               className={`absolute inset-0 -mx-5 -my-1 z-0 ${highlightClass}`}
                             />
                           )}
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 whitespace-pre font-semibold text-slate-900 dark:text-slate-100">
+                            <span>{renderCodePrefix(i)}</span>
                             <button
                               type="button"
                               disabled={isRunning}
                               onClick={() => {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
+                                setFeedback(
+                                  getLineGuideMessage(i, selectedCommands[i]),
+                                );
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded border px-1.5 py-0.5 font-mono text-[11px] transition-all ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
-                            <span>{line.after}</span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {line.after}
+                            </span>
                           </div>
                         </div>
                       );

@@ -18,18 +18,23 @@ import { toast } from "sonner";
 const SIMULASI_SLUG = "variabel-rekap-nilai";
 
 type CommandChoice =
-  | "int"
-  | "float"
-  | "char"
-  | "boolean"
-  | "string"
+  | "Number"
+  | "String"
+  | "Boolean"
+  | "Array"
+  | "Object"
   | "+"
   | "-"
   | "*"
   | "/"
+  | "%"
+  | "**"
   | ">="
+  | ">"
+  | "<"
   | "<="
-  | "==";
+  | "=="
+  | "!=";
 
 type ChallengeData = {
   tugas: number;
@@ -58,8 +63,8 @@ function shuffle<T>(array: T[]): T[] {
 
 function createChallenge(): ChallengeData {
   return {
-    tugas: randomInt(70, 95),
-    uts: randomInt(70, 95),
+    tugas: 70,
+    uts: 78,
   };
 }
 
@@ -67,29 +72,29 @@ const COMMAND_DETAILS: Record<
   string,
   { title: string; desc: string; color: string }
 > = {
-  int: {
-    title: "INT",
-    desc: "Tipe data bulat untuk nilai tugas/uts",
+  Number: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
     color: "bg-emerald-50 border-emerald-200",
   },
-  float: {
-    title: "FLOAT",
-    desc: "Tipe data desimal untuk nilai dengan presisi",
-    color: "bg-sky-50 border-sky-200",
-  },
-  char: {
-    title: "CHAR",
-    desc: "Tipe data untuk satu karakter",
+  String: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
     color: "bg-amber-50 border-amber-200",
   },
-  boolean: {
+  Boolean: {
     title: "BOOLEAN",
-    desc: "Tipe data untuk kondisi true/false",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
     color: "bg-violet-50 border-violet-200",
   },
-  string: {
-    title: "STRING",
-    desc: "Tipe data untuk teks/kumpulan karakter",
+  Array: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
+    color: "bg-sky-50 border-sky-200",
+  },
+  Object: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut",
     color: "bg-rose-50 border-rose-200",
   },
   "+": {
@@ -112,10 +117,30 @@ const COMMAND_DETAILS: Record<
     desc: "Membagi nilai",
     color: "bg-emerald-50 border-emerald-200",
   },
+  "%": {
+    title: "MODULUS (%)",
+    desc: "Mengambil sisa hasil bagi",
+    color: "bg-cyan-50 border-cyan-200",
+  },
+  "**": {
+    title: "PANGKAT (**)",
+    desc: "Memangkatkan nilai",
+    color: "bg-indigo-50 border-indigo-200",
+  },
   ">=": {
     title: "PEMBANDING (>=)",
     desc: "Mengecek lebih besar atau sama dengan",
     color: "bg-lime-50 border-lime-200",
+  },
+  ">": {
+    title: "PEMBANDING (>)",
+    desc: "Mengecek lebih besar dari",
+    color: "bg-lime-50 border-lime-200",
+  },
+  "<": {
+    title: "PEMBANDING (<)",
+    desc: "Mengecek lebih kecil dari",
+    color: "bg-orange-50 border-orange-200",
   },
   "<=": {
     title: "PEMBANDING (<=)",
@@ -125,6 +150,11 @@ const COMMAND_DETAILS: Record<
   "==": {
     title: "PEMBANDING (==)",
     desc: "Mengecek apakah sama",
+    color: "bg-rose-50 border-rose-200",
+  },
+  "!=": {
+    title: "PEMBANDING (!=)",
+    desc: "Mengecek apakah tidak sama",
     color: "bg-rose-50 border-rose-200",
   },
   default: {
@@ -172,61 +202,34 @@ export default function VariabelTerpaduMenengahPage() {
 
   const lineConfigs: LineConfig[] = [
     {
-      before: "",
-      after: ` tugas = ${challenge.tugas};`,
-      expected: "int",
-      choices: shuffle([
-        "int",
-        "float",
-        "char",
-        "boolean",
-        "string",
-        "+",
-        "-",
-        "*",
-      ]),
+      before: `let tugas = ${challenge.tugas}; // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "",
-      after: ` uts = ${challenge.uts};`,
-      expected: "int",
-      choices: shuffle([
-        "int",
-        "float",
-        "char",
-        "boolean",
-        "/",
-        "-",
-        "*",
-        "==",
-      ]),
+      before: `let uts = ${challenge.uts}; // tipe data: `,
+      after: "",
+      expected: "Number",
+      choices: shuffle(["Number", "String", "Boolean", "Array", "Object"]),
     },
     {
-      before: "int total = tugas ",
+      before: "let total = tugas ",
       after: " uts;",
       expected: "+",
-      choices: shuffle([
-        "+",
-        "-",
-        "*",
-        "/",
-        "int",
-        "float",
-        "string",
-        "boolean",
-      ]),
+      choices: shuffle(["+", "-", "*", "/", "%", "**"]),
     },
     {
-      before: "float rata = total ",
-      after: " 2.0;",
+      before: "let rata = total ",
+      after: " 2;",
       expected: "/",
-      choices: shuffle(["/", "+", "-", "*", "int", "char", "float", ">="]),
+      choices: shuffle(["+", "-", "*", "/", "%", "**"]),
     },
     {
-      before: "boolean lulus = rata ",
+      before: "let lulus = rata ",
       after: " 75;",
       expected: ">=",
-      choices: shuffle([">=", "<=", "==", "-", "int", "+", "string", "*"]),
+      choices: shuffle(["==", "!=", ">", "<", ">=", "<="]),
     },
   ];
 
@@ -293,6 +296,7 @@ export default function VariabelTerpaduMenengahPage() {
     setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
+    setFeedback(getLineGuideMessage(lineIndex, command));
   };
 
   const resetSim = (regenerateChallenge: boolean) => {
@@ -317,18 +321,24 @@ export default function VariabelTerpaduMenengahPage() {
   };
 
   const feedbackHints: Record<CommandChoice, string> = {
-    int: "Pastikan token ini mendeklarasikan nilai bulat (angka tanpa desimal).",
-    float: "Gunakan float untuk nilai dengan titik desimal.",
-    char: "Char adalah untuk satu karakter saja, bukan angka.",
-    boolean: "Boolean adalah tipe data untuk true atau false.",
-    string: "String adalah untuk teks atau kumpulan karakter.",
+    Number:
+      "Cek kembali apakah nilainya berupa angka (bisa bulat atau desimal).",
+    String: "Cek apakah variabel ini berisi teks/karakter dalam tanda kutip.",
+    Boolean: "Pastikan variabel ini bertipe kondisi true/false.",
+    Array: "Array dipakai untuk kumpulan nilai dalam tanda kurung siku [].",
+    Object: "Object dipakai untuk pasangan key-value dalam kurung kurawal {}.",
     "+": "Perhatikan operasi penjumlahan untuk menggabungkan dua nilai.",
     "-": "Token ini dipakai saat operasi pengurangan nilai.",
     "*": "Token ini dipakai saat operasi perkalian nilai.",
     "/": "Perhatikan operasi pembagian saat menghitung rata-rata.",
+    "%": "Operator ini menghasilkan sisa pembagian.",
+    "**": "Operator ini digunakan untuk operasi pangkat.",
     ">=": "Gunakan pembanding untuk mengecek nilai lebih besar atau sama dengan batas.",
+    ">": "Gunakan pembanding ini jika ingin mengecek lebih besar dari batas.",
+    "<": "Gunakan pembanding ini jika ingin mengecek lebih kecil dari batas.",
     "<=": "Gunakan pembanding untuk mengecek nilai lebih kecil atau sama dengan batas.",
     "==": "Gunakan pembanding ini jika ingin mengecek dua nilai sama persis.",
+    "!=": "Gunakan pembanding ini jika ingin mengecek dua nilai tidak sama.",
   };
 
   const executeStep = (index: number) => {
@@ -337,7 +347,7 @@ export default function VariabelTerpaduMenengahPage() {
       setActiveLine(-1);
       setShowSuccessCard(true);
       setFeedback(
-        "Berhasil! Semua token sudah sesuai.\n\nPerhitungan kasir menampilkan data dengan benar dari nilai tugas, UTS, total, rata-rata, hingga status kelulusan.\n\nUrutan konsep yang dipakai: int -> int -> + -> / -> >=.",
+        "Berhasil! Semua token sudah sesuai.\n\nBuku rekap nilai berhasil menghitung total, rata-rata, dan status kelulusan dengan benar.\n\nUrutan konsep yang dipakai: Number -> Number -> + -> / -> >=.",
       );
       return;
     }
@@ -392,7 +402,93 @@ export default function VariabelTerpaduMenengahPage() {
     timerRef.current = setTimeout(() => executeStep(0), 250);
   };
 
+  const getLineGuideMessage = (lineIndex: number, selected?: CommandChoice) => {
+    const token = selected ?? "___";
+
+    if (lineIndex === 0) {
+      return `Variabel tugas memiliki nilai 70, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 1) {
+      return `Variabel uts memiliki nilai 78, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 2) {
+      return `Variabel total merupakan hasil dari operasi antara tugas dan uts, maka operator yang digunakan adalah ${token}`;
+    }
+    if (lineIndex === 3) {
+      return `Variabel rata digunakan untuk menghitung nilai rata-rata, maka operator yang digunakan adalah ${token}`;
+    }
+    if (lineIndex === 4) {
+      return `Variabel lulus digunakan untuk menentukan apakah nilai memenuhi syarat (minimal 75), maka operator yang digunakan adalah ${token}`;
+    }
+
+    return "Sistem siap menjalankan algoritma.";
+  };
+
   const totalDisplayLines = Math.max(lineConfigs.length, 10);
+  const renderCodePrefix = (lineIndex: number) => {
+    const kwClass = "text-violet-700 dark:text-violet-300";
+    const varClass = "text-blue-700 dark:text-blue-300";
+    const opClass = "text-slate-700 dark:text-slate-300";
+    const numberClass = "text-orange-700 dark:text-orange-300";
+    const commentClass = "text-slate-500 dark:text-slate-400";
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>tugas</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.tugas}</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>uts</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={numberClass}>{challenge.uts}</span>
+          <span className={opClass}>;</span>{" "}
+          <span className={commentClass}>// tipe data: </span>
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>total</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={varClass}>tugas</span>{" "}
+        </>
+      );
+    }
+
+    if (lineIndex === 3) {
+      return (
+        <>
+          <span className={kwClass}>let</span>{" "}
+          <span className={varClass}>rata</span>{" "}
+          <span className={opClass}>=</span>{" "}
+          <span className={varClass}>total</span>{" "}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className={kwClass}>let</span>{" "}
+        <span className={varClass}>lulus</span>{" "}
+        <span className={opClass}>=</span>{" "}
+        <span className={varClass}>rata</span>{" "}
+      </>
+    );
+  };
 
   const processTone =
     errorLine !== -1
@@ -422,12 +518,16 @@ export default function VariabelTerpaduMenengahPage() {
               icon: <CheckCircle2 size={12} className="text-emerald-500" />,
             }
           : {
-              panel: "bg-card border-border",
-              divider: "border-border",
-              title: "text-muted-foreground",
-              body: "text-foreground bg-muted",
+              panel:
+                "border-emerald-300 bg-gradient-to-br from-emerald-100 via-sky-100 to-cyan-100 dark:border-emerald-700/70 dark:from-emerald-900/35 dark:via-sky-900/30 dark:to-cyan-900/30",
+              divider: "border-emerald-300/90 dark:border-emerald-700/70",
+              title: "text-emerald-800 dark:text-emerald-200",
+              body: "bg-emerald-50/80 text-emerald-900 dark:bg-emerald-950/55 dark:text-emerald-100",
               icon: (
-                <CheckCircle2 size={12} className="text-muted-foreground" />
+                <CheckCircle2
+                  size={12}
+                  className="text-emerald-600 dark:text-emerald-300"
+                />
               ),
             };
 
@@ -613,22 +713,34 @@ export default function VariabelTerpaduMenengahPage() {
               </div>
 
               <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
-                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
-                  {Array.from({ length: totalDisplayLines }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-[26px] transition-all ${activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
+                <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/40 pt-5 pr-4 text-right text-muted-foreground dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+                  {Array.from({ length: totalDisplayLines }).map((_, i) => {
+                    const isWrongLineSelection =
+                      i < lineConfigs.length &&
+                      !!selectedCommands[i] &&
+                      selectedCommands[i] !== lineConfigs[i].expected;
+                    const showWrongState =
+                      (isRunning || errorLine !== -1) && isWrongLineSelection;
+                    return (
+                      <div
+                        key={i}
+                        className={`h-[26px] transition-all ${activeLine === i ? `scale-110 pr-1 font-black ${showWrongState ? "text-rose-700" : "text-emerald-700"}` : ""}`}
+                      >
+                        {i + 1}
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="relative flex-1 overflow-hidden bg-card">
+                <div className="relative flex-1 overflow-hidden bg-slate-50 dark:bg-slate-950/80">
                   <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
                     {lineConfigs.map((line, i) => {
                       const selected = selectedCommands[i];
                       const isActive = activeLine === i;
+                      const isWrongSelection =
+                        !!selected && selected !== line.expected;
+                      const showWrongState =
+                        (isRunning || errorLine !== -1) && isWrongSelection;
 
                       return (
                         <div
@@ -638,23 +750,34 @@ export default function VariabelTerpaduMenengahPage() {
                           {isActive && (
                             <motion.div
                               layoutId="lineHighlightMenengah"
-                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${isRunning ? "border-emerald-500 bg-emerald-50" : "border-emerald-200 bg-emerald-50/30"}`}
+                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                                showWrongState || errorLine === i
+                                  ? "border-rose-500 bg-rose-100/70 dark:bg-rose-500/10"
+                                  : isRunning
+                                    ? "border-emerald-500 bg-emerald-100/70 dark:bg-emerald-500/10"
+                                    : "border-sky-300 bg-sky-50/70 dark:border-sky-500/40 dark:bg-slate-800/50"
+                              }`}
                             />
                           )}
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{line.before}</span>
+                          <div className="relative z-10 whitespace-pre font-mono text-[12px] font-semibold text-slate-900 dark:text-slate-100 lg:text-[13px]">
+                            <span>{renderCodePrefix(i)}</span>
                             <button
                               type="button"
                               disabled={isRunning}
                               onClick={() => {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
+                                setFeedback(
+                                  getLineGuideMessage(i, selectedCommands[i]),
+                                );
                               }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "italic text-slate-300 hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              className={`rounded border px-1 py-0.5 font-mono text-[10px] transition-all lg:text-[11px] ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {selected ?? "_____"}
                             </button>
-                            <span>{line.after}</span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {line.after}
+                            </span>
                           </div>
                         </div>
                       );

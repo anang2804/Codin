@@ -235,6 +235,28 @@ export default function VariabelTerpaduDasarTravelPage() {
     }
   };
 
+  const getLineGuideMessage = (lineIndex: number, selected?: CommandChoice) => {
+    const token = selected ?? "_______";
+
+    if (lineIndex === 0) {
+      return `Variabel namaLengkap memiliki nilai "Kadek Surya Wibawa", maka bertipe data ${token}`;
+    }
+    if (lineIndex === 1) {
+      return `Variabel kelasPenerbangan memiliki nilai 'P', maka bertipe data ${token}`;
+    }
+    if (lineIndex === 2) {
+      return `Variabel nomorKursi memiliki nilai 17, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 3) {
+      return `Variabel beratBagasi memiliki nilai 21.2, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 4) {
+      return `Variabel sudahCheckIn memiliki nilai true, maka bertipe data ${token}`;
+    }
+
+    return "Sistem siap menjalankan algoritma.";
+  };
+
   const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
     if (isRunning) return;
     setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
@@ -242,6 +264,7 @@ export default function VariabelTerpaduDasarTravelPage() {
     setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
+    setFeedback(getLineGuideMessage(lineIndex, command));
   };
 
   const resetSim = (regenerateChallenge: boolean) => {
@@ -679,6 +702,9 @@ export default function VariabelTerpaduDasarTravelPage() {
                               onClick={() => {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
+                                setFeedback(
+                                  getLineGuideMessage(i, selectedCommands[i]),
+                                );
                               }}
                               className={`rounded border px-1 py-0.5 font-mono text-[10px] transition-all lg:text-[11px] ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >

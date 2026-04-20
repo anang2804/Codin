@@ -220,6 +220,28 @@ export default function VariabelTerpaduDasarPage() {
     }
   };
 
+  const getLineGuideMessage = (lineIndex: number, selected?: CommandChoice) => {
+    const token = selected ?? "_______";
+
+    if (lineIndex === 0) {
+      return `Variabel kecepatan memiliki nilai 18, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 1) {
+      return `Variabel trip_meter memiliki nilai 164.3, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 2) {
+      return `Variabel gigi memiliki nilai 'B', maka bertipe data ${token}`;
+    }
+    if (lineIndex === 3) {
+      return `Variabel ready memiliki nilai true, maka bertipe data ${token}`;
+    }
+    if (lineIndex === 4) {
+      return `Variabel mode memiliki nilai "Sport", maka bertipe data ${token}`;
+    }
+
+    return "Sistem siap menjalankan algoritma.";
+  };
+
   const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
     if (isRunning) return;
     setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
@@ -227,6 +249,7 @@ export default function VariabelTerpaduDasarPage() {
     setActiveLine(lineIndex);
     setErrorLine(-1);
     setShowSuccessCard(false);
+    setFeedback(getLineGuideMessage(lineIndex, command));
   };
 
   const resetSim = (regenerateChallenge: boolean) => {
@@ -517,12 +540,14 @@ export default function VariabelTerpaduDasarPage() {
             className={`p-3 rounded-2xl border transition-all duration-300 ${
               errorLine !== -1
                 ? "bg-rose-50/95 border-rose-200"
-                : "bg-card border-border"
+                : "border-emerald-200 bg-gradient-to-br from-emerald-50/95 to-sky-50/80 dark:border-emerald-800/60 dark:from-emerald-900/20 dark:to-sky-900/20"
             }`}
           >
             <div
               className={`flex items-center gap-2 pb-2 border-b ${
-                errorLine !== -1 ? "border-rose-200" : "border-border"
+                errorLine !== -1
+                  ? "border-rose-200"
+                  : "border-emerald-200/80 dark:border-emerald-800/60"
               }`}
             >
               {errorLine !== -1 ? (
@@ -531,15 +556,15 @@ export default function VariabelTerpaduDasarPage() {
                 <CheckCircle2
                   size={12}
                   className={
-                    showSuccessCard
-                      ? "text-emerald-500"
-                      : "text-muted-foreground"
+                    showSuccessCard ? "text-emerald-500" : "text-emerald-500"
                   }
                 />
               )}
               <span
                 className={`text-[10px] font-black uppercase tracking-widest ${
-                  errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
+                  errorLine !== -1
+                    ? "text-rose-600"
+                    : "text-emerald-700 dark:text-emerald-300"
                 }`}
               >
                 CATATAN PROSES
@@ -550,7 +575,7 @@ export default function VariabelTerpaduDasarPage() {
               className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
                 errorLine !== -1
                   ? "text-rose-700 bg-rose-100/60"
-                  : "text-foreground bg-muted"
+                  : "bg-white/80 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
               }`}
             >
               {feedback}
@@ -691,6 +716,9 @@ export default function VariabelTerpaduDasarPage() {
                               onClick={() => {
                                 setOpenSelectorLine(i);
                                 setActiveLine(i);
+                                setFeedback(
+                                  getLineGuideMessage(i, selectedCommands[i]),
+                                );
                               }}
                               className={`rounded border px-1.5 py-0.5 font-mono text-[13px] transition-all ${selected ? "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700" : "border-transparent italic text-slate-400 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
