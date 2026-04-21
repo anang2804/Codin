@@ -174,31 +174,26 @@ const BlenderSimulation = () => {
     lineIdx: number,
   ): string => {
     const trimmed = typedLine.trim().toLowerCase();
-    const expectedLine = EXPECTED_SOLUTION[lineIdx] ?? "";
-    const firstWord = trimmed.split(" ")[0];
-
     if (!trimmed || trimmed.includes("_____")) {
-      return `Baris ${lineIdx + 1} Algoritma belum lengkap.\n\nLengkapi terlebih dahulu bagian yang kosong sesuai template yang tersedia.\n\nPetunjuk: gunakan urutan input → proses → output dengan benar.`;
+      return `Baris ${lineIdx + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`;
     }
 
-    if (COMMAND_GLOSSARY[firstWord]) {
-      return `Baris ${lineIdx + 1} salah, periksa input/output.\n\n${COMMAND_GLOSSARY[firstWord]}`;
-    }
-
-    return `Baris ${lineIdx + 1} salah, periksa input/output.\n\nSeharusnya baris ini mendekati: "${expectedLine}".`;
+    return `Baris ${lineIdx + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan peran pada alur program.\n\nPetunjuk: Perhatikan apakah baris tersebut berfungsi sebagai input, proses, atau output.`;
   };
 
   const getActiveDescription = (): CommandDetail => {
-    const lineContent = linesArray[activeLine]?.trim().toLowerCase() || "";
-    if (lineContent.includes("start") || lineContent.includes("end")) {
-      return COMMAND_DETAILS.START;
+    if (activeLine === -1) {
+      return COMMAND_DETAILS.DEFAULT;
     }
-    if (lineContent.startsWith("input") || lineContent.startsWith("output")) {
+
+    const selectedOnActiveLine = selectedCommands[activeLine];
+    if (selectedOnActiveLine === "input" || selectedOnActiveLine === "output") {
       return COMMAND_DETAILS.INPUT_OUTPUT;
     }
-    if (lineContent.includes("proses")) {
+    if (selectedOnActiveLine === "proses") {
       return COMMAND_DETAILS.PROCESS;
     }
+
     return COMMAND_DETAILS.DEFAULT;
   };
 
@@ -340,9 +335,7 @@ const BlenderSimulation = () => {
           setIsPouring(false);
           setLiquidLevel(0);
           setMixedColor("linear-gradient(to top, #f97316, #dc2626)");
-          setFeedback(
-            `Baris ${index + 1} salah: Tidak ada input! Blender beroperasi tanpa beban dan overheating, mesin rusak dari operasi idle.`,
-          );
+          setFeedback(generateEducationalFeedback(lineRaw, index));
         } else {
           const randomObject =
             FOREIGN_OBJECTS[Math.floor(Math.random() * FOREIGN_OBJECTS.length)];
@@ -354,11 +347,9 @@ const BlenderSimulation = () => {
           setIsPouring(false);
           setLiquidLevel((prev) => Math.max(prev, 45));
           setMixedColor("linear-gradient(to top, #38bdf8, #7dd3fc)");
-          setFeedback(
-            usedOutputInsteadInput
-              ? `Baris ${index + 1} salah: Kamu menuliskan langkah yang kurang tepat pada bagian ini. Akibatnya, proses tidak dapat berjalan dengan benar dan blender tidak berfungsi sebagaimana mestinya.`
-              : `Baris ${index + 1} salah. Benda asing (${randomObject.name}) masuk ke blender, mesin rusak, dan cairan bocor dari retakan!`,
-          );
+          void usedOutputInsteadInput;
+          void randomObject;
+          setFeedback(generateEducationalFeedback(lineRaw, index));
         }
       } else {
         setBlenderBroken(false);
@@ -463,30 +454,28 @@ const BlenderSimulation = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden">
-      <header className="bg-background border-b border-border px-6 py-3 flex justify-between items-center z-40 shrink-0 shadow-sm">
+      <header className="z-40 flex shrink-0 items-center justify-between border-b border-emerald-100/80 bg-white/90 px-6 py-3 shadow-sm backdrop-blur">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
               window.location.href = "/siswa/simulasi";
             }}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
 
-          <div className="w-px h-6 bg-border" />
+          <div className="h-6 w-px bg-border" />
 
-          <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
+          <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
 
           <div className="flex items-center gap-2">
-            <div>
-              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
-                Blender Jus
-              </h1>
-            </div>
-            <span className="text-[8px] text-sky-600 font-bold tracking-widest uppercase italic bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+            <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+              Blender Jus
+            </h1>
+            <span className="rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
               Menengah
             </span>
           </div>
@@ -495,7 +484,7 @@ const BlenderSimulation = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-xs font-bold transition-all duration-200 hover:bg-emerald-50"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -503,10 +492,10 @@ const BlenderSimulation = () => {
           <button
             onClick={markAsTried}
             disabled={hasTried || isSavingCompletion}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 active:scale-95 disabled:opacity-50 ${
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               hasTried
-                ? "bg-[#d1fae5] text-[#0f766e] border-2 border-[#86efac] shadow-sm"
-                : "bg-[#e6f7f1] text-[#0f766e] border border-[#a7f3d0] hover:bg-[#d1fae5] shadow-sm hover:shadow-md"
+                ? "border-2 border-emerald-300 bg-emerald-100 text-emerald-800"
+                : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
             }`}
           >
             <CheckCircle2 size={14} /> {hasTried ? "Selesai" : "Tandai Selesai"}
@@ -515,10 +504,10 @@ const BlenderSimulation = () => {
           <button
             onClick={startRunning}
             disabled={isRunning}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
+            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               isRunning
-                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
-                : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
+                ? "cursor-not-allowed border border-border bg-muted text-muted-foreground"
+                : "bg-gradient-to-br from-emerald-600 to-green-600 text-white hover:from-green-600 hover:to-emerald-600"
             }`}
           >
             <Play size={14} fill={isRunning ? "none" : "white"} /> Jalankan
@@ -527,10 +516,10 @@ const BlenderSimulation = () => {
       </header>
 
       <main className="flex-1 flex overflow-hidden">
-        <aside className="w-72 bg-card border-r border-border p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
+        <aside className="w-72 bg-white border-r border-emerald-100 p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
           <div className="flex items-center gap-2">
-            <BookOpen size={16} className="text-emerald-600/60" />
-            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-wrap">
+            <BookOpen size={16} className="text-emerald-600/70" />
+            <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.12em] text-wrap">
               Deskripsi Perintah
             </h2>
           </div>
@@ -538,35 +527,30 @@ const BlenderSimulation = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentDesc.title}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`p-5 rounded-3xl border ${currentDesc.color} shadow-sm transition-all duration-300`}
+              exit={{ opacity: 0, y: -8 }}
+              className={`rounded-2xl border p-4 shadow-sm ${currentDesc.color}`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-background/90 rounded-xl shadow-sm">
-                  {currentDesc.icon}
-                </div>
-                <h3 className="text-xs font-black text-foreground uppercase tracking-tight">
-                  {currentDesc.title}
-                </h3>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+              <h3 className="mb-2 text-xs font-black uppercase tracking-tight text-foreground">
+                {currentDesc.title}
+              </h3>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
                 {currentDesc.desc}
               </p>
             </motion.div>
           </AnimatePresence>
 
           <div
-            className={`p-3 rounded-2xl border transition-all duration-300 ${
+            className={`p-4 rounded-3xl border transition-all duration-300 ${
               errorLine !== -1
                 ? "bg-rose-50/95 border-rose-200"
-                : "bg-card border-border"
+                : "bg-[#c8dde6] border-[#60d8bb]"
             }`}
           >
             <div
               className={`flex items-center gap-2 pb-2 border-b ${
-                errorLine !== -1 ? "border-rose-200" : "border-border"
+                errorLine !== -1 ? "border-rose-200" : "border-[#60d8bb]"
               }`}
             >
               {errorLine !== -1 ? (
@@ -574,14 +558,12 @@ const BlenderSimulation = () => {
               ) : (
                 <CheckCircle2
                   size={12}
-                  className={
-                    jusKeluar ? "text-emerald-500" : "text-muted-foreground"
-                  }
+                  className={jusKeluar ? "text-[#0b6e5d]" : "text-[#0b6e5d]"}
                 />
               )}
               <span
-                className={`text-[10px] font-black uppercase tracking-widest ${
-                  errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
+                className={`text-[10px] font-black uppercase tracking-[0.12em] ${
+                  errorLine !== -1 ? "text-rose-600" : "text-[#0b6e5d]"
                 }`}
               >
                 CATATAN PROSES
@@ -589,22 +571,22 @@ const BlenderSimulation = () => {
             </div>
 
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+              className={`mt-3 whitespace-pre-line rounded-2xl px-3 py-2 text-[11px] leading-snug ${
                 errorLine !== -1
                   ? "text-rose-700 bg-rose-100/60"
-                  : "text-foreground bg-muted"
+                  : "text-[#125f52] bg-[#d4e5e1]"
               }`}
             >
               {feedback}
             </div>
           </div>
 
-          <div className="mt-auto p-4 bg-primary/10 border border-primary/20 rounded-2xl">
-            <div className="flex items-center justify-between text-[9px] font-black text-primary uppercase mb-2">
+          <div className="mt-auto p-4 bg-emerald-100/40 border border-emerald-200 rounded-3xl">
+            <div className="flex items-center justify-between text-[10px] font-black text-emerald-700 uppercase mb-2 tracking-[0.08em]">
               <span>Status Fokus</span>
               <Activity size={10} />
             </div>
-            <p className="text-[10px] font-bold text-muted-foreground italic leading-tight">
+            <p className="text-[11px] font-bold text-slate-600 italic leading-tight">
               {activeLine !== -1
                 ? `Menganalisis baris ke-${activeLine + 1}`
                 : "Editor siap digunakan"}
@@ -1170,36 +1152,6 @@ const BlenderSimulation = () => {
           </div>
         </div>
       </main>
-
-      <footer className="bg-background px-6 py-2 border-t border-border flex justify-between items-center text-[10px] font-medium text-muted-foreground z-30 shrink-0 select-none">
-        <div className="flex gap-2 items-center">
-          <span
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              isRunning
-                ? "bg-emerald-500 animate-pulse"
-                : errorLine !== -1
-                  ? "bg-rose-500 shadow-[0_0_8px_#f43f5e]"
-                  : "bg-slate-300"
-            }`}
-          />
-          <span className="uppercase tracking-wider font-bold">
-            STATUS SISTEM •
-            {isRunning
-              ? " Algoritma sedang dijalankan"
-              : errorLine !== -1
-                ? " Pemeriksaan logika diperlukan"
-                : " Sistem siap menjalankan algoritma."}
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="hidden md:inline font-bold text-muted-foreground uppercase tracking-tighter">
-            Bahasa: Pseudocode Indonesia
-          </span>
-          <span className="font-black tracking-tight text-emerald-700 uppercase italic">
-            CODIN • Interactive Algorithm Learning • 2026
-          </span>
-        </div>
-      </footer>
     </div>
   );
 };

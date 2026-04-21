@@ -5,6 +5,7 @@ import {
   Play,
   RotateCcw,
   CheckCircle2,
+  AlertTriangle,
   Terminal,
   ArrowLeft,
   BookOpen,
@@ -23,38 +24,22 @@ import { toast } from "sonner";
 // ================== KONSTANTA DAN SOLUSI ==================
 
 const EXPECTED_SOLUTION = [
-  "start",
-  "input harga_makanan",
-  "input harga_minuman",
-  "proses hasil = harga_makanan + harga_minuman",
-  "output hasil",
-  "end",
+  "let harga_makanan; // struktur program: Input",
+  "let harga_minuman; // struktur program: Input",
+  "let hasil = harga_makanan + harga_minuman; // struktur program: Proses",
+  "console.log(hasil); // struktur program: Output",
 ] as const;
 
 const INITIAL_TEMPLATE = [
-  "start",
-  "_____ harga_makanan",
-  "_____ harga_minuman",
-  "_____ hasil = harga_makanan + harga_minuman",
-  "_____ hasil",
-  "end",
+  "let harga_makanan; // struktur program: _____",
+  "let harga_minuman; // struktur program: _____",
+  "let hasil = harga_makanan + harga_minuman; // struktur program: _____",
+  "console.log(hasil); // struktur program: _____",
 ] as const;
 
-const BLANK_LINE_SUFFIX: Partial<Record<number, string>> = {
-  1: "harga_makanan",
-  2: "harga_minuman",
-  3: "hasil = harga_makanan + harga_minuman",
-  4: "hasil",
-};
+const CHOICE_PLACEHOLDER = "_____";
 
-const BLANK_LINE_GHOST_COMMAND: Partial<Record<number, string>> = {
-  1: "input",
-  2: "input",
-  3: "proses",
-  4: "output",
-};
-
-type CommandChoice = "input" | "proses" | "output";
+type CommandChoice = "Input" | "Proses" | "Output";
 
 const COMMAND_DETAILS = {
   START: {
@@ -88,7 +73,7 @@ const COMMAND_DETAILS = {
     color: "bg-emerald-100 border-emerald-200",
   },
   DEFAULT: {
-    title: "WORKSPACE",
+    title: "SIAP MENULIS",
     desc: "Klik bagian kosong (_____) lalu pilih INPUT, PROCESS, atau OUTPUT. Teks abu-abu adalah ghost text panduan.",
     icon: <Monitor className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
@@ -152,25 +137,26 @@ export default function SimulasiKasirKantin() {
 
   const currentDesc = (() => {
     if (activeLine === -1) return COMMAND_DETAILS.DEFAULT;
-    const line = linesArray[activeLine]?.toLowerCase() || "";
-    if (line.includes("start")) return COMMAND_DETAILS.START;
-    if (line.includes("input")) return COMMAND_DETAILS.INPUT;
-    if (line.includes("proses") || line.includes("process"))
-      return COMMAND_DETAILS.PROCESS;
-    if (line.includes("output") || line.includes("print"))
-      return COMMAND_DETAILS.OUTPUT;
-    if (line.includes("end")) return COMMAND_DETAILS.END;
+
+    const selectedOnActiveLine = selectedCommands[activeLine];
+    if (selectedOnActiveLine === "Input") return COMMAND_DETAILS.INPUT;
+    if (selectedOnActiveLine === "Proses") return COMMAND_DETAILS.PROCESS;
+    if (selectedOnActiveLine === "Output") return COMMAND_DETAILS.OUTPUT;
+
     return COMMAND_DETAILS.DEFAULT;
   })();
 
-  const getLineText = (lineIndex: number): string => {
-    const suffix = BLANK_LINE_SUFFIX[lineIndex];
-    if (!suffix) {
-      return INITIAL_TEMPLATE[lineIndex] || "";
-    }
+  const latestLog =
+    logicLog[logicLog.length - 1] ?? "Sistem siap menjalankan algoritma.";
+  const isErrorNote = latestLog.startsWith("ERROR:");
+  const noteMessage = isErrorNote
+    ? latestLog.replace(/^ERROR:\s*/, "")
+    : latestLog;
 
-    const command = selectedCommands[lineIndex] ?? "_____";
-    return `${command} ${suffix}`;
+  const getLineText = (lineIndex: number): string => {
+    const template = INITIAL_TEMPLATE[lineIndex] || "";
+    const command = selectedCommands[lineIndex] ?? CHOICE_PLACEHOLDER;
+    return template.replace(CHOICE_PLACEHOLDER, command);
   };
 
   const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
@@ -185,6 +171,83 @@ export default function SimulasiKasirKantin() {
     const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
     setCode(newCode);
   }, [selectedCommands]);
+
+  const renderCodeLine = (
+    lineIndex: number,
+    selected: CommandChoice | "_____",
+  ) => {
+    const isEmptyChoice = selected === CHOICE_PLACEHOLDER;
+    const choiceClassName = isEmptyChoice
+      ? "text-slate-400"
+      : "inline-flex items-center rounded-md border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-sky-700";
+
+    const choiceButton = (
+      <button
+        type="button"
+        disabled={isRunning}
+        onClick={() => {
+          setOpenSelectorLine(lineIndex);
+          setActiveLine(lineIndex);
+        }}
+        className={`transition-all ${choiceClassName} ${isRunning ? "cursor-not-allowed opacity-80" : isEmptyChoice ? "cursor-pointer hover:text-slate-500" : "cursor-pointer hover:border-sky-400 hover:bg-sky-100"}`}
+      >
+        {selected}
+      </button>
+    );
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className="text-violet-600">let</span>{" "}
+          <span className="text-blue-700">harga_makanan</span>
+          <span className="text-slate-700">; </span>
+          <span className="text-slate-400">// struktur program: </span>
+          {choiceButton}
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className="text-violet-600">let</span>{" "}
+          <span className="text-blue-700">harga_minuman</span>
+          <span className="text-slate-700">; </span>
+          <span className="text-slate-400">// struktur program: </span>
+          {choiceButton}
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className="text-violet-600">let</span>{" "}
+          <span className="text-blue-700">hasil</span>
+          <span className="text-slate-700"> = </span>
+          <span className="text-blue-700">harga_makanan</span>
+          <span className="text-slate-700"> + </span>
+          <span className="text-blue-700">harga_minuman</span>
+          <span className="text-slate-700">; </span>
+          <span className="text-slate-400">// struktur program: </span>
+          {choiceButton}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="text-blue-700">console</span>
+        <span className="text-slate-700">.</span>
+        <span className="text-blue-700">log</span>
+        <span className="text-slate-700">(</span>
+        <span className="text-blue-700">hasil</span>
+        <span className="text-slate-700">); </span>
+        <span className="text-slate-400">// struktur program: </span>
+        {choiceButton}
+      </>
+    );
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -297,10 +360,10 @@ export default function SimulasiKasirKantin() {
     const normalized = normalizeCode(userLine);
 
     if (normalized === "" || normalized.includes("_")) {
-      return "Hmm... sepertinya baris ini masih perlu dilengkapi. Coba periksa kembali perintah yang sesuai untuk langkah ini.";
+      return `Baris ${lineIndex + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`;
     }
 
-    if (lineIndex === 1) {
+    if (lineIndex === 0) {
       if (!normalized.includes("input")) {
         return "Di sini kita perlu membaca data harga makanan. Perintah apa yang cocok untuk membaca data?";
       }
@@ -309,7 +372,7 @@ export default function SimulasiKasirKantin() {
       }
     }
 
-    if (lineIndex === 2) {
+    if (lineIndex === 1) {
       if (!normalized.includes("input")) {
         return "Kita perlu membaca data harga minuman. Perintah apa yang digunakan untuk membaca data?";
       }
@@ -318,7 +381,7 @@ export default function SimulasiKasirKantin() {
       }
     }
 
-    if (lineIndex === 3) {
+    if (lineIndex === 2) {
       if (!normalized.includes("proses") && !normalized.includes("process")) {
         return "Tahap ini adalah PROCESS. Gunakan perintah proses untuk mengolah data harga.";
       }
@@ -333,11 +396,14 @@ export default function SimulasiKasirKantin() {
       }
     }
 
-    if (lineIndex === 4) {
-      if (!normalized.includes("output") && !normalized.includes("print")) {
+    if (lineIndex === 3) {
+      if (!normalized.includes("output")) {
         return "Setelah menghitung, kita perlu menampilkan hasilnya. Perintah apa yang cocok?";
       }
-      if (!normalized.includes("hasil")) {
+      if (
+        !normalized.includes("console.log") ||
+        !normalized.includes("hasil")
+      ) {
         return "Variabel apa yang perlu ditampilkan ke layar?";
       }
     }
@@ -374,12 +440,7 @@ export default function SimulasiKasirKantin() {
 
     // Eksekusi berdasarkan baris
     switch (step) {
-      case 0: // start
-        updateSimData({ status: "Memulai Alur" });
-        addLog("Sistem: Memulai proses kasir...");
-        break;
-
-      case 1: // input harga_makanan
+      case 0: // input harga_makanan
         const foodItems = [
           { name: "Nasi Goreng", price: 15000, emoji: "🍛" },
           { name: "Mie Ayam", price: 12000, emoji: "🍜" },
@@ -393,7 +454,7 @@ export default function SimulasiKasirKantin() {
         );
         break;
 
-      case 2: // input harga_minuman
+      case 1: // input harga_minuman
         const drinkItems = [
           { name: "Es Teh", price: 5000, emoji: "🍹" },
           { name: "Es Jeruk", price: 6000, emoji: "🧃" },
@@ -407,7 +468,7 @@ export default function SimulasiKasirKantin() {
         );
         break;
 
-      case 3: // hasil = harga_makanan + harga_minuman
+      case 2: // hasil = harga_makanan + harga_minuman
         updateSimData({ isCalculating: true, status: "Menghitung Total..." });
         addLog("PROSES: Menghitung total harga...");
         await new Promise((resolve) => setTimeout(resolve, 800));
@@ -422,18 +483,12 @@ export default function SimulasiKasirKantin() {
         addLog(`PROSES: hasil = Rp ${total.toLocaleString("id-ID")}`);
         break;
 
-      case 4: // output hasil
+      case 3: // output hasil
         updateSimData({ receiptPrinted: true, status: "Mencetak Struk" });
         addLog("OUTPUT: Mencetak struk pembayaran...");
         addLog(
           `OUTPUT: total_bayar = Rp ${simDataRef.current.totalPrice.toLocaleString("id-ID")}`,
         );
-        break;
-
-      case 5: // end
-        updateSimData({ status: "Selesai" });
-        addLog("Sukses: Algoritma selesai dijalankan.");
-        setShowSuccessCard(true);
         break;
     }
 
@@ -478,6 +533,7 @@ export default function SimulasiKasirKantin() {
 
     setIsRunning(false);
     setActiveLine(-1);
+    updateSimData({ status: "Selesai" });
     addLog("Sukses: Algoritma berhasil dijalankan.");
     setShowSuccessCard(true);
   };
@@ -487,25 +543,23 @@ export default function SimulasiKasirKantin() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       {/* HEADER */}
-      <header className="px-8 py-4 bg-background border-b border-border flex items-center justify-between shrink-0 shadow-sm z-30">
-        <div className="flex items-center gap-4">
+      <header className="z-40 flex shrink-0 items-center justify-between border-b border-emerald-100/80 bg-white/90 px-6 py-3 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => (window.location.href = "/siswa/simulasi")}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-muted-foreground hover:bg-muted rounded-lg transition-all"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
           >
             <ArrowLeft size={14} /> Kembali
           </button>
-          <div className="w-px h-6 bg-border"></div>
-          <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-emerald-100 shadow-lg">
+          <div className="h-6 w-px bg-border" />
+          <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
             <Terminal size={20} />
           </div>
           <div className="flex items-center gap-2">
-            <div>
-              <h1 className="text-lg font-black tracking-tighter text-foreground uppercase italic leading-none">
-                Mesin Kasir Kantin
-              </h1>
-            </div>
-            <span className="text-[8px] text-emerald-600 font-bold tracking-widest uppercase italic bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
+              Mesin Kasir Kantin
+            </h1>
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
               Dasar
             </span>
           </div>
@@ -514,17 +568,17 @@ export default function SimulasiKasirKantin() {
         <div className="flex items-center gap-3">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-muted text-foreground hover:bg-muted/80 border border-border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-xs font-bold transition-all duration-200 hover:bg-emerald-50"
           >
             <RotateCcw size={14} /> Reset
           </button>
           <button
             onClick={markAsTried}
             disabled={hasTried || isSavingCompletion}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 active:scale-95 disabled:opacity-50 ${
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               hasTried
-                ? "bg-[#d1fae5] text-[#0f766e] border-2 border-[#86efac] shadow-sm"
-                : "bg-[#e6f7f1] text-[#0f766e] border border-[#a7f3d0] hover:bg-[#d1fae5] shadow-sm hover:shadow-md"
+                ? "border-2 border-emerald-300 bg-emerald-100 text-emerald-800"
+                : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
             }`}
           >
             <CheckCircle2 size={14} /> {hasTried ? "Selesai" : "Tandai Selesai"}
@@ -532,10 +586,10 @@ export default function SimulasiKasirKantin() {
           <button
             onClick={startRunning}
             disabled={isRunning}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
+            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               isRunning
-                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
-                : "bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:from-[#22c55e] hover:to-[#16a34a] text-white"
+                ? "cursor-not-allowed border border-border bg-muted text-muted-foreground"
+                : "bg-gradient-to-br from-emerald-600 to-green-600 text-white hover:from-green-600 hover:to-emerald-600"
             }`}
           >
             <Play size={14} fill={isRunning ? "none" : "white"} /> Jalankan
@@ -545,10 +599,10 @@ export default function SimulasiKasirKantin() {
 
       <main className="flex-1 flex overflow-hidden">
         {/* PANEL KIRI - DESKRIPSI */}
-        <aside className="w-72 bg-card border-r border-border p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
+        <aside className="w-72 bg-white border-r border-emerald-100 p-5 flex flex-col gap-6 shrink-0 z-20 overflow-y-auto">
           <div className="flex items-center gap-2">
-            <BookOpen size={16} className="text-emerald-600/60" />
-            <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-wrap">
+            <BookOpen size={16} className="text-emerald-600/70" />
+            <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.12em] text-wrap">
               Deskripsi Perintah
             </h2>
           </div>
@@ -556,34 +610,66 @@ export default function SimulasiKasirKantin() {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentDesc.title}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`p-5 rounded-3xl border ${currentDesc.color} shadow-sm transition-all duration-300`}
+              exit={{ opacity: 0, y: -8 }}
+              className={`rounded-2xl border p-4 shadow-sm ${currentDesc.color}`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-background/90 rounded-xl shadow-sm">
-                  {currentDesc.icon}
-                </div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">
-                  {currentDesc.title}
-                </h3>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+              <h3 className="mb-2 text-xs font-black uppercase tracking-tight text-foreground">
+                {currentDesc.title}
+              </h3>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
                 {currentDesc.desc}
               </p>
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-auto p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
-            <div className="flex items-center justify-between text-[9px] font-black text-emerald-600/60 uppercase mb-2">
-              <span>Info Baris</span>
+          <div
+            className={`p-4 rounded-3xl border transition-all duration-300 ${
+              isErrorNote
+                ? "bg-rose-50/95 border-rose-200"
+                : "bg-[#c8dde6] border-[#60d8bb]"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 pb-2 border-b ${
+                isErrorNote ? "border-rose-200" : "border-[#60d8bb]"
+              }`}
+            >
+              {isErrorNote ? (
+                <AlertTriangle size={13} className="text-rose-500" />
+              ) : (
+                <CheckCircle2 size={13} className="text-[#0b6e5d]" />
+              )}
+              <span
+                className={`text-[10px] font-black uppercase tracking-[0.12em] ${
+                  isErrorNote ? "text-rose-600" : "text-[#0b6e5d]"
+                }`}
+              >
+                CATATAN PROSES
+              </span>
+            </div>
+
+            <div
+              className={`mt-3 whitespace-pre-line rounded-2xl px-3 py-2 text-[11px] leading-snug ${
+                isErrorNote
+                  ? "text-rose-700 bg-rose-100/60"
+                  : "text-[#125f52] bg-[#d4e5e1]"
+              }`}
+            >
+              {noteMessage}
+            </div>
+          </div>
+
+          <div className="mt-auto p-4 bg-emerald-100/40 border border-emerald-200 rounded-3xl">
+            <div className="flex items-center justify-between text-[10px] font-black text-emerald-700 uppercase mb-2 tracking-[0.08em]">
+              <span>Status Fokus</span>
               <Activity size={10} />
             </div>
-            <p className="text-[10px] font-bold text-muted-foreground italic leading-tight">
+            <p className="text-[11px] font-bold text-slate-600 italic leading-tight">
               {activeLine !== -1
                 ? `Sedang fokus di baris ${activeLine + 1}`
-                : "Klik editor untuk mulai"}
+                : "Editor siap digunakan"}
             </p>
           </div>
         </aside>
@@ -661,7 +747,7 @@ export default function SimulasiKasirKantin() {
                 </div>
               </div>
 
-              <div className="relative flex-1 flex font-mono text-[13px] leading-[26px] overflow-hidden">
+              <div className="relative flex-1 flex font-mono text-[11px] leading-[22px] overflow-hidden">
                 <div
                   id="line-gutter"
                   className="w-12 bg-muted/30 text-muted-foreground/70 text-right pr-4 pt-5 select-none border-r border-border/60 overflow-hidden shrink-0"
@@ -669,7 +755,7 @@ export default function SimulasiKasirKantin() {
                   {Array.from({ length: totalDisplayLines }).map((_, i) => (
                     <div
                       key={i}
-                      className={`h-[26px] transition-all ${activeLine === i ? "text-emerald-600 font-black scale-110 pr-1" : ""}`}
+                      className={`h-[22px] transition-all ${activeLine === i ? "text-emerald-600 font-black scale-110 pr-1" : ""}`}
                     >
                       {i + 1}
                     </div>
@@ -679,13 +765,13 @@ export default function SimulasiKasirKantin() {
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
                       const isActive = activeLine === i;
-                      const suffix = BLANK_LINE_SUFFIX[i];
-                      const selected = selectedCommands[i];
+                      const selected =
+                        selectedCommands[i] ?? CHOICE_PLACEHOLDER;
 
                       return (
                         <div
                           key={i}
-                          className="relative h-[26px] flex items-center"
+                          className="relative h-[22px] flex items-center"
                         >
                           {isActive && (
                             <motion.div
@@ -695,30 +781,9 @@ export default function SimulasiKasirKantin() {
                           )}
 
                           <div
-                            className={`relative z-10 whitespace-pre text-slate-900 font-bold ${isRunning && activeLine > i ? "opacity-30" : ""}`}
+                            className={`relative z-10 whitespace-pre font-bold ${isRunning && activeLine > i ? "opacity-30" : ""}`}
                           >
-                            {suffix ? (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={isRunning}
-                                  onClick={() => {
-                                    setOpenSelectorLine(i);
-                                    setActiveLine(i);
-                                  }}
-                                  className={`rounded px-1.5 py-0.5 transition-all ${selected ? "text-slate-900 hover:bg-emerald-50" : "text-slate-300 italic hover:bg-slate-100"} ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                >
-                                  {selected ??
-                                    BLANK_LINE_GHOST_COMMAND[i] ??
-                                    "_____"}
-                                </button>{" "}
-                                <span className="text-slate-900 font-bold">
-                                  {suffix}
-                                </span>
-                              </>
-                            ) : (
-                              getLineText(i)
-                            )}
+                            {renderCodeLine(i, selected)}
                           </div>
                         </div>
                       );
@@ -734,7 +799,7 @@ export default function SimulasiKasirKantin() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleSelectCommand(openSelectorLine, "input")
+                            handleSelectCommand(openSelectorLine, "Input")
                           }
                           className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                         >
@@ -743,7 +808,7 @@ export default function SimulasiKasirKantin() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleSelectCommand(openSelectorLine, "proses")
+                            handleSelectCommand(openSelectorLine, "Proses")
                           }
                           className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
                         >
@@ -752,7 +817,7 @@ export default function SimulasiKasirKantin() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleSelectCommand(openSelectorLine, "output")
+                            handleSelectCommand(openSelectorLine, "Output")
                           }
                           className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
                         >
@@ -945,28 +1010,6 @@ export default function SimulasiKasirKantin() {
           </div>
         </div>
       </main>
-
-      {/* FOOTER */}
-      <footer className="px-8 py-3 bg-background border-t border-border flex items-center justify-between shrink-0 text-[10px]">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <span className="font-black uppercase tracking-widest">
-            STATUS SISTEM
-          </span>
-          <span className="w-px h-3 bg-border"></span>
-          <span className="font-medium italic">
-            Workspace siap menerima algoritma
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-muted-foreground font-medium">
-            BAHASA: PSEUDOCODE INDONESIA
-          </span>
-          <span className="w-px h-3 bg-border"></span>
-          <span className="font-black text-emerald-600 uppercase tracking-wide italic">
-            CODIN • INTERACTIVE ALGORITHM LEARNING
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }
