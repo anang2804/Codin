@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   Link as LinkIcon,
   CheckCircle,
   Circle,
+  Lock,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -235,19 +236,55 @@ export default function SiswaMateriDetailPage() {
     setExpandedBabs(newExpanded);
   }
 
+  const orderedSubBabs = useMemo(() => {
+    const allSubBabItems: SubBab[] = [];
+    babs.forEach((bab) => {
+      if (subBabs[bab.id]) {
+        allSubBabItems.push(...subBabs[bab.id]);
+      }
+    });
+    return allSubBabItems;
+  }, [babs, subBabs]);
+
+  const subBabIndexMap = useMemo(() => {
+    return new Map(orderedSubBabs.map((subBab, index) => [subBab.id, index]));
+  }, [orderedSubBabs]);
+
+  const maxUnlockedSubBabIndex = useMemo(() => {
+    const firstIncompleteIndex = orderedSubBabs.findIndex(
+      (subBab) => !subBab.completed,
+    );
+
+    if (firstIncompleteIndex === -1) {
+      return orderedSubBabs.length - 1;
+    }
+
+    return firstIncompleteIndex;
+  }, [orderedSubBabs]);
+
+  function isSubBabUnlocked(subBabId: string): boolean {
+    const subBabIndex = subBabIndexMap.get(subBabId);
+    if (subBabIndex === undefined) return false;
+    return subBabIndex <= maxUnlockedSubBabIndex;
+  }
+
+  function isBabUnlocked(babId: string): boolean {
+    const babSubBabs = subBabs[babId] || [];
+    if (babSubBabs.length === 0) return true;
+    return babSubBabs.some((subBab) => isSubBabUnlocked(subBab.id));
+  }
+
   function handleSelectSubBab(subBab: SubBab) {
+    if (!isSubBabUnlocked(subBab.id)) {
+      toast.info("Selesaikan materi sebelumnya untuk membuka sub-bab ini");
+      return;
+    }
     setSelectedSubBab(subBab);
   }
 
   // Get all sub babs in order (flat list)
   function getAllSubBabsInOrder(): SubBab[] {
-    const allSubBabs: SubBab[] = [];
-    babs.forEach((bab) => {
-      if (subBabs[bab.id]) {
-        allSubBabs.push(...subBabs[bab.id]);
-      }
-    });
-    return allSubBabs;
+    return orderedSubBabs;
   }
 
   // Get next sub-bab
@@ -374,34 +411,7 @@ export default function SiswaMateriDetailPage() {
     }
   }
 
-  function handleNavigateNext() {
-    const nextSubBab = getNextSubBab();
-    if (nextSubBab) {
-      setSelectedSubBab(nextSubBab);
-      const nextBabId = Object.keys(subBabs).find((babId) =>
-        subBabs[babId].some((sb) => sb.id === nextSubBab.id),
-      );
-      if (nextBabId) {
-        setExpandedBabs((prev) => new Set([...prev, nextBabId]));
-      }
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }
-
   async function handleNextClick() {
-    if (
-      selectedSubBab?.content_type === "file" ||
-      selectedSubBab?.content_type === "link"
-    ) {
-      await handleMarkCompleteAndNext();
-      return;
-    }
-
-    if (getNextSubBab()) {
-      handleNavigateNext();
-      return;
-    }
-
     await handleMarkCompleteAndNext();
   }
 
@@ -608,7 +618,10 @@ export default function SiswaMateriDetailPage() {
                 size="lg"
                 className="min-w-[200px] bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all rounded-lg"
                 onClick={handleNextClick}
-                disabled={selectedSubBab?.completed && !getNextSubBab()}
+                disabled={
+                  !selectedSubBab ||
+                  (selectedSubBab?.completed && !getNextSubBab())
+                }
               >
                 {getNextSubBab() ? (
                   <>
@@ -760,123 +773,168 @@ export default function SiswaMateriDetailPage() {
               </Card>
             ) : (
               <div className="space-y-2">
-                {babs.map((bab, babIndex) => (
-                  <div key={bab.id}>
-                    {/* Bab Header */}
-                    <button
-                      onClick={() => toggleBab(bab.id)}
-                      className="w-full p-3 md:p-2.5 bg-card rounded-lg border border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:shadow-sm transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-bold flex-shrink-0">
-                          {babIndex + 1}
-                        </span>
-                        <div className="flex-1 text-left min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <h3 className="font-semibold text-foreground text-sm truncate">
-                              {bab.title}
-                            </h3>
-                            <span
-                              className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                                subBabs[bab.id] &&
-                                subBabs[bab.id].length > 0 &&
-                                subBabs[bab.id].every((sb) => sb.completed)
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {subBabs[bab.id] &&
-                              subBabs[bab.id].length > 0 &&
-                              subBabs[bab.id].every((sb) => sb.completed)
-                                ? "Selesai"
-                                : "Belum"}
-                            </span>
+                {babs.map((bab, babIndex) => {
+                  const babLocked = !isBabUnlocked(bab.id);
+
+                  return (
+                    <div key={bab.id}>
+                      {/* Bab Header */}
+                      <button
+                        onClick={() => {
+                          if (babLocked) {
+                            toast.info(
+                              "Selesaikan bab sebelumnya untuk membuka bab ini",
+                            );
+                            return;
+                          }
+                          toggleBab(bab.id);
+                        }}
+                        className={`w-full p-3 md:p-2.5 bg-card rounded-lg border transition-all duration-200 ${
+                          babLocked
+                            ? "border-border/70 opacity-60 cursor-not-allowed"
+                            : "border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-bold flex-shrink-0">
+                            {babIndex + 1}
+                          </span>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <h3 className="font-semibold text-foreground text-sm truncate">
+                                {bab.title}
+                              </h3>
+                              <span
+                                className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                                  babLocked
+                                    ? "bg-amber-100 text-amber-700"
+                                    : subBabs[bab.id] &&
+                                        subBabs[bab.id].length > 0 &&
+                                        subBabs[bab.id].every(
+                                          (sb) => sb.completed,
+                                        )
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {babLocked
+                                  ? "Terkunci"
+                                  : subBabs[bab.id] &&
+                                      subBabs[bab.id].length > 0 &&
+                                      subBabs[bab.id].every(
+                                        (sb) => sb.completed,
+                                      )
+                                    ? "Selesai"
+                                    : "Belum"}
+                              </span>
+                            </div>
+                            {bab.description && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {bab.description}
+                              </p>
+                            )}
                           </div>
-                          {bab.description && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {bab.description}
-                            </p>
+                          {babLocked ? (
+                            <Lock
+                              size={18}
+                              className="text-amber-600 flex-shrink-0"
+                            />
+                          ) : expandedBabs.has(bab.id) ? (
+                            <ChevronDown
+                              size={20}
+                              className="text-muted-foreground flex-shrink-0"
+                            />
+                          ) : (
+                            <ChevronRight
+                              size={20}
+                              className="text-muted-foreground flex-shrink-0"
+                            />
                           )}
                         </div>
-                        {expandedBabs.has(bab.id) ? (
-                          <ChevronDown
-                            size={20}
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        ) : (
-                          <ChevronRight
-                            size={20}
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        )}
-                      </div>
-                    </button>
+                      </button>
 
-                    {/* Sub-Bab List */}
-                    {expandedBabs.has(bab.id) && subBabs[bab.id] && (
-                      <div className="ml-4 mt-2 space-y-1.5">
-                        {subBabs[bab.id].map((subBab, subIndex) => (
-                          <button
-                            key={subBab.id}
-                            onClick={() => handleSelectSubBab(subBab)}
-                            className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all duration-200 relative hover:shadow-sm ${
-                              selectedSubBab?.id === subBab.id
-                                ? "bg-green-50 border-green-300 border-l-4 border-l-green-600"
-                                : subBab.completed
-                                  ? "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-green-500"
-                                  : "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-border"
-                            }`}
-                          >
-                            <div className="flex-shrink-0">
-                              {subBab.completed ? (
-                                <CheckCircle
-                                  size={18}
-                                  className="text-green-600"
-                                />
-                              ) : (
-                                <Circle
-                                  size={18}
-                                  className="text-muted-foreground"
-                                />
-                              )}
-                            </div>
-                            <div className="flex-1 text-left min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate leading-snug">
-                                {subIndex + 1}. {subBab.title}
-                              </p>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                {subBab.content_type === "video" && (
-                                  <Video size={12} className="text-green-600" />
-                                )}
-                                {subBab.content_type === "file" && (
-                                  <FileText
-                                    size={12}
-                                    className="text-green-600"
-                                  />
-                                )}
-                                {subBab.content_type === "link" && (
-                                  <LinkIcon
-                                    size={12}
-                                    className="text-green-600"
-                                  />
-                                )}
-                                {subBab.content_type === "text" && (
-                                  <FileText
-                                    size={12}
-                                    className="text-green-600"
-                                  />
-                                )}
-                                <span className="text-xs text-muted-foreground capitalize">
-                                  {subBab.content_type}
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {/* Sub-Bab List */}
+                      {expandedBabs.has(bab.id) && subBabs[bab.id] && (
+                        <div className="ml-4 mt-2 space-y-1.5">
+                          {subBabs[bab.id].map((subBab, subIndex) => {
+                            const subBabLocked = !isSubBabUnlocked(subBab.id);
+
+                            return (
+                              <button
+                                key={subBab.id}
+                                onClick={() => handleSelectSubBab(subBab)}
+                                className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all duration-200 relative ${
+                                  subBabLocked
+                                    ? "bg-card border-border/70 opacity-60 cursor-not-allowed border-l-4 border-l-amber-500"
+                                    : selectedSubBab?.id === subBab.id
+                                      ? "bg-green-50 border-green-300 border-l-4 border-l-green-600 shadow-sm"
+                                      : subBab.completed
+                                        ? "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-green-500 hover:shadow-sm"
+                                        : "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-border hover:shadow-sm"
+                                }`}
+                              >
+                                <div className="flex-shrink-0">
+                                  {subBabLocked ? (
+                                    <Lock
+                                      size={16}
+                                      className="text-amber-600"
+                                    />
+                                  ) : subBab.completed ? (
+                                    <CheckCircle
+                                      size={18}
+                                      className="text-green-600"
+                                    />
+                                  ) : (
+                                    <Circle
+                                      size={18}
+                                      className="text-muted-foreground"
+                                    />
+                                  )}
+                                </div>
+                                <div className="flex-1 text-left min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate leading-snug">
+                                    {subIndex + 1}. {subBab.title}
+                                  </p>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    {subBab.content_type === "video" && (
+                                      <Video
+                                        size={12}
+                                        className="text-green-600"
+                                      />
+                                    )}
+                                    {subBab.content_type === "file" && (
+                                      <FileText
+                                        size={12}
+                                        className="text-green-600"
+                                      />
+                                    )}
+                                    {subBab.content_type === "link" && (
+                                      <LinkIcon
+                                        size={12}
+                                        className="text-green-600"
+                                      />
+                                    )}
+                                    {subBab.content_type === "text" && (
+                                      <FileText
+                                        size={12}
+                                        className="text-green-600"
+                                      />
+                                    )}
+                                    <span className="text-xs text-muted-foreground capitalize">
+                                      {subBabLocked
+                                        ? "Terkunci"
+                                        : subBab.content_type}
+                                    </span>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
