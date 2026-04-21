@@ -8,8 +8,9 @@ const SUPABASE_URL =
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function getFallbackSimulasiMeta(slug: string) {
-  const catalogItem = SIMULATION_SECTIONS.flatMap((section) => section.items)
-    .find((item) => item.slug === slug || item.href.endsWith(`/${slug}`));
+  const catalogItem = SIMULATION_SECTIONS.flatMap(
+    (section) => section.items,
+  ).find((item) => item.slug === slug || item.href.endsWith(`/${slug}`));
 
   if (catalogItem) {
     const difficultyMap: Record<string, string> = {
@@ -41,8 +42,9 @@ function getFallbackSimulasiMeta(slug: string) {
 }
 
 function getCanonicalSlugs(slug: string) {
-  const catalogItem = SIMULATION_SECTIONS.flatMap((section) => section.items)
-    .find((item) => item.slug === slug || item.href.endsWith(`/${slug}`));
+  const catalogItem = SIMULATION_SECTIONS.flatMap(
+    (section) => section.items,
+  ).find((item) => item.slug === slug || item.href.endsWith(`/${slug}`));
 
   if (!catalogItem) return [slug];
   if (catalogItem.slug === slug) return [slug];
@@ -68,7 +70,7 @@ export async function POST(request: Request) {
     if (!simulasi_slug) {
       return NextResponse.json(
         { error: "simulasi_slug is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -87,11 +89,13 @@ export async function POST(request: Request) {
         console.error("Missing service role env for simulasi auto-create");
         return NextResponse.json(
           { error: "Simulasi belum terdaftar di sistem" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
-      const fallbackMeta = getFallbackSimulasiMeta(slugsToTry[slugsToTry.length - 1]);
+      const fallbackMeta = getFallbackSimulasiMeta(
+        slugsToTry[slugsToTry.length - 1],
+      );
       const adminSupabase = createServiceClient(
         SUPABASE_URL,
         SUPABASE_SERVICE_ROLE_KEY,
@@ -100,7 +104,7 @@ export async function POST(request: Request) {
             autoRefreshToken: false,
             persistSession: false,
           },
-        }
+        },
       );
 
       const { data: createdSimulasi, error: createError } = await adminSupabase
@@ -113,7 +117,7 @@ export async function POST(request: Request) {
         console.error("Error creating simulasi fallback:", createError);
         return NextResponse.json(
           { error: "Simulasi belum terdaftar di sistem" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -133,7 +137,7 @@ export async function POST(request: Request) {
         },
         {
           onConflict: "siswa_id,simulasi_id",
-        }
+        },
       )
       .select()
       .single();
@@ -142,7 +146,7 @@ export async function POST(request: Request) {
       console.error("Error marking simulasi as completed:", error);
       return NextResponse.json(
         { error: "Failed to mark simulasi as completed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -151,7 +155,7 @@ export async function POST(request: Request) {
     console.error("Error in mark-completed API:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
