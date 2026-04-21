@@ -484,7 +484,10 @@ export default function TrafficExpertPage() {
           >
             <RotateCcw size={14} /> Reset
           </button>
-          <MarkCompletedButton simulasiSlug="traffic-expert" />
+          <MarkCompletedButton
+            simulasiSlug="traffic-expert"
+            canMarkComplete={simulationStatus === "success"}
+          />
           <button
             onClick={runSimulation}
             disabled={isSimulating && !hardwareBroken}

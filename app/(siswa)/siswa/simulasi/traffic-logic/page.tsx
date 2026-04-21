@@ -479,7 +479,10 @@ export default function TrafficLogicPage() {
           >
             <RotateCcw size={14} /> Reset
           </button>
-          <MarkCompletedButton simulasiSlug="traffic-logic" />
+          <MarkCompletedButton
+            simulasiSlug="traffic-logic"
+            canMarkComplete={simulationStatus === "success"}
+          />
           <button
             onClick={runSimulation}
             disabled={isSimulating}

@@ -6,10 +6,12 @@ import { toast } from "sonner";
 
 interface MarkCompletedButtonProps {
   simulasiSlug: string;
+  canMarkComplete?: boolean;
 }
 
 export default function MarkCompletedButton({
   simulasiSlug,
+  canMarkComplete = true,
 }: MarkCompletedButtonProps) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +43,10 @@ export default function MarkCompletedButton({
 
   const handleMarkCompleted = async () => {
     if (isCompleted) return;
+    if (!canMarkComplete) {
+      toast.info("Jalankan simulasi sampai berhasil sebelum menandai selesai");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -86,14 +92,21 @@ export default function MarkCompletedButton({
   return (
     <button
       onClick={handleMarkCompleted}
-      disabled={isCompleted || isLoading}
+      disabled={isCompleted || isLoading || !canMarkComplete}
       className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-all ${
         isCompleted
           ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300 cursor-default"
-          : isLoading
-            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-            : "bg-white text-emerald-600 border-2 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 active:scale-95"
+          : !canMarkComplete
+            ? "bg-slate-100 text-slate-400 border-2 border-slate-200 cursor-not-allowed"
+            : isLoading
+              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+              : "bg-white text-emerald-600 border-2 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 active:scale-95"
       }`}
+      title={
+        !canMarkComplete && !isCompleted
+          ? "Selesaikan simulasi sampai status berhasil terlebih dahulu"
+          : undefined
+      }
     >
       {isLoading ? (
         <>

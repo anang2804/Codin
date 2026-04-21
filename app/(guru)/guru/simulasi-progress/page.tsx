@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -45,11 +45,7 @@ export default function SimulasiProgressPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [detailSiswa, setDetailSiswa] = useState<SiswaProgress | null>(null);
 
-  useEffect(() => {
-    fetchProgress();
-  }, []);
-
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     try {
       const response = await fetch("/api/guru/simulasi-progress", {
         cache: "no-store",
@@ -65,7 +61,31 @@ export default function SimulasiProgressPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProgress();
+
+    const intervalId = window.setInterval(() => {
+      fetchProgress();
+    }, 15000);
+
+    const handleFocus = () => fetchProgress();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchProgress();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchProgress]);
 
   if (isLoading) {
     return (

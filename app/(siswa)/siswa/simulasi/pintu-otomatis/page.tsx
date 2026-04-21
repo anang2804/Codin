@@ -479,7 +479,7 @@ const PintuOtomatisSimulation = () => {
           </button>
           <button
             onClick={markAsTried}
-            disabled={hasTried || isSavingCompletion}
+            disabled={hasTried || isSavingCompletion || !showSuccessCard}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all duration-200 active:scale-95 disabled:opacity-50 ${
               hasTried
                 ? "bg-[#d1fae5] text-[#0f766e] border-2 border-[#86efac] shadow-sm"

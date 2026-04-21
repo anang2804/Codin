@@ -422,7 +422,10 @@ export default function TrafficDebugPage() {
           >
             <RotateCcw size={14} /> Reset
           </button>
-          <MarkCompletedButton simulasiSlug="traffic-debug" />
+          <MarkCompletedButton
+            simulasiSlug="traffic-debug"
+            canMarkComplete={simulationStatus === "success"}
+          />
           <button
             onClick={runSimulation}
             disabled={isSimulating && simulationStatus !== "error"}

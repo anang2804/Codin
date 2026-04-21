@@ -711,7 +711,7 @@ export default function VariabelBuahKeranjangPage() {
 
           <button
             onClick={markAsTried}
-            disabled={hasTried || isSavingCompletion}
+            disabled={hasTried || isSavingCompletion || !showSuccessCard}
             className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               hasTried
                 ? "border-2 border-[#86efac] bg-[#d1fae5] text-[#0f766e]"
