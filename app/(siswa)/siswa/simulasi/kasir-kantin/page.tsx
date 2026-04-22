@@ -662,6 +662,31 @@ export default function SimulasiKasirKantin() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+      {/* SELECTOR DROPDOWN - Top Level Modal */}
+      {openSelectorLine !== null && !isRunning && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
+          <div className="pointer-events-auto bg-card border border-emerald-200 rounded-2xl px-3 py-3 shadow-lg mb-8 mr-6">
+            <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
+              PILIH PERINTAH BARIS {openSelectorLine + 1}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TYPE_OPTIONS.map((option) => (
+                <button
+                  key={option.type}
+                  type="button"
+                  onClick={() =>
+                    handleSelectCommand(openSelectorLine, option.type)
+                  }
+                  className={`min-w-[92px] px-3 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl border transition-all ${option.className}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HEADER */}
       <header className="z-40 flex shrink-0 items-center justify-between border-b border-emerald-100/80 bg-white/90 px-6 py-3 shadow-sm backdrop-blur">
         <div className="flex items-center gap-3">
@@ -795,7 +820,7 @@ export default function SimulasiKasirKantin() {
         </aside>
 
         {/* WORKSPACE - EDITOR */}
-        <div className="relative flex-1 flex flex-col min-w-0 bg-background">
+        <div className="flex-1 flex flex-col min-w-0 bg-background relative">
           <section className="px-6 pt-5 pb-3">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-start gap-5 shadow-sm">
               <div className="bg-background p-2.5 rounded-xl shadow-sm text-primary">
@@ -844,7 +869,7 @@ export default function SimulasiKasirKantin() {
             </AnimatePresence>
           </section>
 
-          <div className="relative flex-1 flex gap-5 px-6 pb-6 overflow-hidden">
+          <div className="relative flex-1 flex gap-5 px-6 pb-6">
             {/* PANEL TENGAH - EDITOR GHOST TEMPLATE */}
             <section className="flex-1 min-w-[500px] bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden relative">
               <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
@@ -885,6 +910,7 @@ export default function SimulasiKasirKantin() {
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
                       const isActive = activeLine === i;
+                      const isErrorLine = errorLine === i;
                       const selected =
                         selectedCommands[i] ?? CHOICE_PLACEHOLDER;
 
@@ -893,10 +919,10 @@ export default function SimulasiKasirKantin() {
                           key={i}
                           className="relative h-[22px] flex items-center"
                         >
-                          {isActive && (
+                          {(isActive || isErrorLine) && (
                             <motion.div
                               layoutId="lineHighlight"
-                              className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : errorLine === i ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
+                              className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : isErrorLine ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
                             />
                           )}
 
@@ -909,28 +935,6 @@ export default function SimulasiKasirKantin() {
                       );
                     })}
                   </div>
-
-                  {openSelectorLine !== null && !isRunning && (
-                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-2xl px-3 py-3 shadow-lg">
-                      <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
-                        PILIH PERINTAH BARIS {openSelectorLine + 1}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {TYPE_OPTIONS.map((option) => (
-                          <button
-                            key={option.type}
-                            type="button"
-                            onClick={() =>
-                              handleSelectCommand(openSelectorLine, option.type)
-                            }
-                            className={`min-w-[92px] px-3 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl border transition-all ${option.className}`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </section>
