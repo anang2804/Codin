@@ -21,38 +21,104 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
+const CHOICE_PLACEHOLDER = "_____";
+const OPERATOR_PLACEHOLDER = "[OP]";
+const TYPE1_PLACEHOLDER = "[TYPE1]";
+const TYPE2_PLACEHOLDER = "[TYPE2]";
+const TYPE3_PLACEHOLDER = "[TYPE3]";
+
+type CommandChoice = "+" | "-" | "*" | "/" | "%";
+type TypeChoice = "Number" | "String" | "Boolean" | "Array" | "Object";
+type TokenKey = "type1" | "type2" | "operator" | "type3";
+
+const TOKEN_LINE_MAP: Record<TokenKey, number> = {
+  type1: 0,
+  type2: 1,
+  operator: 2,
+  type3: 2,
+};
+
 const EXPECTED_SOLUTION = [
-  "input buah1",
-  "input buah2",
-  "proses: jus = buah1 + buah2",
-  "output jus",
-] as const;
+  "let buah1; // tipe data: Number",
+  "let buah2; // tipe data: Number",
+  "let jus = buah1 + buah2; // tipe data: Number",
+  "console.log(jus);",
+].join("\n");
 
 const INITIAL_TEMPLATE = [
-  "_____ buah1",
-  "_____ buah2",
-  "proses: jus = buah1 + buah2",
-  "_____ jus",
-] as const;
+  "let buah1; // tipe data: [TYPE1]",
+  "let buah2; // tipe data: [TYPE2]",
+  "let jus = buah1 [OP] buah2; // tipe data: [TYPE3]",
+  "console.log(jus);",
+].join("\n");
 
-const BLANK_LINE_SUFFIX: Partial<Record<number, string>> = {
-  0: "buah1",
-  1: "buah2",
-  3: "jus",
-};
+const OPERATOR_OPTIONS: Array<{
+  type: CommandChoice;
+  label: string;
+  className: string;
+}> = [
+  {
+    type: "+",
+    label: "+",
+    className:
+      "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+  },
+  {
+    type: "-",
+    label: "-",
+    className: "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
+  },
+  {
+    type: "*",
+    label: "*",
+    className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
+  },
+  {
+    type: "/",
+    label: "/",
+    className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
+  },
+  {
+    type: "%",
+    label: "%",
+    className:
+      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
+  },
+];
 
-type CommandChoice = "input" | "proses" | "output";
-
-const COMMAND_GLOSSARY: Record<string, string> = {
-  input:
-    "INPUT digunakan untuk membaca data dari bahan mentah (buah) sebelum masuk ke proses blender.",
-  output:
-    "OUTPUT digunakan untuk menampilkan hasil akhir pemrosesan, yaitu jus yang sudah jadi.",
-  proses:
-    "PROSES menandakan tahap transformasi data, dari bahan mentah menjadi hasil olahan.",
-  start: "START menandai awal algoritma dijalankan.",
-  end: "END menandai algoritma selesai dieksekusi.",
-};
+const DATA_TYPE_OPTIONS: Array<{
+  type: TypeChoice;
+  label: string;
+  className: string;
+}> = [
+  {
+    type: "Number",
+    label: "Number",
+    className:
+      "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+  },
+  {
+    type: "String",
+    label: "String",
+    className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
+  },
+  {
+    type: "Boolean",
+    label: "Boolean",
+    className:
+      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
+  },
+  {
+    type: "Array",
+    label: "Array",
+    className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
+  },
+  {
+    type: "Object",
+    label: "Object",
+    className: "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100",
+  },
+];
 
 type CommandDetail = {
   title: string;
@@ -61,28 +127,73 @@ type CommandDetail = {
   color: string;
 };
 
-const COMMAND_DETAILS: Record<string, CommandDetail> = {
-  START: {
-    title: "START / END",
-    desc: "Menandai awal dan akhir algoritma.",
-    icon: <Flag className="text-emerald-500" size={20} />,
+const COMMAND_DETAILS: Record<
+  CommandChoice | TypeChoice | "DEFAULT",
+  CommandDetail
+> = {
+  "+": {
+    title: "(+)",
+    desc: "Penjumlahan (menambah nilai) ",
+    icon: <GlassWater className="text-emerald-600" size={20} />,
     color: "bg-emerald-50 border-emerald-100",
   },
-  INPUT_OUTPUT: {
-    title: "INPUT / OUTPUT",
-    desc: "INPUT Menampilkan data yang dimasukkan, OUTPUT Menampilkan hasil akhir.",
-    icon: <GlassWater className="text-lime-600" size={20} />,
-    color: "bg-lime-50 border-lime-100",
+  "-": {
+    title: "(-)",
+    desc: "Pengurangan (mengurangi nilai)",
+    icon: <Blend className="text-red-600" size={20} />,
+    color: "bg-red-50 border-red-100",
   },
-  PROCESS: {
-    title: "PROSES",
-    desc: "Mengolah data menjadi hasil.",
-    icon: <Blend className="text-emerald-600" size={20} />,
-    color: "bg-emerald-100 border-emerald-200",
+  "*": {
+    title: "(*)",
+    desc: "Perkalian (mengalikan nilai)",
+    icon: <CupSoda className="text-amber-600" size={20} />,
+    color: "bg-amber-50 border-amber-100",
+  },
+  "/": {
+    title: "(/)",
+    desc: "Pembagian (membagi nilai)",
+    icon: <Cpu className="text-sky-600" size={20} />,
+    color: "bg-sky-50 border-sky-100",
+  },
+  "%": {
+    title: "SISA BAGI (%)",
+    desc: "Sisa bagi",
+    icon: <Flag className="text-violet-600" size={20} />,
+    color: "bg-violet-50 border-violet-100",
+  },
+  Number: {
+    title: "NUMBER",
+    desc: "Tipe data Number digunakan untuk menyimpan nilai angka.",
+    icon: <Cpu className="text-emerald-600" size={20} />,
+    color: "bg-emerald-50 border-emerald-100",
+  },
+  String: {
+    title: "STRING",
+    desc: "Tipe data String digunakan untuk menyimpan teks.",
+    icon: <Edit3 className="text-amber-600" size={20} />,
+    color: "bg-amber-50 border-amber-100",
+  },
+  Boolean: {
+    title: "BOOLEAN",
+    desc: "Tipe data Boolean hanya memiliki nilai true atau false.",
+    icon: <Flag className="text-violet-600" size={20} />,
+    color: "bg-violet-50 border-violet-100",
+  },
+  Array: {
+    title: "ARRAY",
+    desc: "Tipe data Array digunakan untuk daftar nilai.",
+    icon: <GlassWater className="text-sky-600" size={20} />,
+    color: "bg-sky-50 border-sky-100",
+  },
+  Object: {
+    title: "OBJECT",
+    desc: "Tipe data Object digunakan untuk pasangan key dan value.",
+    icon: <Blend className="text-rose-600" size={20} />,
+    color: "bg-rose-50 border-rose-100",
   },
   DEFAULT: {
     title: "SIAP MENULIS",
-    desc: "Lengkapi bagian yang kosong sesuai urutan logika: input → proses → output.",
+    desc: "Klik bagian kosong (___) lalu pilih tipe data atau operator yang sesuai.",
     icon: <Edit3 className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
@@ -112,11 +223,14 @@ type SimData = {
 };
 
 const BlenderSimulation = () => {
-  const [selectedCommands, setSelectedCommands] = useState<
-    Partial<Record<number, CommandChoice>>
+  const [selectedTokens, setSelectedTokens] = useState<
+    Partial<Record<TokenKey, CommandChoice | TypeChoice>>
   >({});
-  const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
-  const [code, setCode] = useState<string>(INITIAL_TEMPLATE.join("\n"));
+  const [openSelectorToken, setOpenSelectorToken] = useState<TokenKey | null>(
+    null,
+  );
+  const [activeToken, setActiveToken] = useState<TokenKey | null>(null);
+  const [code, setCode] = useState<string>(INITIAL_TEMPLATE as string);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorLine, setErrorLine] = useState<number>(-1);
@@ -155,46 +269,64 @@ const BlenderSimulation = () => {
 
   const linesArray = code.split("\n");
 
-  const getLineText = (lineIndex: number): string => {
-    const suffix = BLANK_LINE_SUFFIX[lineIndex];
-    if (!suffix) {
-      return INITIAL_TEMPLATE[lineIndex] || "";
-    }
-
-    const command = selectedCommands[lineIndex] ?? "_____";
-    return `${command} ${suffix}`;
+  const getCodeFromSelection = (
+    tokens: Partial<Record<TokenKey, CommandChoice | TypeChoice>>,
+  ): string => {
+    return INITIAL_TEMPLATE.replace(
+      TYPE1_PLACEHOLDER,
+      (tokens.type1 as TypeChoice | undefined) ?? CHOICE_PLACEHOLDER,
+    )
+      .replace(
+        TYPE2_PLACEHOLDER,
+        (tokens.type2 as TypeChoice | undefined) ?? CHOICE_PLACEHOLDER,
+      )
+      .replace(
+        OPERATOR_PLACEHOLDER,
+        (tokens.operator as CommandChoice | undefined) ?? CHOICE_PLACEHOLDER,
+      )
+      .replace(
+        TYPE3_PLACEHOLDER,
+        (tokens.type3 as TypeChoice | undefined) ?? CHOICE_PLACEHOLDER,
+      );
   };
+
+  useEffect(() => {
+    const newCode = getCodeFromSelection(selectedTokens);
+    setCode(newCode);
+  }, [selectedTokens]);
 
   const updateSimData = (newData: Partial<SimData>) => {
     simDataRef.current = { ...simDataRef.current, ...newData };
   };
 
-  const generateEducationalFeedback = (
-    typedLine: string,
-    lineIdx: number,
-  ): string => {
-    const trimmed = typedLine.trim().toLowerCase();
-    if (!trimmed || trimmed.includes("_____")) {
-      return `Baris ${lineIdx + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`;
+  const normalizeCode = (line: string): string => {
+    return line.trim().toLowerCase().replace(/\s+/g, " ");
+  };
+
+  const generateEducationalFeedback = (userLine: string): string => {
+    const trimmed = userLine.trim().toLowerCase();
+    if (!trimmed || trimmed.includes("_")) {
+      return "Masih ada bagian yang kosong. Lengkapi semua placeholder tipe data dan operator terlebih dahulu.";
     }
 
-    return `Baris ${lineIdx + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan peran pada alur program.\n\nPetunjuk: Perhatikan apakah baris tersebut berfungsi sebagai input, proses, atau output.`;
+    if (
+      !trimmed.includes("+") &&
+      !trimmed.includes("-") &&
+      !trimmed.includes("*") &&
+      !trimmed.includes("/") &&
+      !trimmed.includes("%")
+    ) {
+      return `Operator tidak ditemukan.\n\nBagian yang dipilih belum mengandung operator yang valid.\n\nPetunjuk: Gunakan salah satu operator: +, -, *, /, atau %`;
+    }
+
+    return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali tipe data dan operator yang dipilih.";
   };
 
   const getActiveDescription = (): CommandDetail => {
-    if (activeLine === -1) {
-      return COMMAND_DETAILS.DEFAULT;
-    }
-
-    const selectedOnActiveLine = selectedCommands[activeLine];
-    if (selectedOnActiveLine === "input" || selectedOnActiveLine === "output") {
-      return COMMAND_DETAILS.INPUT_OUTPUT;
-    }
-    if (selectedOnActiveLine === "proses") {
-      return COMMAND_DETAILS.PROCESS;
-    }
-
-    return COMMAND_DETAILS.DEFAULT;
+    if (activeLine === -1 || !activeToken) return COMMAND_DETAILS.DEFAULT;
+    const currentTokenChoice = selectedTokens[activeToken];
+    if (!currentTokenChoice) return COMMAND_DETAILS.DEFAULT;
+    return COMMAND_DETAILS[currentTokenChoice] || COMMAND_DETAILS.DEFAULT;
   };
 
   useEffect(() => {
@@ -228,16 +360,21 @@ const BlenderSimulation = () => {
     };
   }, []);
 
-  const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
+  const handleSelectCommand = (
+    token: TokenKey,
+    value: CommandChoice | TypeChoice,
+  ) => {
     if (isRunning) return;
-    setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
-    setOpenSelectorLine(null);
-    setActiveLine(lineIndex);
-    setErrorLine(-1);
-    setShowSuccessCard(false);
+    setSelectedTokens((prev) => ({ ...prev, [token]: value }));
+    setActiveToken(token);
+    setOpenSelectorToken(null);
+    setActiveLine(TOKEN_LINE_MAP[token]);
   };
 
   const resetSim = () => {
+    setSelectedTokens({});
+    setOpenSelectorToken(null);
+    setActiveToken(null);
     setIsRunning(false);
     setActiveLine(-1);
     setErrorLine(-1);
@@ -256,17 +393,13 @@ const BlenderSimulation = () => {
     setIsOverheating(false);
     setForeignObject(null);
     setFeedback("Sistem siap menjalankan algoritma.");
+    setCode(getCodeFromSelection({}));
     updateSimData({ buah1: "", buah2: "", jus: "" });
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
   };
-
-  useEffect(() => {
-    const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
-    setCode(newCode);
-  }, [selectedCommands]);
 
   const markAsTried = async () => {
     if (hasTried || isSavingCompletion) return;
@@ -300,147 +433,170 @@ const BlenderSimulation = () => {
     }
   };
 
-  const executeStep = async (index: number): Promise<void> => {
-    if (index >= EXPECTED_SOLUTION.length || code.trim() === "") {
-      setIsRunning(false);
-      setActiveLine(-1);
-      return;
-    }
+  const executeStep = async (): Promise<void> => {
+    const validateToken = async (
+      token: TokenKey,
+      expected: CommandChoice | TypeChoice,
+      line: number,
+    ): Promise<boolean> => {
+      setActiveLine(line);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    setActiveLine(index);
+      const chosen = selectedTokens[token];
 
-    const lineRaw = linesArray[index] || "";
-    const lineParsed = lineRaw.trim().toLowerCase();
-    const solution = EXPECTED_SOLUTION[index];
-
-    if (lineParsed !== solution) {
-      setIsRunning(false);
-      setErrorLine(index);
-      setShowSuccessCard(false);
-      const isInputLine = index === 0 || index === 1;
-      const hasWrongContent =
-        lineParsed !== "" && !lineParsed.includes("_____");
-
-      if (isInputLine && hasWrongContent) {
-        const usedProses = lineParsed.startsWith("proses");
-        const usedOutputInsteadInput = lineParsed.startsWith("output");
-
-        if (usedProses) {
-          // Real world scenario: blender spins empty → overheating → broken
-          setBlenderBroken(true);
-          setIsOverheating(true);
-          setBlenderActive(true);
-          setIsLeaking(false);
-          setForeignObject(null);
-          setIsPouring(false);
-          setLiquidLevel(0);
-          setMixedColor("linear-gradient(to top, #f97316, #dc2626)");
-          setFeedback(generateEducationalFeedback(lineRaw, index));
-        } else {
-          const randomObject =
-            FOREIGN_OBJECTS[Math.floor(Math.random() * FOREIGN_OBJECTS.length)];
-          setForeignObject(randomObject);
-          setBlenderBroken(true);
-          setIsOverheating(false);
-          setIsLeaking(true);
-          setBlenderActive(false);
-          setIsPouring(false);
-          setLiquidLevel((prev) => Math.max(prev, 45));
-          setMixedColor("linear-gradient(to top, #38bdf8, #7dd3fc)");
-          void usedOutputInsteadInput;
-          void randomObject;
-          setFeedback(generateEducationalFeedback(lineRaw, index));
-        }
-      } else {
+      if (!chosen) {
+        setIsRunning(false);
+        setErrorLine(line);
+        setShowSuccessCard(false);
         setBlenderBroken(false);
         setIsLeaking(false);
         setIsOverheating(false);
         setForeignObject(null);
-        const eduFeedback = generateEducationalFeedback(lineRaw, index);
-        setFeedback(eduFeedback);
+        setFeedback(
+          `Baris ${line + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
+        );
+        return false;
       }
+
+      if (chosen !== expected) {
+        setIsRunning(false);
+        setErrorLine(line);
+        setShowSuccessCard(false);
+        setBlenderBroken(false);
+        setIsLeaking(false);
+        setIsOverheating(false);
+        setForeignObject(null);
+        setFeedback(
+          `Baris ${line + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
+        );
+        return false;
+      }
+
+      return true;
+    };
+
+    const stepType1 = await validateToken("type1", "Number", 0);
+    if (!stepType1) return;
+
+    const pickedFirstFruit =
+      FRUIT_OPTIONS[Math.floor(Math.random() * FRUIT_OPTIONS.length)];
+    setBuah1(pickedFirstFruit);
+    setMixedColor(FRUIT_TYPES[pickedFirstFruit].color);
+    setLiquidLevel(25);
+    updateSimData({ buah1: pickedFirstFruit });
+    setFeedback("Baris 1 benar. Buah pertama berhasil dimasukkan ke blender.");
+    await new Promise((resolve) => setTimeout(resolve, 550));
+
+    const stepType2 = await validateToken("type2", "Number", 1);
+    if (!stepType2) return;
+
+    const availableSecondFruits = FRUIT_OPTIONS.filter(
+      (fruit) => fruit !== simDataRef.current.buah1,
+    );
+    const pickedSecondFruit =
+      availableSecondFruits[
+        Math.floor(Math.random() * availableSecondFruits.length)
+      ] ?? FRUIT_OPTIONS[0];
+    setBuah2(pickedSecondFruit);
+    setLiquidLevel(50);
+    updateSimData({ buah2: pickedSecondFruit });
+    setFeedback("Baris 2 benar. Buah kedua masuk dan blender siap memproses.");
+    await new Promise((resolve) => setTimeout(resolve, 550));
+
+    const stepOperator = await validateToken("operator", "+", 2);
+    if (!stepOperator) return;
+
+    const selectedOperator =
+      (selectedTokens.operator as CommandChoice | undefined) ?? "+";
+    setBlenderActive(true);
+    setFeedback(
+      `Baris 3 benar. Operator ${selectedOperator} dipakai untuk memproses campuran.`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const stepType3 = await validateToken("type3", "Number", 2);
+    if (!stepType3) return;
+
+    setActiveLine(3);
+    await new Promise((resolve) => setTimeout(resolve, 450));
+
+    const lineRaw = code;
+    const lineParsed = normalizeCode(lineRaw);
+    const solution = normalizeCode(EXPECTED_SOLUTION as string);
+
+    if (lineParsed !== solution) {
+      setIsRunning(false);
+      setErrorLine(0);
+      setShowSuccessCard(false);
+      setBlenderBroken(false);
+      setIsLeaking(false);
+      setIsOverheating(false);
+      setForeignObject(null);
+      setFeedback(generateEducationalFeedback(lineRaw));
       return;
     }
 
-    if (lineParsed === "input buah1") {
-      const picked =
-        FRUIT_OPTIONS[Math.floor(Math.random() * FRUIT_OPTIONS.length)];
-      setBuah1(picked);
-      setBlenderBroken(false);
-      setIsLeaking(false);
-      setIsOverheating(false);
-      setForeignObject(null);
-      setLiquidLevel(25);
-      setMixedColor(FRUIT_TYPES[picked].color);
-      updateSimData({ buah1: picked });
-      setFeedback(`INPUT: Membaca buah1 = \"${toTitle(picked)}\"`);
-    }
-
-    if (lineParsed === "input buah2") {
-      const firstFruit = simDataRef.current.buah1;
-      const availableSecondFruits = FRUIT_OPTIONS.filter(
-        (fruit) => fruit !== firstFruit,
-      );
-      const picked =
-        availableSecondFruits[
-          Math.floor(Math.random() * availableSecondFruits.length)
-        ] ?? FRUIT_OPTIONS[0];
-      setBuah2(picked);
-      setBlenderBroken(false);
-      setIsLeaking(false);
-      setIsOverheating(false);
-      setForeignObject(null);
-      setLiquidLevel(50);
-      updateSimData({ buah2: picked });
-      setFeedback(`INPUT: Membaca buah2 = \"${toTitle(picked)}\"`);
-    }
-
-    if (lineParsed === "proses: jus = buah1 + buah2") {
-      setBlenderActive(true);
-      setFeedback("PROSES: Blender sedang mencampur buah...");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const dataBuah1 =
-        FRUIT_TYPES[simDataRef.current.buah1 as keyof typeof FRUIT_TYPES];
-      const dataBuah2 =
-        FRUIT_TYPES[simDataRef.current.buah2 as keyof typeof FRUIT_TYPES];
-      if (dataBuah1 && dataBuah2) {
-        setMixedColor(
-          `linear-gradient(to top, ${dataBuah1.color}, ${dataBuah2.color})`,
-        );
-      }
-      setLiquidLevel(75);
-      setBlenderActive(false);
-    }
-
-    if (lineParsed === "output jus") {
-      const hasilJus = `${toTitle(simDataRef.current.buah1)} + ${toTitle(simDataRef.current.buah2)}`;
-      setJus(hasilJus);
-      updateSimData({ jus: hasilJus });
-      setIsPouring(true);
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      setLiquidLevel(10);
-      setGlassLevel(85);
-      setJusKeluar(true);
-      setIsPouring(false);
-      setFeedback(`OUTPUT: Jus ${hasilJus} keluar ke gelas.`);
-    }
-
-    if (lineParsed === "output jus") {
-      setShowSuccessCard(true);
-      setFeedback(
-        "Berhasil! Algoritma berjalan dengan benar.\n\nBlender menerima input, memproses data, dan menghasilkan output sesuai urutan.\n\nStruktur yang kamu gunakan: input → proses → output.\n\nAlgoritma ini sudah sesuai dengan konsep dasar pemrograman.",
+    // Success: All lines are correct
+    setBlenderBroken(false);
+    setIsLeaking(false);
+    setIsOverheating(false);
+    setForeignObject(null);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const dataBuah1 =
+      FRUIT_TYPES[simDataRef.current.buah1 as keyof typeof FRUIT_TYPES];
+    const dataBuah2 =
+      FRUIT_TYPES[simDataRef.current.buah2 as keyof typeof FRUIT_TYPES];
+    if (dataBuah1 && dataBuah2) {
+      setMixedColor(
+        `linear-gradient(to top, ${dataBuah1.color}, ${dataBuah2.color})`,
       );
     }
+    setLiquidLevel(75);
+    setBlenderActive(false);
 
-    timerRef.current = setTimeout(() => {
-      void executeStep(index + 1);
-    }, 1200);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const hasilJus = `${toTitle(simDataRef.current.buah1)} ${selectedOperator} ${toTitle(simDataRef.current.buah2)}`;
+    setJus(hasilJus);
+    updateSimData({ jus: hasilJus });
+    setFeedback("Baris 4 dieksekusi. Output jus dituang ke gelas.");
+    setIsPouring(true);
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    setLiquidLevel(10);
+    setGlassLevel(85);
+    setJusKeluar(true);
+    setIsPouring(false);
+    setShowSuccessCard(true);
+    setFeedback(
+      `Berhasil! Operator ${selectedOperator} sudah benar.\n\nbuah1 ${selectedOperator} buah2 = hasil yang sempurna!`,
+    );
+    setIsRunning(false);
   };
 
-  const startRunning = () => {
-    resetSim();
+  const startRunning = async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     setIsRunning(true);
-    void executeStep(0);
+    setActiveLine(-1);
+    setErrorLine(-1);
+    setShowSuccessCard(false);
+    setBuah1("");
+    setBuah2("");
+    setJus("");
+    setBlenderActive(false);
+    setJusKeluar(false);
+    setLiquidLevel(0);
+    setGlassLevel(0);
+    setMixedColor("rgba(255,255,255,0.05)");
+    setIsPouring(false);
+    setBlenderBroken(false);
+    setIsLeaking(false);
+    setIsOverheating(false);
+    setForeignObject(null);
+    setFeedback("Sistem siap menjalankan algoritma.");
+    updateSimData({ buah1: "", buah2: "", jus: "" });
+    await executeStep();
   };
 
   const currentDesc = getActiveDescription();
@@ -450,7 +606,7 @@ const BlenderSimulation = () => {
   const buah2Data = buah2
     ? FRUIT_TYPES[buah2 as keyof typeof FRUIT_TYPES]
     : null;
-  const totalDisplayLines = Math.max(INITIAL_TEMPLATE.length, 10);
+  const totalDisplayLines = linesArray.length;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden">
@@ -632,9 +788,11 @@ const BlenderSimulation = () => {
                     🎉 Berhasil! Algoritma benar
                   </h3>
                   <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
-                    Algoritma berjalan sesuai urutan input → proses → output.
+                    Tipe data dan ekspresi sudah digunakan dengan tepat pada
+                    setiap baris algoritma.
                     <br />
-                    Blender berhasil menghasilkan jus dengan benar.
+                    Blender berhasil membaca input buah, memproses campuran, dan
+                    menghasilkan output jus dengan benar.
                   </p>
                 </div>
               </motion.section>
@@ -696,94 +854,237 @@ const BlenderSimulation = () => {
 
                 <div className="relative flex-1 bg-card overflow-hidden">
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
-                    {INITIAL_TEMPLATE.map((_, i) => {
-                      const isActive = activeLine === i;
-                      const suffix = BLANK_LINE_SUFFIX[i];
-                      const selected = selectedCommands[i];
+                    {linesArray.map((line, index) => {
+                      const renderHighlight = activeLine === index;
+
+                      if (index === 0) {
+                        return (
+                          <div
+                            key={`line-${index}`}
+                            className="relative h-[26px] flex items-center"
+                          >
+                            {renderHighlight && (
+                              <motion.div
+                                layoutId="lineHighlight"
+                                className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
+                                  isRunning
+                                    ? "bg-emerald-50 border-emerald-500"
+                                    : errorLine === index
+                                      ? "bg-red-50 border-red-500"
+                                      : "bg-emerald-50/30 border-emerald-200"
+                                }`}
+                              />
+                            )}
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah1</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={isRunning}
+                                onClick={() => {
+                                  setOpenSelectorToken("type1");
+                                  setActiveToken("type1");
+                                  setActiveLine(index);
+                                }}
+                                className={`rounded px-1.5 py-0.5 transition-all ${
+                                  selectedTokens.type1
+                                    ? "text-emerald-700 hover:bg-emerald-50"
+                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {selectedTokens.type1 ?? CHOICE_PLACEHOLDER}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (index === 1) {
+                        return (
+                          <div
+                            key={`line-${index}`}
+                            className="relative h-[26px] flex items-center"
+                          >
+                            {renderHighlight && (
+                              <motion.div
+                                layoutId="lineHighlight"
+                                className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
+                                  isRunning
+                                    ? "bg-emerald-50 border-emerald-500"
+                                    : errorLine === index
+                                      ? "bg-red-50 border-red-500"
+                                      : "bg-emerald-50/30 border-emerald-200"
+                                }`}
+                              />
+                            )}
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah2</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={isRunning}
+                                onClick={() => {
+                                  setOpenSelectorToken("type2");
+                                  setActiveToken("type2");
+                                  setActiveLine(index);
+                                }}
+                                className={`rounded px-1.5 py-0.5 transition-all ${
+                                  selectedTokens.type2
+                                    ? "text-emerald-700 hover:bg-emerald-50"
+                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {selectedTokens.type2 ?? CHOICE_PLACEHOLDER}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (index === 2) {
+                        return (
+                          <div
+                            key={`line-${index}`}
+                            className="relative h-[26px] flex items-center"
+                          >
+                            {renderHighlight && (
+                              <motion.div
+                                layoutId="lineHighlight"
+                                className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
+                                  isRunning
+                                    ? "bg-emerald-50 border-emerald-500"
+                                    : errorLine === index
+                                      ? "bg-red-50 border-red-500"
+                                      : "bg-emerald-50/30 border-emerald-200"
+                                }`}
+                              />
+                            )}
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">jus</span>
+                              <span className="text-slate-900"> = </span>
+                              <span className="text-blue-700">buah1</span>
+                              <span className="text-slate-900"> </span>
+                              <button
+                                type="button"
+                                disabled={isRunning}
+                                onClick={() => {
+                                  setOpenSelectorToken("operator");
+                                  setActiveToken("operator");
+                                  setActiveLine(index);
+                                }}
+                                className={`rounded px-1.5 py-0.5 transition-all ${
+                                  selectedTokens.operator
+                                    ? "text-emerald-700 hover:bg-emerald-50"
+                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {selectedTokens.operator ?? CHOICE_PLACEHOLDER}
+                              </button>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah2</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={isRunning}
+                                onClick={() => {
+                                  setOpenSelectorToken("type3");
+                                  setActiveToken("type3");
+                                  setActiveLine(index);
+                                }}
+                                className={`rounded px-1.5 py-0.5 transition-all ${
+                                  selectedTokens.type3
+                                    ? "text-emerald-700 hover:bg-emerald-50"
+                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {selectedTokens.type3 ?? CHOICE_PLACEHOLDER}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
-                          key={i}
+                          key={`line-${index}`}
                           className="relative h-[26px] flex items-center"
                         >
-                          {isActive && (
+                          {renderHighlight && (
                             <motion.div
                               layoutId="lineHighlight"
                               className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
                                 isRunning
                                   ? "bg-emerald-50 border-emerald-500"
-                                  : errorLine === i
+                                  : errorLine === index
                                     ? "bg-red-50 border-red-500"
                                     : "bg-emerald-50/30 border-emerald-200"
                               }`}
                             />
                           )}
-
-                          <div
-                            className={`relative z-10 whitespace-pre text-slate-900 font-bold ${
-                              isRunning && activeLine > i ? "opacity-30" : ""
-                            }`}
-                          >
-                            {suffix ? (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={isRunning}
-                                  onClick={() => {
-                                    setOpenSelectorLine(i);
-                                    setActiveLine(i);
-                                  }}
-                                  className={`rounded px-1.5 py-0.5 transition-all ${
-                                    selected
-                                      ? "text-slate-900 hover:bg-emerald-50"
-                                      : "text-slate-300 italic hover:bg-slate-100"
-                                  } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                >
-                                  {selected ?? "_____"}
-                                </button>{" "}
-                                <span className="text-slate-900">{suffix}</span>
-                              </>
-                            ) : (
-                              getLineText(i)
-                            )}
+                          <div className="relative z-10 whitespace-pre font-bold">
+                            <span className="text-slate-900">console.log(</span>
+                            <span className="text-blue-700">jus</span>
+                            <span className="text-slate-900">);</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  {openSelectorLine !== null && !isRunning && (
+                  {openSelectorToken !== null && !isRunning && (
                     <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
                       <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
-                        PILIH PERINTAH BARIS {openSelectorLine + 1}
+                        {openSelectorToken === "operator"
+                          ? "PILIH OPERATOR baris 3"
+                          : "PILIH TIPE DATA baris"}
                       </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "input")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        >
-                          INPUT
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "proses")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                        >
-                          PROCESS
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "output")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
-                        >
-                          OUTPUT
-                        </button>
+                      <div className="flex flex-wrap gap-2">
+                        {openSelectorToken === "operator"
+                          ? OPERATOR_OPTIONS.map((option) => (
+                              <button
+                                key={option.type}
+                                type="button"
+                                onClick={() =>
+                                  handleSelectCommand(
+                                    openSelectorToken,
+                                    option.type,
+                                  )
+                                }
+                                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border transition-all ${option.className}`}
+                              >
+                                {option.label}
+                              </button>
+                            ))
+                          : DATA_TYPE_OPTIONS.map((option) => (
+                              <button
+                                key={option.type}
+                                type="button"
+                                onClick={() =>
+                                  handleSelectCommand(
+                                    openSelectorToken,
+                                    option.type,
+                                  )
+                                }
+                                className={`px-3 py-1.5 text-[10px] font-black tracking-wide rounded-lg border transition-all ${option.className}`}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
                       </div>
                     </div>
                   )}

@@ -910,7 +910,6 @@ export default function SimulasiKasirKantin() {
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
                     {INITIAL_TEMPLATE.map((_, i) => {
                       const isActive = activeLine === i;
-                      const isErrorLine = errorLine === i;
                       const selected =
                         selectedCommands[i] ?? CHOICE_PLACEHOLDER;
 
@@ -919,10 +918,10 @@ export default function SimulasiKasirKantin() {
                           key={i}
                           className="relative h-[22px] flex items-center"
                         >
-                          {(isActive || isErrorLine) && (
+                          {isActive && (
                             <motion.div
                               layoutId="lineHighlight"
-                              className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : isErrorLine ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
+                              className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : errorLine === i ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
                             />
                           )}
 

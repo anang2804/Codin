@@ -58,13 +58,13 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
     ],
   },
   {
-    title: "Struktur Program (IPO)",
-    badgeClass: "bg-violet-50 text-violet-700 border border-violet-100",
+    title: "Variabel Terpadu",
+    badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
     items: [
       {
-        title: "Perbaiki Mesin Kasir Kantin",
+        title: "Mesin Kasir Kantin",
         description:
-          "Susun struktur Input-Process-Output untuk proses perhitungan total belanja di kasir kantin.",
+          "Amati nilai pada setiap variabel, lalu tentukan tipe data yang sesuai.",
         href: "/siswa/simulasi/kasir-kantin",
         slug: "kasir-kantin",
         level: "Dasar",
@@ -72,34 +72,6 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         emoji: "🍛",
         accent: "border-emerald-500",
       },
-      {
-        title: "Blender Jus",
-        description:
-          "Susun struktur Input-Process-Output untuk proses blender dari buah menjadi jus.",
-        href: "/siswa/simulasi/blender-buah",
-        slug: "mesin-jus-blender",
-        level: "Menengah",
-        gradient: "from-lime-100 to-emerald-200",
-        emoji: "🧃",
-        accent: "border-lime-500",
-      },
-      {
-        title: "Mesin Cuci Otomatis",
-        description:
-          "Lengkapi struktur Input-Process-Output mesin cuci hingga menghasilkan pakaian_bersih.",
-        href: "/siswa/simulasi/mesin-cuci",
-        slug: "mesin-cuci-lanjutan",
-        level: "Lanjutan",
-        gradient: "from-violet-100 to-indigo-200",
-        emoji: "🧺",
-        accent: "border-violet-500",
-      },
-    ],
-  },
-  {
-    title: "Variabel Terpadu",
-    badgeClass: "bg-amber-50 text-amber-700 border border-amber-100",
-    items: [
       {
         title: "Dashboard Speedometer",
         description:
@@ -121,6 +93,17 @@ export const SIMULATION_SECTIONS: SimulationSection[] = [
         gradient: "from-teal-100 to-cyan-200",
         emoji: "🛂",
         accent: "border-teal-500",
+      },
+      {
+        title: "Blender Jus",
+        description:
+          "Perhatikan data dan proses blender jus, lalu tentukan tipe data dan operator yang tepat.",
+        href: "/siswa/simulasi/blender-buah",
+        slug: "mesin-jus-blender",
+        level: "Menengah",
+        gradient: "from-lime-100 to-emerald-200",
+        emoji: "🧃",
+        accent: "border-lime-500",
       },
       {
         title: "Buku Rekap Nilai",
