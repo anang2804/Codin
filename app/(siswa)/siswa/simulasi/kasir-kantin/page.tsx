@@ -16,6 +16,7 @@ import {
   Calculator,
   Printer,
   Monitor,
+  Braces,
   Utensils,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,61 +25,101 @@ import { toast } from "sonner";
 // ================== KONSTANTA DAN SOLUSI ==================
 
 const EXPECTED_SOLUTION = [
-  "let harga_makanan; // struktur program: Input",
-  "let harga_minuman; // struktur program: Input",
-  "let hasil = harga_makanan + harga_minuman; // struktur program: Proses",
-  "console.log(hasil); // struktur program: Output",
+  "let daftarBelanja = [",
+  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 },',
+  '  { nama: "Es Teh", harga: 5000, jumlah: 1 }',
+  "]; // tipe data: Array",
+  "let totalHarga = 35000; // tipe data: Number",
+  "let bayar = 50000; // tipe data: Number",
+  "let kembalian = 15000; // tipe data: Number",
 ] as const;
 
 const INITIAL_TEMPLATE = [
-  "let harga_makanan; // struktur program: _____",
-  "let harga_minuman; // struktur program: _____",
-  "let hasil = harga_makanan + harga_minuman; // struktur program: _____",
-  "console.log(hasil); // struktur program: _____",
+  "let daftarBelanja = [",
+  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 },',
+  '  { nama: "Es Teh", harga: 5000, jumlah: 1 }',
+  "]; // tipe data: _____",
+  "let totalHarga = 35000; // tipe data: _____",
+  "let bayar = 50000; // tipe data: _____",
+  "let kembalian = 15000; // tipe data: _____",
 ] as const;
 
 const CHOICE_PLACEHOLDER = "_____";
 
-type CommandChoice = "Input" | "Proses" | "Output";
+type CommandChoice = "Boolean" | "Number" | "String" | "Array" | "Object";
 
 const COMMAND_DETAILS = {
-  START: {
-    title: "START",
-    desc: "Menandai titik awal algoritma. Program akan mulai membaca instruksi dari baris ini.",
-    icon: <Flag className="text-emerald-500" size={20} />,
-    color: "bg-emerald-50 border-emerald-100",
+  BOOLEAN: {
+    title: "BOOLEAN",
+    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
+    icon: <Flag className="text-violet-600" size={20} />,
+    color: "bg-violet-50 border-violet-100",
   },
-  INPUT: {
-    title: "INPUT",
-    desc: "Digunakan untuk mengambil data dari luar (seperti harga barang) untuk disimpan di memori.",
-    icon: <Database className="text-teal-500" size={20} />,
-    color: "bg-teal-50 border-teal-100",
+  NUMBER: {
+    title: "NUMBER",
+    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
+    icon: <Calculator className="text-amber-600" size={20} />,
+    color: "bg-amber-50 border-amber-100",
   },
-  PROCESS: {
-    title: "PROCESS",
-    desc: "Tahap pengolahan data, misalnya menjumlahkan harga makanan dan minuman menjadi total.",
-    icon: <Calculator className="text-green-600" size={20} />,
-    color: "bg-green-50 border-green-100",
+  STRING: {
+    title: "STRING",
+    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
+    icon: <Printer className="text-yellow-600" size={20} />,
+    color: "bg-yellow-50 border-yellow-100",
   },
-  OUTPUT: {
-    title: "OUTPUT / PRINT",
-    desc: "Menampilkan hasil akhir ke layar atau mencetak bukti transaksi seperti struk belanja.",
-    icon: <Printer className="text-emerald-600" size={20} />,
-    color: "bg-emerald-50 border-emerald-100",
+  ARRAY: {
+    title: "ARRAY",
+    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
+    icon: <Braces className="text-sky-600" size={20} />,
+    color: "bg-sky-50 border-sky-100",
   },
-  END: {
-    title: "END",
-    desc: "Menandakan bahwa semua proses telah selesai dan sistem berhenti bekerja.",
-    icon: <CheckCircle2 className="text-emerald-700" size={20} />,
-    color: "bg-emerald-100 border-emerald-200",
+  OBJECT: {
+    title: "OBJECT",
+    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut (pasangan nama dan nilai).",
+    icon: <Database className="text-rose-600" size={20} />,
+    color: "bg-rose-50 border-rose-100",
   },
   DEFAULT: {
     title: "SIAP MENULIS",
-    desc: "Klik bagian kosong (_____) lalu pilih INPUT, PROCESS, atau OUTPUT. Teks abu-abu adalah ghost text panduan.",
+    desc: "Klik bagian kosong (_____) lalu pilih Boolean, Number, String, Array, atau Object. Teks abu-abu adalah ghost text panduan.",
     icon: <Monitor className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
 };
+
+const TYPE_OPTIONS: Array<{
+  type: CommandChoice;
+  label: string;
+  className: string;
+}> = [
+  {
+    type: "Boolean",
+    label: "BOOLEAN",
+    className:
+      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
+  },
+  {
+    type: "Number",
+    label: "NUMBER",
+    className:
+      "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+  },
+  {
+    type: "String",
+    label: "STRING",
+    className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
+  },
+  {
+    type: "Array",
+    label: "ARRAY",
+    className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
+  },
+  {
+    type: "Object",
+    label: "OBJECT",
+    className: "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100",
+  },
+];
 
 // ================== TIPE DATA ==================
 
@@ -94,6 +135,8 @@ type SimulationState = {
   isCalculating: boolean;
   receiptPrinted: boolean;
   totalPrice: number;
+  paidAmount: number;
+  changeAmount: number;
   status: string;
 };
 
@@ -123,6 +166,8 @@ export default function SimulasiKasirKantin() {
     isCalculating: false,
     receiptPrinted: false,
     totalPrice: 0,
+    paidAmount: 0,
+    changeAmount: 0,
     status: "Sistem Standby",
   });
 
@@ -139,9 +184,11 @@ export default function SimulasiKasirKantin() {
     if (activeLine === -1) return COMMAND_DETAILS.DEFAULT;
 
     const selectedOnActiveLine = selectedCommands[activeLine];
-    if (selectedOnActiveLine === "Input") return COMMAND_DETAILS.INPUT;
-    if (selectedOnActiveLine === "Proses") return COMMAND_DETAILS.PROCESS;
-    if (selectedOnActiveLine === "Output") return COMMAND_DETAILS.OUTPUT;
+    if (selectedOnActiveLine === "Boolean") return COMMAND_DETAILS.BOOLEAN;
+    if (selectedOnActiveLine === "Number") return COMMAND_DETAILS.NUMBER;
+    if (selectedOnActiveLine === "String") return COMMAND_DETAILS.STRING;
+    if (selectedOnActiveLine === "Array") return COMMAND_DETAILS.ARRAY;
+    if (selectedOnActiveLine === "Object") return COMMAND_DETAILS.OBJECT;
 
     return COMMAND_DETAILS.DEFAULT;
   })();
@@ -152,6 +199,28 @@ export default function SimulasiKasirKantin() {
   const noteMessage = isErrorNote
     ? latestLog.replace(/^ERROR:\s*/, "")
     : latestLog;
+  const activeLineNote = (() => {
+    if (activeLine === 3) {
+      return `Variabel daftarBelanja berisi kumpulan beberapa data barang, maka bertipe data _____`;
+    }
+
+    if (activeLine === 4) {
+      return `Variabel totalHarga memiliki nilai 35000 yang digunakan untuk perhitungan, maka bertipe data _____`;
+    }
+
+    if (activeLine === 5) {
+      return `Variabel bayar memiliki nilai 50000 sebagai jumlah uang pembayaran, maka bertipe data _____`;
+    }
+
+    if (activeLine === 6) {
+      return `Variabel kembalian memiliki nilai 15000 sebagai hasil pengurangan dari pembayaran, maka bertipe data _____`;
+    }
+
+    return null;
+  })();
+  const showWrongTypeVisual = errorLine !== -1;
+  const showTotalBubbleVisual = errorLine === 4;
+  const showReceiptErrorVisual = errorLine === 5 || errorLine === 6;
 
   const getLineText = (lineIndex: number): string => {
     const template = INITIAL_TEMPLATE[lineIndex] || "";
@@ -164,7 +233,6 @@ export default function SimulasiKasirKantin() {
     setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
     setOpenSelectorLine(null);
     setActiveLine(lineIndex);
-    setErrorLine(-1);
   };
 
   useEffect(() => {
@@ -179,7 +247,9 @@ export default function SimulasiKasirKantin() {
     const isEmptyChoice = selected === CHOICE_PLACEHOLDER;
     const choiceClassName = isEmptyChoice
       ? "text-slate-400"
-      : "inline-flex items-center rounded-md border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-sky-700";
+      : selected === "Array"
+        ? "inline-flex items-center rounded-md border border-violet-300 bg-violet-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-violet-700"
+        : "inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-amber-700";
 
     const choiceButton = (
       <button
@@ -199,10 +269,9 @@ export default function SimulasiKasirKantin() {
       return (
         <>
           <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">harga_makanan</span>
-          <span className="text-slate-700">; </span>
-          <span className="text-slate-400">// struktur program: </span>
-          {choiceButton}
+          <span className="text-blue-700">daftarBelanja</span>
+          <span className="text-slate-700"> = </span>
+          <span className="text-slate-700">[</span>
         </>
       );
     }
@@ -210,11 +279,20 @@ export default function SimulasiKasirKantin() {
     if (lineIndex === 1) {
       return (
         <>
-          <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">harga_minuman</span>
-          <span className="text-slate-700">; </span>
-          <span className="text-slate-400">// struktur program: </span>
-          {choiceButton}
+          <span className="text-slate-700"> </span>
+          <span className="text-slate-700">{`{`}</span>{" "}
+          <span className="text-blue-700">nama</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-emerald-700">"Nasi Goreng"</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">harga</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-orange-700">15000</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">jumlah</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-orange-700">2</span>
+          <span className="text-slate-700">{` },`}</span>
         </>
       );
     }
@@ -222,14 +300,58 @@ export default function SimulasiKasirKantin() {
     if (lineIndex === 2) {
       return (
         <>
+          <span className="text-slate-700"> </span>
+          <span className="text-slate-700">{`{`}</span>{" "}
+          <span className="text-blue-700">nama</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-emerald-700">"Es Teh"</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">harga</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-orange-700">5000</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">jumlah</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-orange-700">1</span>
+          <span className="text-slate-700">{` }`}</span>
+        </>
+      );
+    }
+
+    if (lineIndex === 3) {
+      return (
+        <>
+          <span className="text-slate-700">]</span>
+          <span className="text-slate-700">;</span>{" "}
+          <span className="text-slate-400">// tipe data: </span>
+          {choiceButton}
+        </>
+      );
+    }
+
+    if (lineIndex === 4) {
+      return (
+        <>
           <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">hasil</span>
+          <span className="text-blue-700">totalHarga</span>
           <span className="text-slate-700"> = </span>
-          <span className="text-blue-700">harga_makanan</span>
-          <span className="text-slate-700"> + </span>
-          <span className="text-blue-700">harga_minuman</span>
-          <span className="text-slate-700">; </span>
-          <span className="text-slate-400">// struktur program: </span>
+          <span className="text-orange-700">35000</span>
+          <span className="text-slate-700">;</span>{" "}
+          <span className="text-slate-400">// tipe data: </span>
+          {choiceButton}
+        </>
+      );
+    }
+
+    if (lineIndex === 5) {
+      return (
+        <>
+          <span className="text-violet-600">let</span>{" "}
+          <span className="text-blue-700">bayar</span>
+          <span className="text-slate-700"> = </span>
+          <span className="text-orange-700">50000</span>
+          <span className="text-slate-700">;</span>{" "}
+          <span className="text-slate-400">// tipe data: </span>
           {choiceButton}
         </>
       );
@@ -237,13 +359,12 @@ export default function SimulasiKasirKantin() {
 
     return (
       <>
-        <span className="text-blue-700">console</span>
-        <span className="text-slate-700">.</span>
-        <span className="text-blue-700">log</span>
-        <span className="text-slate-700">(</span>
-        <span className="text-blue-700">hasil</span>
-        <span className="text-slate-700">); </span>
-        <span className="text-slate-400">// struktur program: </span>
+        <span className="text-violet-600">let</span>{" "}
+        <span className="text-blue-700">kembalian</span>
+        <span className="text-slate-700"> = </span>
+        <span className="text-orange-700">15000</span>
+        <span className="text-slate-700">;</span>{" "}
+        <span className="text-slate-400">// tipe data: </span>
         {choiceButton}
       </>
     );
@@ -336,6 +457,8 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      paidAmount: 0,
+      changeAmount: 0,
       status: "Sistem Standby",
     });
     simDataRef.current = {
@@ -344,6 +467,8 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      paidAmount: 0,
+      changeAmount: 0,
       status: "Sistem Standby",
     };
   };
@@ -363,48 +488,15 @@ export default function SimulasiKasirKantin() {
       return `Baris ${lineIndex + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`;
     }
 
-    if (lineIndex === 0) {
-      if (!normalized.includes("input")) {
-        return "Di sini kita perlu membaca data harga makanan. Perintah apa yang cocok untuk membaca data?";
-      }
-      if (!normalized.includes("harga_makanan")) {
-        return "Kita sedang mencoba membaca harga makanan. Variabel apa yang seharusnya dibaca?";
-      }
-    }
-
-    if (lineIndex === 1) {
-      if (!normalized.includes("input")) {
-        return "Kita perlu membaca data harga minuman. Perintah apa yang digunakan untuk membaca data?";
-      }
-      if (!normalized.includes("harga_minuman")) {
-        return "Sistem perlu tahu harga minuman. Variabel mana yang harus dibaca?";
-      }
-    }
-
-    if (lineIndex === 2) {
-      if (!normalized.includes("proses") && !normalized.includes("process")) {
-        return "Tahap ini adalah PROCESS. Gunakan perintah proses untuk mengolah data harga.";
-      }
-      if (!normalized.includes("hasil")) {
-        return "Kita perlu menyimpan hasil perhitungan. Variabel apa yang seharusnya digunakan?";
-      }
-      if (!normalized.includes("=")) {
-        return "Bagaimana cara menyimpan hasil perhitungan ke dalam variabel?";
-      }
-      if (!normalized.includes("+")) {
-        return "Kita perlu menjumlahkan harga makanan dan minuman. Operator apa yang digunakan?";
-      }
-    }
-
     if (lineIndex === 3) {
-      if (!normalized.includes("output")) {
-        return "Setelah menghitung, kita perlu menampilkan hasilnya. Perintah apa yang cocok?";
+      if (!normalized.includes("array")) {
+        return `Baris ${lineIndex + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`;
       }
-      if (
-        !normalized.includes("console.log") ||
-        !normalized.includes("hasil")
-      ) {
-        return "Variabel apa yang perlu ditampilkan ke layar?";
+    }
+
+    if (lineIndex === 4 || lineIndex === 5 || lineIndex === 6) {
+      if (!normalized.includes("number")) {
+        return `Baris ${lineIndex + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`;
       }
     }
 
@@ -432,6 +524,26 @@ export default function SimulasiKasirKantin() {
     if (normalizedUser !== normalizedExpected) {
       setErrorLine(step);
       setShowSuccessCard(false);
+      const isTotalLineError = step === 4;
+      const isReceiptLineError = step === 5 || step === 6;
+      updateSimData({
+        food: simDataRef.current.food ?? {
+          name: "Nasi Goreng",
+          price: 15000,
+          emoji: "🍛",
+        },
+        drink: simDataRef.current.drink ?? {
+          name: "Es Teh",
+          price: 5000,
+          emoji: "🍹",
+        },
+        isCalculating: false,
+        receiptPrinted: isReceiptLineError,
+        totalPrice: isTotalLineError || isReceiptLineError ? 35000 : 0,
+        paidAmount: isReceiptLineError ? 50000 : 0,
+        changeAmount: step === 6 ? 15000 : 0,
+        status: "Data tumpah: tipe data tidak cocok",
+      });
       const feedback = generateEducationalFeedback(step, userLine);
       addLog(`ERROR: ${feedback}`);
       setActiveLine(-1);
@@ -440,55 +552,59 @@ export default function SimulasiKasirKantin() {
 
     // Eksekusi berdasarkan baris
     switch (step) {
-      case 0: // input harga_makanan
-        const foodItems = [
-          { name: "Nasi Goreng", price: 15000, emoji: "🍛" },
-          { name: "Mie Ayam", price: 12000, emoji: "🍜" },
-          { name: "Soto Ayam", price: 13000, emoji: "🍲" },
-        ];
-        const randomFood =
-          foodItems[Math.floor(Math.random() * foodItems.length)];
-        updateSimData({ food: randomFood, status: "Input Makanan" });
-        addLog(
-          `INPUT: harga_makanan = ${randomFood.name} (Rp ${randomFood.price.toLocaleString("id-ID")})`,
-        );
+      case 0:
+        updateSimData({ status: "Membuka daftar belanja" });
+        addLog("DATA: Membuka daftarBelanja...");
         break;
 
-      case 1: // input harga_minuman
-        const drinkItems = [
-          { name: "Es Teh", price: 5000, emoji: "🍹" },
-          { name: "Es Jeruk", price: 6000, emoji: "🧃" },
-          { name: "Kopi", price: 7000, emoji: "☕" },
-        ];
-        const randomDrink =
-          drinkItems[Math.floor(Math.random() * drinkItems.length)];
-        updateSimData({ drink: randomDrink, status: "Input Minuman" });
-        addLog(
-          `INPUT: harga_minuman = ${randomDrink.name} (Rp ${randomDrink.price.toLocaleString("id-ID")})`,
-        );
+      case 1:
+        updateSimData({
+          food: { name: "Nasi Goreng", price: 15000, emoji: "🍛" },
+          status: "Item 1 ditambahkan",
+        });
+        addLog('DATA: Item pertama = "Nasi Goreng" (2 porsi)');
         break;
 
-      case 2: // hasil = harga_makanan + harga_minuman
-        updateSimData({ isCalculating: true, status: "Menghitung Total..." });
-        addLog("PROSES: Menghitung total harga...");
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const total =
-          (simDataRef.current.food?.price || 0) +
-          (simDataRef.current.drink?.price || 0);
+      case 2:
+        updateSimData({
+          drink: { name: "Es Teh", price: 5000, emoji: "🍹" },
+          status: "Item 2 ditambahkan",
+        });
+        addLog('DATA: Item kedua = "Es Teh" (1 gelas)');
+        break;
+
+      case 3:
+        updateSimData({ status: "Array dikenali" });
+        addLog("TIPE DATA: daftarBelanja = Array");
+        break;
+
+      case 4:
+        updateSimData({ isCalculating: true, status: "Menghitung total" });
+        addLog("PROSES: Menghitung totalHarga...");
+        await new Promise((resolve) => setTimeout(resolve, 700));
         updateSimData({
           isCalculating: false,
-          totalPrice: total,
-          status: "Kalkulasi Selesai",
+          totalPrice: 35000,
+          status: "Total harga siap",
         });
-        addLog(`PROSES: hasil = Rp ${total.toLocaleString("id-ID")}`);
+        addLog("TIPE DATA: totalHarga = Number");
+        addLog("HASIL: totalHarga = 35000");
         break;
 
-      case 3: // output hasil
-        updateSimData({ receiptPrinted: true, status: "Mencetak Struk" });
-        addLog("OUTPUT: Mencetak struk pembayaran...");
-        addLog(
-          `OUTPUT: total_bayar = Rp ${simDataRef.current.totalPrice.toLocaleString("id-ID")}`,
-        );
+      case 5:
+        updateSimData({
+          receiptPrinted: true,
+          paidAmount: 50000,
+          status: "Pembayaran siap",
+        });
+        addLog("TIPE DATA: bayar = Number");
+        addLog("DATA: bayar = 50000");
+        break;
+
+      case 6:
+        updateSimData({ changeAmount: 15000, status: "Kembalian siap" });
+        addLog("TIPE DATA: kembalian = Number");
+        addLog("HASIL: kembalian = 15000");
         break;
     }
 
@@ -509,6 +625,8 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      paidAmount: 0,
+      changeAmount: 0,
       status: "Menjalankan...",
     };
     setSimState({
@@ -517,6 +635,8 @@ export default function SimulasiKasirKantin() {
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
+      paidAmount: 0,
+      changeAmount: 0,
       status: "Menjalankan...",
     });
 
@@ -657,7 +777,7 @@ export default function SimulasiKasirKantin() {
                   : "text-[#125f52] bg-[#d4e5e1]"
               }`}
             >
-              {noteMessage}
+              {isErrorNote ? noteMessage : (activeLineNote ?? noteMessage)}
             </div>
           </div>
 
@@ -714,7 +834,7 @@ export default function SimulasiKasirKantin() {
                       🎉 Berhasil! Algoritma benar
                     </h3>
                     <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
-                      Algoritma berjalan sesuai urutan input → proses → output.
+                      Tipe data dan struktur variabel sudah sesuai.
                       <br />
                       Simulasi kasir kantin berjalan dengan benar.
                     </p>
@@ -791,38 +911,23 @@ export default function SimulasiKasirKantin() {
                   </div>
 
                   {openSelectorLine !== null && !isRunning && (
-                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
+                    <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-2xl px-3 py-3 shadow-lg">
                       <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
                         PILIH PERINTAH BARIS {openSelectorLine + 1}
                       </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "Input")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        >
-                          INPUT
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "Proses")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                        >
-                          PROCESS
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectCommand(openSelectorLine, "Output")
-                          }
-                          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100"
-                        >
-                          OUTPUT
-                        </button>
+                      <div className="flex flex-wrap gap-2">
+                        {TYPE_OPTIONS.map((option) => (
+                          <button
+                            key={option.type}
+                            type="button"
+                            onClick={() =>
+                              handleSelectCommand(openSelectorLine, option.type)
+                            }
+                            className={`min-w-[92px] px-3 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl border transition-all ${option.className}`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -831,10 +936,28 @@ export default function SimulasiKasirKantin() {
             </section>
 
             {/* PANEL KANAN - HARDWARE VISUALIZATION */}
-            <aside className="w-[380px] bg-[#020617] rounded-3xl flex flex-col shrink-0 overflow-hidden shadow-2xl border border-slate-800 relative">
-              <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center px-6">
+            <aside
+              className={`w-[380px] rounded-3xl flex flex-col shrink-0 overflow-hidden shadow-2xl border relative ${
+                showWrongTypeVisual
+                  ? "bg-[#1f0a10] border-rose-900"
+                  : "bg-[#020617] border-slate-800"
+              }`}
+            >
+              <div
+                className={`p-4 border-b flex justify-between items-center px-6 ${
+                  showWrongTypeVisual
+                    ? "border-rose-900 bg-rose-950/40"
+                    : "border-slate-800 bg-slate-900/50"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-emerald-400">
+                  <div
+                    className={`p-1.5 rounded-lg border ${
+                      showWrongTypeVisual
+                        ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                        : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                    }`}
+                  >
                     <Activity size={14} />
                   </div>
                   <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
@@ -842,9 +965,19 @@ export default function SimulasiKasirKantin() {
                   </h2>
                 </div>
                 <div
-                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${isRunning ? "bg-emerald-600 text-white" : "bg-background/20 text-muted-foreground border border-border/60"}`}
+                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-colors ${
+                    showWrongTypeVisual
+                      ? "bg-rose-600 text-white"
+                      : isRunning
+                        ? "bg-emerald-600 text-white"
+                        : "bg-background/20 text-muted-foreground border border-border/60"
+                  }`}
                 >
-                  {isRunning ? "Active" : "Idle"}
+                  {showWrongTypeVisual
+                    ? "Type Error"
+                    : isRunning
+                      ? "Active"
+                      : "Idle"}
                 </div>
               </div>
 
@@ -861,10 +994,29 @@ export default function SimulasiKasirKantin() {
                   <motion.div
                     animate={{
                       scale: activeLine >= 1 && activeLine <= 2 ? 1.05 : 1,
-                      y: activeLine >= 1 && activeLine <= 2 ? -5 : 0,
+                      y: showWrongTypeVisual
+                        ? 10
+                        : activeLine >= 1 && activeLine <= 2
+                          ? -5
+                          : 0,
                     }}
                     className="absolute bottom-28 w-56 h-6 bg-slate-700 rounded-full flex items-center justify-center border-b-4 border-slate-900 shadow-xl z-10"
                   />
+
+                  {showWrongTypeVisual && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 0.85, scale: 1 }}
+                        className="absolute bottom-[86px] left-[86px] h-5 w-24 rounded-full bg-amber-700/45 blur-[1px] z-10"
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 0.85, scale: 1 }}
+                        className="absolute bottom-[84px] right-[86px] h-5 w-24 rounded-full bg-sky-500/40 blur-[1px] z-10"
+                      />
+                    </>
+                  )}
 
                   {/* Interactive Food/Drink Icons */}
                   <div className="absolute bottom-32 flex gap-10 z-20">
@@ -878,7 +1030,17 @@ export default function SimulasiKasirKantin() {
                             scale: 0.5,
                             rotate: -20,
                           }}
-                          animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                          animate={
+                            showWrongTypeVisual
+                              ? {
+                                  opacity: 1,
+                                  y: 58,
+                                  x: -24,
+                                  scale: 0.95,
+                                  rotate: -32,
+                                }
+                              : { opacity: 1, y: 0, scale: 1, rotate: 0 }
+                          }
                           className="filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]"
                         >
                           <span className="text-7xl">
@@ -897,7 +1059,17 @@ export default function SimulasiKasirKantin() {
                             scale: 0.5,
                             rotate: 20,
                           }}
-                          animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                          animate={
+                            showWrongTypeVisual
+                              ? {
+                                  opacity: 1,
+                                  y: 58,
+                                  x: 24,
+                                  scale: 0.95,
+                                  rotate: 34,
+                                }
+                              : { opacity: 1, y: 0, scale: 1, rotate: 0 }
+                          }
                           className="filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]"
                         >
                           <span className="text-7xl">
@@ -916,39 +1088,53 @@ export default function SimulasiKasirKantin() {
                       />
                     </div>
                     <AnimatePresence>
-                      {simState.receiptPrinted && (
+                      {(simState.receiptPrinted || showReceiptErrorVisual) && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 100, opacity: 1 }}
-                          className="absolute top-2 left-2 right-2 bg-white rounded-sm shadow-xl p-2 flex flex-col gap-1 overflow-hidden z-40 border-t-2 border-dashed border-slate-200"
+                          className={`absolute top-2 left-2 right-2 rounded-sm shadow-xl p-2 flex flex-col gap-1 overflow-hidden z-40 border-t-2 border-dashed ${
+                            showReceiptErrorVisual
+                              ? "bg-rose-50 border-rose-200"
+                              : "bg-white border-slate-200"
+                          }`}
                         >
-                          <div className="text-[5px] text-emerald-800 font-black border-b border-slate-100 pb-0.5 mb-1 uppercase text-center tracking-tighter">
+                          <div
+                            className={`text-[5px] font-black border-b pb-0.5 mb-1 uppercase text-center tracking-tighter ${showReceiptErrorVisual ? "text-rose-700 border-rose-100" : "text-emerald-800 border-slate-100"}`}
+                          >
                             Receipt #001
                           </div>
-                          <div className="flex justify-between text-[4px] text-muted-foreground font-bold uppercase tracking-tighter">
-                            <span>Items</span>
-                            <span>Price</span>
+                          <div
+                            className={`flex justify-between text-[4px] font-bold uppercase tracking-tighter ${showReceiptErrorVisual ? "text-rose-600" : "text-muted-foreground"}`}
+                          >
+                            <span>Info</span>
+                            <span>Nilai</span>
                           </div>
-                          {simState.food && (
-                            <div className="flex justify-between text-[4px] text-slate-800 font-bold">
-                              <span>Food</span>
-                              <span>
-                                {Math.round(simState.food.price / 1000)}k
-                              </span>
-                            </div>
-                          )}
-                          {simState.drink && (
-                            <div className="flex justify-between text-[4px] text-slate-800 font-bold">
-                              <span>Drink</span>
-                              <span>
-                                {Math.round(simState.drink.price / 1000)}k
-                              </span>
-                            </div>
-                          )}
-                          <div className="mt-auto pt-1 border-t border-dashed border-slate-300 flex justify-between text-[6px] text-black font-black uppercase">
+                          <div
+                            className={`flex justify-between text-[4px] font-bold ${showReceiptErrorVisual ? "text-rose-800" : "text-slate-800"}`}
+                          >
                             <span>Total</span>
                             <span>
                               {Math.round(simState.totalPrice / 1000)}k
+                            </span>
+                          </div>
+                          {simState.paidAmount > 0 && (
+                            <div
+                              className={`flex justify-between text-[4px] font-bold ${showReceiptErrorVisual ? "text-rose-800" : "text-slate-800"}`}
+                            >
+                              <span>Bayar</span>
+                              <span>
+                                {Math.round(simState.paidAmount / 1000)}k
+                              </span>
+                            </div>
+                          )}
+                          <div
+                            className={`mt-auto pt-1 border-t border-dashed flex justify-between text-[6px] font-black uppercase ${showReceiptErrorVisual ? "border-rose-200 text-rose-900" : "border-slate-300 text-black"}`}
+                          >
+                            <span>Kembali</span>
+                            <span>
+                              {simState.changeAmount > 0
+                                ? `${Math.round(simState.changeAmount / 1000)}k`
+                                : "-"}
                             </span>
                           </div>
                         </motion.div>
@@ -957,15 +1143,20 @@ export default function SimulasiKasirKantin() {
                   </div>
 
                   {/* Display Results */}
-                  {simState.totalPrice > 0 && !simState.isCalculating && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="absolute bottom-12 bg-white border-2 border-emerald-500 px-6 py-2 rounded-2xl text-emerald-600 font-mono text-lg font-black shadow-lg shadow-emerald-500/20 z-40"
-                    >
-                      Rp {simState.totalPrice.toLocaleString("id-ID")}
-                    </motion.div>
-                  )}
+                  {(simState.totalPrice > 0 || showTotalBubbleVisual) &&
+                    !simState.isCalculating && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`absolute bottom-12 px-6 py-2 rounded-2xl font-mono text-lg font-black shadow-lg z-40 ${
+                          showTotalBubbleVisual
+                            ? "bg-rose-50 border-2 border-rose-500 text-rose-600 shadow-rose-500/20"
+                            : "bg-white border-2 border-emerald-500 text-emerald-600 shadow-emerald-500/20"
+                        }`}
+                      >
+                        Rp {simState.totalPrice.toLocaleString("id-ID")}
+                      </motion.div>
+                    )}
 
                   {/* Status Bubble */}
                   <AnimatePresence>
