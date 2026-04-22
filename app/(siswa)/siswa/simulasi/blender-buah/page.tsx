@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-const CHOICE_PLACEHOLDER = "_____";
+const CHOICE_PLACEHOLDER = "___";
 const OPERATOR_PLACEHOLDER = "[OP]";
 const TYPE1_PLACEHOLDER = "[TYPE1]";
 const TYPE2_PLACEHOLDER = "[TYPE2]";
@@ -59,28 +59,28 @@ const OPERATOR_OPTIONS: Array<{
 }> = [
   {
     type: "+",
-    label: "+",
+    label: "+ TAMBAH",
     className:
       "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
   },
   {
     type: "-",
-    label: "-",
+    label: "- KURANG",
     className: "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
   },
   {
     type: "*",
-    label: "*",
+    label: "* KALI",
     className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
   },
   {
     type: "/",
-    label: "/",
+    label: "/ BAGI",
     className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
   },
   {
     type: "%",
-    label: "%",
+    label: "% SISA",
     className:
       "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
   },
@@ -132,32 +132,32 @@ const COMMAND_DETAILS: Record<
   CommandDetail
 > = {
   "+": {
-    title: "(+)",
-    desc: "Penjumlahan (menambah nilai) ",
+    title: "TAMBAH (+)",
+    desc: "Operator penjumlahan digunakan untuk menjumlahkan dua nilai atau variabel.",
     icon: <GlassWater className="text-emerald-600" size={20} />,
     color: "bg-emerald-50 border-emerald-100",
   },
   "-": {
-    title: "(-)",
-    desc: "Pengurangan (mengurangi nilai)",
+    title: "KURANG (-)",
+    desc: "Operator pengurangan digunakan untuk mengurangi satu nilai dari nilai lainnya.",
     icon: <Blend className="text-red-600" size={20} />,
     color: "bg-red-50 border-red-100",
   },
   "*": {
-    title: "(*)",
-    desc: "Perkalian (mengalikan nilai)",
+    title: "KALI (*)",
+    desc: "Operator perkalian digunakan untuk mengalikan dua nilai atau variabel.",
     icon: <CupSoda className="text-amber-600" size={20} />,
     color: "bg-amber-50 border-amber-100",
   },
   "/": {
-    title: "(/)",
-    desc: "Pembagian (membagi nilai)",
+    title: "BAGI (/)",
+    desc: "Operator pembagian digunakan untuk membagi satu nilai dengan nilai lainnya.",
     icon: <Cpu className="text-sky-600" size={20} />,
     color: "bg-sky-50 border-sky-100",
   },
   "%": {
     title: "SISA BAGI (%)",
-    desc: "Sisa bagi",
+    desc: "Operator modulo digunakan untuk mendapatkan sisa pembagian dari dua nilai.",
     icon: <Flag className="text-violet-600" size={20} />,
     color: "bg-violet-50 border-violet-100",
   },
@@ -369,6 +369,8 @@ const BlenderSimulation = () => {
     setActiveToken(token);
     setOpenSelectorToken(null);
     setActiveLine(TOKEN_LINE_MAP[token]);
+    setErrorLine(-1);
+    setShowSuccessCard(false);
   };
 
   const resetSim = () => {
@@ -438,13 +440,12 @@ const BlenderSimulation = () => {
       token: TokenKey,
       expected: CommandChoice | TypeChoice,
       line: number,
+      errorMessage: string,
     ): Promise<boolean> => {
       setActiveLine(line);
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const chosen = selectedTokens[token];
-
-      if (!chosen) {
+      if (selectedTokens[token] !== expected) {
         setIsRunning(false);
         setErrorLine(line);
         setShowSuccessCard(false);
@@ -452,69 +453,43 @@ const BlenderSimulation = () => {
         setIsLeaking(false);
         setIsOverheating(false);
         setForeignObject(null);
-        setFeedback(
-          `Baris ${line + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`,
-        );
-        return false;
-      }
-
-      if (chosen !== expected) {
-        setIsRunning(false);
-        setErrorLine(line);
-        setShowSuccessCard(false);
-        setBlenderBroken(false);
-        setIsLeaking(false);
-        setIsOverheating(false);
-        setForeignObject(null);
-        setFeedback(
-          `Baris ${line + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`,
-        );
+        setFeedback(errorMessage);
         return false;
       }
 
       return true;
     };
 
-    const stepType1 = await validateToken("type1", "Number", 0);
+    const stepType1 = await validateToken(
+      "type1",
+      "Number",
+      0,
+      "Baris 1 belum tepat. tipe data `buah1` harus Number.",
+    );
     if (!stepType1) return;
 
-    const pickedFirstFruit =
-      FRUIT_OPTIONS[Math.floor(Math.random() * FRUIT_OPTIONS.length)];
-    setBuah1(pickedFirstFruit);
-    setMixedColor(FRUIT_TYPES[pickedFirstFruit].color);
-    setLiquidLevel(25);
-    updateSimData({ buah1: pickedFirstFruit });
-    setFeedback("Baris 1 benar. Buah pertama berhasil dimasukkan ke blender.");
-    await new Promise((resolve) => setTimeout(resolve, 550));
-
-    const stepType2 = await validateToken("type2", "Number", 1);
+    const stepType2 = await validateToken(
+      "type2",
+      "Number",
+      1,
+      "Baris 2 belum tepat. tipe data `buah2` harus Number.",
+    );
     if (!stepType2) return;
 
-    const availableSecondFruits = FRUIT_OPTIONS.filter(
-      (fruit) => fruit !== simDataRef.current.buah1,
+    const stepOperator = await validateToken(
+      "operator",
+      "+",
+      2,
+      "Baris 3 belum tepat. operator untuk `buah1` dan `buah2` harus `+`.",
     );
-    const pickedSecondFruit =
-      availableSecondFruits[
-        Math.floor(Math.random() * availableSecondFruits.length)
-      ] ?? FRUIT_OPTIONS[0];
-    setBuah2(pickedSecondFruit);
-    setLiquidLevel(50);
-    updateSimData({ buah2: pickedSecondFruit });
-    setFeedback("Baris 2 benar. Buah kedua masuk dan blender siap memproses.");
-    await new Promise((resolve) => setTimeout(resolve, 550));
-
-    const stepOperator = await validateToken("operator", "+", 2);
     if (!stepOperator) return;
 
-    const selectedOperator =
-      (selectedTokens.operator as CommandChoice | undefined) ?? "+";
-    setBlenderActive(true);
-    setFeedback(
-      `Baris 3 benar. Operator ${selectedOperator} dipakai untuk memproses campuran.`,
+    const stepType3 = await validateToken(
+      "type3",
+      "Number",
+      2,
+      "Baris 3 belum tepat. tipe data `jus` harus Number.",
     );
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const stepType3 = await validateToken("type3", "Number", 2);
     if (!stepType3) return;
 
     setActiveLine(3);
@@ -536,12 +511,42 @@ const BlenderSimulation = () => {
       return;
     }
 
-    // Success: All lines are correct
+    // Success: Operator is correct
+    const picked =
+      FRUIT_OPTIONS[Math.floor(Math.random() * FRUIT_OPTIONS.length)];
+    setBuah1(picked);
     setBlenderBroken(false);
     setIsLeaking(false);
     setIsOverheating(false);
     setForeignObject(null);
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    setLiquidLevel(25);
+    setMixedColor(FRUIT_TYPES[picked].color);
+    updateSimData({ buah1: picked });
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const firstFruit = simDataRef.current.buah1;
+    const availableSecondFruits = FRUIT_OPTIONS.filter(
+      (fruit) => fruit !== firstFruit,
+    );
+    const pickedSecond =
+      availableSecondFruits[
+        Math.floor(Math.random() * availableSecondFruits.length)
+      ] ?? FRUIT_OPTIONS[0];
+    setBuah2(pickedSecond);
+    setLiquidLevel(50);
+    updateSimData({ buah2: pickedSecond });
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const selectedOperator =
+      (selectedTokens.operator as CommandChoice | undefined) ?? "+";
+
+    setBlenderActive(true);
+    setFeedback(
+      `Operator ${selectedOperator} benar! Menggabungkan buah1 dan buah2...`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const dataBuah1 =
       FRUIT_TYPES[simDataRef.current.buah1 as keyof typeof FRUIT_TYPES];
     const dataBuah2 =
@@ -554,12 +559,11 @@ const BlenderSimulation = () => {
     setLiquidLevel(75);
     setBlenderActive(false);
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
     const hasilJus = `${toTitle(simDataRef.current.buah1)} ${selectedOperator} ${toTitle(simDataRef.current.buah2)}`;
     setJus(hasilJus);
     updateSimData({ jus: hasilJus });
-    setFeedback("Baris 4 dieksekusi. Output jus dituang ke gelas.");
     setIsPouring(true);
     await new Promise((resolve) => setTimeout(resolve, 900));
     setLiquidLevel(10);
@@ -788,11 +792,9 @@ const BlenderSimulation = () => {
                     🎉 Berhasil! Algoritma benar
                   </h3>
                   <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed font-medium">
-                    Tipe data dan ekspresi sudah digunakan dengan tepat pada
-                    setiap baris algoritma.
+                    Algoritma berjalan sesuai urutan input → proses → output.
                     <br />
-                    Blender berhasil membaca input buah, memproses campuran, dan
-                    menghasilkan output jus dengan benar.
+                    Blender berhasil menghasilkan jus dengan benar.
                   </p>
                 </div>
               </motion.section>
@@ -875,13 +877,9 @@ const BlenderSimulation = () => {
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre font-bold">
-                              <span className="text-violet-700">let</span>
-                              <span className="text-slate-900"> </span>
-                              <span className="text-blue-700">buah1</span>
-                              <span className="text-slate-900">; </span>
-                              <span className="text-slate-500">
-                                // tipe data:{" "}
+                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
+                              <span className="text-slate-900">
+                                let buah1; // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
@@ -893,8 +891,8 @@ const BlenderSimulation = () => {
                                 }}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type1
-                                    ? "text-emerald-700 hover:bg-emerald-50"
-                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                    ? "text-slate-900 hover:bg-emerald-50"
+                                    : "text-slate-300 italic hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type1 ?? CHOICE_PLACEHOLDER}
@@ -922,13 +920,9 @@ const BlenderSimulation = () => {
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre font-bold">
-                              <span className="text-violet-700">let</span>
-                              <span className="text-slate-900"> </span>
-                              <span className="text-blue-700">buah2</span>
-                              <span className="text-slate-900">; </span>
-                              <span className="text-slate-500">
-                                // tipe data:{" "}
+                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
+                              <span className="text-slate-900">
+                                let buah2; // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
@@ -940,8 +934,8 @@ const BlenderSimulation = () => {
                                 }}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type2
-                                    ? "text-emerald-700 hover:bg-emerald-50"
-                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                    ? "text-slate-900 hover:bg-emerald-50"
+                                    : "text-slate-300 italic hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type2 ?? CHOICE_PLACEHOLDER}
@@ -969,13 +963,10 @@ const BlenderSimulation = () => {
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre font-bold">
-                              <span className="text-violet-700">let</span>
-                              <span className="text-slate-900"> </span>
-                              <span className="text-blue-700">jus</span>
-                              <span className="text-slate-900"> = </span>
-                              <span className="text-blue-700">buah1</span>
-                              <span className="text-slate-900"> </span>
+                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
+                              <span className="text-slate-900">
+                                let jus = buah1{" "}
+                              </span>
                               <button
                                 type="button"
                                 disabled={isRunning}
@@ -986,17 +977,15 @@ const BlenderSimulation = () => {
                                 }}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.operator
-                                    ? "text-emerald-700 hover:bg-emerald-50"
-                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                    ? "text-slate-900 hover:bg-emerald-50"
+                                    : "text-slate-300 italic hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.operator ?? CHOICE_PLACEHOLDER}
                               </button>
-                              <span className="text-slate-900"> </span>
-                              <span className="text-blue-700">buah2</span>
-                              <span className="text-slate-900">; </span>
-                              <span className="text-slate-500">
-                                // tipe data:{" "}
+                              <span className="text-slate-900">
+                                {" "}
+                                buah2; // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
@@ -1008,8 +997,8 @@ const BlenderSimulation = () => {
                                 }}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type3
-                                    ? "text-emerald-700 hover:bg-emerald-50"
-                                    : "text-slate-300 tracking-widest hover:bg-slate-100"
+                                    ? "text-slate-900 hover:bg-emerald-50"
+                                    : "text-slate-300 italic hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type3 ?? CHOICE_PLACEHOLDER}
@@ -1036,10 +1025,8 @@ const BlenderSimulation = () => {
                               }`}
                             />
                           )}
-                          <div className="relative z-10 whitespace-pre font-bold">
-                            <span className="text-slate-900">console.log(</span>
-                            <span className="text-blue-700">jus</span>
-                            <span className="text-slate-900">);</span>
+                          <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
+                            <span className="text-slate-900">{line}</span>
                           </div>
                         </div>
                       );
@@ -1050,8 +1037,8 @@ const BlenderSimulation = () => {
                     <div className="absolute left-5 right-5 bottom-4 z-30 bg-card border border-emerald-200 rounded-xl px-3 py-2 shadow-lg">
                       <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
                         {openSelectorToken === "operator"
-                          ? "PILIH OPERATOR baris 3"
-                          : "PILIH TIPE DATA baris"}
+                          ? "PILIH OPERATOR"
+                          : "PILIH TIPE DATA"}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {openSelectorToken === "operator"

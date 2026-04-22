@@ -24,64 +24,48 @@ import { toast } from "sonner";
 
 // ================== KONSTANTA DAN SOLUSI ==================
 
-const EXPECTED_SOLUTION = [
-  "let daftarBelanja = [",
-  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 },',
-  '  { nama: "Es Teh", harga: 5000, jumlah: 1 }',
-  "]; // tipe data: Array",
-  "let totalHarga = 35000; // tipe data: Number",
-  "let bayar = 50000; // tipe data: Number",
-  "let kembalian = 15000; // tipe data: Number",
-] as const;
+const EXPECTED_SOLUTION = "buah1 + buah2;" as const;
 
-const INITIAL_TEMPLATE = [
-  "let daftarBelanja = [",
-  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 },',
-  '  { nama: "Es Teh", harga: 5000, jumlah: 1 }',
-  "]; // tipe data: _____",
-  "let totalHarga = 35000; // tipe data: _____",
-  "let bayar = 50000; // tipe data: _____",
-  "let kembalian = 15000; // tipe data: _____",
-] as const;
+const INITIAL_TEMPLATE = "buah1 ___ buah2;" as const;
 
-const CHOICE_PLACEHOLDER = "_____";
+const CHOICE_PLACEHOLDER = "___";
 
-type CommandChoice = "Boolean" | "Number" | "String" | "Array" | "Object";
+type CommandChoice = "+" | "-" | "*" | "/" | "%";
 
 const COMMAND_DETAILS = {
-  BOOLEAN: {
-    title: "BOOLEAN",
-    desc: "Digunakan untuk menyimpan nilai logika, yaitu benar (true) atau salah (false).",
-    icon: <Flag className="text-violet-600" size={20} />,
-    color: "bg-violet-50 border-violet-100",
+  PLUS: {
+    title: "TAMBAH (+)",
+    desc: "Operator penjumlahan digunakan untuk menjumlahkan dua nilai atau variabel.",
+    icon: <Calculator className="text-emerald-600" size={20} />,
+    color: "bg-emerald-50 border-emerald-100",
   },
-  NUMBER: {
-    title: "NUMBER",
-    desc: "Digunakan untuk menyimpan data berupa angka, baik bilangan bulat maupun desimal.",
+  MINUS: {
+    title: "KURANG (-)",
+    desc: "Operator pengurangan digunakan untuk mengurangi satu nilai dari nilai lainnya.",
+    icon: <Calculator className="text-red-600" size={20} />,
+    color: "bg-red-50 border-red-100",
+  },
+  MULTIPLY: {
+    title: "KALI (*)",
+    desc: "Operator perkalian digunakan untuk mengalikan dua nilai atau variabel.",
     icon: <Calculator className="text-amber-600" size={20} />,
     color: "bg-amber-50 border-amber-100",
   },
-  STRING: {
-    title: "STRING",
-    desc: "Digunakan untuk menyimpan data berupa teks atau kumpulan karakter.",
-    icon: <Printer className="text-yellow-600" size={20} />,
-    color: "bg-yellow-50 border-yellow-100",
-  },
-  ARRAY: {
-    title: "ARRAY",
-    desc: "Digunakan untuk menyimpan kumpulan data dalam satu variabel.",
-    icon: <Braces className="text-sky-600" size={20} />,
+  DIVIDE: {
+    title: "BAGI (/)",
+    desc: "Operator pembagian digunakan untuk membagi satu nilai dengan nilai lainnya.",
+    icon: <Calculator className="text-sky-600" size={20} />,
     color: "bg-sky-50 border-sky-100",
   },
-  OBJECT: {
-    title: "OBJECT",
-    desc: "Digunakan untuk menyimpan data yang memiliki beberapa atribut (pasangan nama dan nilai).",
-    icon: <Database className="text-rose-600" size={20} />,
-    color: "bg-rose-50 border-rose-100",
+  MODULO: {
+    title: "SISA BAGI (%)",
+    desc: "Operator modulo digunakan untuk mendapatkan sisa pembagian dari dua nilai.",
+    icon: <Calculator className="text-violet-600" size={20} />,
+    color: "bg-violet-50 border-violet-100",
   },
   DEFAULT: {
     title: "SIAP MENULIS",
-    desc: "Klik bagian kosong (_____) lalu pilih Boolean, Number, String, Array, atau Object. Teks abu-abu adalah ghost text panduan.",
+    desc: "Klik bagian kosong (___) lalu pilih operator: +, -, *, /, atau %. Teks abu-abu adalah ghost text panduan.",
     icon: <Monitor className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
@@ -93,31 +77,31 @@ const TYPE_OPTIONS: Array<{
   className: string;
 }> = [
   {
-    type: "Boolean",
-    label: "BOOLEAN",
-    className:
-      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
-  },
-  {
-    type: "Number",
-    label: "NUMBER",
+    type: "+",
+    label: "+ TAMBAH",
     className:
       "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
   },
   {
-    type: "String",
-    label: "STRING",
+    type: "-",
+    label: "- KURANG",
+    className: "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
+  },
+  {
+    type: "*",
+    label: "* KALI",
     className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
   },
   {
-    type: "Array",
-    label: "ARRAY",
+    type: "/",
+    label: "/ BAGI",
     className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
   },
   {
-    type: "Object",
-    label: "OBJECT",
-    className: "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100",
+    type: "%",
+    label: "% SISA",
+    className:
+      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
   },
 ];
 
@@ -145,11 +129,10 @@ type SimulationState = {
 const SIMULASI_SLUG = "kasir-kantin";
 
 export default function SimulasiKasirKantin() {
-  const [selectedCommands, setSelectedCommands] = useState<
-    Partial<Record<number, CommandChoice>>
-  >({});
+  const [selectedOperator, setSelectedOperator] =
+    useState<CommandChoice | null>(null);
   const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
-  const [code, setCode] = useState(INITIAL_TEMPLATE.join("\n"));
+  const [code, setCode] = useState(INITIAL_TEMPLATE as string);
   const [isRunning, setIsRunning] = useState(false);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [errorLine, setErrorLine] = useState<number>(-1);
@@ -175,21 +158,15 @@ export default function SimulasiKasirKantin() {
   const simDataRef = useRef<SimulationState>(simState);
 
   const linesArray = code.split("\n");
-  const totalDisplayLines = Math.max(
-    INITIAL_TEMPLATE.length,
-    linesArray.length,
-  );
+  const totalDisplayLines = 1;
 
   const currentDesc = (() => {
-    if (activeLine === -1) return COMMAND_DETAILS.DEFAULT;
-
-    const selectedOnActiveLine = selectedCommands[activeLine];
-    if (selectedOnActiveLine === "Boolean") return COMMAND_DETAILS.BOOLEAN;
-    if (selectedOnActiveLine === "Number") return COMMAND_DETAILS.NUMBER;
-    if (selectedOnActiveLine === "String") return COMMAND_DETAILS.STRING;
-    if (selectedOnActiveLine === "Array") return COMMAND_DETAILS.ARRAY;
-    if (selectedOnActiveLine === "Object") return COMMAND_DETAILS.OBJECT;
-
+    if (activeLine === -1 || !selectedOperator) return COMMAND_DETAILS.DEFAULT;
+    if (selectedOperator === "+") return COMMAND_DETAILS.PLUS;
+    if (selectedOperator === "-") return COMMAND_DETAILS.MINUS;
+    if (selectedOperator === "*") return COMMAND_DETAILS.MULTIPLY;
+    if (selectedOperator === "/") return COMMAND_DETAILS.DIVIDE;
+    if (selectedOperator === "%") return COMMAND_DETAILS.MODULO;
     return COMMAND_DETAILS.DEFAULT;
   })();
 
@@ -200,172 +177,74 @@ export default function SimulasiKasirKantin() {
     ? latestLog.replace(/^ERROR:\s*/, "")
     : latestLog;
   const activeLineNote = (() => {
-    if (activeLine === 3) {
-      return `Variabel daftarBelanja berisi kumpulan beberapa data barang, maka bertipe data _____`;
+    if (activeLine === 0) {
+      return `Pertemuan dua buah: buah1 ___ buah2. Gunakan operator yang sesuai untuk menggabungkan nilai dari kedua buah tersebut.`;
     }
-
-    if (activeLine === 4) {
-      return `Variabel totalHarga memiliki nilai 35000 yang digunakan untuk perhitungan, maka bertipe data _____`;
-    }
-
-    if (activeLine === 5) {
-      return `Variabel bayar memiliki nilai 50000 sebagai jumlah uang pembayaran, maka bertipe data _____`;
-    }
-
-    if (activeLine === 6) {
-      return `Variabel kembalian memiliki nilai 15000 sebagai hasil pengurangan dari pembayaran, maka bertipe data _____`;
-    }
-
     return null;
   })();
   const showWrongTypeVisual = errorLine !== -1;
-  const showTotalBubbleVisual = errorLine === 4;
-  const showReceiptErrorVisual = errorLine === 5 || errorLine === 6;
 
-  const getLineText = (lineIndex: number): string => {
-    const template = INITIAL_TEMPLATE[lineIndex] || "";
-    const command = selectedCommands[lineIndex] ?? CHOICE_PLACEHOLDER;
-    return template.replace(CHOICE_PLACEHOLDER, command);
+  const getLineText = (): string => {
+    const command = selectedOperator ?? CHOICE_PLACEHOLDER;
+    return (INITIAL_TEMPLATE as string).replace(CHOICE_PLACEHOLDER, command);
   };
 
-  const handleSelectCommand = (lineIndex: number, command: CommandChoice) => {
+  const handleSelectOperator = (operator: CommandChoice) => {
     if (isRunning) return;
-    setSelectedCommands((prev) => ({ ...prev, [lineIndex]: command }));
+    setSelectedOperator(operator);
     setOpenSelectorLine(null);
-    setActiveLine(lineIndex);
+    setActiveLine(0);
   };
 
   useEffect(() => {
-    const newCode = INITIAL_TEMPLATE.map((_, i) => getLineText(i)).join("\n");
+    const newCode = getLineText();
     setCode(newCode);
-  }, [selectedCommands]);
+  }, [selectedOperator]);
 
-  const renderCodeLine = (
-    lineIndex: number,
-    selected: CommandChoice | "_____",
-  ) => {
+  const renderCodeLine = () => {
+    const selected = selectedOperator ?? CHOICE_PLACEHOLDER;
     const isEmptyChoice = selected === CHOICE_PLACEHOLDER;
-    const choiceClassName = isEmptyChoice
-      ? "text-slate-400"
-      : selected === "Array"
-        ? "inline-flex items-center rounded-md border border-violet-300 bg-violet-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-violet-700"
-        : "inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] leading-none font-semibold text-amber-700";
+    const operatorColor =
+      selected === "+"
+        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+        : selected === "-"
+          ? "border-red-300 bg-red-50 text-red-700"
+          : selected === "*"
+            ? "border-amber-300 bg-amber-50 text-amber-700"
+            : selected === "/"
+              ? "border-sky-300 bg-sky-50 text-sky-700"
+              : selected === "%"
+                ? "border-violet-300 bg-violet-50 text-violet-700"
+                : "text-slate-400";
 
     const choiceButton = (
       <button
         type="button"
         disabled={isRunning}
         onClick={() => {
-          setOpenSelectorLine(lineIndex);
-          setActiveLine(lineIndex);
+          setOpenSelectorLine(0);
+          setActiveLine(0);
         }}
-        className={`transition-all ${choiceClassName} ${isRunning ? "cursor-not-allowed opacity-80" : isEmptyChoice ? "cursor-pointer hover:text-slate-500" : "cursor-pointer hover:border-sky-400 hover:bg-sky-100"}`}
+        className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] leading-none font-semibold transition-all ${
+          isRunning
+            ? "cursor-not-allowed opacity-80"
+            : isEmptyChoice
+              ? "cursor-pointer hover:text-slate-500"
+              : "cursor-pointer hover:bg-opacity-80"
+        } ${operatorColor}`}
       >
         {selected}
       </button>
     );
 
-    if (lineIndex === 0) {
-      return (
-        <>
-          <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">daftarBelanja</span>
-          <span className="text-slate-700"> = </span>
-          <span className="text-slate-700">[</span>
-        </>
-      );
-    }
-
-    if (lineIndex === 1) {
-      return (
-        <>
-          <span className="text-slate-700"> </span>
-          <span className="text-slate-700">{`{`}</span>{" "}
-          <span className="text-blue-700">nama</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-emerald-700">"Nasi Goreng"</span>
-          <span className="text-slate-700">, </span>
-          <span className="text-blue-700">harga</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-orange-700">15000</span>
-          <span className="text-slate-700">, </span>
-          <span className="text-blue-700">jumlah</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-orange-700">2</span>
-          <span className="text-slate-700">{` },`}</span>
-        </>
-      );
-    }
-
-    if (lineIndex === 2) {
-      return (
-        <>
-          <span className="text-slate-700"> </span>
-          <span className="text-slate-700">{`{`}</span>{" "}
-          <span className="text-blue-700">nama</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-emerald-700">"Es Teh"</span>
-          <span className="text-slate-700">, </span>
-          <span className="text-blue-700">harga</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-orange-700">5000</span>
-          <span className="text-slate-700">, </span>
-          <span className="text-blue-700">jumlah</span>
-          <span className="text-slate-700">: </span>
-          <span className="text-orange-700">1</span>
-          <span className="text-slate-700">{` }`}</span>
-        </>
-      );
-    }
-
-    if (lineIndex === 3) {
-      return (
-        <>
-          <span className="text-slate-700">]</span>
-          <span className="text-slate-700">;</span>{" "}
-          <span className="text-slate-400">// tipe data: </span>
-          {choiceButton}
-        </>
-      );
-    }
-
-    if (lineIndex === 4) {
-      return (
-        <>
-          <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">totalHarga</span>
-          <span className="text-slate-700"> = </span>
-          <span className="text-orange-700">35000</span>
-          <span className="text-slate-700">;</span>{" "}
-          <span className="text-slate-400">// tipe data: </span>
-          {choiceButton}
-        </>
-      );
-    }
-
-    if (lineIndex === 5) {
-      return (
-        <>
-          <span className="text-violet-600">let</span>{" "}
-          <span className="text-blue-700">bayar</span>
-          <span className="text-slate-700"> = </span>
-          <span className="text-orange-700">50000</span>
-          <span className="text-slate-700">;</span>{" "}
-          <span className="text-slate-400">// tipe data: </span>
-          {choiceButton}
-        </>
-      );
-    }
-
     return (
       <>
-        <span className="text-violet-600">let</span>{" "}
-        <span className="text-blue-700">kembalian</span>
-        <span className="text-slate-700"> = </span>
-        <span className="text-orange-700">15000</span>
-        <span className="text-slate-700">;</span>{" "}
-        <span className="text-slate-400">// tipe data: </span>
+        <span className="text-blue-700">buah1</span>
+        <span className="text-slate-700"> </span>
         {choiceButton}
+        <span className="text-slate-700"> </span>
+        <span className="text-blue-700">buah2</span>
+        <span className="text-slate-700">;</span>
       </>
     );
   };
@@ -442,9 +321,9 @@ export default function SimulasiKasirKantin() {
   };
 
   const resetSim = () => {
-    setSelectedCommands({});
+    setSelectedOperator(null);
     setOpenSelectorLine(null);
-    setCode(INITIAL_TEMPLATE.join("\n"));
+    setCode(INITIAL_TEMPLATE as string);
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
@@ -478,142 +357,58 @@ export default function SimulasiKasirKantin() {
     setSimState((prev) => ({ ...prev, ...updates }));
   };
 
-  const generateEducationalFeedback = (
-    lineIndex: number,
-    userLine: string,
-  ): string => {
+  const generateEducationalFeedback = (userLine: string): string => {
     const normalized = normalizeCode(userLine);
 
     if (normalized === "" || normalized.includes("_")) {
-      return `Baris ${lineIndex + 1} belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian pilih jawaban yang sesuai.`;
+      return `Baris belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi dengan operator yang sesuai.\n\nPetunjuk: Pilih operator yang tepat untuk menggabungkan buah1 dan buah2: +, -, *, /, atau %`;
     }
 
-    if (lineIndex === 3) {
-      if (!normalized.includes("array")) {
-        return `Baris ${lineIndex + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`;
-      }
+    if (
+      !normalized.includes("+") &&
+      !normalized.includes("-") &&
+      !normalized.includes("*") &&
+      !normalized.includes("/") &&
+      !normalized.includes("%")
+    ) {
+      return `Operator tidak ditemukan.\n\nBagian yang dipilih belum mengandung operator yang valid.\n\nPetunjuk: Gunakan salah satu operator: +, -, *, /, atau %`;
     }
 
-    if (lineIndex === 4 || lineIndex === 5 || lineIndex === 6) {
-      if (!normalized.includes("number")) {
-        return `Baris ${lineIndex + 1} belum tepat.\n\nBagian yang dipilih belum sesuai dengan fungsi pada baris ini.\n\nPetunjuk: Perhatikan tujuan dari baris tersebut, kemudian sesuaikan dengan jenis data atau proses yang dilakukan.`;
-      }
-    }
-
-    return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali struktur perintahnya.";
+    return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali operator yang dipilih.";
   };
 
   // ================== EKSEKUSI ALGORITMA ==================
 
-  const executeStep = async (step: number): Promise<boolean> => {
-    const lines = code.split("\n");
-
-    if (step >= lines.length) {
-      return true;
-    }
-
-    setActiveLine(step);
+  const executeStep = async (): Promise<boolean> => {
+    setActiveLine(0);
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const userLine = lines[step];
-    const expectedLine = EXPECTED_SOLUTION[step];
+    const userLine = code;
+    const expectedLine = EXPECTED_SOLUTION as string;
 
     const normalizedUser = normalizeCode(userLine);
     const normalizedExpected = normalizeCode(expectedLine);
 
     if (normalizedUser !== normalizedExpected) {
-      setErrorLine(step);
+      setErrorLine(0);
       setShowSuccessCard(false);
-      const isTotalLineError = step === 4;
-      const isReceiptLineError = step === 5 || step === 6;
       updateSimData({
-        food: simDataRef.current.food ?? {
-          name: "Nasi Goreng",
-          price: 15000,
-          emoji: "🍛",
-        },
-        drink: simDataRef.current.drink ?? {
-          name: "Es Teh",
-          price: 5000,
-          emoji: "🍹",
-        },
-        isCalculating: false,
-        receiptPrinted: isReceiptLineError,
-        totalPrice: isTotalLineError || isReceiptLineError ? 35000 : 0,
-        paidAmount: isReceiptLineError ? 50000 : 0,
-        changeAmount: step === 6 ? 15000 : 0,
-        status: "Data tumpah: tipe data tidak cocok",
+        status: "Operator tidak cocok",
       });
-      const feedback = generateEducationalFeedback(step, userLine);
+      const feedback = generateEducationalFeedback(userLine);
       addLog(`ERROR: ${feedback}`);
       setActiveLine(-1);
       return false;
     }
 
-    // Eksekusi berdasarkan baris
-    switch (step) {
-      case 0:
-        updateSimData({ status: "Membuka daftar belanja" });
-        addLog("DATA: Membuka daftarBelanja...");
-        break;
-
-      case 1:
-        updateSimData({
-          food: { name: "Nasi Goreng", price: 15000, emoji: "🍛" },
-          status: "Item 1 ditambahkan",
-        });
-        addLog('DATA: Item pertama = "Nasi Goreng" (2 porsi)');
-        break;
-
-      case 2:
-        updateSimData({
-          drink: { name: "Es Teh", price: 5000, emoji: "🍹" },
-          status: "Item 2 ditambahkan",
-        });
-        addLog('DATA: Item kedua = "Es Teh" (1 gelas)');
-        break;
-
-      case 3:
-        updateSimData({ status: "Array dikenali" });
-        addLog("TIPE DATA: daftarBelanja = Array");
-        break;
-
-      case 4:
-        updateSimData({ isCalculating: true, status: "Menghitung total" });
-        addLog("PROSES: Menghitung totalHarga...");
-        await new Promise((resolve) => setTimeout(resolve, 700));
-        updateSimData({
-          isCalculating: false,
-          totalPrice: 35000,
-          status: "Total harga siap",
-        });
-        addLog("TIPE DATA: totalHarga = Number");
-        addLog("HASIL: totalHarga = 35000");
-        break;
-
-      case 5:
-        updateSimData({
-          receiptPrinted: true,
-          paidAmount: 50000,
-          status: "Pembayaran siap",
-        });
-        addLog("TIPE DATA: bayar = Number");
-        addLog("DATA: bayar = 50000");
-        break;
-
-      case 6:
-        updateSimData({ changeAmount: 15000, status: "Kembalian siap" });
-        addLog("TIPE DATA: kembalian = Number");
-        addLog("HASIL: kembalian = 15000");
-        break;
-    }
-
+    // Eksekusi berhasil
+    updateSimData({ status: "Operator berhasil dijalankan" });
+    addLog(`OPERATOR: ${selectedOperator}`);
+    addLog(`HASIL: buah1 ${selectedOperator} buah2`);
     return true;
   };
 
   const startRunning = async () => {
-    const lines = code.split("\n");
-
     setIsRunning(true);
     setShowSuccessCard(false);
     setActiveLine(-1);
@@ -640,21 +435,19 @@ export default function SimulasiKasirKantin() {
       status: "Menjalankan...",
     });
 
-    addLog("Sistem: Memulai eksekusi algoritma...");
+    addLog("Sistem: Memulai eksekusi operasi...");
 
-    for (let i = 0; i < lines.length; i++) {
-      const success = await executeStep(i);
-      if (!success) {
-        setShowSuccessCard(false);
-        setIsRunning(false);
-        return;
-      }
+    const success = await executeStep();
+    if (!success) {
+      setShowSuccessCard(false);
+      setIsRunning(false);
+      return;
     }
 
     setIsRunning(false);
     setActiveLine(-1);
     updateSimData({ status: "Selesai" });
-    addLog("Sukses: Algoritma berhasil dijalankan.");
+    addLog("Sukses: Operasi berhasil dijalankan.");
     setShowSuccessCard(true);
   };
 
@@ -667,16 +460,14 @@ export default function SimulasiKasirKantin() {
         <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
           <div className="pointer-events-auto bg-card border border-emerald-200 rounded-2xl px-3 py-3 shadow-lg mb-8 mr-6">
             <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
-              PILIH PERINTAH BARIS {openSelectorLine + 1}
+              PILIH OPERATOR
             </p>
             <div className="flex flex-wrap gap-2">
               {TYPE_OPTIONS.map((option) => (
                 <button
                   key={option.type}
                   type="button"
-                  onClick={() =>
-                    handleSelectCommand(openSelectorLine, option.type)
-                  }
+                  onClick={() => handleSelectOperator(option.type)}
                   className={`min-w-[92px] px-3 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl border transition-all ${option.className}`}
                 >
                   {option.label}
@@ -908,31 +699,23 @@ export default function SimulasiKasirKantin() {
                 </div>
                 <div className="relative flex-1 bg-card overflow-hidden">
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
-                    {INITIAL_TEMPLATE.map((_, i) => {
-                      const isActive = activeLine === i;
-                      const selected =
-                        selectedCommands[i] ?? CHOICE_PLACEHOLDER;
-
-                      return (
-                        <div
-                          key={i}
-                          className="relative h-[22px] flex items-center"
-                        >
-                          {isActive && (
-                            <motion.div
-                              layoutId="lineHighlight"
-                              className={`absolute inset-0 -mx-5 border-l-4 z-0 ${isRunning ? "bg-emerald-50 border-emerald-500" : errorLine === i ? "bg-red-50 border-red-500" : "bg-emerald-50/30 border-emerald-200"}`}
-                            />
-                          )}
-
-                          <div
-                            className={`relative z-10 whitespace-pre font-bold ${isRunning && activeLine > i ? "opacity-30" : ""}`}
-                          >
-                            {renderCodeLine(i, selected)}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    <div className="relative h-[22px] flex items-center">
+                      {activeLine === 0 && (
+                        <motion.div
+                          layoutId="lineHighlight"
+                          className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
+                            isRunning
+                              ? "bg-emerald-50 border-emerald-500"
+                              : errorLine === 0
+                                ? "bg-red-50 border-red-500"
+                                : "bg-emerald-50/30 border-emerald-200"
+                          }`}
+                        />
+                      )}
+                      <div className="relative z-10 whitespace-pre font-bold">
+                        {renderCodeLine()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1091,29 +874,33 @@ export default function SimulasiKasirKantin() {
                       />
                     </div>
                     <AnimatePresence>
-                      {(simState.receiptPrinted || showReceiptErrorVisual) && (
+                      {(simState.receiptPrinted || errorLine === 0) && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 100, opacity: 1 }}
                           className={`absolute top-2 left-2 right-2 rounded-sm shadow-xl p-2 flex flex-col gap-1 overflow-hidden z-40 border-t-2 border-dashed ${
-                            showReceiptErrorVisual
+                            errorLine === 0
                               ? "bg-rose-50 border-rose-200"
                               : "bg-white border-slate-200"
                           }`}
                         >
                           <div
-                            className={`text-[5px] font-black border-b pb-0.5 mb-1 uppercase text-center tracking-tighter ${showReceiptErrorVisual ? "text-rose-700 border-rose-100" : "text-emerald-800 border-slate-100"}`}
+                            className={`text-[5px] font-black border-b pb-0.5 mb-1 uppercase text-center tracking-tighter ${
+                              errorLine === 0
+                                ? "text-rose-700 border-rose-100"
+                                : "text-emerald-800 border-slate-100"
+                            }`}
                           >
                             Receipt #001
                           </div>
                           <div
-                            className={`flex justify-between text-[4px] font-bold uppercase tracking-tighter ${showReceiptErrorVisual ? "text-rose-600" : "text-muted-foreground"}`}
+                            className={`flex justify-between text-[4px] font-bold uppercase tracking-tighter ${errorLine === 0 ? "text-rose-600" : "text-muted-foreground"}`}
                           >
                             <span>Info</span>
                             <span>Nilai</span>
                           </div>
                           <div
-                            className={`flex justify-between text-[4px] font-bold ${showReceiptErrorVisual ? "text-rose-800" : "text-slate-800"}`}
+                            className={`flex justify-between text-[4px] font-bold ${errorLine === 0 ? "text-rose-800" : "text-slate-800"}`}
                           >
                             <span>Total</span>
                             <span>
@@ -1122,7 +909,7 @@ export default function SimulasiKasirKantin() {
                           </div>
                           {simState.paidAmount > 0 && (
                             <div
-                              className={`flex justify-between text-[4px] font-bold ${showReceiptErrorVisual ? "text-rose-800" : "text-slate-800"}`}
+                              className={`flex justify-between text-[4px] font-bold ${errorLine === 0 ? "text-rose-800" : "text-slate-800"}`}
                             >
                               <span>Bayar</span>
                               <span>
@@ -1131,7 +918,7 @@ export default function SimulasiKasirKantin() {
                             </div>
                           )}
                           <div
-                            className={`mt-auto pt-1 border-t border-dashed flex justify-between text-[6px] font-black uppercase ${showReceiptErrorVisual ? "border-rose-200 text-rose-900" : "border-slate-300 text-black"}`}
+                            className={`mt-auto pt-1 border-t border-dashed flex justify-between text-[6px] font-black uppercase ${errorLine === 0 ? "border-rose-200 text-rose-900" : "border-slate-300 text-black"}`}
                           >
                             <span>Kembali</span>
                             <span>
@@ -1146,18 +933,18 @@ export default function SimulasiKasirKantin() {
                   </div>
 
                   {/* Display Results */}
-                  {(simState.totalPrice > 0 || showTotalBubbleVisual) &&
+                  {(simState.totalPrice > 0 || errorLine === 0) &&
                     !simState.isCalculating && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className={`absolute bottom-12 px-6 py-2 rounded-2xl font-mono text-lg font-black shadow-lg z-40 ${
-                          showTotalBubbleVisual
+                          errorLine === 0
                             ? "bg-rose-50 border-2 border-rose-500 text-rose-600 shadow-rose-500/20"
                             : "bg-white border-2 border-emerald-500 text-emerald-600 shadow-emerald-500/20"
                         }`}
                       >
-                        Rp {simState.totalPrice.toLocaleString("id-ID")}
+                        Operator Hasil
                       </motion.div>
                     )}
 
