@@ -322,6 +322,18 @@ const BlenderSimulation = () => {
     return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali tipe data dan operator yang dipilih.";
   };
 
+  const getLineGuideMessage = (token: TokenKey): string => {
+    if (token === "type1") {
+      return "Variabel buah1 digunakan sebagai nilai input, maka bertipe data _______";
+    }
+
+    if (token === "type2") {
+      return "Variabel buah2 digunakan sebagai nilai input, maka bertipe data _______";
+    }
+
+    return "Variabel jus merupakan hasil dari proses antara buah1 dan buah2, maka operator yang digunakan adalah _______ dan hasilnya bertipe data _______";
+  };
+
   const getActiveDescription = (): CommandDetail => {
     if (activeLine === -1 || !activeToken) return COMMAND_DETAILS.DEFAULT;
     const currentTokenChoice = selectedTokens[activeToken];
@@ -371,6 +383,14 @@ const BlenderSimulation = () => {
     setActiveLine(TOKEN_LINE_MAP[token]);
     setErrorLine(-1);
     setShowSuccessCard(false);
+  };
+
+  const handleTokenFocus = (token: TokenKey) => {
+    if (isRunning) return;
+    setOpenSelectorToken(token);
+    setActiveToken(token);
+    setActiveLine(TOKEN_LINE_MAP[token]);
+    setFeedback(getLineGuideMessage(token));
   };
 
   const resetSim = () => {
@@ -870,29 +890,29 @@ const BlenderSimulation = () => {
                                 layoutId="lineHighlight"
                                 className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
                                   isRunning
-                                    ? "bg-emerald-50 border-emerald-500"
+                                    ? "bg-violet-50 border-violet-500"
                                     : errorLine === index
                                       ? "bg-red-50 border-red-500"
-                                      : "bg-emerald-50/30 border-emerald-200"
+                                      : "bg-violet-50/30 border-violet-200"
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
-                              <span className="text-slate-900">
-                                let buah1; // tipe data:{" "}
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah1</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
                                 disabled={isRunning}
-                                onClick={() => {
-                                  setOpenSelectorToken("type1");
-                                  setActiveToken("type1");
-                                  setActiveLine(index);
-                                }}
+                                onClick={() => handleTokenFocus("type1")}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type1
-                                    ? "text-slate-900 hover:bg-emerald-50"
-                                    : "text-slate-300 italic hover:bg-slate-100"
+                                    ? "text-sky-700 hover:bg-sky-50"
+                                    : "text-slate-400 hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type1 ?? CHOICE_PLACEHOLDER}
@@ -913,29 +933,29 @@ const BlenderSimulation = () => {
                                 layoutId="lineHighlight"
                                 className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
                                   isRunning
-                                    ? "bg-emerald-50 border-emerald-500"
+                                    ? "bg-violet-50 border-violet-500"
                                     : errorLine === index
                                       ? "bg-red-50 border-red-500"
-                                      : "bg-emerald-50/30 border-emerald-200"
+                                      : "bg-violet-50/30 border-violet-200"
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
-                              <span className="text-slate-900">
-                                let buah2; // tipe data:{" "}
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah2</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
                                 disabled={isRunning}
-                                onClick={() => {
-                                  setOpenSelectorToken("type2");
-                                  setActiveToken("type2");
-                                  setActiveLine(index);
-                                }}
+                                onClick={() => handleTokenFocus("type2")}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type2
-                                    ? "text-slate-900 hover:bg-emerald-50"
-                                    : "text-slate-300 italic hover:bg-slate-100"
+                                    ? "text-sky-700 hover:bg-sky-50"
+                                    : "text-slate-400 hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type2 ?? CHOICE_PLACEHOLDER}
@@ -956,49 +976,46 @@ const BlenderSimulation = () => {
                                 layoutId="lineHighlight"
                                 className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
                                   isRunning
-                                    ? "bg-emerald-50 border-emerald-500"
+                                    ? "bg-violet-50 border-violet-500"
                                     : errorLine === index
                                       ? "bg-red-50 border-red-500"
-                                      : "bg-emerald-50/30 border-emerald-200"
+                                      : "bg-violet-50/30 border-violet-200"
                                 }`}
                               />
                             )}
-                            <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
-                              <span className="text-slate-900">
-                                let jus = buah1{" "}
-                              </span>
+                            <div className="relative z-10 whitespace-pre font-bold">
+                              <span className="text-violet-700">let</span>
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">jus</span>
+                              <span className="text-slate-900"> = </span>
+                              <span className="text-blue-700">buah1</span>
+                              <span className="text-slate-900"> </span>
                               <button
                                 type="button"
                                 disabled={isRunning}
-                                onClick={() => {
-                                  setOpenSelectorToken("operator");
-                                  setActiveToken("operator");
-                                  setActiveLine(index);
-                                }}
+                                onClick={() => handleTokenFocus("operator")}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.operator
-                                    ? "text-slate-900 hover:bg-emerald-50"
-                                    : "text-slate-300 italic hover:bg-slate-100"
+                                    ? "text-sky-700 hover:bg-sky-50"
+                                    : "text-slate-400 hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.operator ?? CHOICE_PLACEHOLDER}
                               </button>
-                              <span className="text-slate-900">
-                                {" "}
-                                buah2; // tipe data:{" "}
+                              <span className="text-slate-900"> </span>
+                              <span className="text-blue-700">buah2</span>
+                              <span className="text-slate-900">; </span>
+                              <span className="text-slate-500">
+                                // tipe data:{" "}
                               </span>
                               <button
                                 type="button"
                                 disabled={isRunning}
-                                onClick={() => {
-                                  setOpenSelectorToken("type3");
-                                  setActiveToken("type3");
-                                  setActiveLine(index);
-                                }}
+                                onClick={() => handleTokenFocus("type3")}
                                 className={`rounded px-1.5 py-0.5 transition-all ${
                                   selectedTokens.type3
-                                    ? "text-slate-900 hover:bg-emerald-50"
-                                    : "text-slate-300 italic hover:bg-slate-100"
+                                    ? "text-sky-700 hover:bg-sky-50"
+                                    : "text-slate-400 hover:bg-slate-100"
                                 } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
                               >
                                 {selectedTokens.type3 ?? CHOICE_PLACEHOLDER}
@@ -1018,15 +1035,18 @@ const BlenderSimulation = () => {
                               layoutId="lineHighlight"
                               className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
                                 isRunning
-                                  ? "bg-emerald-50 border-emerald-500"
+                                  ? "bg-violet-50 border-violet-500"
                                   : errorLine === index
                                     ? "bg-red-50 border-red-500"
-                                    : "bg-emerald-50/30 border-emerald-200"
+                                    : "bg-violet-50/30 border-violet-200"
                               }`}
                             />
                           )}
-                          <div className="relative z-10 whitespace-pre text-slate-900 font-bold">
-                            <span className="text-slate-900">{line}</span>
+                          <div className="relative z-10 whitespace-pre font-bold">
+                            <span className="text-violet-700">console.log</span>
+                            <span className="text-slate-900">(</span>
+                            <span className="text-blue-700">jus</span>
+                            <span className="text-slate-900">);</span>
                           </div>
                         </div>
                       );
