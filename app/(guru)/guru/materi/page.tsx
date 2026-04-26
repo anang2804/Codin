@@ -421,7 +421,7 @@ export default function GuruMateriPage() {
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={resetForm}>
-        <DialogContent className="max-w-2xl animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-card">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-card">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {editingId ? "Edit Materi" : "Tambah Materi Baru"}
