@@ -65,6 +65,7 @@ export async function POST(req: Request) {
       email,
       password: providedPassword,
       full_name,
+      jenis_kelamin,
       no_telepon,
       nuptk,
     } = body;
@@ -168,6 +169,7 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({
         nuptk: normalizedNuptk,
+        jenis_kelamin: jenis_kelamin || null,
         no_telepon: normalizedPhone || null,
         current_password: generatedPassword,
         password_updated_at: new Date().toISOString(),

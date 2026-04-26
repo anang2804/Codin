@@ -71,6 +71,7 @@ export default function AdminGuruPage() {
     email: "",
     password: "",
     nuptk: "",
+    jenis_kelamin: "",
     no_telepon: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,6 +82,7 @@ export default function AdminGuruPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showAddPassword, setShowAddPassword] = useState(false);
   const [addNuptkError, setAddNuptkError] = useState("");
+  const [addGenderError, setAddGenderError] = useState("");
   const [addPhoneError, setAddPhoneError] = useState("");
   const [addPasswordError, setAddPasswordError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -482,6 +484,7 @@ export default function AdminGuruPage() {
             email: getByAliases(row, ["email", "akun"]),
             password: getByAliases(row, ["password", "kata sandi", "sandi"]),
             nuptk: getByAliases(row, ["nuptk"]),
+            jenis_kelamin: getByAliases(row, ["jenis kelamin", "gender", "jk"]),
             no_telepon: getByAliases(row, [
               "no telepon",
               "nomor telepon",
@@ -509,12 +512,13 @@ export default function AdminGuruPage() {
   // Handle template download
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Nama", "Email", "Password", "NUPTK", "No Telepon"],
+      ["Nama", "Email", "Password", "NUPTK", "Jenis Kelamin", "No Telepon"],
       [
         "Contoh Guru",
         "guru@sekolah.com",
         "password123",
         "1234567890",
+        "Laki-laki",
         "08123456789",
       ],
     ]);
@@ -523,6 +527,7 @@ export default function AdminGuruPage() {
       { wch: 28 },
       { wch: 16 },
       { wch: 16 },
+      { wch: 18 },
       { wch: 16 },
     ];
     const wb = XLSX.utils.book_new();
@@ -561,12 +566,13 @@ export default function AdminGuruPage() {
       const email = String(row.email ?? "").trim();
       const password = String(row.password ?? "").trim();
       const nuptk = String(row.nuptk ?? "").trim();
+      const jenisKelamin = String(row.jenis_kelamin ?? "").trim();
       const noTelepon = String(row.no_telepon ?? "").trim();
 
-      if (!fullName || !email || !password || !nuptk) {
+      if (!fullName || !email || !password || !nuptk || !jenisKelamin) {
         results.failed++;
         results.errors.push(
-          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, Password, dan NUPTK harus diisi)`,
+          `Baris ${row.rowNum}: Data tidak lengkap (Nama, Email, Password, NUPTK, dan Jenis Kelamin harus diisi)`,
         );
         continue;
       }
@@ -586,6 +592,7 @@ export default function AdminGuruPage() {
             full_name: fullName,
             password,
             nuptk,
+            jenis_kelamin: jenisKelamin,
             no_telepon: noTelepon || null,
             sendEmail: false,
           }),
@@ -654,6 +661,7 @@ export default function AdminGuruPage() {
       .trim()
       .toLowerCase();
     const normalizedNuptk = String(addForm.nuptk ?? "").trim();
+    const normalizedGender = String(addForm.jenis_kelamin ?? "").trim();
     const normalizedPhone = String(addForm.no_telepon ?? "").trim();
     const normalizedPassword = String(addForm.password ?? "").trim();
 
@@ -661,15 +669,24 @@ export default function AdminGuruPage() {
       !addForm.full_name.trim() ||
       !normalizedEmail ||
       !normalizedPassword ||
-      !normalizedNuptk
+      !normalizedNuptk ||
+      !normalizedGender
     ) {
-      toast.error("Nama, email, password, dan NUPTK harus diisi");
+      toast.error(
+        "Nama, email, password, NUPTK, dan jenis kelamin harus diisi",
+      );
       return;
     }
 
     if (!/^\d+$/.test(normalizedNuptk)) {
       setAddNuptkError("NUPTK harus berisi angka.");
       toast.error("NUPTK harus berisi angka");
+      return;
+    }
+
+    if (!normalizedGender) {
+      setAddGenderError("Jenis kelamin wajib diisi.");
+      toast.error("Jenis kelamin wajib diisi");
       return;
     }
 
@@ -692,6 +709,7 @@ export default function AdminGuruPage() {
 
     setAddPhoneError("");
     setAddNuptkError("");
+    setAddGenderError("");
     setAddPasswordError("");
     setIsSubmitting(true);
     try {
@@ -703,6 +721,7 @@ export default function AdminGuruPage() {
           full_name: addForm.full_name.trim(),
           password: normalizedPassword,
           nuptk: normalizedNuptk,
+          jenis_kelamin: normalizedGender,
           no_telepon: normalizedPhone || null,
           sendEmail: false,
         }),
@@ -745,9 +764,11 @@ export default function AdminGuruPage() {
         email: "",
         password: "",
         nuptk: "",
+        jenis_kelamin: "",
         no_telepon: "",
       });
       setAddNuptkError("");
+      setAddGenderError("");
       setAddPhoneError("");
       setAddPasswordError("");
       setTimeout(() => {
@@ -1695,6 +1716,7 @@ export default function AdminGuruPage() {
             setUploadProgress(0);
             setAddMode("single");
             setAddNuptkError("");
+            setAddGenderError("");
             setAddPasswordError("");
           }
         }}
@@ -1930,6 +1952,33 @@ export default function AdminGuruPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Jenis Kelamin <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addForm.jenis_kelamin}
+                  onChange={(e) => {
+                    setAddForm({
+                      ...addForm,
+                      jenis_kelamin: e.target.value,
+                    });
+                    setAddGenderError("");
+                  }}
+                  className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm transition ${
+                    addGenderError
+                      ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                      : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  }`}
+                >
+                  <option value="">Pilih jenis kelamin</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+                {addGenderError && (
+                  <p className="mt-1 text-xs text-red-600">{addGenderError}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -2015,10 +2064,12 @@ export default function AdminGuruPage() {
                       email: "",
                       password: "",
                       nuptk: "",
+                      jenis_kelamin: "",
                       no_telepon: "",
                     });
                     setAddPhoneError("");
                     setAddNuptkError("");
+                    setAddGenderError("");
                     setAddPasswordError("");
                   }}
                   className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-lg"
