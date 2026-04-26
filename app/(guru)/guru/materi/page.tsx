@@ -638,6 +638,9 @@ export default function GuruMateriPage() {
         }}
       >
         <DialogContent className="max-w-sm animate-in fade-in-0 zoom-in-95 duration-200 p-7">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Hapus Materi</DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col items-center text-center">
             <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
               <AlertTriangle size={26} className="text-red-500" />
