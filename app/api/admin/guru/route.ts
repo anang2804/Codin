@@ -68,7 +68,15 @@ export async function POST(req: Request) {
       jenis_kelamin,
       no_telepon,
       nuptk,
+      kelas_ids,
     } = body;
+    const normalizedKelasIds = Array.isArray(kelas_ids)
+      ? [
+          ...new Set(
+            kelas_ids.map((id: unknown) => String(id).trim()).filter(Boolean),
+          ),
+        ]
+      : [];
     const normalizedPhone = normalizePhoneNumber(no_telepon);
     const normalizedNuptk = String(nuptk ?? "").trim();
 
@@ -176,6 +184,31 @@ export async function POST(req: Request) {
       })
       .eq("id", created.user.id);
 
+    if (normalizedKelasIds.length > 0) {
+      // Clear existing wali kelas assignments for these classes first.
+      const { error: clearKelasError } = await supabaseAdmin
+        .from("kelas")
+        .update({ wali_kelas_id: null })
+        .in("id", normalizedKelasIds);
+
+      if (clearKelasError) {
+        throw new Error(
+          clearKelasError.message || "Failed to clear kelas assignments",
+        );
+      }
+
+      const { error: assignKelasError } = await supabaseAdmin
+        .from("kelas")
+        .update({ wali_kelas_id: created.user.id })
+        .in("id", normalizedKelasIds);
+
+      if (assignKelasError) {
+        throw new Error(
+          assignKelasError.message || "Failed to assign kelas to guru",
+        );
+      }
+    }
+
     return NextResponse.json({
       id: created.user.id,
       email,
@@ -231,16 +264,74 @@ export async function GET(req: Request) {
       throw fetchError;
     }
 
-    const mapped = (rows || []).map((g: any) => ({
-      id: g.id,
-      email: g.email,
-      full_name: g.full_name,
-      nuptk: g.nuptk ?? null,
-      created_at: g.created_at,
-      jenis_kelamin: g.jenis_kelamin ?? null,
-      no_telepon: g.no_telepon ?? null,
-      alamat: g.alamat ?? null,
-    }));
+    const { data: kelasRows, error: kelasError } = await supabaseAdmin
+      .from("kelas")
+      .select("id, name, wali_kelas_id");
+
+    if (kelasError) {
+      throw kelasError;
+    }
+
+    const { data: siswaRows, error: siswaError } = await supabaseAdmin
+      .from("profiles")
+      .select("kelas")
+      .eq("role", "siswa");
+
+    if (siswaError) {
+      throw siswaError;
+    }
+
+    const siswaCountByKelasName = new Map<string, number>();
+    for (const siswa of siswaRows || []) {
+      const kelasName = String(siswa?.kelas ?? "").trim();
+      if (!kelasName) continue;
+      const key = kelasName.toLowerCase();
+      siswaCountByKelasName.set(key, (siswaCountByKelasName.get(key) || 0) + 1);
+    }
+
+    const kelasByGuruId = new Map<
+      string,
+      Array<{ id: string; name: string; total_siswa: number }>
+    >();
+
+    for (const kelas of kelasRows || []) {
+      const guruId = String(kelas?.wali_kelas_id ?? "").trim();
+      const kelasName = String(kelas?.name ?? "").trim();
+      if (!guruId || !kelasName) continue;
+
+      const totalSiswa =
+        siswaCountByKelasName.get(kelasName.toLowerCase()) || 0;
+      const current = kelasByGuruId.get(guruId) || [];
+      current.push({
+        id: kelas.id,
+        name: kelasName,
+        total_siswa: totalSiswa,
+      });
+      kelasByGuruId.set(guruId, current);
+    }
+
+    const mapped = (rows || []).map((g: any) => {
+      const kelasDiajar = (kelasByGuruId.get(String(g.id)) || []).sort((a, b) =>
+        a.name.localeCompare(b.name, "id"),
+      );
+      const totalSiswaKelasDiajar = kelasDiajar.reduce(
+        (acc, item) => acc + item.total_siswa,
+        0,
+      );
+
+      return {
+        id: g.id,
+        email: g.email,
+        full_name: g.full_name,
+        nuptk: g.nuptk ?? null,
+        created_at: g.created_at,
+        jenis_kelamin: g.jenis_kelamin ?? null,
+        no_telepon: g.no_telepon ?? null,
+        alamat: g.alamat ?? null,
+        kelas_diajar: kelasDiajar,
+        total_siswa_kelas_diajar: totalSiswaKelasDiajar,
+      };
+    });
 
     return NextResponse.json(
       { data: mapped },
@@ -299,7 +390,17 @@ export async function PUT(req: Request) {
       no_telepon,
       alamat,
       nuptk,
+      kelas_ids,
     } = body;
+    const normalizedKelasIds = Array.isArray(kelas_ids)
+      ? [
+          ...new Set(
+            kelas_ids
+              .map((kelasId: unknown) => String(kelasId).trim())
+              .filter(Boolean),
+          ),
+        ]
+      : null;
     const normalizedPhone = normalizePhoneNumber(no_telepon);
     const normalizedNuptk =
       nuptk !== undefined ? String(nuptk ?? "").trim() : undefined;
@@ -388,6 +489,60 @@ export async function PUT(req: Request) {
           },
           { status: 500 },
         );
+      }
+    }
+
+    if (normalizedKelasIds !== null) {
+      // Remove this guru from previously assigned classes first.
+      const { error: clearExistingAssignmentsError } = await supabaseAdmin
+        .from("kelas")
+        .update({ wali_kelas_id: null })
+        .eq("wali_kelas_id", id);
+
+      if (clearExistingAssignmentsError) {
+        return NextResponse.json(
+          {
+            error:
+              clearExistingAssignmentsError.message ||
+              "Failed to clear old kelas assignments",
+          },
+          { status: 500 },
+        );
+      }
+
+      if (normalizedKelasIds.length > 0) {
+        // If selected classes previously belonged to another guru, replace assignment.
+        const { error: clearSelectedAssignmentsError } = await supabaseAdmin
+          .from("kelas")
+          .update({ wali_kelas_id: null })
+          .in("id", normalizedKelasIds);
+
+        if (clearSelectedAssignmentsError) {
+          return NextResponse.json(
+            {
+              error:
+                clearSelectedAssignmentsError.message ||
+                "Failed to prepare selected kelas assignments",
+            },
+            { status: 500 },
+          );
+        }
+
+        const { error: assignSelectedAssignmentsError } = await supabaseAdmin
+          .from("kelas")
+          .update({ wali_kelas_id: id })
+          .in("id", normalizedKelasIds);
+
+        if (assignSelectedAssignmentsError) {
+          return NextResponse.json(
+            {
+              error:
+                assignSelectedAssignmentsError.message ||
+                "Failed to assign selected kelas",
+            },
+            { status: 500 },
+          );
+        }
       }
     }
 

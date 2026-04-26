@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,6 +193,8 @@ export default function AdminSiswaPage() {
   const [passwordLoadingUsers, setPasswordLoadingUsers] = useState<Set<string>>(
     new Set(),
   );
+  const isCheckingPasswordStatusRef = useRef(false);
+  const hasLoggedPasswordFetchErrorRef = useRef(false);
 
   // Helper functions for password management
   const normalizeEmail = (e?: string) =>
@@ -324,6 +326,10 @@ export default function AdminSiswaPage() {
   // Check password status
   const checkPasswordStatus = async (userIds: string[]) => {
     if (userIds.length === 0) return;
+    if (isCheckingPasswordStatusRef.current) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+
+    isCheckingPasswordStatusRef.current = true;
     try {
       const res = await fetch(
         "/api/admin/check-password-status?t=" + Date.now(),
@@ -338,6 +344,12 @@ export default function AdminSiswaPage() {
           cache: "no-store",
         },
       );
+      if (!res.ok) {
+        return;
+      }
+
+      hasLoggedPasswordFetchErrorRef.current = false;
+
       if (res.ok) {
         const json = await res.json();
         const statusMap = new Map();
@@ -355,7 +367,24 @@ export default function AdminSiswaPage() {
         await Promise.all(passwordPromises);
       }
     } catch (error) {
+      const isLikelyTransientNetworkError =
+        error instanceof TypeError ||
+        (error instanceof DOMException && error.name === "AbortError");
+
+      // Keep the UI stable for temporary network glitches and avoid noisy repeated logs.
+      if (isLikelyTransientNetworkError) {
+        if (!hasLoggedPasswordFetchErrorRef.current) {
+          console.warn(
+            "Password status check temporarily unavailable. Will retry automatically.",
+          );
+          hasLoggedPasswordFetchErrorRef.current = true;
+        }
+        return;
+      }
+
       console.error("Error checking password status:", error);
+    } finally {
+      isCheckingPasswordStatusRef.current = false;
     }
   };
 

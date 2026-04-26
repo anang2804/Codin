@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   FileUp,
   X as XIcon,
+  GraduationCap,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,19 @@ interface Guru {
   jenis_kelamin?: string | null;
   no_telepon?: string;
   alamat?: string;
+  kelas_diajar?: Array<{
+    id: string;
+    name: string;
+    total_siswa: number;
+  }>;
+  total_siswa_kelas_diajar?: number;
   created_at: string;
+}
+
+interface KelasOption {
+  id: string;
+  name: string;
+  wali_kelas_id?: string | null;
 }
 
 export default function AdminGuruPage() {
@@ -62,6 +75,8 @@ export default function AdminGuruPage() {
   const [filteredGuru, setFilteredGuru] = useState<Guru[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([]);
+  const [loadingKelasOptions, setLoadingKelasOptions] = useState(false);
 
   // Add form state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -74,6 +89,7 @@ export default function AdminGuruPage() {
     jenis_kelamin: "",
     no_telepon: "",
   });
+  const [addSelectedKelasIds, setAddSelectedKelasIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<{
     email: string;
@@ -118,6 +134,9 @@ export default function AdminGuruPage() {
   const [showEditPasswordError, setShowEditPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editSelectedKelasIds, setEditSelectedKelasIds] = useState<string[]>(
+    [],
+  );
 
   const clearEditValidationError = (field: string) => {
     setEditValidationErrors((prev) => {
@@ -278,6 +297,7 @@ export default function AdminGuruPage() {
 
   useEffect(() => {
     fetchGuru();
+    fetchKelasOptions();
   }, []);
 
   useEffect(() => {
@@ -442,6 +462,41 @@ export default function AdminGuruPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchKelasOptions = async () => {
+    setLoadingKelasOptions(true);
+    try {
+      const response = await fetch(`/api/admin/kelas?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Failed to fetch kelas");
+      }
+      setKelasOptions(Array.isArray(json.data) ? json.data : []);
+    } catch (error) {
+      console.error("Error fetching kelas options:", error);
+      setKelasOptions([]);
+    } finally {
+      setLoadingKelasOptions(false);
+    }
+  };
+
+  const toggleAddKelas = (kelasId: string) => {
+    setAddSelectedKelasIds((prev) =>
+      prev.includes(kelasId)
+        ? prev.filter((id) => id !== kelasId)
+        : [...prev, kelasId],
+    );
+  };
+
+  const toggleEditKelas = (kelasId: string) => {
+    setEditSelectedKelasIds((prev) =>
+      prev.includes(kelasId)
+        ? prev.filter((id) => id !== kelasId)
+        : [...prev, kelasId],
+    );
   };
 
   // Handle Excel file upload
@@ -723,6 +778,7 @@ export default function AdminGuruPage() {
           nuptk: normalizedNuptk,
           jenis_kelamin: normalizedGender,
           no_telepon: normalizedPhone || null,
+          kelas_ids: addSelectedKelasIds,
           sendEmail: false,
         }),
       });
@@ -767,6 +823,7 @@ export default function AdminGuruPage() {
         jenis_kelamin: "",
         no_telepon: "",
       });
+      setAddSelectedKelasIds([]);
       setAddNuptkError("");
       setAddGenderError("");
       setAddPhoneError("");
@@ -795,6 +852,7 @@ export default function AdminGuruPage() {
     setEditingId(guru.id);
     setEditForm({ ...guru });
     setOriginalEditForm({ ...guru });
+    setEditSelectedKelasIds((guru.kelas_diajar || []).map((kelas) => kelas.id));
     setEditValidationErrors({});
     setEditPhoneError("");
     setShowEditPasswordError(false);
@@ -888,6 +946,7 @@ export default function AdminGuruPage() {
         jenis_kelamin: normalizedEditData.jenis_kelamin,
         no_telepon: normalizedEditData.no_telepon,
         alamat: normalizedEditData.alamat,
+        kelas_ids: editSelectedKelasIds,
       };
 
       // Only include password if it's been provided
@@ -942,6 +1001,7 @@ export default function AdminGuruPage() {
       setEditPhoneError("");
       setShowEditPasswordError(false);
       setShowEditPassword(false);
+      setEditSelectedKelasIds([]);
       fetchGuru();
     } catch (err: any) {
       console.error("Error updating guru:", err);
@@ -1380,6 +1440,43 @@ export default function AdminGuruPage() {
                         </p>
                       )}
                     </div>
+                    {/* Kelas yang diajar */}
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        Kelas yang Diajar
+                      </label>
+                      {loadingKelasOptions ? (
+                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                          Memuat daftar kelas...
+                        </div>
+                      ) : kelasOptions.length === 0 ? (
+                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                          Belum ada data kelas
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1.5 p-2 rounded-md border border-gray-200 bg-gray-50">
+                          {kelasOptions.map((kelas) => {
+                            const checked = editSelectedKelasIds.includes(
+                              kelas.id,
+                            );
+                            return (
+                              <label
+                                key={kelas.id}
+                                className="flex items-center gap-2 text-[12px] text-gray-700"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleEditKelas(kelas.id)}
+                                  className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                                />
+                                <span className="truncate">{kelas.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                     {/* Alamat — full width */}
                     <div className="col-span-2">
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">
@@ -1583,6 +1680,44 @@ export default function AdminGuruPage() {
                             Terdaftar:{" "}
                             {new Date(g.created_at).toLocaleDateString("id-ID")}
                           </div>
+                          {(() => {
+                            const kelasDiajar = g.kelas_diajar || [];
+                            const totalSiswaKelasDiajar =
+                              g.total_siswa_kelas_diajar ??
+                              kelasDiajar.reduce(
+                                (acc, kelas) => acc + (kelas.total_siswa || 0),
+                                0,
+                              );
+
+                            if (kelasDiajar.length === 0) {
+                              return (
+                                <div className="flex items-center gap-1.5 text-amber-600">
+                                  <GraduationCap size={13} />
+                                  Belum ada kelas yang diajar
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="flex flex-col gap-1.5 pt-1">
+                                <div className="flex items-center gap-1.5 text-emerald-700">
+                                  <GraduationCap size={13} />
+                                  {kelasDiajar.length} kelas diajar • total{" "}
+                                  {totalSiswaKelasDiajar} siswa
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {kelasDiajar.map((kelas) => (
+                                    <span
+                                      key={kelas.id}
+                                      className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    >
+                                      {kelas.name}: {kelas.total_siswa} siswa
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -2054,6 +2189,40 @@ export default function AdminGuruPage() {
                   <p className="mt-1 text-xs text-red-600">{addPhoneError}</p>
                 )}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Kelas yang Diajar
+                </label>
+                {loadingKelasOptions ? (
+                  <div className="h-10 px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-500 flex items-center">
+                    Memuat daftar kelas...
+                  </div>
+                ) : kelasOptions.length === 0 ? (
+                  <div className="h-10 px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-500 flex items-center">
+                    Belum ada data kelas
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 p-3 rounded-md border border-gray-200 bg-gray-50 max-h-44 overflow-y-auto">
+                    {kelasOptions.map((kelas) => {
+                      const checked = addSelectedKelasIds.includes(kelas.id);
+                      return (
+                        <label
+                          key={kelas.id}
+                          className="flex items-center gap-2 text-sm text-gray-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddKelas(kelas.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          />
+                          <span className="truncate">{kelas.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-3 pt-1">
                 <Button
                   variant="outline"
@@ -2067,6 +2236,7 @@ export default function AdminGuruPage() {
                       jenis_kelamin: "",
                       no_telepon: "",
                     });
+                    setAddSelectedKelasIds([]);
                     setAddPhoneError("");
                     setAddNuptkError("");
                     setAddGenderError("");
