@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { compressImageFile } from "@/lib/utils/image-compression";
 
 interface Soal {
   id: string;
@@ -206,10 +207,31 @@ export default function AsesmenDetailPage({
     const supabase = createClient();
 
     try {
-      const fileName = `${Date.now()}_${file.name}`;
+      const isImage = file.type.startsWith("image/");
+      const compressed = isImage
+        ? await compressImageFile(file, {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 0.78,
+            targetType: "image/webp",
+          })
+        : {
+            file,
+            compressed: false,
+            originalSize: file.size,
+            compressedSize: file.size,
+          };
+      const uploadFile = compressed.file;
+
+      const extFromName = uploadFile.name.split(".").pop() || "bin";
+      const safeName = uploadFile.name
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+      const fileName = `${Date.now()}_${safeName}.${extFromName}`;
+
       const { data, error } = await supabase.storage
         .from("learning-materials")
-        .upload(fileName, file);
+        .upload(fileName, uploadFile, { contentType: uploadFile.type });
 
       if (error) throw error;
 

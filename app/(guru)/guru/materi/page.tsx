@@ -26,6 +26,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import Link from "next/link";
+import {
+  compressImageFile,
+  fileToDataUrl,
+} from "@/lib/utils/image-compression";
 import { useMapel } from "@/lib/hooks/use-mapel";
 import {
   useMateri,
@@ -113,31 +117,29 @@ export default function GuruMateriPage() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5MB");
+    // Validate file size (max 12MB before compression)
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 12MB");
       return;
     }
 
     try {
       setUploadingThumbnail(true);
 
-      // Convert image to base64 as fallback (no storage bucket needed)
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFormData({ ...formData, thumbnail_url: base64String });
-        toast.success("Thumbnail berhasil diunggah");
-        setUploadingThumbnail(false);
-      };
-      reader.onerror = () => {
-        toast.error("Gagal membaca file");
-        setUploadingThumbnail(false);
-      };
-      reader.readAsDataURL(file);
+      const compressed = await compressImageFile(file, {
+        maxWidth: 1600,
+        maxHeight: 900,
+        quality: 0.75,
+        targetType: "image/webp",
+      });
+
+      const base64String = await fileToDataUrl(compressed.file);
+      setFormData({ ...formData, thumbnail_url: base64String });
+      toast.success("Thumbnail berhasil diunggah");
     } catch (error) {
       console.error("Error uploading thumbnail:", error);
       toast.error("Gagal mengunggah thumbnail");
+    } finally {
       setUploadingThumbnail(false);
     }
   };

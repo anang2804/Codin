@@ -18,6 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
+import { compressImageFile } from "@/lib/utils/image-compression";
 
 interface Profile {
   id: string;
@@ -136,20 +137,39 @@ export default function SiswaProfilePage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran foto maksimal 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ukuran foto maksimal 10MB");
       return;
     }
 
     try {
       setUploadingAvatar(true);
       const supabase = createClient();
-      const ext = file.name.split(".").pop();
+
+      const compressed = await compressImageFile(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.78,
+        targetType: "image/webp",
+      });
+      const uploadFile = compressed.file;
+
+      if (uploadFile.size > 5 * 1024 * 1024) {
+        toast.error(
+          "Ukuran foto setelah kompresi masih terlalu besar (maks. 5MB)",
+        );
+        return;
+      }
+
+      const ext = uploadFile.name.split(".").pop();
       const path = `avatars/${profile.id}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("learning-materials")
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, uploadFile, {
+          upsert: true,
+          contentType: uploadFile.type,
+        });
 
       if (uploadError) {
         throw new Error(uploadError.message || "Gagal upload avatar");

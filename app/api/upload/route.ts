@@ -28,13 +28,14 @@ export async function POST(request: NextRequest) {
       "video/quicktime",
       "image/jpeg",
       "image/png",
+      "image/webp",
       "image/gif",
     ];
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "Tipe file tidak diizinkan" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (file.size > 50 * 1024 * 1024) {
       return NextResponse.json(
         { error: "Ukuran file maksimal 50MB" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       console.error("Supabase upload error:", uploadError);
       return NextResponse.json(
         { error: `Upload gagal: ${uploadError.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to upload file" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

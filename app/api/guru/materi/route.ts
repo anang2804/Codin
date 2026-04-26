@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, mapel_id, thumbnail_url } = body;
+    const { title, description, mapel_id, kelas_id, thumbnail_url } = body;
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
         title,
         description,
         mapel_id: mapel_id || null,
+        kelas_id: kelas_id || null,
         thumbnail_url: thumbnail_url || null,
         created_by: user.id,
       },
@@ -187,7 +188,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, description, mapel_id, thumbnail_url } = body;
+    const { id, title, description, mapel_id, kelas_id, thumbnail_url } = body;
 
     if (!id || !title) {
       return NextResponse.json(
@@ -211,6 +212,7 @@ export async function PUT(request: NextRequest) {
         title,
         description,
         mapel_id: mapel_id || null,
+        kelas_id: kelas_id || null,
         thumbnail_url: thumbnail_url || null,
       },
       include: {

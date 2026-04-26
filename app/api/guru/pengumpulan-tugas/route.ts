@@ -3,16 +3,16 @@ import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
 type PengumpulanTugasRow = {
-  id: string;
+  id: string | null;
   sub_bab_id: string;
   bab_id: string;
-  siswa_id: string;
-  file_url: string;
-  file_name: string;
-  file_size: number | bigint;
-  mime_type: string;
-  submitted_at: Date;
-  updated_at: Date;
+  siswa_id: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  file_size: number | bigint | null;
+  mime_type: string | null;
+  submitted_at: Date | null;
+  updated_at: Date | null;
   sub_bab_title: string;
   bab_title: string;
   materi_id: string;
@@ -25,7 +25,9 @@ function normalizeRows(rows: PengumpulanTugasRow[]) {
   return rows.map((row) => ({
     ...row,
     file_size:
-      typeof row.file_size === "bigint" ? Number(row.file_size) : row.file_size,
+      typeof row.file_size === "bigint"
+        ? Number(row.file_size)
+        : (row.file_size ?? 0),
   }));
 }
 
@@ -52,9 +54,9 @@ export async function GET() {
     const rows = await prisma.$queryRaw<PengumpulanTugasRow[]>`
       SELECT
         mpt.id,
-        mpt.sub_bab_id,
+        msb.id AS sub_bab_id,
         mb.id AS bab_id,
-        mpt.siswa_id,
+        siswa.id AS siswa_id,
         mpt.url_file AS file_url,
         mpt.nama_file AS file_name,
         mpt.ukuran_file AS file_size,
@@ -65,22 +67,38 @@ export async function GET() {
         mb.title AS bab_title,
         m.id AS materi_id,
         m.title AS materi_title,
-        p.full_name AS siswa_name,
-        p.kelas AS siswa_kelas
-      FROM materi_pengumpulan_tugas mpt
-      JOIN materi_sub_bab msb ON msb.id = mpt.sub_bab_id
+        siswa.full_name AS siswa_name,
+        siswa.kelas AS siswa_kelas
+      FROM materi_sub_bab msb
       JOIN materi_bab mb ON mb.id = msb.bab_id
       JOIN materi m ON m.id = mb.materi_id
-      LEFT JOIN profiles p ON p.id = mpt.siswa_id
+      LEFT JOIN kelas k ON k.id = m.kelas_id
+      LEFT JOIN profiles siswa
+        ON siswa.role = 'siswa'
+        AND siswa.kelas IS NOT NULL
+        AND k.name IS NOT NULL
+        AND (
+          LOWER(TRIM(siswa.kelas)) = LOWER(TRIM(k.name))
+          OR LOWER(TRIM(siswa.kelas)) LIKE LOWER(TRIM(k.name)) || '%'
+          OR LOWER(TRIM(k.name)) LIKE LOWER(TRIM(siswa.kelas)) || '%'
+        )
+      LEFT JOIN materi_pengumpulan_tugas mpt
+        ON mpt.sub_bab_id = msb.id
+        AND mpt.siswa_id = siswa.id
       WHERE m.created_by = CAST(${user.id} AS uuid)
-      ORDER BY mpt.dikumpulkan_pada DESC
+        AND msb.content_type = 'assignment'
+      ORDER BY COALESCE(mpt.dikumpulkan_pada, msb.created_at) DESC
     `;
 
     const normalizedRows = normalizeRows(rows);
 
-    const total_pengumpulan = normalizedRows.length;
-    const total_siswa = new Set(normalizedRows.map((r) => r.siswa_id)).size;
+    const rowsWithSubmission = normalizedRows.filter((r) => !!r.id);
+    const total_pengumpulan = rowsWithSubmission.length;
+    const total_siswa = new Set(
+      normalizedRows.map((r) => r.siswa_id).filter(Boolean),
+    ).size;
     const total_materi = new Set(normalizedRows.map((r) => r.materi_id)).size;
+    const total_tugas = new Set(normalizedRows.map((r) => r.sub_bab_id)).size;
 
     return NextResponse.json(
       {
@@ -88,6 +106,7 @@ export async function GET() {
           total_pengumpulan,
           total_siswa,
           total_materi,
+          total_tugas,
         },
         data: normalizedRows,
       },

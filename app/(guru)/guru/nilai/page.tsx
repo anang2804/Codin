@@ -34,16 +34,16 @@ interface AsesmenCard {
 }
 
 interface PengumpulanTugasItem {
-  id: string;
+  id: string | null;
   sub_bab_id: string;
   bab_id: string;
-  siswa_id: string;
-  file_url: string;
-  file_name: string;
+  siswa_id: string | null;
+  file_url: string | null;
+  file_name: string | null;
   file_size: number;
-  mime_type: string;
-  submitted_at: string;
-  updated_at: string;
+  mime_type: string | null;
+  submitted_at: string | null;
+  updated_at: string | null;
   sub_bab_title: string;
   bab_title: string;
   materi_id: string;
@@ -64,6 +64,9 @@ export default function GuruNilaiPage() {
   const [selectedKelas, setSelectedKelas] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedSubBab, setExpandedSubBab] = useState<Set<string>>(new Set());
+
+  const getTimestamp = (value?: string | null) =>
+    value ? new Date(value).getTime() : 0;
 
   useEffect(() => {
     const supabase = createClient();
@@ -259,7 +262,7 @@ export default function GuruNilaiPage() {
         item.bab_title.toLowerCase().includes(keyword) ||
         item.sub_bab_title.toLowerCase().includes(keyword) ||
         (item.siswa_name || "").toLowerCase().includes(keyword) ||
-        item.file_name.toLowerCase().includes(keyword);
+        (item.file_name || "").toLowerCase().includes(keyword);
 
       return matchesMateri && matchesKelas && matchesKeyword;
     });
@@ -277,9 +280,7 @@ export default function GuruNilaiPage() {
     return Array.from(groups.entries())
       .map(([key, items]) => {
         const sortedItems = [...items].sort(
-          (a, b) =>
-            new Date(b.submitted_at).getTime() -
-            new Date(a.submitted_at).getTime(),
+          (a, b) => getTimestamp(b.submitted_at) - getTimestamp(a.submitted_at),
         );
         const latest = sortedItems[0];
 
@@ -294,8 +295,7 @@ export default function GuruNilaiPage() {
           .map(([bab_id, babItems]) => {
             const babSorted = [...babItems].sort(
               (a, b) =>
-                new Date(b.submitted_at).getTime() -
-                new Date(a.submitted_at).getTime(),
+                getTimestamp(b.submitted_at) - getTimestamp(a.submitted_at),
             );
             const babLatest = babSorted[0];
 
@@ -310,46 +310,56 @@ export default function GuruNilaiPage() {
               .map(([sub_bab_id, subItems]) => {
                 const subSorted = [...subItems].sort(
                   (a, b) =>
-                    new Date(b.submitted_at).getTime() -
-                    new Date(a.submitted_at).getTime(),
+                    getTimestamp(b.submitted_at) - getTimestamp(a.submitted_at),
                 );
                 const subLatest = subSorted[0];
+                const submittedItems = subSorted.filter((item) => !!item.id);
 
                 return {
                   sub_bab_id,
                   sub_bab_title: subLatest.sub_bab_title,
-                  total_submit: subSorted.length,
-                  total_siswa: new Set(subSorted.map((i) => i.siswa_id)).size,
+                  total_submit: submittedItems.length,
+                  total_siswa: new Set(
+                    subSorted.map((i) => i.siswa_id).filter(Boolean),
+                  ).size,
                   latest_submitted_at: subLatest.submitted_at,
                   items: subSorted,
                 };
               })
               .sort(
                 (a, b) =>
-                  new Date(b.latest_submitted_at).getTime() -
-                  new Date(a.latest_submitted_at).getTime(),
+                  getTimestamp(b.latest_submitted_at) -
+                  getTimestamp(a.latest_submitted_at),
               );
+
+            const submittedInBab = babSorted.filter((item) => !!item.id);
 
             return {
               bab_id,
               bab_title: babLatest.bab_title,
-              total_submit: babSorted.length,
-              total_siswa: new Set(babSorted.map((i) => i.siswa_id)).size,
+              total_submit: submittedInBab.length,
+              total_siswa: new Set(
+                babSorted.map((i) => i.siswa_id).filter(Boolean),
+              ).size,
               latest_submitted_at: babLatest.submitted_at,
               sub_babs,
             };
           })
           .sort(
             (a, b) =>
-              new Date(b.latest_submitted_at).getTime() -
-              new Date(a.latest_submitted_at).getTime(),
+              getTimestamp(b.latest_submitted_at) -
+              getTimestamp(a.latest_submitted_at),
           );
+
+        const submittedInMateri = sortedItems.filter((item) => !!item.id);
 
         return {
           key,
           materi_title: latest.materi_title,
-          total_submit: sortedItems.length,
-          total_siswa: new Set(sortedItems.map((i) => i.siswa_id)).size,
+          total_submit: submittedInMateri.length,
+          total_siswa: new Set(
+            sortedItems.map((i) => i.siswa_id).filter(Boolean),
+          ).size,
           total_bab: babs.length,
           total_sub_bab: new Set(sortedItems.map((i) => i.sub_bab_id)).size,
           latest_submitted_at: latest.submitted_at,
@@ -358,8 +368,8 @@ export default function GuruNilaiPage() {
       })
       .sort(
         (a, b) =>
-          new Date(b.latest_submitted_at).getTime() -
-          new Date(a.latest_submitted_at).getTime(),
+          getTimestamp(b.latest_submitted_at) -
+          getTimestamp(a.latest_submitted_at),
       );
   }, [filteredPengumpulan]);
 
@@ -538,11 +548,11 @@ export default function GuruNilaiPage() {
                 <Upload size={30} />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Belum ada pengumpulan tugas.
+                Belum ada tugas pengumpulan.
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Siswa belum mengunggah file pada sub-bab bertipe pengumpulan
-                tugas.
+                Buat sub-bab dengan tipe tugas pada materi untuk mulai memantau
+                pengumpulan siswa.
               </p>
             </Card>
           ) : (
@@ -705,46 +715,87 @@ export default function GuruNilaiPage() {
 
                                             {isSubBabOpen && (
                                               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                {subBab.items.map((item) => (
-                                                  <div
-                                                    key={item.id}
-                                                    className="flex flex-col gap-2 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-2 md:flex-row md:items-center md:justify-between"
-                                                  >
-                                                    <div className="min-w-0">
-                                                      <p className="text-sm font-medium text-green-900 dark:text-green-200 truncate">
-                                                        {item.siswa_name ||
-                                                          "Tanpa Nama"}{" "}
-                                                        •{" "}
-                                                        {item.siswa_kelas ||
-                                                          "-"}
-                                                      </p>
-                                                      <p className="text-xs text-green-700/80 dark:text-green-400/60 truncate">
-                                                        {item.file_name} (
-                                                        {formatFileSize(
-                                                          item.file_size,
-                                                        )}
-                                                        )
-                                                      </p>
-                                                    </div>
+                                                {subBab.items.map(
+                                                  (item, idx) => {
+                                                    const hasSubmission =
+                                                      !!item.id;
 
-                                                    <a
-                                                      href={item.file_url}
-                                                      target="_blank"
-                                                      rel="noopener noreferrer"
-                                                    >
-                                                      <Button
-                                                        size="sm"
-                                                        className="bg-green-600 hover:bg-green-700"
+                                                    return (
+                                                      <div
+                                                        key={
+                                                          item.id ||
+                                                          `${subBab.sub_bab_id}-pending-${idx}`
+                                                        }
+                                                        className="flex flex-col gap-2 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-2 md:flex-row md:items-center md:justify-between"
                                                       >
-                                                        <FileDown
-                                                          size={14}
-                                                          className="mr-1.5"
-                                                        />
-                                                        Lihat File
-                                                      </Button>
-                                                    </a>
-                                                  </div>
-                                                ))}
+                                                        <div className="min-w-0">
+                                                          {hasSubmission ? (
+                                                            <>
+                                                              <p className="text-sm font-medium text-green-900 dark:text-green-200 truncate">
+                                                                {item.siswa_name ||
+                                                                  "Tanpa Nama"}{" "}
+                                                                •{" "}
+                                                                {item.siswa_kelas ||
+                                                                  "-"}
+                                                              </p>
+                                                              <p className="text-xs text-green-700/80 dark:text-green-400/60 truncate">
+                                                                {item.file_name}{" "}
+                                                                (
+                                                                {formatFileSize(
+                                                                  item.file_size,
+                                                                )}
+                                                                )
+                                                              </p>
+                                                            </>
+                                                          ) : (
+                                                            <>
+                                                              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 truncate">
+                                                                {item.siswa_name ||
+                                                                  "Tanpa Nama"}{" "}
+                                                                •{" "}
+                                                                {item.siswa_kelas ||
+                                                                  "-"}
+                                                              </p>
+                                                              <p className="text-xs text-amber-700/80 dark:text-amber-400/70 truncate">
+                                                                Belum
+                                                                mengumpulkan
+                                                                tugas
+                                                              </p>
+                                                            </>
+                                                          )}
+                                                        </div>
+
+                                                        {hasSubmission &&
+                                                        item.file_url ? (
+                                                          <a
+                                                            href={item.file_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                          >
+                                                            <Button
+                                                              size="sm"
+                                                              className="bg-green-600 hover:bg-green-700"
+                                                            >
+                                                              <FileDown
+                                                                size={14}
+                                                                className="mr-1.5"
+                                                              />
+                                                              Lihat File
+                                                            </Button>
+                                                          </a>
+                                                        ) : (
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled
+                                                          >
+                                                            Menunggu Pengumpulan
+                                                          </Button>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  },
+                                                )}
                                               </div>
                                             )}
                                           </>
