@@ -123,7 +123,9 @@ export default function SimulasiProgressPage() {
             <Users size={13} />
             Total Siswa
           </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{totalSiswa}</p>
+          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+            {totalSiswa}
+          </p>
         </Card>
 
         <Card className="border border-green-100 dark:border-green-900/40 bg-green-50/70 dark:bg-green-900/20 p-4 shadow-sm">
@@ -141,7 +143,9 @@ export default function SimulasiProgressPage() {
             <MonitorPlay size={13} />
             Belum Selesai
           </div>
-          <p className="text-3xl font-semibold text-gray-600 dark:text-gray-400">{belumSelesai}</p>
+          <p className="text-3xl font-semibold text-gray-600 dark:text-gray-400">
+            {belumSelesai}
+          </p>
         </Card>
       </div>
 
@@ -308,13 +312,18 @@ export default function SimulasiProgressPage() {
                             fill="currentColor"
                           />
                         ) : (
-                          <XCircle size={16} className="text-gray-300 dark:text-gray-700" />
+                          <XCircle
+                            size={16}
+                            className="text-gray-300 dark:text-gray-700"
+                          />
                         )}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p
                           className={`truncate text-sm font-medium ${
-                            completed ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"
+                            completed
+                              ? "text-gray-900 dark:text-gray-100"
+                              : "text-gray-400 dark:text-gray-500"
                           }`}
                         >
                           {sim.name}

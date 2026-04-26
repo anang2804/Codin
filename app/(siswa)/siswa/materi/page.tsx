@@ -213,7 +213,7 @@ export default function SiswaMateriPage() {
     <div className="space-y-4 md:space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground dark:text-gray-100 leading-tight">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground dark:text-gray-100 leading-tight">
             Materi Pembelajaran
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-400 mt-0.5">
@@ -231,12 +231,12 @@ export default function SiswaMateriPage() {
         </div>
       </div>
 
-        {/* Filter Section */}
-        <Card className="p-3 md:p-4 border border-border dark:border-gray-800 bg-card dark:bg-card rounded-xl shadow-sm">
+      {/* Filter Section */}
+      <Card className="p-3 md:p-4 border border-border dark:border-gray-800 bg-card dark:bg-card rounded-xl shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-gray-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-gray-500"
               size={18}
             />
             <Input
@@ -271,11 +271,16 @@ export default function SiswaMateriPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground dark:text-gray-400">Memuat materi...</p>
+          <p className="text-muted-foreground dark:text-gray-400">
+            Memuat materi...
+          </p>
         </div>
       ) : filteredMateri.length === 0 ? (
         <Card className="p-12 text-center border-green-100 dark:border-green-900/50 bg-card">
-          <BookOpen size={48} className="mx-auto text-muted-foreground dark:text-gray-600 mb-4" />
+          <BookOpen
+            size={48}
+            className="mx-auto text-muted-foreground dark:text-gray-600 mb-4"
+          />
           <p className="text-muted-foreground dark:text-gray-400">
             {searchTerm || selectedMapel !== "all"
               ? "Tidak ada materi yang cocok dengan pencarian"

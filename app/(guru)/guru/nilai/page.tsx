@@ -433,7 +433,9 @@ export default function GuruNilaiPage() {
           {loadingAsesmen ? (
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-card p-12 text-center shadow-sm">
               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 dark:border-green-900 border-t-green-600"></div>
-              <p className="text-gray-600 dark:text-gray-400">Memuat asesmen...</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                Memuat asesmen...
+              </p>
             </div>
           ) : asesmen.length === 0 ? (
             <Card className="rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center shadow-sm">
@@ -474,7 +476,9 @@ export default function GuruNilaiPage() {
                           <span className="font-medium text-green-900 dark:text-green-200">
                             {a.mapel?.name || "-"}
                           </span>
-                          <span className="text-green-300 dark:text-green-700">•</span>
+                          <span className="text-green-300 dark:text-green-700">
+                            •
+                          </span>
                           <span className="font-medium text-green-900 dark:text-green-200">
                             {a.kelas?.name || "-"}
                           </span>
@@ -493,7 +497,10 @@ export default function GuruNilaiPage() {
 
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="inline-flex items-center gap-2 rounded-xl border border-green-100 dark:border-green-900/30 bg-green-50 dark:bg-green-900/20 px-3 py-2">
-                        <BarChart3 size={14} className="text-green-500 dark:text-green-400" />
+                        <BarChart3
+                          size={14}
+                          className="text-green-500 dark:text-green-400"
+                        />
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-green-600/80 dark:text-green-400/70">
                             Partisipasi
@@ -521,7 +528,9 @@ export default function GuruNilaiPage() {
           {loadingPengumpulan ? (
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-card p-12 text-center shadow-sm">
               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 dark:border-green-900 border-t-green-600"></div>
-              <p className="text-gray-600 dark:text-gray-400">Memuat pengumpulan tugas...</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                Memuat pengumpulan tugas...
+              </p>
             </div>
           ) : pengumpulanTugas.length === 0 ? (
             <Card className="rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center shadow-sm">

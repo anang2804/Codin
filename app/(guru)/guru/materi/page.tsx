@@ -310,7 +310,10 @@ export default function GuruMateriPage() {
       {/* Materi List */}
       {filteredMateri.length === 0 ? (
         <Card className="p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700 bg-card">
-          <BookOpen size={64} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+          <BookOpen
+            size={64}
+            className="mx-auto text-gray-400 dark:text-gray-600 mb-4"
+          />
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
             {searchTerm || selectedMapel !== "all"
               ? "Tidak ada materi yang ditemukan"
@@ -348,7 +351,10 @@ export default function GuruMateriPage() {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <BookOpen size={48} className="text-green-500 dark:text-green-600 opacity-40" />
+                    <BookOpen
+                      size={48}
+                      className="text-green-500 dark:text-green-600 opacity-40"
+                    />
                   </div>
                 )}
               </div>

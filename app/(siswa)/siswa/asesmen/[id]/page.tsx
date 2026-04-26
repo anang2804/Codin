@@ -475,7 +475,9 @@ export default function SiswaAsesmenDetailPage({
             <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {asesmen?.title}
             </h1>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{asesmen?.description}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              {asesmen?.description}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-base font-semibold text-gray-700 dark:text-green-200 bg-green-50 dark:bg-green-900/30 px-3 py-2 rounded-lg border border-green-100 dark:border-green-900/50 shadow-sm">
