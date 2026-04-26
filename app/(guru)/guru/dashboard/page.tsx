@@ -28,7 +28,10 @@ export default function GuruDashboard() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         // Fetch profile
@@ -40,51 +43,94 @@ export default function GuruDashboard() {
 
         setProfile(profileData);
 
-        const [materiRes, asesmenRes] = await Promise.all([
-          supabase
-            .from("materi")
-            .select("kelas_id", { count: "exact" })
-            .eq("created_by", user.id),
-          supabase
-            .from("asesmen")
-            .select("*", { count: "exact" })
-            .eq("created_by", user.id),
-        ]);
+        const [materiRes, asesmenRes, waliKelasRes, mapelRes] =
+          await Promise.all([
+            supabase
+              .from("materi")
+              .select("id, kelas_id, mapel_id")
+              .eq("created_by", user.id),
+            supabase
+              .from("asesmen")
+              .select("id, kelas_id, mapel_id")
+              .eq("created_by", user.id),
+            supabase
+              .from("kelas")
+              .select("id, name")
+              .eq("wali_kelas_id", user.id),
+            supabase.from("mapel").select("id").eq("guru_id", user.id),
+          ]);
 
-        // Collect distinct kelas_id from guru's materi
-        const kelasIdSet = new Set<string>(
-          (materiRes.data ?? []).map((m: any) => m.kelas_id).filter(Boolean),
+        const mapelIds = (mapelRes.data ?? [])
+          .map((m: any) => m.id)
+          .filter(Boolean);
+
+        let materiByMapel: Array<{ id: string; kelas_id: string | null }> = [];
+        let asesmenByMapel: Array<{ id: string; kelas_id: string | null }> = [];
+
+        if (mapelIds.length > 0) {
+          const [materiByMapelRes, asesmenByMapelRes] = await Promise.all([
+            supabase
+              .from("materi")
+              .select("id, kelas_id")
+              .in("mapel_id", mapelIds),
+            supabase
+              .from("asesmen")
+              .select("id, kelas_id")
+              .in("mapel_id", mapelIds),
+          ]);
+          materiByMapel = materiByMapelRes.data ?? [];
+          asesmenByMapel = asesmenByMapelRes.data ?? [];
+        }
+
+        const materiIds = new Set<string>(
+          [...(materiRes.data ?? []), ...materiByMapel]
+            .map((m: any) => m.id)
+            .filter(Boolean),
         );
-        const kelasIds = [...kelasIdSet];
+        const asesmenIds = new Set<string>(
+          [...(asesmenRes.data ?? []), ...asesmenByMapel]
+            .map((a: any) => a.id)
+            .filter(Boolean),
+        );
 
-        let totalKelas = 0;
-        let totalSiswa = 0;
+        const kelasIdSet = new Set<string>(
+          [
+            ...(waliKelasRes.data ?? []).map((k: any) => k.id),
+            ...(materiRes.data ?? []).map((m: any) => m.kelas_id),
+            ...(asesmenRes.data ?? []).map((a: any) => a.kelas_id),
+            ...materiByMapel.map((m: any) => m.kelas_id),
+            ...asesmenByMapel.map((a: any) => a.kelas_id),
+          ].filter(Boolean),
+        );
+
+        const kelasIds = [...kelasIdSet];
+        let kelasNames = (waliKelasRes.data ?? [])
+          .map((k: any) => k.name)
+          .filter(Boolean);
 
         if (kelasIds.length > 0) {
-          // Get kelas names for those IDs
           const { data: kelasData } = await supabase
             .from("kelas")
-            .select("name")
+            .select("id, name")
             .in("id", kelasIds);
+          kelasNames = [...new Set((kelasData ?? []).map((k: any) => k.name))];
+        }
 
-          const kelasNames = (kelasData ?? []).map((k: any) => k.name);
-          totalKelas = kelasNames.length;
-
-          // Count students whose kelas matches any of those names
+        let totalSiswa = 0;
+        if (kelasNames.length > 0) {
           const { count: siswaCount } = await supabase
             .from("profiles")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact", head: true })
             .eq("role", "siswa")
             .in("kelas", kelasNames);
-
           totalSiswa = siswaCount || 0;
         }
 
         setStats({
           totalSiswa,
-          totalKelas,
-          totalMateri: materiRes.count || 0,
-          totalAsesmen: asesmenRes.count || 0,
+          totalKelas: kelasIds.length,
+          totalMateri: materiIds.size,
+          totalAsesmen: asesmenIds.size,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
