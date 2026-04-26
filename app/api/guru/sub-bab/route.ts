@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+const ALLOWED_CONTENT_TYPES = [
+  "text",
+  "video",
+  "file",
+  "link",
+  "assignment",
+] as const;
+
 // GET - Fetch all sub_babs for a bab
 export async function GET(request: NextRequest) {
   try {
@@ -80,6 +88,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!ALLOWED_CONTENT_TYPES.includes(content_type)) {
+      return NextResponse.json(
+        { error: "content_type tidak valid" },
+        { status: 400 },
+      );
+    }
+
     // Verify ownership
     const bab = await prisma.materiBab.findUnique({
       where: { id: bab_id },
@@ -115,6 +130,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: subBab }, { status: 201 });
   } catch (error) {
     console.error("Error creating sub_bab:", error);
+
+    const rawMessage = String(error || "");
+    if (rawMessage.includes("materi_sub_bab_content_type_check")) {
+      return NextResponse.json(
+        {
+          error:
+            "Database belum mengizinkan tipe konten assignment. Jalankan script 030_allow_assignment_content_type.sql.",
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to create sub_bab" },
       { status: 500 },
@@ -152,6 +179,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (!ALLOWED_CONTENT_TYPES.includes(content_type)) {
+      return NextResponse.json(
+        { error: "content_type tidak valid" },
+        { status: 400 },
+      );
+    }
+
     // Verify ownership
     const subBab = await prisma.materiSubBab.findUnique({
       where: { id },
@@ -182,6 +216,18 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ data: updatedSubBab });
   } catch (error) {
     console.error("Error updating sub_bab:", error);
+
+    const rawMessage = String(error || "");
+    if (rawMessage.includes("materi_sub_bab_content_type_check")) {
+      return NextResponse.json(
+        {
+          error:
+            "Database belum mengizinkan tipe konten assignment. Jalankan script 030_allow_assignment_content_type.sql.",
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to update sub_bab" },
       { status: 500 },

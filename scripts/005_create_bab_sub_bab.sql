@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.materi_sub_bab (
   bab_id UUID NOT NULL REFERENCES public.materi_bab(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
   content TEXT,
-  content_type VARCHAR(20) NOT NULL CHECK (content_type IN ('text', 'video', 'file', 'link')),
+  content_type VARCHAR(20) NOT NULL CHECK (content_type IN ('text', 'video', 'file', 'link', 'assignment')),
   content_url TEXT,
   duration INTEGER DEFAULT 0,
   order_index INTEGER NOT NULL DEFAULT 0,

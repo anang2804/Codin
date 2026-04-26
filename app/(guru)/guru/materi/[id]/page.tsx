@@ -27,6 +27,7 @@ import {
   FileText,
   Link as LinkIcon,
   File,
+  Upload,
   Loader2,
   Eye,
 } from "lucide-react";
@@ -51,7 +52,7 @@ interface SubBab {
   title: string;
   description?: string | null;
   content?: string | null;
-  content_type: "text" | "video" | "file" | "link";
+  content_type: "text" | "video" | "file" | "link" | "assignment";
   content_url?: string | null;
   duration?: number | null;
   order_index: number;
@@ -104,7 +105,7 @@ export default function GuruMateriDetailPage() {
   const [subBabForm, setSubBabForm] = useState({
     title: "",
     description: "",
-    content_type: "text" as "text" | "file" | "link",
+    content_type: "text" as "text" | "file" | "link" | "assignment",
     content_url: "",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -211,7 +212,11 @@ export default function GuruMateriDetailPage() {
         content_type:
           subBab.content_type === "video"
             ? "link"
-            : ((subBab.content_type || "text") as "text" | "file" | "link"),
+            : ((subBab.content_type || "text") as
+                | "text"
+                | "file"
+                | "link"
+                | "assignment"),
         content_url: subBab.content_url || "",
       });
       setEditingSubBabId(subBab.id);
@@ -278,7 +283,11 @@ export default function GuruMateriDetailPage() {
           title: subBabForm.title,
           description: subBabForm.description,
           content_type: subBabForm.content_type,
-          content_url: subBabForm.content_type !== "text" ? fileUrl : undefined,
+          content_url:
+            subBabForm.content_type === "file" ||
+            subBabForm.content_type === "link"
+              ? fileUrl
+              : undefined,
         });
         toast.success("Sub-bab berhasil diperbarui");
       } else {
@@ -287,7 +296,11 @@ export default function GuruMateriDetailPage() {
           title: subBabForm.title,
           description: subBabForm.description,
           content_type: subBabForm.content_type,
-          content_url: subBabForm.content_type !== "text" ? fileUrl : undefined,
+          content_url:
+            subBabForm.content_type === "file" ||
+            subBabForm.content_type === "link"
+              ? fileUrl
+              : undefined,
         });
         toast.success("Sub-bab berhasil ditambahkan");
       }
@@ -346,6 +359,8 @@ export default function GuruMateriDetailPage() {
         return <File size={16} className="text-blue-600" />;
       case "link":
         return <LinkIcon size={16} className="text-green-600" />;
+      case "assignment":
+        return <Upload size={16} className="text-orange-600" />;
       default:
         return <FileText size={16} className="text-gray-600" />;
     }
@@ -715,11 +730,12 @@ export default function GuruMateriDetailPage() {
               <Label className="text-sm font-medium text-gray-700">
                 Tipe Konten
               </Label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
                 {[
                   { value: "text", label: "Teks", icon: FileText },
                   { value: "file", label: "File", icon: File },
                   { value: "link", label: "Link", icon: LinkIcon },
+                  { value: "assignment", label: "Tugas", icon: Upload },
                 ].map(({ value, label, icon: Icon }) => {
                   const isActive = subBabForm.content_type === value;
                   return (

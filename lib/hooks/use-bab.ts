@@ -13,7 +13,7 @@ export interface Bab {
     id: string;
     bab_id: string;
     title: string;
-    content_type: "text" | "video" | "file" | "link";
+    content_type: "text" | "video" | "file" | "link" | "assignment";
     content: string | null;
     content_url: string | null;
     duration: number | null;

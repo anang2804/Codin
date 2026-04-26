@@ -7,7 +7,7 @@ export interface SubBab {
   bab_id: string;
   title: string;
   description?: string | null;
-  content_type: "text" | "video" | "file" | "link";
+  content_type: "text" | "video" | "file" | "link" | "assignment";
   content: string | null;
   content_url: string | null;
   order_index: number;
@@ -35,7 +35,7 @@ export function useCreateSubBab() {
       bab_id: string;
       title: string;
       description?: string;
-      content_type: "text" | "video" | "file" | "link";
+      content_type: "text" | "video" | "file" | "link" | "assignment";
       content?: string;
       content_url?: string;
     }) => {
@@ -71,7 +71,7 @@ export function useUpdateSubBab() {
       bab_id: string;
       title: string;
       description?: string;
-      content_type: "text" | "video" | "file" | "link";
+      content_type: "text" | "video" | "file" | "link" | "assignment";
       content?: string;
       content_url?: string;
     }) => {

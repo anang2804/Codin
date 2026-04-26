@@ -10,6 +10,7 @@ import {
   FileText,
   Video,
   Link as LinkIcon,
+  Upload,
   CheckCircle,
   Circle,
   Lock,
@@ -46,11 +47,22 @@ interface SubBab {
   title: string;
   description?: string;
   content: string | null;
-  content_type: "text" | "video" | "file" | "link";
+  content_type: "text" | "video" | "file" | "link" | "assignment";
   content_url: string | null;
   order_index: number;
   created_at: string;
   completed?: boolean;
+}
+
+interface AssignmentSubmission {
+  id: string;
+  sub_bab_id: string;
+  siswa_id: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  submitted_at: string;
 }
 
 function toEmbeddableVideoUrl(rawUrl: string): string | null {
@@ -104,6 +116,10 @@ export default function SiswaMateriDetailPage() {
   const [selectedSubBab, setSelectedSubBab] = useState<SubBab | null>(null);
   const [loading, setLoading] = useState(true);
   const [contentVisible, setContentVisible] = useState(false);
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [assignmentUploading, setAssignmentUploading] = useState(false);
+  const [assignmentSubmission, setAssignmentSubmission] =
+    useState<AssignmentSubmission | null>(null);
 
   useEffect(() => {
     fetchMateri();
@@ -120,6 +136,90 @@ export default function SiswaMateriDetailPage() {
     const timer = window.setTimeout(() => setContentVisible(true), 20);
     return () => window.clearTimeout(timer);
   }, [selectedSubBab?.id]);
+
+  useEffect(() => {
+    setAssignmentFile(null);
+    setAssignmentSubmission(null);
+
+    if (selectedSubBab?.content_type !== "assignment") {
+      return;
+    }
+
+    fetchAssignmentSubmission(selectedSubBab.id);
+  }, [selectedSubBab?.id, selectedSubBab?.content_type]);
+
+  async function fetchAssignmentSubmission(subBabId: string) {
+    try {
+      const response = await fetch(
+        `/api/siswa/submission?sub_bab_id=${subBabId}`,
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal memuat submission");
+      }
+
+      setAssignmentSubmission(data.data || null);
+    } catch (error: any) {
+      console.error("Error fetching submission:", error);
+      toast.error(error.message || "Gagal memuat status pengumpulan tugas");
+    }
+  }
+
+  async function handleAssignmentSubmit() {
+    if (!selectedSubBab || selectedSubBab.content_type !== "assignment") {
+      return;
+    }
+
+    if (!assignmentFile) {
+      toast.error("Pilih file tugas terlebih dahulu");
+      return;
+    }
+
+    try {
+      setAssignmentUploading(true);
+
+      const formData = new FormData();
+      formData.append("file", assignmentFile);
+      formData.append("type", "assignment-submissions");
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || "Gagal upload file tugas");
+      }
+
+      const submitResponse = await fetch("/api/siswa/submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sub_bab_id: selectedSubBab.id,
+          file_url: uploadData.url,
+          file_name: assignmentFile.name,
+          file_size: assignmentFile.size,
+          mime_type: assignmentFile.type,
+        }),
+      });
+      const submitData = await submitResponse.json();
+
+      if (!submitResponse.ok) {
+        throw new Error(submitData.error || "Gagal menyimpan pengumpulan");
+      }
+
+      setAssignmentSubmission(submitData.data);
+      setAssignmentFile(null);
+      toast.success("Tugas berhasil dikumpulkan");
+    } catch (error: any) {
+      console.error("Error submitting assignment:", error);
+      toast.error(error.message || "Gagal mengumpulkan tugas");
+    } finally {
+      setAssignmentUploading(false);
+    }
+  }
 
   async function fetchMateri() {
     try {
@@ -412,6 +512,14 @@ export default function SiswaMateriDetailPage() {
   }
 
   async function handleNextClick() {
+    const needsAssignmentSubmission =
+      selectedSubBab?.content_type === "assignment" && !assignmentSubmission;
+
+    if (needsAssignmentSubmission) {
+      toast.info("Kumpulkan file tugas dulu sebelum lanjut");
+      return;
+    }
+
     await handleMarkCompleteAndNext();
   }
 
@@ -435,6 +543,9 @@ export default function SiswaMateriDetailPage() {
       ? toEmbeddableVideoUrl(contentUrl)
       : null;
 
+    const needsAssignmentSubmission =
+      selectedSubBab.content_type === "assignment" && !assignmentSubmission;
+
     return (
       <div className="p-5 md:p-6 pb-28">
         <Card
@@ -445,7 +556,6 @@ export default function SiswaMateriDetailPage() {
           }`}
         >
           <div className="p-6 md:p-8">
-            {/* Sub-Bab Header */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
                 {selectedSubBab.content_type === "video" && (
@@ -460,6 +570,9 @@ export default function SiswaMateriDetailPage() {
                 {selectedSubBab.content_type === "text" && (
                   <FileText size={20} className="text-green-600" />
                 )}
+                {selectedSubBab.content_type === "assignment" && (
+                  <Upload size={20} className="text-orange-600" />
+                )}
                 <h2 className="text-2xl font-bold text-gray-900">
                   {selectedSubBab.title}
                 </h2>
@@ -471,9 +584,7 @@ export default function SiswaMateriDetailPage() {
               )}
             </div>
 
-            {/* Content */}
             <div className="bg-white">
-              {/* Text Content */}
               {selectedSubBab.content && (
                 <Card className="p-6 mb-6 border border-gray-100 shadow-sm rounded-xl">
                   <div className="prose max-w-none">
@@ -484,10 +595,8 @@ export default function SiswaMateriDetailPage() {
                 </Card>
               )}
 
-              {/* Media Content */}
               {selectedSubBab.content_url && (
                 <div>
-                  {/* Video Content */}
                   {selectedSubBab.content_type === "video" && (
                     <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
                       {contentUrl.startsWith("http") ? (
@@ -529,30 +638,18 @@ export default function SiswaMateriDetailPage() {
                     </Card>
                   )}
 
-                  {/* File/Document Content - Display as iframe or embed */}
                   {selectedSubBab.content_type === "file" && (
                     <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
-                      {selectedSubBab.content_url.startsWith("data:") ? (
-                        <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
-                          <iframe
-                            src={selectedSubBab.content_url}
-                            className="w-full h-full border-0"
-                            title={selectedSubBab.title}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
-                          <iframe
-                            src={selectedSubBab.content_url}
-                            className="w-full h-full border-0"
-                            title={selectedSubBab.title}
-                          />
-                        </div>
-                      )}
+                      <div className="w-full h-[calc(100vh-250px)] bg-gray-50">
+                        <iframe
+                          src={selectedSubBab.content_url}
+                          className="w-full h-full border-0"
+                          title={selectedSubBab.title}
+                        />
+                      </div>
                     </Card>
                   )}
 
-                  {/* Link Content - Display as iframe */}
                   {selectedSubBab.content_type === "link" &&
                     contentUrl.startsWith("http") && (
                       <Card className="p-0 mb-6 border border-gray-100 shadow-sm rounded-xl overflow-hidden">
@@ -594,11 +691,79 @@ export default function SiswaMateriDetailPage() {
                     )}
                 </div>
               )}
+
+              {selectedSubBab.content_type === "assignment" && (
+                <Card className="p-6 mb-6 border border-orange-100 shadow-sm rounded-xl bg-orange-50/40">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Upload size={20} className="text-orange-600 mt-0.5" />
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">
+                        Pengumpulan Tugas
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Pilih file jawaban Anda lalu klik tombol kumpulkan.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setAssignmentFile(file);
+                      }}
+                      className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-orange-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-orange-700"
+                    />
+
+                    {assignmentFile && (
+                      <p className="text-xs text-gray-600">
+                        File dipilih: {assignmentFile.name} (
+                        {(assignmentFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+
+                    {assignmentSubmission && (
+                      <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                        <p>
+                          Sudah dikumpulkan: {assignmentSubmission.file_name}
+                        </p>
+                        <p>
+                          Waktu:{" "}
+                          {new Date(
+                            assignmentSubmission.submitted_at,
+                          ).toLocaleString("id-ID")}
+                        </p>
+                        <a
+                          href={assignmentSubmission.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline"
+                        >
+                          Lihat file terkumpul
+                        </a>
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      onClick={handleAssignmentSubmit}
+                      disabled={assignmentUploading || !assignmentFile}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      {assignmentUploading
+                        ? "Mengupload..."
+                        : assignmentSubmission
+                          ? "Kumpulkan Ulang"
+                          : "Kumpulkan Tugas"}
+                    </Button>
+                  </div>
+                </Card>
+              )}
             </div>
           </div>
         </Card>
 
-        {/* Navigation Buttons - Sticky at bottom */}
         <div className="sticky bottom-0 left-0 right-0 pt-4 pb-3 bg-gradient-to-t from-gray-50 via-gray-50/95 to-transparent">
           <div className="max-w-5xl mx-auto px-1 md:px-2">
             <div className="flex items-center justify-between gap-4">
@@ -620,10 +785,13 @@ export default function SiswaMateriDetailPage() {
                 onClick={handleNextClick}
                 disabled={
                   !selectedSubBab ||
+                  needsAssignmentSubmission ||
                   (selectedSubBab?.completed && !getNextSubBab())
                 }
               >
-                {getNextSubBab() ? (
+                {needsAssignmentSubmission ? (
+                  "Kumpulkan Tugas Dulu"
+                ) : getNextSubBab() ? (
                   <>
                     Berikutnya
                     <ChevronRight size={16} className="ml-2" />
@@ -920,10 +1088,18 @@ export default function SiswaMateriDetailPage() {
                                         className="text-green-600"
                                       />
                                     )}
+                                    {subBab.content_type === "assignment" && (
+                                      <Upload
+                                        size={12}
+                                        className="text-orange-600"
+                                      />
+                                    )}
                                     <span className="text-xs text-muted-foreground capitalize">
                                       {subBabLocked
                                         ? "Terkunci"
-                                        : subBab.content_type}
+                                        : subBab.content_type === "assignment"
+                                          ? "Pengumpulan tugas"
+                                          : subBab.content_type}
                                     </span>
                                   </div>
                                 </div>
