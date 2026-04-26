@@ -106,7 +106,9 @@ export default function SiswaAsesmenPage() {
                     console.error("Error checking jawaban:", jawabanError);
                   }
 
-                  const isCompleted = Boolean(jawabanData && jawabanData.length > 0);
+                  const isCompleted = Boolean(
+                    jawabanData && jawabanData.length > 0,
+                  );
 
                   let nilaiData = null;
                   if (isCompleted) {
@@ -127,7 +129,10 @@ export default function SiswaAsesmenPage() {
                     mapel: mapelData,
                     nilai: nilaiData,
                     is_completed: isCompleted,
-                    schedule_status: getScheduleStatus(a.waktu_mulai, a.waktu_selesai),
+                    schedule_status: getScheduleStatus(
+                      a.waktu_mulai,
+                      a.waktu_selesai,
+                    ),
                   };
                 }),
               );
@@ -169,7 +174,9 @@ export default function SiswaAsesmenPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground dark:text-gray-400">Memuat kuis...</p>
+          <p className="text-muted-foreground dark:text-gray-400">
+            Memuat kuis...
+          </p>
         </div>
       ) : asesmen.length === 0 ? (
         <Card className="p-12 text-center border-green-100 dark:border-green-900/50 bg-card">
@@ -238,12 +245,15 @@ export default function SiswaAsesmenPage() {
                     <span className="text-xs">Jadwal</span>
                   </div>
                   <span className="font-semibold text-foreground dark:text-gray-100 text-[11px] text-right ml-2">
-                    {formatDateTime(a.waktu_mulai)} - {formatDateTime(a.waktu_selesai)}
+                    {formatDateTime(a.waktu_mulai)} -{" "}
+                    {formatDateTime(a.waktu_selesai)}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center pt-1.5">
-                  <span className="text-muted-foreground dark:text-gray-400 text-xs">Status</span>
+                  <span className="text-muted-foreground dark:text-gray-400 text-xs">
+                    Status
+                  </span>
                   {a.is_completed ? (
                     <Badge className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-900/50 text-[11px] px-2 py-0.5 rounded-full">
                       Selesai

@@ -62,10 +62,12 @@ export default function SiswaAsesmenDetailPage({
   const [questionVisible, setQuestionVisible] = useState(false);
   const [allowExit, setAllowExit] = useState(false);
   const [flaggedSoalIds, setFlaggedSoalIds] = useState<string[]>([]);
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   const getDraftKey = () => `quiz_draft_${id}`;
 
   const clearQuizDraft = () => {
+    if (typeof window === "undefined") return;
     localStorage.removeItem(getDraftKey());
   };
 
@@ -103,7 +105,7 @@ export default function SiswaAsesmenDetailPage({
   }, [loading, soals.length, allowExit]);
 
   useEffect(() => {
-    if (loading || soals.length === 0 || submitting) return;
+    if (loading || soals.length === 0 || submitting || !draftHydrated) return;
 
     const draft: QuizDraft = {
       asesmenId: id,
@@ -119,6 +121,7 @@ export default function SiswaAsesmenDetailPage({
     loading,
     soals.length,
     submitting,
+    draftHydrated,
     currentSoalIndex,
     jawaban,
     flaggedSoalIds,
@@ -149,7 +152,11 @@ export default function SiswaAsesmenDetailPage({
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      setDraftHydrated(true);
+      return;
+    }
 
     try {
       // Check if there are existing answers (not nilai)
@@ -244,7 +251,10 @@ export default function SiswaAsesmenDetailPage({
         try {
           const savedDraft = JSON.parse(savedDraftRaw) as QuizDraft;
 
-          if (savedDraft.asesmenId === id) {
+          if (
+            savedDraft.asesmenId === id &&
+            savedDraft.expiresAt > Date.now()
+          ) {
             const restoredJawaban = initialJawaban.map((item) => {
               const savedAnswer = savedDraft.jawaban.find(
                 (draftItem) => draftItem.soal_id === item.soal_id,
@@ -269,11 +279,16 @@ export default function SiswaAsesmenDetailPage({
                 0,
                 Math.floor((savedDraft.expiresAt - Date.now()) / 1000),
               );
-              setTimeLeft(remainingTime);
+              setTimeLeft((prev) => Math.min(prev, remainingTime));
             }
+
+            toast.info(
+              "Progress kuis dipulihkan. Lanjutkan dari sesi terakhir.",
+            );
           } else {
             setJawaban(initialJawaban);
             setFlaggedSoalIds([]);
+            clearQuizDraft();
           }
         } catch {
           setJawaban(initialJawaban);
@@ -287,6 +302,7 @@ export default function SiswaAsesmenDetailPage({
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
+      setDraftHydrated(true);
       setLoading(false);
     }
   };
