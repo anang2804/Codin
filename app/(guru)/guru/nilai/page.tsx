@@ -404,26 +404,26 @@ export default function GuruNilaiPage() {
       {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-green-950">
+          <h1 className="text-3xl font-semibold text-green-950 dark:text-green-400">
             Kelola Nilai
           </h1>
-          <p className="mt-2 text-sm text-green-700/80">
+          <p className="mt-2 text-sm text-green-700/80 dark:text-green-400/60">
             Pantau hasil kuis dan pengumpulan tugas siswa.
           </p>
         </div>
       </div>
 
       <Tabs defaultValue="nilai-kuis" className="space-y-4">
-        <TabsList className="h-11 border border-green-100 bg-green-50/70">
+        <TabsList className="h-11 border border-green-100 dark:border-green-900/50 bg-green-50/70 dark:bg-card">
           <TabsTrigger
             value="nilai-kuis"
-            className="px-4 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            className="px-4 data-[state=active]:bg-green-600 data-[state=active]:text-white dark:data-[state=active]:bg-green-600 dark:data-[state=active]:text-white"
           >
             Nilai Kuis
           </TabsTrigger>
           <TabsTrigger
             value="pengumpulan-tugas"
-            className="px-4 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            className="px-4 data-[state=active]:bg-green-600 data-[state=active]:text-white dark:data-[state=active]:bg-green-600 dark:data-[state=active]:text-white"
           >
             Pengumpulan Tugas
           </TabsTrigger>
@@ -431,19 +431,19 @@ export default function GuruNilaiPage() {
 
         <TabsContent value="nilai-kuis">
           {loadingAsesmen ? (
-            <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center shadow-sm">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 border-t-green-600"></div>
-              <p className="text-gray-600">Memuat asesmen...</p>
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-card p-12 text-center shadow-sm">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 dark:border-green-900 border-t-green-600"></div>
+              <p className="text-gray-600 dark:text-gray-400">Memuat asesmen...</p>
             </div>
           ) : asesmen.length === 0 ? (
-            <Card className="rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 text-green-600">
+            <Card className="rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center shadow-sm">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
                 <BarChart3 size={30} />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Belum ada nilai yang tersedia.
               </h2>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Buat kuis terlebih dahulu untuk mulai memantau performa siswa.
               </p>
               <Link href="/guru/asesmen">
@@ -457,25 +457,25 @@ export default function GuruNilaiPage() {
               {asesmen.map((a) => (
                 <Card
                   key={a.id}
-                  className="rounded-2xl border border-green-100 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  className="rounded-2xl border border-green-100 dark:border-green-900/30 bg-white dark:bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0 flex-1 space-y-2">
-                        <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">
                           {a.title}
                         </h3>
 
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-green-700/80">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[11px] font-medium text-green-700">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-green-700/80 dark:text-green-400/70">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-3 py-1 text-[11px] font-medium text-green-700 dark:text-green-400">
                             <BookOpen size={14} />
                             Soal Pilihan Ganda
                           </span>
-                          <span className="font-medium text-green-900">
+                          <span className="font-medium text-green-900 dark:text-green-200">
                             {a.mapel?.name || "-"}
                           </span>
-                          <span className="text-green-300">•</span>
-                          <span className="font-medium text-green-900">
+                          <span className="text-green-300 dark:text-green-700">•</span>
+                          <span className="font-medium text-green-900 dark:text-green-200">
                             {a.kelas?.name || "-"}
                           </span>
                         </div>
@@ -492,20 +492,20 @@ export default function GuruNilaiPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-green-100 bg-green-50 px-3 py-2">
-                        <BarChart3 size={14} className="text-green-500" />
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-green-100 dark:border-green-900/30 bg-green-50 dark:bg-green-900/20 px-3 py-2">
+                        <BarChart3 size={14} className="text-green-500 dark:text-green-400" />
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-green-600/80">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-green-600/80 dark:text-green-400/70">
                             Partisipasi
                           </p>
-                          <p className="text-sm font-semibold text-green-950">
+                          <p className="text-sm font-semibold text-green-950 dark:text-green-200">
                             {a.participant_count} siswa
                           </p>
                         </div>
                       </div>
 
                       {a.participant_count === 0 && (
-                        <div className="rounded-xl border border-dashed border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700/80">
+                        <div className="rounded-xl border border-dashed border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/20 px-3 py-2 text-sm text-green-700/80 dark:text-green-400/60">
                           Belum ada siswa yang mengerjakan kuis ini.
                         </div>
                       )}
@@ -519,31 +519,31 @@ export default function GuruNilaiPage() {
 
         <TabsContent value="pengumpulan-tugas" className="space-y-4">
           {loadingPengumpulan ? (
-            <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center shadow-sm">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 border-t-green-600"></div>
-              <p className="text-gray-600">Memuat pengumpulan tugas...</p>
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-card p-12 text-center shadow-sm">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-200 dark:border-green-900 border-t-green-600"></div>
+              <p className="text-gray-600 dark:text-gray-400">Memuat pengumpulan tugas...</p>
             </div>
           ) : pengumpulanTugas.length === 0 ? (
-            <Card className="rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+            <Card className="rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center shadow-sm">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400">
                 <Upload size={30} />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Belum ada pengumpulan tugas.
               </h2>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Siswa belum mengunggah file pada sub-bab bertipe pengumpulan
                 tugas.
               </p>
             </Card>
           ) : (
             <>
-              <Card className="rounded-xl border border-green-100 bg-green-50/40 p-4 shadow-sm">
+              <Card className="rounded-xl border border-green-100 dark:border-green-900/30 bg-green-50/40 dark:bg-green-900/10 p-4 shadow-sm">
                 <div className="grid gap-3 lg:grid-cols-4">
                   <div className="relative lg:col-span-2">
                     <Search
                       size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-green-500"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-green-500 dark:text-green-400"
                     />
                     <Input
                       value={searchTerm}
@@ -555,7 +555,7 @@ export default function GuruNilaiPage() {
                   <select
                     value={selectedMateri}
                     onChange={(e) => setSelectedMateri(e.target.value)}
-                    className="h-10 rounded-md border border-green-200 bg-white px-3 py-2 text-sm text-green-900 focus:outline-none focus:border-green-500"
+                    className="h-10 rounded-md border border-green-200 dark:border-green-900/50 bg-white dark:bg-input px-3 py-2 text-sm text-green-900 dark:text-foreground focus:outline-none focus:border-green-500 dark:focus:border-green-400"
                   >
                     <option value="all">Semua Materi</option>
                     {materiOptions.map((materiName) => (
@@ -567,7 +567,7 @@ export default function GuruNilaiPage() {
                   <select
                     value={selectedKelas}
                     onChange={(e) => setSelectedKelas(e.target.value)}
-                    className="h-10 rounded-md border border-green-200 bg-white px-3 py-2 text-sm text-green-900 focus:outline-none focus:border-green-500"
+                    className="h-10 rounded-md border border-green-200 dark:border-green-900/50 bg-white dark:bg-input px-3 py-2 text-sm text-green-900 dark:text-foreground focus:outline-none focus:border-green-500 dark:focus:border-green-400"
                   >
                     <option value="all">Semua Kelas</option>
                     {kelasOptions.map((kelasName) => (
@@ -581,7 +581,7 @@ export default function GuruNilaiPage() {
 
               <div className="grid gap-3">
                 {groupedPengumpulan.length === 0 ? (
-                  <Card className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
+                  <Card className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
                     Tidak ada data yang sesuai filter.
                   </Card>
                 ) : (
@@ -591,7 +591,7 @@ export default function GuruNilaiPage() {
                     return (
                       <Card
                         key={group.key}
-                        className="rounded-xl border border-green-100 bg-white p-4 shadow-sm"
+                        className="rounded-xl border border-green-100 dark:border-green-900/30 bg-white dark:bg-card p-4 shadow-sm"
                       >
                         <button
                           type="button"
@@ -600,25 +600,25 @@ export default function GuruNilaiPage() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 space-y-1">
-                              <h3 className="text-base font-semibold text-green-950 truncate">
+                              <h3 className="text-base font-semibold text-green-950 dark:text-green-200 truncate">
                                 {group.materi_title}
                               </h3>
-                              <p className="text-sm text-green-700/80 truncate">
+                              <p className="text-sm text-green-700/80 dark:text-green-400/60 truncate">
                                 {group.total_bab} bab • {group.total_sub_bab}{" "}
                                 sub-bab
                               </p>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-green-700/80">
-                                <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-green-700/80 dark:text-green-400/60">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-2 py-0.5">
                                   <Users size={12} />
                                   {group.total_siswa} siswa
                                 </span>
-                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5">
+                                <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-2 py-0.5">
                                   {group.total_submit} pengumpulan
                                 </span>
                               </div>
                             </div>
 
-                            <div className="text-green-700 shrink-0 pt-1">
+                            <div className="text-green-700 dark:text-green-400 shrink-0 pt-1">
                               {isOpen ? (
                                 <ChevronDown size={18} />
                               ) : (
@@ -629,21 +629,21 @@ export default function GuruNilaiPage() {
                         </button>
 
                         {isOpen && (
-                          <div className="mt-4 space-y-3 border-t border-green-100 pt-3">
+                          <div className="mt-4 space-y-3 border-t border-green-100 dark:border-green-900/30 pt-3">
                             {group.babs.map((bab) => (
                               <div
                                 key={bab.bab_id}
-                                className="rounded-lg border border-green-100 bg-green-50/50 p-3"
+                                className="rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/50 dark:bg-green-900/10 p-3"
                               >
-                                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-green-100 pb-2">
-                                  <p className="text-sm font-semibold text-green-900">
+                                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-green-100 dark:border-green-900/30 pb-2">
+                                  <p className="text-sm font-semibold text-green-900 dark:text-green-200">
                                     {bab.bab_title}
                                   </p>
-                                  <div className="flex flex-wrap items-center gap-2 text-xs text-green-700/80">
-                                    <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-green-700/80 dark:text-green-400/60">
+                                    <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-white dark:bg-input/50 px-2 py-0.5">
                                       {bab.total_submit} pengumpulan
                                     </span>
-                                    <span className="inline-flex items-center rounded-full border border-green-200 bg-white px-2 py-0.5">
+                                    <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-white dark:bg-input/50 px-2 py-0.5">
                                       {bab.sub_babs.length} sub-bab
                                     </span>
                                   </div>
@@ -653,7 +653,7 @@ export default function GuruNilaiPage() {
                                   {bab.sub_babs.map((subBab) => (
                                     <div
                                       key={subBab.sub_bab_id}
-                                      className="rounded-lg border border-green-100 bg-white p-3"
+                                      className="rounded-lg border border-green-100 dark:border-green-900/30 bg-white dark:bg-card/50 p-3"
                                     >
                                       {(() => {
                                         const subBabKey = `${group.key}::${bab.bab_id}::${subBab.sub_bab_id}`;
@@ -669,26 +669,26 @@ export default function GuruNilaiPage() {
                                               }
                                               className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-left"
                                             >
-                                              <p className="text-sm font-semibold text-green-900">
+                                              <p className="text-sm font-semibold text-green-900 dark:text-green-200">
                                                 {subBab.sub_bab_title}
                                               </p>
-                                              <div className="flex items-center gap-2 text-xs text-green-700/80">
-                                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5">
+                                              <div className="flex items-center gap-2 text-xs text-green-700/80 dark:text-green-400/60">
+                                                <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-2 py-0.5">
                                                   {subBab.total_submit}{" "}
                                                   pengumpulan
                                                 </span>
-                                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-2 py-0.5">
+                                                <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-2 py-0.5">
                                                   {subBab.total_siswa} siswa
                                                 </span>
                                                 {isSubBabOpen ? (
                                                   <ChevronDown
                                                     size={16}
-                                                    className="text-green-700"
+                                                    className="text-green-700 dark:text-green-400"
                                                   />
                                                 ) : (
                                                   <ChevronRight
                                                     size={16}
-                                                    className="text-green-700"
+                                                    className="text-green-700 dark:text-green-400"
                                                   />
                                                 )}
                                               </div>
@@ -699,17 +699,17 @@ export default function GuruNilaiPage() {
                                                 {subBab.items.map((item) => (
                                                   <div
                                                     key={item.id}
-                                                    className="flex flex-col gap-2 rounded-lg border border-green-100 bg-green-50/70 px-3 py-2 md:flex-row md:items-center md:justify-between"
+                                                    className="flex flex-col gap-2 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-2 md:flex-row md:items-center md:justify-between"
                                                   >
                                                     <div className="min-w-0">
-                                                      <p className="text-sm font-medium text-green-900 truncate">
+                                                      <p className="text-sm font-medium text-green-900 dark:text-green-200 truncate">
                                                         {item.siswa_name ||
                                                           "Tanpa Nama"}{" "}
                                                         •{" "}
                                                         {item.siswa_kelas ||
                                                           "-"}
                                                       </p>
-                                                      <p className="text-xs text-green-700/80 truncate">
+                                                      <p className="text-xs text-green-700/80 dark:text-green-400/60 truncate">
                                                         {item.file_name} (
                                                         {formatFileSize(
                                                           item.file_size,

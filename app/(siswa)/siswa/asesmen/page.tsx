@@ -177,11 +177,11 @@ export default function SiswaAsesmenPage() {
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-foreground dark:text-gray-100 flex items-center gap-3">
             <ClipboardList className="text-green-600" size={28} />
             Akses Kuis
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
             Kerjakan kuis untuk menguji pemahaman materi
           </p>
         </div>
@@ -190,15 +190,15 @@ export default function SiswaAsesmenPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat kuis...</p>
+            <p className="text-muted-foreground dark:text-gray-400">Memuat kuis...</p>
         </div>
-      ) : asesmen.length === 0 ? (
-        <Card className="p-12 text-center border-green-100">
+        ) : asesmen.length === 0 ? (
+          <Card className="p-12 text-center border-green-100 dark:border-green-900/50 bg-card">
           <ClipboardList
             size={48}
-            className="mx-auto text-muted-foreground mb-4"
+              className="mx-auto text-muted-foreground dark:text-gray-600 mb-4"
           />
-          <p className="text-muted-foreground">
+            <p className="text-muted-foreground dark:text-gray-400">
             Belum ada kuis tersedia untuk kelas Anda.
           </p>
         </Card>
@@ -212,30 +212,30 @@ export default function SiswaAsesmenPage() {
             >
               {/* Header */}
               <div className="px-4 py-2.5 border-b border-border bg-gradient-to-r from-green-50 to-green-100 dark:from-emerald-500/10 dark:to-emerald-500/20">
-                <div className="flex items-center gap-2 mb-1">
+                className={`overflow-hidden border-border dark:border-gray-800 bg-card dark:bg-card rounded-xl shadow-sm hover:shadow-md hover:-translate-y-[5px] transition-all duration-200 flex flex-col ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
                   <ClipboardList className="text-green-600" size={16} />
                   <span className="font-medium text-muted-foreground text-xs">
                     Kuis
-                  </span>
+                <div className="px-4 py-2.5 border-b border-border dark:border-gray-800 bg-gradient-to-r from-green-50 dark:from-emerald-500/10 to-green-100 dark:to-emerald-500/20">
                 </div>
                 <h2 className="text-sm font-bold text-foreground line-clamp-2">
-                  {a.title}
+                    <span className="font-medium text-muted-foreground dark:text-gray-400 text-xs">
                 </h2>
               </div>
 
-              {/* Content */}
+                  <h2 className="text-sm font-bold text-foreground dark:text-gray-100 line-clamp-2">
               <div className="p-4 space-y-2.5 text-sm flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <FileText size={14} className="text-green-600" />
                     <span className="text-xs">Jumlah Soal</span>
-                  </div>
+                <div className="p-4 space-y-2.5 text-sm flex-1 border-b border-border dark:border-gray-800">
                   <span className="font-semibold text-foreground text-xs">
                     {a.soal_count} soal
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground dark:text-gray-100 text-xs">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <BookOpen size={14} className="text-green-600" />
                     <span className="text-xs">Mata Pelajaran</span>
@@ -245,7 +245,7 @@ export default function SiswaAsesmenPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground dark:text-gray-100 text-xs text-right truncate ml-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock size={14} className="text-green-600" />
                     <span className="text-xs">Waktu</span>
@@ -255,7 +255,7 @@ export default function SiswaAsesmenPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground dark:text-gray-100 text-xs">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <CalendarClock size={14} className="text-green-600" />
                     <span className="text-xs">Jadwal</span>
@@ -265,33 +265,33 @@ export default function SiswaAsesmenPage() {
                     {formatDateTime(a.waktu_selesai)}
                   </span>
                 </div>
-
+                    <span className="font-semibold text-foreground dark:text-gray-100 text-[11px] text-right ml-2">
                 <div className="flex justify-between items-center pt-1.5 border-t border-border">
                   <span className="text-muted-foreground text-xs">Status</span>
                   {a.is_completed ? (
                     <Badge className="bg-green-50 text-green-700 hover:bg-green-50 border border-green-200 text-[11px] px-2 py-0.5 rounded-full">
                       Selesai
-                    </Badge>
-                  ) : a.schedule_status === "upcoming" ? (
+                  <div className="flex justify-between items-center pt-1.5">
+                    <span className="text-muted-foreground dark:text-gray-400 text-xs">Status</span>
                     <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border border-blue-200 text-[11px] px-2 py-0.5 rounded-full">
-                      Belum Mulai
+                      <Badge className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-900/50 text-[11px] px-2 py-0.5 rounded-full">
                     </Badge>
                   ) : a.schedule_status === "closed" ? (
                     <Badge className="bg-red-50 text-red-700 hover:bg-red-50 border border-red-200 text-[11px] px-2 py-0.5 rounded-full">
-                      Ditutup
+                      <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-900/50 text-[11px] px-2 py-0.5 rounded-full">
                     </Badge>
                   ) : (
                     <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200 text-[11px] px-2 py-0.5 rounded-full">
-                      Tersedia
+                      <Badge className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-900/50 text-[11px] px-2 py-0.5 rounded-full">
                     </Badge>
                   )}
                 </div>
-                {a.is_completed && a.nilai && (
-                  <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <span className="text-muted-foreground font-medium text-xs">
+                      <Badge className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-900/50 text-[11px] px-2 py-0.5 rounded-full">
+                  <div className="flex justify-between items-center pt-2 mt-2">
+                    <span className="text-muted-foreground dark:text-gray-400 font-medium text-xs">
                       Nilai
                     </span>
-                    <span className="font-bold text-green-600 text-sm">
+                    <span className="font-bold text-green-600 dark:text-green-400 text-sm">
                       {a.nilai.score}/100
                     </span>
                   </div>
@@ -299,12 +299,12 @@ export default function SiswaAsesmenPage() {
               </div>
 
               {/* Action Button */}
-              <div className="p-4 pt-0 mt-auto">
+              <div className="p-4 pt-3 mt-auto">
                 {a.is_completed ? (
                   <Button
                     disabled
                     size="sm"
-                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
+                    className="w-full bg-muted dark:bg-gray-800 text-muted-foreground dark:text-gray-500 cursor-not-allowed h-9 text-xs border border-border dark:border-gray-700"
                   >
                     Sudah Dikerjakan
                   </Button>
@@ -312,7 +312,7 @@ export default function SiswaAsesmenPage() {
                   <Button
                     disabled
                     size="sm"
-                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
+                    className="w-full bg-muted dark:bg-gray-800 text-muted-foreground dark:text-gray-500 cursor-not-allowed h-9 text-xs border border-border dark:border-gray-700"
                   >
                     Belum Mulai
                   </Button>
@@ -320,7 +320,7 @@ export default function SiswaAsesmenPage() {
                   <Button
                     disabled
                     size="sm"
-                    className="w-full bg-muted text-muted-foreground cursor-not-allowed h-9 text-xs border border-border"
+                    className="w-full bg-muted dark:bg-gray-800 text-muted-foreground dark:text-gray-500 cursor-not-allowed h-9 text-xs border border-border dark:border-gray-700"
                   >
                     Sudah Ditutup
                   </Button>

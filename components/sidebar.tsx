@@ -96,14 +96,14 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed top-4 left-4 z-[70] p-2 text-green-600 bg-transparent rounded-lg"
+        className="md:hidden fixed top-4 left-4 z-[70] p-2 text-green-600 dark:text-green-400 bg-transparent rounded-lg"
       >
         {open ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`sidebar-shell fixed left-0 top-0 h-screen bg-card border-r border-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-[60] ${
+        className={`sidebar-shell fixed left-0 top-0 h-screen bg-card dark:bg-sidebar border-r border-border dark:border-sidebar-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-[60] ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } ${collapsed ? "sidebar-collapsed" : ""}`}
       >
@@ -127,7 +127,7 @@ export function Sidebar({ role }: SidebarProps) {
           <button
             type="button"
             onClick={toggleCollapse}
-            className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border border-border bg-card text-muted-foreground hover:text-green-600 hover:border-green-500 shadow-sm absolute -right-4 bottom-6"
+            className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border border-border dark:border-sidebar-border bg-card dark:bg-secondary text-muted-foreground dark:text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:border-green-500 dark:hover:border-green-600 shadow-sm absolute -right-4 bottom-6"
             aria-label={collapsed ? "Perbesar sidebar" : "Sempitkan sidebar"}
           >
             {collapsed ? (
@@ -152,8 +152,8 @@ export function Sidebar({ role }: SidebarProps) {
                         : "gap-5 px-4"
                     } ${
                       isActive
-                        ? "bg-green-600/10 text-green-700 border border-green-200"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground md:hover:translate-x-1"
+                        ? "bg-green-600/10 dark:bg-green-600/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-600/40"
+                        : "text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-secondary hover:text-foreground dark:hover:text-foreground md:hover:translate-x-1"
                     }`}
                   >
                     <Icon size={20} className="shrink-0 md:mr-2" />

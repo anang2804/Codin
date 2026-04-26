@@ -260,11 +260,11 @@ export default function GuruMateriPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <BookOpen className="text-green-600" size={22} />
               Kelola Materi
             </h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
               Buat dan kelola materi pembelajaran dengan bab dan sub-bab
             </p>
           </div>
@@ -281,20 +281,20 @@ export default function GuruMateriPage() {
         <div className="flex gap-3">
           <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
               size={16}
             />
             <Input
               placeholder="Cari materi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 border-gray-200 focus:border-green-400"
+              className="pl-9 border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600"
             />
           </div>
           <select
             value={selectedMapel}
             onChange={(e) => setSelectedMapel(e.target.value)}
-            className="h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 min-w-[200px]"
+            className="h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 min-w-[200px]"
           >
             <option value="all">Semua Mata Pelajaran</option>
             {Array.isArray(mapelList) &&
@@ -309,14 +309,14 @@ export default function GuruMateriPage() {
 
       {/* Materi List */}
       {filteredMateri.length === 0 ? (
-        <Card className="p-12 text-center border-2 border-dashed border-gray-300">
-          <BookOpen size={64} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+        <Card className="p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700 bg-card">
+          <BookOpen size={64} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
             {searchTerm || selectedMapel !== "all"
               ? "Tidak ada materi yang ditemukan"
               : "Belum ada materi"}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             {searchTerm || selectedMapel !== "all"
               ? "Coba ubah filter pencarian"
               : "Mulai buat materi pembelajaran pertama Anda"}
@@ -336,10 +336,10 @@ export default function GuruMateriPage() {
           {filteredMateri.map((m) => (
             <Card
               key={m.id}
-              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+              className="overflow-hidden border border-gray-100 dark:border-gray-800 bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
             >
               {/* Thumbnail */}
-              <div className="relative h-40 bg-gradient-to-br from-green-50 to-green-100 overflow-hidden">
+              <div className="relative h-40 bg-gradient-to-br from-green-50 dark:from-green-900/20 to-green-100 dark:to-green-900/10 overflow-hidden">
                 {m.thumbnail_url ? (
                   <img
                     src={m.thumbnail_url}
@@ -348,7 +348,7 @@ export default function GuruMateriPage() {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <BookOpen size={48} className="text-green-500 opacity-40" />
+                    <BookOpen size={48} className="text-green-500 dark:text-green-600 opacity-40" />
                   </div>
                 )}
               </div>
@@ -357,21 +357,21 @@ export default function GuruMateriPage() {
               <div className="p-4">
                 <div className="mb-3">
                   {m.mapel && (
-                    <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded-full mb-2">
+                    <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-900/50 rounded-full mb-2">
                       {m.mapel.name}
                     </span>
                   )}
-                  <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
                     {m.title}
                   </h3>
                   {m.description && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                       {m.description}
                     </p>
                   )}
                 </div>
 
-                <div className="text-xs text-gray-400 mb-4">
+                <div className="text-xs text-gray-400 dark:text-gray-500 mb-4">
                   {new Date(m.created_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "long",
@@ -384,7 +384,7 @@ export default function GuruMateriPage() {
                   <Link href={`/guru/materi/${m.id}`} className="flex-1">
                     <Button
                       variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.02] transition-all duration-200"
+                      className="w-full border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-[1.02] transition-all duration-200"
                     >
                       <Eye size={14} className="mr-1.5" />
                       Kelola Bab
@@ -394,7 +394,7 @@ export default function GuruMateriPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleEdit(m)}
-                    className="border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.02] transition-all duration-200"
+                    className="border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 hover:scale-[1.02] transition-all duration-200"
                   >
                     <Edit size={14} />
                   </Button>
@@ -415,12 +415,12 @@ export default function GuruMateriPage() {
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={resetForm}>
-        <DialogContent className="max-w-2xl animate-in fade-in-0 zoom-in-95 duration-200">
+        <DialogContent className="max-w-2xl animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-card">
           <DialogHeader className="pb-2">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               {editingId ? "Edit Materi" : "Tambah Materi Baru"}
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-400">
+            <DialogDescription className="text-sm text-gray-400 dark:text-gray-500">
               Lengkapi informasi dasar materi. Bab dan sub-bab dapat ditambahkan
               setelah materi dibuat.
             </DialogDescription>
@@ -431,7 +431,7 @@ export default function GuruMateriPage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="title"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Judul Materi <span className="text-red-400">*</span>
               </Label>
@@ -443,7 +443,7 @@ export default function GuruMateriPage() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 required
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
+                className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200"
               />
             </div>
 
@@ -452,7 +452,7 @@ export default function GuruMateriPage() {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="mapel"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Mata Pelajaran <span className="text-red-400">*</span>
                 </Label>
@@ -462,7 +462,7 @@ export default function GuruMateriPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, mapel_id: e.target.value })
                   }
-                  className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 transition-colors duration-200"
+                  className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
                 >
                   <option value="">Pilih Mata Pelajaran</option>
                   {Array.isArray(mapelList) &&
@@ -477,7 +477,7 @@ export default function GuruMateriPage() {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="kelas"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Kelas <span className="text-red-400">*</span>
                 </Label>
@@ -487,7 +487,7 @@ export default function GuruMateriPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, kelas_id: e.target.value })
                   }
-                  className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-green-400 transition-colors duration-200"
+                  className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
                 >
                   <option value="">Pilih Kelas</option>
                   {Array.isArray(kelasList) &&
@@ -504,7 +504,7 @@ export default function GuruMateriPage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="description"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Deskripsi Singkat
               </Label>
@@ -515,14 +515,14 @@ export default function GuruMateriPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
+                className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200 resize-none"
                 rows={3}
               />
             </div>
 
             {/* Thumbnail */}
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Thumbnail / Sampul
               </Label>
               <div className="mt-1">
@@ -546,18 +546,18 @@ export default function GuruMateriPage() {
                 ) : (
                   <label
                     htmlFor="thumbnail-upload"
-                    className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50/50 transition-all duration-200"
+                    className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-all duration-200"
                   >
                     <ImageIcon
-                      className="text-gray-300 group-hover:text-green-500 mb-2 transition-colors duration-200"
+                      className="text-gray-300 dark:text-gray-600 group-hover:text-green-500 dark:group-hover:text-green-400 mb-2 transition-colors duration-200"
                       size={28}
                     />
-                    <span className="text-sm text-gray-400 group-hover:text-green-600 transition-colors duration-200">
+                    <span className="text-sm text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200">
                       {uploadingThumbnail
                         ? "Mengunggah..."
                         : "Klik untuk upload gambar"}
                     </span>
-                    <span className="text-xs text-gray-300 mt-1">
+                    <span className="text-xs text-gray-300 dark:text-gray-600 mt-1">
                       PNG, JPG maks. 5MB
                     </span>
                     <input

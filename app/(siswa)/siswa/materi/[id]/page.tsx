@@ -975,13 +975,13 @@ export default function SiswaMateriDetailPage() {
                               <span
                                 className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
                                   babLocked
-                                    ? "bg-amber-100 text-amber-700"
+                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
                                     : subBabs[bab.id] &&
                                         subBabs[bab.id].length > 0 &&
                                         subBabs[bab.id].every(
                                           (sb) => sb.completed,
                                         )
-                                      ? "bg-green-100 text-green-700"
+                                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
                                       : "bg-muted text-muted-foreground"
                                 }`}
                               >
@@ -1035,7 +1035,7 @@ export default function SiswaMateriDetailPage() {
                                   subBabLocked
                                     ? "bg-card border-border/70 opacity-60 cursor-not-allowed border-l-4 border-l-amber-500"
                                     : selectedSubBab?.id === subBab.id
-                                      ? "bg-green-50 border-green-300 border-l-4 border-l-green-600 shadow-sm"
+                                      ? "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700 border-l-4 border-l-green-600 dark:border-l-green-500 shadow-sm"
                                       : subBab.completed
                                         ? "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-green-500 hover:shadow-sm"
                                         : "bg-card border-border hover:border-green-300 hover:bg-green-50 dark:hover:bg-emerald-500/10 border-l-4 border-l-border hover:shadow-sm"
@@ -1060,7 +1060,13 @@ export default function SiswaMateriDetailPage() {
                                   )}
                                 </div>
                                 <div className="flex-1 text-left min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate leading-snug">
+                                  <p
+                                    className={`text-sm font-medium truncate leading-snug ${
+                                      selectedSubBab?.id === subBab.id
+                                        ? "text-green-900 dark:text-green-100"
+                                        : "text-foreground"
+                                    }`}
+                                  >
                                     {subIndex + 1}. {subBab.title}
                                   </p>
                                   <div className="flex items-center gap-1 mt-0.5">
@@ -1094,7 +1100,13 @@ export default function SiswaMateriDetailPage() {
                                         className="text-orange-600"
                                       />
                                     )}
-                                    <span className="text-xs text-muted-foreground capitalize">
+                                    <span
+                                      className={`text-xs capitalize ${
+                                        selectedSubBab?.id === subBab.id
+                                          ? "text-green-700 dark:text-green-300"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    >
                                       {subBabLocked
                                         ? "Terkunci"
                                         : subBab.content_type === "assignment"

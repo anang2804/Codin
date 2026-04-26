@@ -371,19 +371,15 @@ export default function SiswaDashboard() {
                   <Icon size={18} className="text-green-600" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-foreground">
-                    {label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {count} tersedia
-                  </span>
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                  <span className="text-xs text-muted-foreground">{count} tersedia</span>
                 </div>
               </div>
               <Link href={href} className="shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full text-green-600 hover:text-green-700 hover:bg-green-50"
+                  className="h-8 w-8 rounded-full text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
                   aria-label={label}
                 >
                   <ArrowRight size={16} />
@@ -395,12 +391,8 @@ export default function SiswaDashboard() {
             <div className="hidden md:flex flex-col h-full px-4 py-3">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-base font-semibold text-foreground">
-                    {label}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {count} tersedia
-                  </p>
+                  <p className="text-base font-semibold text-foreground">{label}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{count} tersedia</p>
                 </div>
                 <div className="p-2 bg-green-50 dark:bg-emerald-500/15 rounded-lg">
                   <Icon size={20} className="text-green-600" />
@@ -421,9 +413,7 @@ export default function SiswaDashboard() {
       <Card
         className={`p-4 border border-border bg-card rounded-xl shadow-sm transition-all duration-200 ${entranceClass}`}
       >
-        <h2 className="text-base font-semibold text-foreground mb-4">
-          Progress Belajar
-        </h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Progress Belajar</h2>
 
         <div className="flex flex-row items-center justify-between gap-4 sm:gap-6 md:gap-10 pt-1">
           <div className="flex-1 flex flex-col items-center">
@@ -463,10 +453,8 @@ export default function SiswaDashboard() {
         {/* Materi Terbaru */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <BookOpen size={16} className="text-green-500" />
-            <h2 className="text-base font-semibold text-foreground">
-              Materi Terbaru
-            </h2>
+            <BookOpen size={16} className="text-green-500 dark:text-green-400" />
+            <h2 className="text-base font-semibold text-foreground dark:text-gray-100">Materi Terbaru</h2>
           </div>
           <div className="space-y-2.5">
             {recentMateri.length > 0 ? (
@@ -490,24 +478,20 @@ export default function SiswaDashboard() {
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar size={12} />
                           <span>
-                            {new Date(materi.created_at).toLocaleDateString(
-                              "id-ID",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              },
-                            )}
+                            {new Date(materi.created_at).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </span>
                         </div>
                         <Link href={`/siswa/materi/${materi.id}`}>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 text-sm h-auto px-2 py-1"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm h-auto px-2 py-1"
                           >
-                            Detail Materi{" "}
-                            <ArrowRight size={12} className="ml-1" />
+                            Detail Materi <ArrowRight size={12} className="ml-1" />
                           </Button>
                         </Link>
                       </div>
@@ -517,9 +501,7 @@ export default function SiswaDashboard() {
               ))
             ) : (
               <Card className="p-4 border border-border bg-card rounded-xl shadow-sm text-center">
-                <p className="text-sm text-muted-foreground">
-                  Belum ada materi
-                </p>
+                <p className="text-sm text-muted-foreground">Belum ada materi</p>
               </Card>
             )}
           </div>
@@ -528,10 +510,8 @@ export default function SiswaDashboard() {
         {/* Tugas Terbaru */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <ClipboardList size={16} className="text-green-500" />
-            <h2 className="text-base font-semibold text-foreground">
-              Tugas Terbaru
-            </h2>
+            <ClipboardList size={16} className="text-green-500 dark:text-green-400" />
+            <h2 className="text-base font-semibold text-foreground dark:text-gray-100">Tugas Terbaru</h2>
           </div>
           <div className="space-y-2.5">
             {recentAsesmen.length > 0 ? (
@@ -557,8 +537,8 @@ export default function SiswaDashboard() {
                           <Badge
                             className={
                               isCompleted
-                                ? "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-300 dark:border-green-500/30 text-sm px-2 py-0.5 rounded-full font-medium border border-green-200 shrink-0"
-                                : "bg-amber-50 text-amber-600 hover:bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 text-sm px-2 py-0.5 rounded-full font-medium border border-amber-200 shrink-0"
+                                ? "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-900/50 text-sm px-2 py-0.5 rounded-full font-medium border border-green-200 dark:border-green-900/50 shrink-0"
+                                : "bg-amber-50 text-amber-600 hover:bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900/50 text-sm px-2 py-0.5 rounded-full font-medium border border-amber-200 dark:border-amber-900/50 shrink-0"
                             }
                           >
                             {isCompleted ? "Selesai" : "Belum Selesai"}
@@ -567,10 +547,7 @@ export default function SiswaDashboard() {
                         <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
                           <span className="flex items-center gap-1">
                             <FileText size={12} />
-                            {(asesmen.question_count ??
-                              asesmen.total_questions) ||
-                              0}{" "}
-                            soal
+                            {(asesmen.question_count ?? asesmen.total_questions) || 0} soal
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock size={12} />
@@ -581,10 +558,9 @@ export default function SiswaDashboard() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 text-sm h-auto px-2 py-1"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm h-auto px-2 py-1"
                           >
-                            Detail Tugas{" "}
-                            <ArrowRight size={12} className="ml-1" />
+                            Detail Tugas <ArrowRight size={12} className="ml-1" />
                           </Button>
                         </Link>
                       </div>

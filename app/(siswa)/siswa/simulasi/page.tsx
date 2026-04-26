@@ -107,11 +107,11 @@ export default function SiswaSimulasiPage() {
 
   if (!canAccessSimulasi) {
     return (
-      <Card className="border border-amber-100 bg-amber-50/70 p-6">
-        <h1 className="text-xl font-semibold text-amber-900">
+      <Card className="border border-amber-100 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-900/20 p-6">
+        <h1 className="text-xl font-semibold text-amber-900 dark:text-amber-200">
           Simulasi khusus Kelas X
         </h1>
-        <p className="mt-2 text-sm text-amber-800">
+        <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
           Fitur simulasi saat ini hanya tersedia untuk siswa kelas X.
         </p>
       </Card>
@@ -123,11 +123,11 @@ export default function SiswaSimulasiPage() {
   const getLevelBadgeClass = (level: string) => {
     switch (level) {
       case "Dasar":
-        return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+        return "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50";
       case "Menengah":
-        return "bg-sky-50 text-sky-700 border border-sky-100";
+        return "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border border-sky-100 dark:border-sky-900/50";
       case "Lanjutan":
-        return "bg-rose-50 text-rose-700 border border-rose-100";
+        return "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-100 dark:border-rose-900/50";
       default:
         return "bg-muted text-muted-foreground border border-border";
     }
@@ -135,8 +135,8 @@ export default function SiswaSimulasiPage() {
 
   const getStatusBadgeClass = (completed: boolean) => {
     return completed
-      ? "rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100"
-      : "rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700 border border-amber-100";
+      ? "rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50"
+      : "rounded-full bg-amber-50 dark:bg-amber-900/30 px-2 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/50";
   };
 
   const getLevelRank = (level: string) => {
@@ -156,11 +156,11 @@ export default function SiswaSimulasiPage() {
     <div className="space-y-7">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground dark:text-gray-100 flex items-center gap-3">
             <Microscope className="text-primary" size={28} />
             Simulasi
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
             Simulasi interaktif untuk memahami algoritma dan pemrograman
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function SiswaSimulasiPage() {
             return (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-foreground">
+                  <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
                     {section.title}
                   </h2>
                   <span
@@ -197,7 +197,7 @@ export default function SiswaSimulasiPage() {
                     return (
                       <Card
                         key={item.href}
-                        className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
+                        className={`overflow-hidden rounded-xl border border-border dark:border-gray-800 bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex h-full flex-col ${
                           animateIn
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 translate-y-3"
@@ -228,10 +228,10 @@ export default function SiswaSimulasiPage() {
                         <div className="flex flex-1 flex-col p-4">
                           <div className="space-y-3 flex-1">
                             <div className="space-y-1.5">
-                              <h3 className="text-base font-semibold text-foreground leading-snug line-clamp-2">
+                              <h3 className="text-base font-semibold text-foreground dark:text-gray-100 leading-snug line-clamp-2">
                                 {item.title}
                               </h3>
-                              <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                              <p className="text-xs text-muted-foreground dark:text-gray-400 line-clamp-3 leading-relaxed">
                                 {item.description}
                               </p>
                             </div>
