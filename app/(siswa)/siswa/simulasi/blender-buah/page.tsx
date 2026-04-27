@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useSimulasiAttemptRecorder } from "@/lib/hooks/useSimulasiAttemptRecorder";
 import {
   Play,
   RotateCcw,
@@ -235,6 +236,12 @@ const BlenderSimulation = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorLine, setErrorLine] = useState<number>(-1);
   const [showSuccessCard, setShowSuccessCard] = useState<boolean>(false);
+
+  useSimulasiAttemptRecorder({
+    simulasiSlug: SIMULASI_SLUG,
+    isRunning,
+    isSuccess: showSuccessCard,
+  });
   const [hasTried, setHasTried] = useState<boolean>(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState<boolean>(false);
 

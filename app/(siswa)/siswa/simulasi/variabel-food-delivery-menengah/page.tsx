@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSimulasiAttemptRecorder } from "@/lib/hooks/useSimulasiAttemptRecorder";
 import {
   Activity,
   AlertTriangle,
@@ -196,6 +197,12 @@ export default function VariabelFoodDeliveryMenengahPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+
+  useSimulasiAttemptRecorder({
+    simulasiSlug: SIMULASI_SLUG,
+    isRunning,
+    isSuccess: showSuccessCard,
+  });
   const [feedback, setFeedback] = useState(
     "Sistem siap menjalankan algoritma.",
   );

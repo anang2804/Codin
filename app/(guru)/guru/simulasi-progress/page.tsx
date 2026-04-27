@@ -48,10 +48,14 @@ interface Simulasi {
 }
 
 export default function SimulasiProgressPage() {
+  const HISTORY_PREVIEW_LIMIT = 4;
   const [siswaList, setSiswaList] = useState<SiswaProgress[]>([]);
   const [simulasiList, setSimulasiList] = useState<Simulasi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [detailSiswa, setDetailSiswa] = useState<SiswaProgress | null>(null);
+  const [expandedHistory, setExpandedHistory] = useState<
+    Record<string, boolean>
+  >({});
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -232,7 +236,10 @@ export default function SimulasiProgressPage() {
                           size="sm"
                           variant="outline"
                           className="gap-1.5 text-xs border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary"
-                          onClick={() => setDetailSiswa(siswa)}
+                          onClick={() => {
+                            setExpandedHistory({});
+                            setDetailSiswa(siswa);
+                          }}
                         >
                           Detail
                           <ChevronRight size={13} />
@@ -250,7 +257,12 @@ export default function SimulasiProgressPage() {
       {/* Detail Dialog */}
       <Dialog
         open={detailSiswa !== null}
-        onOpenChange={(open) => !open && setDetailSiswa(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailSiswa(null);
+            setExpandedHistory({});
+          }
+        }}
       >
         <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl max-h-[85vh] overflow-y-auto dark:bg-card">
           <DialogHeader>
@@ -311,6 +323,16 @@ export default function SimulasiProgressPage() {
                   const successAttemptNo = progress?.success_attempt_no ?? null;
                   const firstSuccessAt = progress?.first_success_at ?? null;
                   const history = progress?.attempt_history ?? [];
+                  const successCount = history.filter(
+                    (attempt) => attempt.result === "success",
+                  ).length;
+                  const failedCount = history.length - successCount;
+                  const historyKey = `${detailSiswa.id}:${sim.id}`;
+                  const isHistoryExpanded =
+                    expandedHistory[historyKey] ?? false;
+                  const visibleHistory = isHistoryExpanded
+                    ? history
+                    : history.slice(-HISTORY_PREVIEW_LIMIT);
                   return (
                     <div
                       key={sim.id}
@@ -373,22 +395,44 @@ export default function SimulasiProgressPage() {
                           </p>
                         )}
                         {history.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {history.map((attempt) => (
-                              <span
-                                key={`${sim.id}-${attempt.attempt_no}`}
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                  attempt.result === "success"
-                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
-                                    : "bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300"
-                                }`}
+                          <div className="mt-2 space-y-1.5">
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                              Riwayat: {history.length} percobaan (
+                              {successCount} berhasil, {failedCount} gagal)
+                            </p>
+                            <div className="flex gap-1.5 overflow-x-auto pb-1 pr-1">
+                              {visibleHistory.map((attempt) => (
+                                <span
+                                  key={`${sim.id}-${attempt.attempt_no}`}
+                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                    attempt.result === "success"
+                                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+                                      : "bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300"
+                                  }`}
+                                >
+                                  #{attempt.attempt_no}{" "}
+                                  {attempt.result === "success"
+                                    ? "berhasil"
+                                    : "gagal"}
+                                </span>
+                              ))}
+                            </div>
+                            {history.length > HISTORY_PREVIEW_LIMIT && (
+                              <button
+                                type="button"
+                                className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                onClick={() =>
+                                  setExpandedHistory((prev) => ({
+                                    ...prev,
+                                    [historyKey]: !isHistoryExpanded,
+                                  }))
+                                }
                               >
-                                #{attempt.attempt_no}{" "}
-                                {attempt.result === "success"
-                                  ? "berhasil"
-                                  : "gagal"}
-                              </span>
-                            ))}
+                                {isHistoryExpanded
+                                  ? "Sembunyikan riwayat"
+                                  : `Lihat semua (${history.length})`}
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

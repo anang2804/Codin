@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSimulasiAttemptRecorder } from "@/lib/hooks/useSimulasiAttemptRecorder";
 import {
   Activity,
   AlertTriangle,
@@ -247,6 +248,12 @@ export default function VariabelDataSiswaPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+
+  useSimulasiAttemptRecorder({
+    simulasiSlug: SIMULASI_SLUG,
+    isRunning,
+    isSuccess: showSuccessCard,
+  });
   const [runVisualKey, setRunVisualKey] = useState(0);
   const [mismatchType, setMismatchType] = useState<
     "umur" | "tinggi" | "jenisKelamin" | null

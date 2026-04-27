@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useSimulasiAttemptRecorder } from "@/lib/hooks/useSimulasiAttemptRecorder";
 import {
   Play,
   RotateCcw,
@@ -165,6 +166,12 @@ export default function SimulasiKasirKantin() {
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [errorLine, setErrorLine] = useState<number>(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+
+  useSimulasiAttemptRecorder({
+    simulasiSlug: SIMULASI_SLUG,
+    isRunning,
+    isSuccess: showSuccessCard,
+  });
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
   const [logicLog, setLogicLog] = useState<string[]>([

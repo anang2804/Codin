@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSimulasiAttemptRecorder } from "@/lib/hooks/useSimulasiAttemptRecorder";
 import {
   Activity,
   ArrowLeft,
@@ -30,6 +31,12 @@ export default function StrukturKontrolLampuTidurDasarPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+
+  useSimulasiAttemptRecorder({
+    simulasiSlug: SIMULASI_SLUG,
+    isRunning,
+    isSuccess: showSuccessCard,
+  });
   const [feedback, setFeedback] = useState("Sistem siap menjalankan simulasi.");
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
