@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   BarChart3,
   BookOpen,
@@ -14,10 +21,12 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 interface AsesmenCard {
   id: string;
@@ -50,6 +59,19 @@ interface PengumpulanTugasItem {
   materi_title: string;
   siswa_name: string | null;
   siswa_kelas: string | null;
+  nilai_tugas: number | null;
+  komentar_guru: string | null;
+  has_unread_komentar_siswa: boolean;
+}
+
+interface SubmissionComment {
+  id: string;
+  submission_id: string;
+  sender_id: string;
+  sender_name: string | null;
+  sender_role: string | null;
+  message: string;
+  created_at: string;
 }
 
 export default function GuruNilaiPage() {
@@ -64,6 +86,18 @@ export default function GuruNilaiPage() {
   const [selectedKelas, setSelectedKelas] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedSubBab, setExpandedSubBab] = useState<Set<string>>(new Set());
+  const [draftPenilaian, setDraftPenilaian] = useState<Record<string, string>>(
+    {},
+  );
+  const [savingPenilaianIds, setSavingPenilaianIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [activeNilaiId, setActiveNilaiId] = useState<string | null>(null);
+  const [activeKomentarId, setActiveKomentarId] = useState<string | null>(null);
+  const [komentarList, setKomentarList] = useState<SubmissionComment[]>([]);
+  const [komentarDraft, setKomentarDraft] = useState("");
+  const [loadingKomentar, setLoadingKomentar] = useState(false);
+  const [sendingKomentar, setSendingKomentar] = useState(false);
 
   const getTimestamp = (value?: string | null) =>
     value ? new Date(value).getTime() : 0;
@@ -131,6 +165,23 @@ export default function GuruNilaiPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    setDraftPenilaian((prev) => {
+      let hasChanges = false;
+      const next = { ...prev };
+
+      pengumpulanTugas.forEach((item) => {
+        if (!item.id || next[item.id]) return;
+
+        hasChanges = true;
+        next[item.id] =
+          typeof item.nilai_tugas === "number" ? String(item.nilai_tugas) : "";
+      });
+
+      return hasChanges ? next : prev;
+    });
+  }, [pengumpulanTugas]);
 
   const fetchAsesmen = async () => {
     const supabase = createClient();
@@ -373,6 +424,18 @@ export default function GuruNilaiPage() {
       );
   }, [filteredPengumpulan]);
 
+  const activeNilaiItem = useMemo(() => {
+    if (!activeNilaiId) return null;
+    return pengumpulanTugas.find((item) => item.id === activeNilaiId) || null;
+  }, [pengumpulanTugas, activeNilaiId]);
+
+  const activeKomentarItem = useMemo(() => {
+    if (!activeKomentarId) return null;
+    return (
+      pengumpulanTugas.find((item) => item.id === activeKomentarId) || null
+    );
+  }, [pengumpulanTugas, activeKomentarId]);
+
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -395,6 +458,181 @@ export default function GuruNilaiPage() {
       }
       return next;
     });
+  };
+
+  const onChangePenilaianDraft = (submissionId: string, value: string) => {
+    setDraftPenilaian((prev) => ({
+      ...prev,
+      [submissionId]: value,
+    }));
+  };
+
+  const getDraftNilai = (item: PengumpulanTugasItem) => {
+    if (!item.id) {
+      return "";
+    }
+
+    return (
+      draftPenilaian[item.id] ??
+      (typeof item.nilai_tugas === "number" ? String(item.nilai_tugas) : "")
+    );
+  };
+
+  const isNilaiChanged = (item: PengumpulanTugasItem) => {
+    if (!item.id) return false;
+    const draftNilai = getDraftNilai(item).trim();
+    const nilaiNow = draftNilai === "" ? null : Number.parseInt(draftNilai, 10);
+
+    if (draftNilai !== "" && Number.isNaN(nilaiNow)) {
+      return true;
+    }
+
+    return nilaiNow !== item.nilai_tugas;
+  };
+
+  const savePenilaian = async (
+    item: PengumpulanTugasItem,
+    closeAfterSave = false,
+  ) => {
+    if (!item.id) return;
+
+    const nilaiRaw = getDraftNilai(item).trim();
+
+    let nilai: number | null = null;
+    if (nilaiRaw !== "") {
+      nilai = Number.parseInt(nilaiRaw, 10);
+      if (!Number.isInteger(nilai) || nilai < 0 || nilai > 100) {
+        toast.error("Nilai harus bilangan bulat 0-100");
+        return;
+      }
+    }
+
+    setSavingPenilaianIds((prev) => {
+      const next = new Set(prev);
+      next.add(item.id!);
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/guru/pengumpulan-tugas", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          submissionId: item.id,
+          nilai,
+          // Keep existing single comment field intact while nilai is updated.
+          komentarGuru: item.komentar_guru,
+        }),
+      });
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal menyimpan nilai dan komentar");
+      }
+
+      setPengumpulanTugas((prev) =>
+        prev.map((it) =>
+          it.id === item.id
+            ? {
+                ...it,
+                nilai_tugas: json.data?.nilai_tugas ?? null,
+                komentar_guru: json.data?.komentar_guru ?? null,
+                updated_at: json.data?.updated_at ?? it.updated_at,
+              }
+            : it,
+        ),
+      );
+
+      setDraftPenilaian((prev) => ({
+        ...prev,
+        [item.id!]:
+          typeof json.data?.nilai_tugas === "number"
+            ? String(json.data.nilai_tugas)
+            : "",
+      }));
+
+      if (closeAfterSave) {
+        setActiveNilaiId(null);
+      }
+
+      toast.success("Nilai dan komentar berhasil disimpan");
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal menyimpan nilai dan komentar");
+    } finally {
+      setSavingPenilaianIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id!);
+        return next;
+      });
+    }
+  };
+
+  const fetchKomentar = async (submissionId: string) => {
+    try {
+      setLoadingKomentar(true);
+      const response = await fetch(
+        `/api/submission-comments?submission_id=${submissionId}&mark_as_read=1`,
+        { cache: "no-store" },
+      );
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal memuat komentar");
+      }
+
+      setKomentarList(json.data || []);
+
+      setPengumpulanTugas((prev) =>
+        prev.map((item) =>
+          item.id === submissionId
+            ? { ...item, has_unread_komentar_siswa: false }
+            : item,
+        ),
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal memuat komentar");
+      setKomentarList([]);
+    } finally {
+      setLoadingKomentar(false);
+    }
+  };
+
+  const openKomentarDialog = async (submissionId: string) => {
+    setActiveKomentarId(submissionId);
+    setKomentarDraft("");
+    await fetchKomentar(submissionId);
+  };
+
+  const sendKomentar = async (submissionId: string) => {
+    const message = komentarDraft.trim();
+    if (!message) {
+      toast.error("Komentar tidak boleh kosong");
+      return;
+    }
+
+    try {
+      setSendingKomentar(true);
+
+      const response = await fetch("/api/submission-comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId, message }),
+      });
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal mengirim komentar");
+      }
+
+      setKomentarList((prev) => [...prev, json.data]);
+      setKomentarDraft("");
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal mengirim komentar");
+    } finally {
+      setSendingKomentar(false);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -726,7 +964,7 @@ export default function GuruNilaiPage() {
                                                           item.id ||
                                                           `${subBab.sub_bab_id}-pending-${idx}`
                                                         }
-                                                        className="flex flex-col gap-2 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-2 md:flex-row md:items-center md:justify-between"
+                                                        className="flex flex-col gap-3 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-3"
                                                       >
                                                         <div className="min-w-0">
                                                           {hasSubmission ? (
@@ -765,32 +1003,94 @@ export default function GuruNilaiPage() {
                                                           )}
                                                         </div>
 
-                                                        {hasSubmission &&
-                                                        item.file_url ? (
-                                                          <a
-                                                            href={item.file_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                          >
+                                                        {hasSubmission ? (
+                                                          <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-green-800 dark:text-green-300">
+                                                              {typeof item.nilai_tugas ===
+                                                              "number" ? (
+                                                                <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-white dark:bg-input/50 px-2 py-0.5 font-medium">
+                                                                  Nilai:{" "}
+                                                                  {
+                                                                    item.nilai_tugas
+                                                                  }
+                                                                </span>
+                                                              ) : (
+                                                                <span className="inline-flex items-center rounded-full border border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-amber-700 dark:text-amber-300">
+                                                                  Belum dinilai
+                                                                </span>
+                                                              )}
+                                                            </div>
+
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                              {item.file_url ? (
+                                                                <a
+                                                                  href={
+                                                                    item.file_url
+                                                                  }
+                                                                  target="_blank"
+                                                                  rel="noopener noreferrer"
+                                                                >
+                                                                  <Button
+                                                                    size="sm"
+                                                                    className="bg-green-600 hover:bg-green-700"
+                                                                  >
+                                                                    <FileDown
+                                                                      size={14}
+                                                                      className="mr-1.5"
+                                                                    />
+                                                                    Lihat File
+                                                                  </Button>
+                                                                </a>
+                                                              ) : null}
+
+                                                              <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                  setActiveNilaiId(
+                                                                    item.id,
+                                                                  )
+                                                                }
+                                                              >
+                                                                <BookOpen
+                                                                  size={14}
+                                                                  className="mr-1.5"
+                                                                />
+                                                                Nilai
+                                                              </Button>
+
+                                                              <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                                                                onClick={() =>
+                                                                  openKomentarDialog(
+                                                                    item.id!,
+                                                                  )
+                                                                }
+                                                              >
+                                                                {item.has_unread_komentar_siswa ? (
+                                                                  <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+                                                                ) : null}
+                                                                <MessageSquare
+                                                                  size={14}
+                                                                  className="mr-1.5"
+                                                                />
+                                                                Komentar
+                                                              </Button>
+                                                            </div>
+                                                          </div>
+                                                        ) : (
+                                                          <div className="flex justify-end">
                                                             <Button
                                                               size="sm"
-                                                              className="bg-green-600 hover:bg-green-700"
+                                                              variant="outline"
+                                                              disabled
                                                             >
-                                                              <FileDown
-                                                                size={14}
-                                                                className="mr-1.5"
-                                                              />
-                                                              Lihat File
+                                                              Menunggu
+                                                              Pengumpulan
                                                             </Button>
-                                                          </a>
-                                                        ) : (
-                                                          <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled
-                                                          >
-                                                            Menunggu Pengumpulan
-                                                          </Button>
+                                                          </div>
                                                         )}
                                                       </div>
                                                     );
@@ -817,6 +1117,174 @@ export default function GuruNilaiPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={!!activeNilaiItem}
+        onOpenChange={(open) => {
+          if (!open) setActiveNilaiId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Input Nilai Siswa</DialogTitle>
+          </DialogHeader>
+
+          {activeNilaiItem ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/60 dark:bg-green-900/10 p-3">
+                <p className="text-sm font-semibold text-green-900 dark:text-green-200">
+                  {activeNilaiItem.siswa_name || "Tanpa Nama"} •{" "}
+                  {activeNilaiItem.siswa_kelas || "-"}
+                </p>
+                <p className="mt-1 text-xs text-green-700/80 dark:text-green-400/60 truncate">
+                  {activeNilaiItem.file_name || "Tanpa File"}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Nilai (0-100)
+                </p>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={getDraftNilai(activeNilaiItem)}
+                  onChange={(e) =>
+                    onChangePenilaianDraft(activeNilaiItem.id!, e.target.value)
+                  }
+                  placeholder="Masukkan nilai"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setActiveNilaiId(null)}
+                >
+                  Tutup
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => savePenilaian(activeNilaiItem, true)}
+                  disabled={
+                    savingPenilaianIds.has(activeNilaiItem.id!) ||
+                    !isNilaiChanged(activeNilaiItem)
+                  }
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {savingPenilaianIds.has(activeNilaiItem.id!)
+                    ? "Menyimpan..."
+                    : "Simpan Nilai"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!activeKomentarItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveKomentarId(null);
+            setKomentarDraft("");
+            setKomentarList([]);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Komentar Tugas (Chat)</DialogTitle>
+          </DialogHeader>
+
+          {activeKomentarItem ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-900">
+                {activeKomentarItem.siswa_name || "Tanpa Nama"} •{" "}
+                {activeKomentarItem.siswa_kelas || "-"}
+              </div>
+
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                {loadingKomentar ? (
+                  <p className="text-sm text-gray-500">Memuat komentar...</p>
+                ) : komentarList.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    Belum ada komentar. Mulai percakapan dari sini.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {komentarList.map((comment) => {
+                      const isGuru = comment.sender_role === "guru";
+                      return (
+                        <div
+                          key={comment.id}
+                          className={`flex ${isGuru ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                              isGuru
+                                ? "bg-green-600 text-white"
+                                : "bg-white border border-gray-200 text-gray-800"
+                            }`}
+                          >
+                            <p className="text-[11px] opacity-80 mb-0.5">
+                              {comment.sender_name ||
+                                (isGuru ? "Guru" : "Siswa")}
+                            </p>
+                            <p className="whitespace-pre-wrap">
+                              {comment.message}
+                            </p>
+                            <p className="mt-1 text-[10px] opacity-70">
+                              {new Date(comment.created_at).toLocaleString(
+                                "id-ID",
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Textarea
+                  value={komentarDraft}
+                  onChange={(e) => setKomentarDraft(e.target.value)}
+                  placeholder="Tulis balasan komentar..."
+                  maxLength={2000}
+                  className="min-h-24"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setActiveKomentarId(null);
+                      setKomentarDraft("");
+                      setKomentarList([]);
+                    }}
+                  >
+                    Tutup
+                  </Button>
+                  <Button
+                    type="button"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    onClick={() => sendKomentar(activeKomentarItem.id!)}
+                    disabled={
+                      sendingKomentar || komentarDraft.trim().length === 0
+                    }
+                  >
+                    {sendingKomentar ? "Mengirim..." : "Kirim Komentar"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

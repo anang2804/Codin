@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   BookOpen,
@@ -16,6 +17,7 @@ import {
   Lock,
   ChevronDown,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -63,6 +65,18 @@ interface AssignmentSubmission {
   file_size: number;
   mime_type: string;
   submitted_at: string;
+  nilai_tugas: number | null;
+  komentar_guru: string | null;
+}
+
+interface SubmissionComment {
+  id: string;
+  submission_id: string;
+  sender_id: string;
+  sender_name: string | null;
+  sender_role: string | null;
+  message: string;
+  created_at: string;
 }
 
 function toEmbeddableVideoUrl(rawUrl: string): string | null {
@@ -120,6 +134,14 @@ export default function SiswaMateriDetailPage() {
   const [assignmentUploading, setAssignmentUploading] = useState(false);
   const [assignmentSubmission, setAssignmentSubmission] =
     useState<AssignmentSubmission | null>(null);
+  const [submissionComments, setSubmissionComments] = useState<
+    SubmissionComment[]
+  >([]);
+  const [loadingSubmissionComments, setLoadingSubmissionComments] =
+    useState(false);
+  const [sendingSubmissionComment, setSendingSubmissionComment] =
+    useState(false);
+  const [submissionCommentDraft, setSubmissionCommentDraft] = useState("");
 
   useEffect(() => {
     fetchMateri();
@@ -140,6 +162,8 @@ export default function SiswaMateriDetailPage() {
   useEffect(() => {
     setAssignmentFile(null);
     setAssignmentSubmission(null);
+    setSubmissionComments([]);
+    setSubmissionCommentDraft("");
 
     if (selectedSubBab?.content_type !== "assignment") {
       return;
@@ -147,6 +171,15 @@ export default function SiswaMateriDetailPage() {
 
     fetchAssignmentSubmission(selectedSubBab.id);
   }, [selectedSubBab?.id, selectedSubBab?.content_type]);
+
+  useEffect(() => {
+    if (!assignmentSubmission?.id) {
+      setSubmissionComments([]);
+      return;
+    }
+
+    void fetchSubmissionComments(assignmentSubmission.id);
+  }, [assignmentSubmission?.id]);
 
   async function fetchAssignmentSubmission(subBabId: string) {
     try {
@@ -163,6 +196,68 @@ export default function SiswaMateriDetailPage() {
     } catch (error: any) {
       console.error("Error fetching submission:", error);
       toast.error(error.message || "Gagal memuat status pengumpulan tugas");
+    }
+  }
+
+  async function fetchSubmissionComments(submissionId: string) {
+    try {
+      setLoadingSubmissionComments(true);
+      const response = await fetch(
+        `/api/submission-comments?submission_id=${submissionId}`,
+        {
+          cache: "no-store",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal memuat komentar");
+      }
+
+      setSubmissionComments(data.data || []);
+    } catch (error: any) {
+      console.error("Error fetching submission comments:", error);
+      toast.error(error.message || "Gagal memuat komentar diskusi");
+      setSubmissionComments([]);
+    } finally {
+      setLoadingSubmissionComments(false);
+    }
+  }
+
+  async function sendSubmissionComment() {
+    if (!assignmentSubmission?.id) return;
+
+    const message = submissionCommentDraft.trim();
+    if (!message) {
+      toast.error("Komentar tidak boleh kosong");
+      return;
+    }
+
+    try {
+      setSendingSubmissionComment(true);
+      const response = await fetch("/api/submission-comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          submissionId: assignmentSubmission.id,
+          message,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal mengirim komentar");
+      }
+
+      setSubmissionComments((prev) => [...prev, data.data]);
+      setSubmissionCommentDraft("");
+    } catch (error: any) {
+      console.error("Error sending submission comment:", error);
+      toast.error(error.message || "Gagal mengirim komentar");
+    } finally {
+      setSendingSubmissionComment(false);
     }
   }
 
@@ -742,6 +837,107 @@ export default function SiswaMateriDetailPage() {
                         >
                           Lihat file terkumpul
                         </a>
+
+                        {typeof assignmentSubmission.nilai_tugas ===
+                        "number" ? (
+                          <p className="mt-2">
+                            Nilai tugas: {assignmentSubmission.nilai_tugas}
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-amber-700">
+                            Nilai belum diberikan guru
+                          </p>
+                        )}
+
+                        <div className="mt-2 rounded-md border border-green-200 bg-white px-2 py-2 text-green-900">
+                          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-green-800">
+                            <MessageSquare size={14} />
+                            Diskusi Komentar
+                          </div>
+
+                          <div className="max-h-52 overflow-y-auto rounded-md border border-green-100 bg-green-50/60 px-2 py-2">
+                            {loadingSubmissionComments ? (
+                              <p className="text-xs text-green-700/80">
+                                Memuat komentar...
+                              </p>
+                            ) : submissionComments.length === 0 ? (
+                              <p className="text-xs text-green-700/80">
+                                Belum ada komentar. Kamu bisa mulai bertanya ke
+                                guru di sini.
+                              </p>
+                            ) : (
+                              <div className="space-y-1.5">
+                                {submissionComments.map((comment) => {
+                                  const isGuru = comment.sender_role === "guru";
+
+                                  return (
+                                    <div
+                                      key={comment.id}
+                                      className={`flex ${isGuru ? "justify-start" : "justify-end"}`}
+                                    >
+                                      <div
+                                        className={`max-w-[85%] rounded-2xl px-2.5 py-1.5 text-xs ${
+                                          isGuru
+                                            ? "bg-white border border-green-200 text-green-900"
+                                            : "bg-green-600 text-white"
+                                        }`}
+                                      >
+                                        <p className="text-[10px] opacity-80 mb-0.5">
+                                          {comment.sender_name ||
+                                            (isGuru ? "Guru" : "Saya")}
+                                        </p>
+                                        <p className="whitespace-pre-wrap">
+                                          {comment.message}
+                                        </p>
+                                        <p className="mt-0.5 text-[10px] opacity-70">
+                                          {new Date(
+                                            comment.created_at,
+                                          ).toLocaleString("id-ID")}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-2 space-y-2">
+                            <Textarea
+                              value={submissionCommentDraft}
+                              onChange={(e) =>
+                                setSubmissionCommentDraft(e.target.value)
+                              }
+                              placeholder="Tulis komentar atau pertanyaan ke guru..."
+                              maxLength={2000}
+                              className="min-h-20 bg-white"
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={sendSubmissionComment}
+                                disabled={
+                                  sendingSubmissionComment ||
+                                  submissionCommentDraft.trim().length === 0
+                                }
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                {sendingSubmissionComment
+                                  ? "Mengirim..."
+                                  : "Kirim Komentar"}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {(assignmentSubmission.komentar_guru || "").trim()
+                            .length > 0 ? (
+                            <p className="mt-2 text-[11px] text-green-700/80">
+                              Catatan lama guru:{" "}
+                              {assignmentSubmission.komentar_guru}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
                     )}
 

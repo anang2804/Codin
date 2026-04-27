@@ -12,6 +12,8 @@ type SubmissionRow = {
   mime_type: string;
   submitted_at: Date;
   updated_at: Date;
+  nilai_tugas: number | null;
+  komentar_guru: string | null;
 };
 
 function normalizeSubmissionRow(row: SubmissionRow | undefined | null) {
@@ -55,7 +57,9 @@ export async function GET(req: Request) {
         ukuran_file AS file_size,
         tipe_mime AS mime_type,
         dikumpulkan_pada AS submitted_at,
-        diperbarui_pada AS updated_at
+        diperbarui_pada AS updated_at,
+        nilai_tugas,
+        komentar_guru
       FROM materi_pengumpulan_tugas
       WHERE sub_bab_id = CAST(${subBabId} AS uuid)
         AND siswa_id = CAST(${user.id} AS uuid)
@@ -148,7 +152,9 @@ export async function POST(req: Request) {
         ukuran_file AS file_size,
         tipe_mime AS mime_type,
         dikumpulkan_pada AS submitted_at,
-        diperbarui_pada AS updated_at
+        diperbarui_pada AS updated_at,
+        nilai_tugas,
+        komentar_guru
       FROM materi_pengumpulan_tugas
       WHERE sub_bab_id = CAST(${sub_bab_id} AS uuid)
         AND siswa_id = CAST(${user.id} AS uuid)
