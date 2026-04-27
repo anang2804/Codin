@@ -86,6 +86,9 @@ export default function GuruNilaiPage() {
   const [selectedKelas, setSelectedKelas] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedSubBab, setExpandedSubBab] = useState<Set<string>>(new Set());
+  const [subBabSearchTerms, setSubBabSearchTerms] = useState<
+    Record<string, string>
+  >({});
   const [draftPenilaian, setDraftPenilaian] = useState<Record<string, string>>(
     {},
   );
@@ -458,6 +461,13 @@ export default function GuruNilaiPage() {
       }
       return next;
     });
+  };
+
+  const setSubBabSearchTerm = (key: string, value: string) => {
+    setSubBabSearchTerms((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   const onChangePenilaianDraft = (submissionId: string, value: string) => {
@@ -952,150 +962,224 @@ export default function GuruNilaiPage() {
                                             </button>
 
                                             {isSubBabOpen && (
-                                              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                                {subBab.items.map(
-                                                  (item, idx) => {
-                                                    const hasSubmission =
-                                                      !!item.id;
+                                              <div className="space-y-2">
+                                                <div className="relative">
+                                                  <Search
+                                                    size={14}
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-green-500 dark:text-green-400"
+                                                  />
+                                                  <Input
+                                                    value={
+                                                      subBabSearchTerms[
+                                                        subBabKey
+                                                      ] || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                      setSubBabSearchTerm(
+                                                        subBabKey,
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                    placeholder="Cari nama siswa di sub-bab ini..."
+                                                    className="h-9 pl-8"
+                                                  />
+                                                </div>
 
-                                                    return (
-                                                      <div
-                                                        key={
-                                                          item.id ||
-                                                          `${subBab.sub_bab_id}-pending-${idx}`
-                                                        }
-                                                        className="flex flex-col gap-3 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-3"
-                                                      >
-                                                        <div className="min-w-0">
+                                                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                                  {subBab.items
+                                                    .filter((item) => {
+                                                      const keyword = (
+                                                        subBabSearchTerms[
+                                                          subBabKey
+                                                        ] || ""
+                                                      )
+                                                        .trim()
+                                                        .toLowerCase();
+
+                                                      if (!keyword) {
+                                                        return true;
+                                                      }
+
+                                                      return (
+                                                        item.siswa_name || ""
+                                                      )
+                                                        .toLowerCase()
+                                                        .includes(keyword);
+                                                    })
+                                                    .map((item, idx) => {
+                                                      const hasSubmission =
+                                                        !!item.id;
+
+                                                      return (
+                                                        <div
+                                                          key={
+                                                            item.id ||
+                                                            `${subBab.sub_bab_id}-pending-${idx}`
+                                                          }
+                                                          className="flex flex-col gap-3 rounded-lg border border-green-100 dark:border-green-900/30 bg-green-50/70 dark:bg-green-900/10 px-3 py-3"
+                                                        >
+                                                          <div className="min-w-0">
+                                                            {hasSubmission ? (
+                                                              <>
+                                                                <p className="text-sm font-medium text-green-900 dark:text-green-200 truncate">
+                                                                  {item.siswa_name ||
+                                                                    "Tanpa Nama"}{" "}
+                                                                  •{" "}
+                                                                  {item.siswa_kelas ||
+                                                                    "-"}
+                                                                </p>
+                                                                <p className="text-xs text-green-700/80 dark:text-green-400/60 truncate">
+                                                                  {
+                                                                    item.file_name
+                                                                  }{" "}
+                                                                  (
+                                                                  {formatFileSize(
+                                                                    item.file_size,
+                                                                  )}
+                                                                  )
+                                                                </p>
+                                                              </>
+                                                            ) : (
+                                                              <>
+                                                                <p className="text-sm font-medium text-amber-800 dark:text-amber-300 truncate">
+                                                                  {item.siswa_name ||
+                                                                    "Tanpa Nama"}{" "}
+                                                                  •{" "}
+                                                                  {item.siswa_kelas ||
+                                                                    "-"}
+                                                                </p>
+                                                                <p className="text-xs text-amber-700/80 dark:text-amber-400/70 truncate">
+                                                                  Belum
+                                                                  mengumpulkan
+                                                                  tugas
+                                                                </p>
+                                                              </>
+                                                            )}
+                                                          </div>
+
                                                           {hasSubmission ? (
-                                                            <>
-                                                              <p className="text-sm font-medium text-green-900 dark:text-green-200 truncate">
-                                                                {item.siswa_name ||
-                                                                  "Tanpa Nama"}{" "}
-                                                                •{" "}
-                                                                {item.siswa_kelas ||
-                                                                  "-"}
-                                                              </p>
-                                                              <p className="text-xs text-green-700/80 dark:text-green-400/60 truncate">
-                                                                {item.file_name}{" "}
-                                                                (
-                                                                {formatFileSize(
-                                                                  item.file_size,
+                                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                              <div className="flex flex-wrap items-center gap-2 text-xs text-green-800 dark:text-green-300">
+                                                                {typeof item.nilai_tugas ===
+                                                                "number" ? (
+                                                                  <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-white dark:bg-input/50 px-2 py-0.5 font-medium">
+                                                                    Nilai:{" "}
+                                                                    {
+                                                                      item.nilai_tugas
+                                                                    }
+                                                                  </span>
+                                                                ) : (
+                                                                  <span className="inline-flex items-center rounded-full border border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-amber-700 dark:text-amber-300">
+                                                                    Belum
+                                                                    dinilai
+                                                                  </span>
                                                                 )}
-                                                                )
-                                                              </p>
-                                                            </>
+                                                              </div>
+
+                                                              <div className="flex flex-wrap items-center gap-2">
+                                                                {item.file_url ? (
+                                                                  <a
+                                                                    href={
+                                                                      item.file_url
+                                                                    }
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                  >
+                                                                    <Button
+                                                                      size="sm"
+                                                                      className="bg-green-600 hover:bg-green-700"
+                                                                    >
+                                                                      <FileDown
+                                                                        size={
+                                                                          14
+                                                                        }
+                                                                        className="mr-1.5"
+                                                                      />
+                                                                      Lihat File
+                                                                    </Button>
+                                                                  </a>
+                                                                ) : null}
+
+                                                                <Button
+                                                                  size="sm"
+                                                                  variant="outline"
+                                                                  onClick={() =>
+                                                                    setActiveNilaiId(
+                                                                      item.id,
+                                                                    )
+                                                                  }
+                                                                >
+                                                                  <BookOpen
+                                                                    size={14}
+                                                                    className="mr-1.5"
+                                                                  />
+                                                                  Nilai
+                                                                </Button>
+
+                                                                <Button
+                                                                  size="sm"
+                                                                  variant="outline"
+                                                                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                                                                  onClick={() =>
+                                                                    openKomentarDialog(
+                                                                      item.id!,
+                                                                    )
+                                                                  }
+                                                                >
+                                                                  {item.has_unread_komentar_siswa ? (
+                                                                    <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+                                                                  ) : null}
+                                                                  <MessageSquare
+                                                                    size={14}
+                                                                    className="mr-1.5"
+                                                                  />
+                                                                  Komentar
+                                                                </Button>
+                                                              </div>
+                                                            </div>
                                                           ) : (
-                                                            <>
-                                                              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 truncate">
-                                                                {item.siswa_name ||
-                                                                  "Tanpa Nama"}{" "}
-                                                                •{" "}
-                                                                {item.siswa_kelas ||
-                                                                  "-"}
-                                                              </p>
-                                                              <p className="text-xs text-amber-700/80 dark:text-amber-400/70 truncate">
-                                                                Belum
-                                                                mengumpulkan
-                                                                tugas
-                                                              </p>
-                                                            </>
+                                                            <div className="flex justify-end">
+                                                              <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled
+                                                              >
+                                                                Menunggu
+                                                                Pengumpulan
+                                                              </Button>
+                                                            </div>
                                                           )}
                                                         </div>
+                                                      );
+                                                    })}
 
-                                                        {hasSubmission ? (
-                                                          <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-green-800 dark:text-green-300">
-                                                              {typeof item.nilai_tugas ===
-                                                              "number" ? (
-                                                                <span className="inline-flex items-center rounded-full border border-green-200 dark:border-green-900/50 bg-white dark:bg-input/50 px-2 py-0.5 font-medium">
-                                                                  Nilai:{" "}
-                                                                  {
-                                                                    item.nilai_tugas
-                                                                  }
-                                                                </span>
-                                                              ) : (
-                                                                <span className="inline-flex items-center rounded-full border border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-amber-700 dark:text-amber-300">
-                                                                  Belum dinilai
-                                                                </span>
-                                                              )}
-                                                            </div>
+                                                  {subBab.items.filter(
+                                                    (item) => {
+                                                      const keyword = (
+                                                        subBabSearchTerms[
+                                                          subBabKey
+                                                        ] || ""
+                                                      )
+                                                        .trim()
+                                                        .toLowerCase();
 
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                              {item.file_url ? (
-                                                                <a
-                                                                  href={
-                                                                    item.file_url
-                                                                  }
-                                                                  target="_blank"
-                                                                  rel="noopener noreferrer"
-                                                                >
-                                                                  <Button
-                                                                    size="sm"
-                                                                    className="bg-green-600 hover:bg-green-700"
-                                                                  >
-                                                                    <FileDown
-                                                                      size={14}
-                                                                      className="mr-1.5"
-                                                                    />
-                                                                    Lihat File
-                                                                  </Button>
-                                                                </a>
-                                                              ) : null}
+                                                      if (!keyword) {
+                                                        return true;
+                                                      }
 
-                                                              <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                  setActiveNilaiId(
-                                                                    item.id,
-                                                                  )
-                                                                }
-                                                              >
-                                                                <BookOpen
-                                                                  size={14}
-                                                                  className="mr-1.5"
-                                                                />
-                                                                Nilai
-                                                              </Button>
-
-                                                              <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                className="border-orange-300 text-orange-700 hover:bg-orange-50"
-                                                                onClick={() =>
-                                                                  openKomentarDialog(
-                                                                    item.id!,
-                                                                  )
-                                                                }
-                                                              >
-                                                                {item.has_unread_komentar_siswa ? (
-                                                                  <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
-                                                                ) : null}
-                                                                <MessageSquare
-                                                                  size={14}
-                                                                  className="mr-1.5"
-                                                                />
-                                                                Komentar
-                                                              </Button>
-                                                            </div>
-                                                          </div>
-                                                        ) : (
-                                                          <div className="flex justify-end">
-                                                            <Button
-                                                              size="sm"
-                                                              variant="outline"
-                                                              disabled
-                                                            >
-                                                              Menunggu
-                                                              Pengumpulan
-                                                            </Button>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    );
-                                                  },
-                                                )}
+                                                      return (
+                                                        item.siswa_name || ""
+                                                      )
+                                                        .toLowerCase()
+                                                        .includes(keyword);
+                                                    },
+                                                  ).length === 0 ? (
+                                                    <div className="rounded-lg border border-dashed border-green-200 dark:border-green-900/50 bg-white/80 dark:bg-card/40 px-3 py-4 text-center text-xs text-green-700/70 dark:text-green-400/60">
+                                                      Tidak ada nama siswa yang
+                                                      cocok.
+                                                    </div>
+                                                  ) : null}
+                                                </div>
                                               </div>
                                             )}
                                           </>
