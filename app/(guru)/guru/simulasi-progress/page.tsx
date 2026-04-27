@@ -24,6 +24,14 @@ interface SimulasiProgress {
   slug: string;
   completed: boolean;
   completed_at: string | null;
+  attempt_count: number;
+  first_success_at: string | null;
+  success_attempt_no: number | null;
+  attempt_history: {
+    attempt_no: number;
+    result: "success" | "failed";
+    created_at: string;
+  }[];
 }
 
 interface SiswaProgress {
@@ -299,6 +307,10 @@ export default function SimulasiProgressPage() {
                   );
                   const completed = progress?.completed ?? false;
                   const completed_at = progress?.completed_at ?? null;
+                  const attemptCount = progress?.attempt_count ?? 0;
+                  const successAttemptNo = progress?.success_attempt_no ?? null;
+                  const firstSuccessAt = progress?.first_success_at ?? null;
+                  const history = progress?.attempt_history ?? [];
                   return (
                     <div
                       key={sim.id}
@@ -340,6 +352,44 @@ export default function SimulasiProgressPage() {
                               },
                             )}
                           </p>
+                        )}
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Percobaan: {attemptCount}
+                          {successAttemptNo
+                            ? ` • Berhasil di percobaan ke-${successAttemptNo}`
+                            : " • Belum berhasil"}
+                        </p>
+                        {firstSuccessAt && (
+                          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                            Berhasil pertama:{" "}
+                            {new Date(firstSuccessAt).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </p>
+                        )}
+                        {history.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {history.map((attempt) => (
+                              <span
+                                key={`${sim.id}-${attempt.attempt_no}`}
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                  attempt.result === "success"
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+                                    : "bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300"
+                                }`}
+                              >
+                                #{attempt.attempt_no}{" "}
+                                {attempt.result === "success"
+                                  ? "berhasil"
+                                  : "gagal"}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                       <span

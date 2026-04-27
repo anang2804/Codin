@@ -143,6 +143,7 @@ const FLOW_MAP = {
 };
 
 export default function TrafficDebugPage() {
+  const SIMULASI_SLUG = "traffic-debug";
   const router = useRouter();
   const [workspace, setWorkspace] = useState<Record<string, any>>({
     step_start: { ...SYMBOL_TYPES.TERMINATOR, label: "START" },
@@ -164,6 +165,23 @@ export default function TrafficDebugPage() {
 
   const [awaitingDecision, setAwaitingDecision] = useState(false);
   const decisionResolver = useRef<((value: string) => void) | null>(null);
+
+  const recordAttempt = async (result: "success" | "failed") => {
+    try {
+      await fetch("/api/siswa/simulasi/record-attempt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          simulasi_slug: SIMULASI_SLUG,
+          result,
+        }),
+      });
+    } catch (error) {
+      console.error("Error recording simulation attempt:", error);
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent, typeKey: string) => {
     if (isSimulating) {
@@ -228,6 +246,7 @@ export default function TrafficDebugPage() {
   };
 
   const triggerExplosion = (msg: string) => {
+    void recordAttempt("failed");
     setHardwareBroken(true);
     setSimulationStatus("error");
     setFeedback(`💥 KRITIS: ${msg}`);
@@ -309,6 +328,7 @@ export default function TrafficDebugPage() {
           setSimulationStatus("success");
           setCarAPosition(140);
           setFeedback("✅ BERHASIL! Alur logika dieksekusi dengan sempurna.");
+          void recordAttempt("success");
         } else {
           // Masuk ke Jalur TIDAK
           setActiveStep("no_out");
@@ -322,6 +342,7 @@ export default function TrafficDebugPage() {
           }
           await new Promise((r) => setTimeout(r, 1000));
           setFeedback("⚠️ Memilih jalur TIDAK: Lampu tetap merah.");
+          void recordAttempt("failed");
         }
       } else {
         await new Promise((r) => setTimeout(r, 800));

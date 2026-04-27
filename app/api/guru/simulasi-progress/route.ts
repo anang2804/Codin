@@ -95,12 +95,27 @@ export async function GET() {
     // Get all progress
     const { data: progressList, error: progressError } = await supabase
       .from("simulasi_progress")
-      .select("siswa_id, simulasi_id, completed, completed_at");
+      .select(
+        "siswa_id, simulasi_id, completed, completed_at, attempt_count, first_success_at, success_attempt_no",
+      );
 
     if (progressError) {
       console.error("Error fetching progress:", progressError);
       return NextResponse.json(
         { error: "Failed to fetch progress" },
+        { status: 500 },
+      );
+    }
+
+    const { data: attemptList, error: attemptError } = await supabase
+      .from("simulasi_attempts")
+      .select("siswa_id, simulasi_id, attempt_no, result, created_at")
+      .order("created_at", { ascending: true });
+
+    if (attemptError) {
+      console.error("Error fetching attempt history:", attemptError);
+      return NextResponse.json(
+        { error: "Failed to fetch attempt history" },
         { status: 500 },
       );
     }
@@ -114,7 +129,27 @@ export async function GET() {
       progressMap[p.siswa_id][p.simulasi_id] = {
         completed: p.completed,
         completed_at: p.completed_at,
+        attempt_count: p.attempt_count || 0,
+        first_success_at: p.first_success_at || null,
+        success_attempt_no: p.success_attempt_no || null,
       };
+    });
+
+    const attemptMap: Record<string, Record<string, any[]>> = {};
+    attemptList?.forEach((attempt) => {
+      if (!attemptMap[attempt.siswa_id]) {
+        attemptMap[attempt.siswa_id] = {};
+      }
+
+      if (!attemptMap[attempt.siswa_id][attempt.simulasi_id]) {
+        attemptMap[attempt.siswa_id][attempt.simulasi_id] = [];
+      }
+
+      attemptMap[attempt.siswa_id][attempt.simulasi_id].push({
+        attempt_no: attempt.attempt_no,
+        result: attempt.result,
+        created_at: attempt.created_at,
+      });
     });
 
     const siswaKelasX = (siswaList || []).filter((siswa) =>
@@ -132,6 +167,12 @@ export async function GET() {
         slug: sim.slug,
         completed: progressMap[siswa.id]?.[sim.id]?.completed || false,
         completed_at: progressMap[siswa.id]?.[sim.id]?.completed_at || null,
+        attempt_count: progressMap[siswa.id]?.[sim.id]?.attempt_count || 0,
+        first_success_at:
+          progressMap[siswa.id]?.[sim.id]?.first_success_at || null,
+        success_attempt_no:
+          progressMap[siswa.id]?.[sim.id]?.success_attempt_no || null,
+        attempt_history: attemptMap[siswa.id]?.[sim.id] || [],
       })),
     }));
 

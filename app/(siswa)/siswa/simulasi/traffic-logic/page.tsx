@@ -14,6 +14,8 @@ import {
   Zap,
   Lightbulb,
   Activity,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkCompletedButton from "@/components/MarkCompletedButton";
@@ -138,6 +140,7 @@ const FLOWCHART_STRUCTURE = {
 };
 
 export default function TrafficLogicPage() {
+  const SIMULASI_SLUG = "traffic-logic";
   const router = useRouter();
   const [workspace, setWorkspace] = useState<Record<string, any>>({});
   const [lightColor, setLightColor] = useState("red");
@@ -145,6 +148,9 @@ export default function TrafficLogicPage() {
   const [activeStep, setActiveStep] = useState<string | null>(null);
   const [simulationStatus, setSimulationStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
+  const [checkedSteps, setCheckedSteps] = useState<string[]>([]);
+  const [failedStep, setFailedStep] = useState<string | null>(null);
+  const [runningStep, setRunningStep] = useState<string | null>(null);
   const [draggedType, setDraggedType] = useState<string | null>(null);
   const [selectedSymbolType, setSelectedSymbolType] =
     useState<SymbolTypeKey | null>(null);
@@ -165,6 +171,23 @@ export default function TrafficLogicPage() {
       () => logEndRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
     );
+  };
+
+  const recordAttempt = async (result: "success" | "failed") => {
+    try {
+      await fetch("/api/siswa/simulasi/record-attempt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          simulasi_slug: SIMULASI_SLUG,
+          result,
+        }),
+      });
+    } catch (error) {
+      console.error("Error recording simulation attempt:", error);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, typeKey: string) => {
@@ -194,6 +217,9 @@ export default function TrafficLogicPage() {
     simRunIdRef.current += 1;
     setIsSimulating(false);
     setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
     setSimulationStatus("idle");
     setHardwareBroken(false);
     setCarAPosition(2);
@@ -229,6 +255,9 @@ export default function TrafficLogicPage() {
     simRunIdRef.current += 1;
     setIsSimulating(false);
     setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
     setSimulationStatus("idle");
     setHardwareBroken(false);
     setCarAPosition(2);
@@ -242,6 +271,9 @@ export default function TrafficLogicPage() {
     simRunIdRef.current += 1;
     setIsSimulating(false);
     setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
     setSimulationStatus("idle");
     setFeedback("");
     setCarAPosition(2);
@@ -252,7 +284,10 @@ export default function TrafficLogicPage() {
     setLogMessages([]);
   };
 
-  const triggerExplosion = (msg: string) => {
+  const triggerExplosion = (msg: string, stepId?: string) => {
+    void recordAttempt("failed");
+    setFailedStep(stepId || activeStep || null);
+    setRunningStep(null);
     setHardwareBroken(true);
     setSimulationStatus("error");
     setFeedback("Hmm... ada langkah yang perlu diperiksa.");
@@ -288,25 +323,18 @@ export default function TrafficLogicPage() {
     return { valid: true };
   };
 
+  const markStepChecked = (stepId: string) => {
+    setCheckedSteps((prev) =>
+      prev.includes(stepId) ? prev : [...prev, stepId],
+    );
+  };
+
   const runSimulation = async () => {
-    const totalSlots = Object.keys(FLOWCHART_STRUCTURE).length;
-    const filledSlots = Object.keys(workspace).length;
-
-    if (filledSlots < totalSlots) {
-      setLogMessages([
-        "Algoritma belum lengkap.",
-        "Sistem masih menunggu langkah berikutnya sebelum simulasi dapat dijalankan.",
-        "Lengkapi flowchart terlebih dahulu ya.",
-      ]);
-      setFeedback(
-        "Flowchart belum lengkap. Isi semua kotak yang masih kosong dulu ya.",
-      );
-      return;
-    }
-
     resetSim();
     setIsSimulating(true);
     setSimulationStatus("running");
+    setFailedStep(null);
+    setRunningStep(null);
     const runId = simRunIdRef.current;
     setLogMessages([
       "Baik, kita mulai menjalankan algoritmanya.",
@@ -314,55 +342,88 @@ export default function TrafficLogicPage() {
     ]);
 
     setActiveStep("s1");
+    setRunningStep("s1");
     await new Promise((r) => setTimeout(r, 600));
     if (simRunIdRef.current !== runId) return;
     addLog("Oke, titik awal ditemukan.");
     const checkStart = checkStepValidity("s1", "terminator");
     if (!checkStart.valid) {
-      triggerExplosion(checkStart.error || "");
+      triggerExplosion(checkStart.error || "", "s1");
       return;
     }
+    markStepChecked("s1");
+    setRunningStep(null);
+    await new Promise((r) => setTimeout(r, 220));
 
     setActiveStep("s2");
+    setRunningStep("s2");
     await new Promise((r) => setTimeout(r, 700));
     if (simRunIdRef.current !== runId) return;
     addLog("Sistem membaca warna lampu lalu lintas.");
     const checkInput = checkStepValidity("s2", "io");
     if (!checkInput.valid) {
-      triggerExplosion(checkInput.error || "");
+      triggerExplosion(checkInput.error || "", "s2");
       return;
     }
+    markStepChecked("s2");
+    setRunningStep(null);
+    await new Promise((r) => setTimeout(r, 220));
 
     setActiveStep("s4");
+    setRunningStep("s4");
     await new Promise((r) => setTimeout(r, 700));
     if (simRunIdRef.current !== runId) return;
     addLog("Sekarang sistem memeriksa kondisi warna lampu.");
     const checkDecision = checkStepValidity("s4", "decision");
     if (!checkDecision.valid) {
-      triggerExplosion(checkDecision.error || "");
+      triggerExplosion(checkDecision.error || "", "s4");
       return;
     }
+    markStepChecked("s4");
+    setRunningStep(null);
+    await new Promise((r) => setTimeout(r, 220));
 
     setActiveStep("s5a");
+    setRunningStep("s5a");
     await new Promise((r) => setTimeout(r, 700));
     if (simRunIdRef.current !== runId) return;
     addLog("Lampu merah terdeteksi.");
     addLog("Kendaraan harus berhenti terlebih dahulu.");
     const checkBranchYa = checkStepValidity("s5a", "io");
     if (!checkBranchYa.valid) {
-      triggerExplosion(checkBranchYa.error || "");
+      triggerExplosion(checkBranchYa.error || "", "s5a");
       return;
     }
+    markStepChecked("s5a");
+    setRunningStep(null);
+    await new Promise((r) => setTimeout(r, 220));
+
+    setActiveStep("s5b");
+    setRunningStep("s5b");
+    await new Promise((r) => setTimeout(r, 700));
+    if (simRunIdRef.current !== runId) return;
+    addLog("Sistem juga mengecek jalur TIDAK sebagai alur cadangan.");
+    const checkBranchTidak = checkStepValidity("s5b", "io");
+    if (!checkBranchTidak.valid) {
+      triggerExplosion(checkBranchTidak.error || "", "s5b");
+      return;
+    }
+    markStepChecked("s5b");
+    setRunningStep(null);
+    await new Promise((r) => setTimeout(r, 220));
 
     setActiveStep("s6");
+    setRunningStep("s6");
     await new Promise((r) => setTimeout(r, 700));
     if (simRunIdRef.current !== runId) return;
     addLog("Algoritma mencapai titik akhir.");
     const checkEnd = checkStepValidity("s6", "terminator");
     if (!checkEnd.valid) {
-      triggerExplosion(checkEnd.error || "");
+      triggerExplosion(checkEnd.error || "", "s6");
       return;
     }
+    markStepChecked("s6");
+    setRunningStep(null);
 
     executeVisualSim(runId);
   };
@@ -381,7 +442,9 @@ export default function TrafficLogicPage() {
         if (simRunIdRef.current !== runId) return;
         setCarAPosition(140);
         setSimulationStatus("success");
+        setRunningStep(null);
         setFeedback("Simulasi berhasil! Flowchart kamu sudah benar.");
+        void recordAttempt("success");
         addLog("Simulasi selesai dijalankan.");
       }, 400);
       setTimeout(() => {
@@ -392,7 +455,9 @@ export default function TrafficLogicPage() {
 
   const renderSlot = (slotData: any) => {
     const isCurrent = activeStep === slotData.id;
-    const isError = isCurrent && simulationStatus === "error";
+    const isRunning = runningStep === slotData.id;
+    const isChecked = checkedSteps.includes(slotData.id);
+    const isError = failedStep === slotData.id;
 
     return (
       <div
@@ -404,17 +469,29 @@ export default function TrafficLogicPage() {
               ? "bg-card border-border shadow-md"
               : "bg-card/70 border-dashed border-border hover:bg-primary/10 hover:border-primary/40"
           }
+          ${isCurrent ? "ring-4 ring-sky-500/20 border-sky-400 shadow-lg" : ""}
           ${
-            isCurrent ? "ring-4 ring-blue-500/20 border-blue-400 shadow-lg" : ""
+            isChecked
+              ? "ring-2 ring-emerald-400 border-emerald-500 bg-emerald-100/80"
+              : ""
           }
-          ${isError ? "ring-2 ring-red-400/50 border-red-400 bg-red-50" : ""}
+          ${isRunning ? "ring-2 ring-sky-300 border-sky-400 bg-sky-50/70" : ""}
+          ${isError ? "ring-2 ring-red-500 border-red-500 bg-red-100" : ""}
         `}
       >
         {workspace[slotData.id] ? (
           <motion.div
             drag="x"
             dragConstraints={{ left: -20, right: 20 }}
-            className="flex items-center gap-2 w-full px-3 cursor-move h-full overflow-hidden"
+            className={`flex items-center gap-2 w-full px-3 cursor-move h-full overflow-hidden ${
+              isChecked
+                ? "bg-emerald-50"
+                : isRunning
+                  ? "bg-sky-50"
+                  : isError
+                    ? "bg-red-50"
+                    : ""
+            }`}
           >
             <div
               className={`${workspace[slotData.id].shape} ${workspace[slotData.id].color} shrink-0 shadow-sm pointer-events-none`}
@@ -433,6 +510,29 @@ export default function TrafficLogicPage() {
             >
               <Trash2 size={13} />
             </button>
+            <AnimatePresence mode="wait">
+              {isError ? (
+                <motion.span
+                  key="error"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  className="ml-1 shrink-0 text-red-600"
+                >
+                  <XCircle size={14} fill="currentColor" />
+                </motion.span>
+              ) : isChecked ? (
+                <motion.span
+                  key="checked"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  className="ml-1 shrink-0 text-emerald-600"
+                >
+                  <CheckCircle2 size={14} fill="currentColor" />
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
           </motion.div>
         ) : (
           <div className="flex items-center justify-center w-full pointer-events-none px-3 text-center overflow-hidden">
@@ -671,6 +771,10 @@ export default function TrafficLogicPage() {
               ></div>
 
               <div className="relative flex flex-col items-center gap-1">
+                <div className="mb-2 flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/80 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                  <CheckCircle2 size={12} className="text-emerald-600" />
+                  Validasi langkah: {checkedSteps.length}/6
+                </div>
                 <div>{renderSlot(FLOWCHART_STRUCTURE.start)}</div>
                 <ArrowDown className="text-muted-foreground/60" size={14} />
 

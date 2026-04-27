@@ -17,6 +17,8 @@ import {
   Activity,
   Lightbulb,
   Terminal,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkCompletedButton from "@/components/MarkCompletedButton";
@@ -135,12 +137,16 @@ const HARD_STRUCTURE = {
 };
 
 export default function TrafficExpertPage() {
+  const SIMULASI_SLUG = "traffic-expert";
   const router = useRouter();
   const [workspace, setWorkspace] = useState<Record<string, any>>({});
   const [lightColor, setLightColor] = useState("red");
   const [ambulanceActive, setAmbulanceActive] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [runningStep, setRunningStep] = useState<string | null>(null);
+  const [checkedSteps, setCheckedSteps] = useState<string[]>([]);
+  const [failedStep, setFailedStep] = useState<string | null>(null);
   const [simulationStatus, setSimulationStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
   const [draggedType, setDraggedType] = useState<string | null>(null);
@@ -156,6 +162,23 @@ export default function TrafficExpertPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [awaitingDecision, setAwaitingDecision] = useState<string | null>(null);
   const decisionResolver = useRef<((value: string) => void) | null>(null);
+
+  const recordAttempt = async (result: "success" | "failed") => {
+    try {
+      await fetch("/api/siswa/simulasi/record-attempt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          simulasi_slug: SIMULASI_SLUG,
+          result,
+        }),
+      });
+    } catch (error) {
+      console.error("Error recording simulation attempt:", error);
+    }
+  };
 
   // Animasi Arus Mobil C (Jalan terus jika A&B Lampu Merah)
   useEffect(() => {
@@ -192,6 +215,11 @@ export default function TrafficExpertPage() {
       ...prev,
       [slotId]: { ...SYMBOL_TYPES[selectedType] },
     }));
+    setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
+    setSimulationStatus("idle");
     setDraggedType(null);
   };
 
@@ -218,11 +246,19 @@ export default function TrafficExpertPage() {
       delete newWs[slotId];
       return newWs;
     });
+    setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
+    setSimulationStatus("idle");
   };
 
   const resetSim = () => {
     setIsSimulating(false);
     setActiveStep(null);
+    setRunningStep(null);
+    setCheckedSteps([]);
+    setFailedStep(null);
     setSimulationStatus("idle");
     setFeedback("");
     setCarAPosition(2);
@@ -235,10 +271,19 @@ export default function TrafficExpertPage() {
     setIsScanning(false);
   };
 
-  const triggerExplosion = (msg: string) => {
+  const triggerExplosion = (msg: string, stepId?: string) => {
+    void recordAttempt("failed");
+    setFailedStep(stepId || activeStep || null);
+    setRunningStep(null);
     setHardwareBroken(true);
     setSimulationStatus("error");
     setFeedback(`💥 KRITIS: ${msg}`);
+  };
+
+  const markStepChecked = (stepId: string) => {
+    setCheckedSteps((prev) =>
+      prev.includes(stepId) ? prev : [...prev, stepId],
+    );
   };
 
   const checkValidity = (id: string, expectedGroup: string) => {
@@ -285,6 +330,7 @@ export default function TrafficExpertPage() {
     ];
     const missing = requiredIds.filter((id) => !workspace[id]);
     if (missing.length > 0) {
+      void recordAttempt("failed");
       setFeedback(
         "⚠️ Kanvas belum lengkap! Pasangkan semua simbol termasuk START dan END tunggal.",
       );
@@ -293,17 +339,23 @@ export default function TrafficExpertPage() {
 
     setIsSimulating(true);
     setSimulationStatus("running");
+    setFailedStep(null);
+    setRunningStep(null);
     setFeedback("Sistem memulai sinkronisasi sensor prioritas...");
 
     // 1. Alur Atas
     for (const step of HARD_STRUCTURE.top) {
       setActiveStep(step.id);
+      setRunningStep(step.id);
       const check = checkValidity(step.id, step.group);
       if (!check.valid) {
         await new Promise((r) => setTimeout(r, 600));
-        triggerExplosion(check.error || "Terjadi kesalahan!");
+        triggerExplosion(check.error || "Terjadi kesalahan!", step.id);
         return;
       }
+      markStepChecked(step.id);
+      setRunningStep(null);
+      await new Promise((r) => setTimeout(r, 200));
 
       if (step.id === "s3") {
         setFeedback("🔍 SENSOR: Mencari frekuensi sirine ambulans...");
@@ -319,23 +371,33 @@ export default function TrafficExpertPage() {
             "🚨 ALERT: Ambulans terdeteksi! Semua kendaraan berhenti di garis stop.",
           );
           setActiveStep("s4ya");
+          setRunningStep("s4ya");
           const checkY = checkValidity("s4ya", "process");
           if (!checkY.valid) {
             await new Promise((r) => setTimeout(r, 600));
-            triggerExplosion(checkY.error || "Kesalahan jalur YA!");
+            triggerExplosion(checkY.error || "Kesalahan jalur YA!", "s4ya");
             return;
           }
+          markStepChecked("s4ya");
+          setRunningStep(null);
           await new Promise((r) => setTimeout(r, 2000));
         } else {
           setFeedback("ℹ️ Status: Aman. Memeriksa sensor lampu lalu lintas...");
           for (const nStep of HARD_STRUCTURE.branchAmbTidak.header) {
             setActiveStep(nStep.id);
+            setRunningStep(nStep.id);
             const checkN = checkValidity(nStep.id, nStep.group);
             if (!checkN.valid) {
               await new Promise((r) => setTimeout(r, 600));
-              triggerExplosion(checkN.error || "Kesalahan jalur TIDAK!");
+              triggerExplosion(
+                checkN.error || "Kesalahan jalur TIDAK!",
+                nStep.id,
+              );
               return;
             }
+            markStepChecked(nStep.id);
+            setRunningStep(null);
+            await new Promise((r) => setTimeout(r, 200));
 
             if (nStep.id === "s5no") {
               setAwaitingDecision("LIGHT");
@@ -349,12 +411,15 @@ export default function TrafficExpertPage() {
                   "Lampu Merah: Mobil A & B Berhenti. Mobil C Vertikal melaju.",
                 );
                 setActiveStep("s6ya");
+                setRunningStep("s6ya");
                 const checkR = checkValidity("s6ya", "process");
                 if (!checkR.valid) {
                   await new Promise((r) => setTimeout(r, 600));
-                  triggerExplosion(checkR.error || "Kesalahan proses!");
+                  triggerExplosion(checkR.error || "Kesalahan proses!", "s6ya");
                   return;
                 }
+                markStepChecked("s6ya");
+                setRunningStep(null);
                 await new Promise((r) => setTimeout(r, 2000));
               } else {
                 setLightColor("green");
@@ -362,12 +427,15 @@ export default function TrafficExpertPage() {
                   "Lampu Hijau: Mobil A & B melaju. Mobil C Berhenti.",
                 );
                 setActiveStep("s6no");
+                setRunningStep("s6no");
                 const checkG = checkValidity("s6no", "process");
                 if (!checkG.valid) {
                   await new Promise((r) => setTimeout(r, 600));
-                  triggerExplosion(checkG.error || "Kesalahan proses!");
+                  triggerExplosion(checkG.error || "Kesalahan proses!", "s6no");
                   return;
                 }
+                markStepChecked("s6no");
+                setRunningStep(null);
                 setCarAPosition(140);
                 setCarBPosition(140);
                 await new Promise((r) => setTimeout(r, 2000));
@@ -382,25 +450,32 @@ export default function TrafficExpertPage() {
     }
 
     setActiveStep("s_end");
+    setRunningStep("s_end");
     const finalCheck = checkValidity("s_end", "terminator");
     if (!finalCheck.valid) {
       await new Promise((r) => setTimeout(r, 600));
-      triggerExplosion(finalCheck.error || "Kesalahan END!");
+      triggerExplosion(finalCheck.error || "Kesalahan END!", "s_end");
       return;
     }
+    markStepChecked("s_end");
+    setRunningStep(null);
 
     await new Promise((r) => setTimeout(r, 800));
     setSimulationStatus("success");
     setFeedback(
       "✅ BERHASIL: Seluruh alur logika dan pergerakan kendaraan sudah sinkron.",
     );
+    void recordAttempt("success");
     setActiveStep(null);
+    setRunningStep(null);
   };
 
   const renderSlot = (slotData: any, customWidth = "w-full") => {
     const isPlaced = workspace[slotData.id];
     const isCurrent = activeStep === slotData.id;
-    const isError = isCurrent && simulationStatus === "error";
+    const isRunning = runningStep === slotData.id;
+    const isChecked = checkedSteps.includes(slotData.id);
+    const isError = failedStep === slotData.id;
 
     return (
       <div
@@ -412,10 +487,10 @@ export default function TrafficExpertPage() {
               ? "bg-card border-border shadow-sm"
               : "bg-muted/20 border-dashed border-border hover:bg-primary/10"
           }
-          ${
-            isCurrent ? "ring-2 ring-blue-500/30 border-blue-400 shadow-lg" : ""
-          }
-          ${isError ? "ring-red-500 bg-red-50 border-red-500 shadow-red-100" : ""}
+          ${isCurrent ? "ring-2 ring-sky-500/30 border-sky-400 shadow-lg" : ""}
+          ${isRunning ? "ring-2 ring-sky-300 border-sky-400 bg-sky-50/70" : ""}
+          ${isChecked ? "ring-2 ring-emerald-400 border-emerald-500 bg-emerald-100/80" : ""}
+          ${isError ? "ring-2 ring-red-500 border-red-500 bg-red-100 shadow-red-100" : ""}
         `}
       >
         {isPlaced ? (
@@ -438,6 +513,29 @@ export default function TrafficExpertPage() {
                 <Trash2 size={12} />
               </button>
             )}
+            <AnimatePresence mode="wait">
+              {isError ? (
+                <motion.span
+                  key="error"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  className="ml-1 shrink-0 text-red-600"
+                >
+                  <XCircle size={13} fill="currentColor" />
+                </motion.span>
+              ) : isChecked ? (
+                <motion.span
+                  key="checked"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  className="ml-1 shrink-0 text-emerald-600"
+                >
+                  <CheckCircle2 size={13} fill="currentColor" />
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="w-full text-center px-1.5 overflow-hidden">
@@ -677,6 +775,10 @@ export default function TrafficExpertPage() {
 
           <div className="w-full flex-1 min-h-0 overflow-auto flex items-start justify-center z-20">
             <div className="w-full max-w-[600px] flex flex-col items-center scale-[0.85] origin-top font-black">
+              <div className="mb-2 flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/80 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                <CheckCircle2 size={12} className="text-emerald-600" />
+                Validasi langkah: {checkedSteps.length}
+              </div>
               <div className="w-36">{renderSlot(HARD_STRUCTURE.top[0])}</div>
               <ArrowDown className="text-muted-foreground/60 my-1" size={16} />
               <div className="w-48">{renderSlot(HARD_STRUCTURE.top[1])}</div>
