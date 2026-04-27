@@ -24,84 +24,98 @@ import { toast } from "sonner";
 
 // ================== KONSTANTA DAN SOLUSI ==================
 
-const EXPECTED_SOLUTION = "buah1 + buah2;" as const;
+const TYPE1_PLACEHOLDER = "[TYPE1]";
+const TYPE2_PLACEHOLDER = "[TYPE2]";
+const CHOICE_PLACEHOLDER = "_____";
 
-const INITIAL_TEMPLATE = "buah1 ___ buah2;" as const;
+const EXPECTED_SOLUTION = [
+  "let daftarBelanja = [",
+  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 }',
+  "]; // tipe data: Array",
+  "",
+  "let totalHarga = 30000; // tipe data: Number",
+].join("\n");
 
-const CHOICE_PLACEHOLDER = "___";
+const INITIAL_TEMPLATE = [
+  "let daftarBelanja = [",
+  '  { nama: "Nasi Goreng", harga: 15000, jumlah: 2 }',
+  `]; // tipe data: ${TYPE1_PLACEHOLDER}`,
+  "",
+  `let totalHarga = 30000; // tipe data: ${TYPE2_PLACEHOLDER}`,
+].join("\n");
 
-type CommandChoice = "+" | "-" | "*" | "/" | "%";
+type TypeChoice = "Number" | "String" | "Boolean" | "Array" | "Object";
 
 const COMMAND_DETAILS = {
-  PLUS: {
-    title: "TAMBAH (+)",
-    desc: "Operator penjumlahan digunakan untuk menjumlahkan dua nilai atau variabel.",
-    icon: <Calculator className="text-emerald-600" size={20} />,
+  NUMBER: {
+    title: "NUMBER",
+    desc: "Tipe data Number digunakan untuk menyimpan nilai angka.",
+    icon: <Database className="text-emerald-600" size={20} />,
     color: "bg-emerald-50 border-emerald-100",
   },
-  MINUS: {
-    title: "KURANG (-)",
-    desc: "Operator pengurangan digunakan untuk mengurangi satu nilai dari nilai lainnya.",
-    icon: <Calculator className="text-red-600" size={20} />,
-    color: "bg-red-50 border-red-100",
-  },
-  MULTIPLY: {
-    title: "KALI (*)",
-    desc: "Operator perkalian digunakan untuk mengalikan dua nilai atau variabel.",
-    icon: <Calculator className="text-amber-600" size={20} />,
+  STRING: {
+    title: "STRING",
+    desc: "Tipe data String digunakan untuk menyimpan teks.",
+    icon: <BookOpen className="text-amber-600" size={20} />,
     color: "bg-amber-50 border-amber-100",
   },
-  DIVIDE: {
-    title: "BAGI (/)",
-    desc: "Operator pembagian digunakan untuk membagi satu nilai dengan nilai lainnya.",
-    icon: <Calculator className="text-sky-600" size={20} />,
+  BOOLEAN: {
+    title: "BOOLEAN",
+    desc: "Tipe data Boolean hanya memiliki nilai true atau false.",
+    icon: <Flag className="text-violet-600" size={20} />,
+    color: "bg-violet-50 border-violet-100",
+  },
+  ARRAY: {
+    title: "ARRAY",
+    desc: "Tipe data Array digunakan untuk daftar nilai.",
+    icon: <Braces className="text-sky-600" size={20} />,
     color: "bg-sky-50 border-sky-100",
   },
-  MODULO: {
-    title: "SISA BAGI (%)",
-    desc: "Operator modulo digunakan untuk mendapatkan sisa pembagian dari dua nilai.",
-    icon: <Calculator className="text-violet-600" size={20} />,
-    color: "bg-violet-50 border-violet-100",
+  OBJECT: {
+    title: "OBJECT",
+    desc: "Tipe data Object digunakan untuk pasangan key dan value.",
+    icon: <Utensils className="text-red-600" size={20} />,
+    color: "bg-red-50 border-red-100",
   },
   DEFAULT: {
     title: "SIAP MENULIS",
-    desc: "Klik bagian kosong (___) lalu pilih operator: +, -, *, /, atau %. Teks abu-abu adalah ghost text panduan.",
+    desc: "Klik bagian kosong (_____) lalu pilih tipe data yang sesuai untuk tiap baris.",
     icon: <Monitor className="text-muted-foreground" size={20} />,
     color: "bg-slate-50 border-slate-200",
   },
 };
 
 const TYPE_OPTIONS: Array<{
-  type: CommandChoice;
+  type: TypeChoice;
   label: string;
   className: string;
 }> = [
   {
-    type: "+",
-    label: "+ TAMBAH",
+    type: "Number",
+    label: "Number",
     className:
       "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
   },
   {
-    type: "-",
-    label: "- KURANG",
-    className: "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
-  },
-  {
-    type: "*",
-    label: "* KALI",
+    type: "String",
+    label: "String",
     className: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
   },
   {
-    type: "/",
-    label: "/ BAGI",
+    type: "Boolean",
+    label: "Boolean",
+    className:
+      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
+  },
+  {
+    type: "Array",
+    label: "Array",
     className: "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100",
   },
   {
-    type: "%",
-    label: "% SISA",
-    className:
-      "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100",
+    type: "Object",
+    label: "Object",
+    className: "border-red-300 bg-red-50 text-red-700 hover:bg-red-100",
   },
 ];
 
@@ -113,9 +127,18 @@ interface FoodItem {
   emoji: string;
 }
 
+const KANTIN_ITEM: FoodItem = {
+  name: "Nasi Goreng",
+  price: 15000,
+  emoji: "🍛",
+};
+
+const KANTIN_ITEM_QUANTITY = 2;
+
 type SimulationState = {
   food: FoodItem | null;
   drink: FoodItem | null;
+  itemQuantity: number;
   isCalculating: boolean;
   receiptPrinted: boolean;
   totalPrice: number;
@@ -129,8 +152,13 @@ type SimulationState = {
 const SIMULASI_SLUG = "kasir-kantin";
 
 export default function SimulasiKasirKantin() {
-  const [selectedOperator, setSelectedOperator] =
-    useState<CommandChoice | null>(null);
+  const [selectedTypes, setSelectedTypes] = useState<{
+    type1: TypeChoice | null;
+    type2: TypeChoice | null;
+  }>({
+    type1: null,
+    type2: null,
+  });
   const [openSelectorLine, setOpenSelectorLine] = useState<number | null>(null);
   const [code, setCode] = useState(INITIAL_TEMPLATE as string);
   const [isRunning, setIsRunning] = useState(false);
@@ -146,6 +174,7 @@ export default function SimulasiKasirKantin() {
   const [simState, setSimState] = useState<SimulationState>({
     food: null,
     drink: null,
+    itemQuantity: 0,
     isCalculating: false,
     receiptPrinted: false,
     totalPrice: 0,
@@ -158,15 +187,23 @@ export default function SimulasiKasirKantin() {
   const simDataRef = useRef<SimulationState>(simState);
 
   const linesArray = code.split("\n");
-  const totalDisplayLines = 1;
+  const totalDisplayLines = linesArray.length;
+
+  const selectedTypeOnActiveLine =
+    activeLine === 2
+      ? selectedTypes.type1
+      : activeLine === 4
+        ? selectedTypes.type2
+        : null;
 
   const currentDesc = (() => {
-    if (activeLine === -1 || !selectedOperator) return COMMAND_DETAILS.DEFAULT;
-    if (selectedOperator === "+") return COMMAND_DETAILS.PLUS;
-    if (selectedOperator === "-") return COMMAND_DETAILS.MINUS;
-    if (selectedOperator === "*") return COMMAND_DETAILS.MULTIPLY;
-    if (selectedOperator === "/") return COMMAND_DETAILS.DIVIDE;
-    if (selectedOperator === "%") return COMMAND_DETAILS.MODULO;
+    if (activeLine === -1 || !selectedTypeOnActiveLine)
+      return COMMAND_DETAILS.DEFAULT;
+    if (selectedTypeOnActiveLine === "Number") return COMMAND_DETAILS.NUMBER;
+    if (selectedTypeOnActiveLine === "String") return COMMAND_DETAILS.STRING;
+    if (selectedTypeOnActiveLine === "Boolean") return COMMAND_DETAILS.BOOLEAN;
+    if (selectedTypeOnActiveLine === "Array") return COMMAND_DETAILS.ARRAY;
+    if (selectedTypeOnActiveLine === "Object") return COMMAND_DETAILS.OBJECT;
     return COMMAND_DETAILS.DEFAULT;
   })();
 
@@ -178,75 +215,148 @@ export default function SimulasiKasirKantin() {
     : latestLog;
   const activeLineNote = (() => {
     if (activeLine === 0) {
-      return `Pertemuan dua buah: buah1 ___ buah2. Gunakan operator yang sesuai untuk menggabungkan nilai dari kedua buah tersebut.`;
+      return "Baris 1: sistem membaca deklarasi daftarBelanja.";
+    }
+    if (activeLine === 1) {
+      return "Baris 2: item Nasi Goreng diproses beserta harga dan jumlah.";
+    }
+    if (activeLine === 2) {
+      return "Baris daftarBelanja menyimpan sekumpulan item belanja, jadi gunakan tipe data yang sesuai untuk daftar.";
+    }
+    if (activeLine === 4) {
+      return "Baris totalHarga menyimpan nilai angka hasil perhitungan total.";
     }
     return null;
   })();
   const showWrongTypeVisual = errorLine !== -1;
 
   const getLineText = (): string => {
-    const command = selectedOperator ?? CHOICE_PLACEHOLDER;
-    return (INITIAL_TEMPLATE as string).replace(CHOICE_PLACEHOLDER, command);
+    return (INITIAL_TEMPLATE as string)
+      .replace(TYPE1_PLACEHOLDER, selectedTypes.type1 ?? CHOICE_PLACEHOLDER)
+      .replace(TYPE2_PLACEHOLDER, selectedTypes.type2 ?? CHOICE_PLACEHOLDER);
   };
 
-  const handleSelectOperator = (operator: CommandChoice) => {
+  const handleSelectType = (type: TypeChoice) => {
     if (isRunning) return;
-    setSelectedOperator(operator);
+
+    if (openSelectorLine === 2) {
+      setSelectedTypes((prev) => ({ ...prev, type1: type }));
+      setActiveLine(2);
+    } else if (openSelectorLine === 4) {
+      setSelectedTypes((prev) => ({ ...prev, type2: type }));
+      setActiveLine(4);
+    }
+
     setOpenSelectorLine(null);
-    setActiveLine(0);
   };
 
   useEffect(() => {
     const newCode = getLineText();
     setCode(newCode);
-  }, [selectedOperator]);
+  }, [selectedTypes]);
 
-  const renderCodeLine = () => {
-    const selected = selectedOperator ?? CHOICE_PLACEHOLDER;
-    const isEmptyChoice = selected === CHOICE_PLACEHOLDER;
-    const operatorColor =
-      selected === "+"
-        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-        : selected === "-"
-          ? "border-red-300 bg-red-50 text-red-700"
-          : selected === "*"
-            ? "border-amber-300 bg-amber-50 text-amber-700"
-            : selected === "/"
-              ? "border-sky-300 bg-sky-50 text-sky-700"
-              : selected === "%"
-                ? "border-violet-300 bg-violet-50 text-violet-700"
-                : "text-slate-400";
+  const getTypeBadgeColor = (type: TypeChoice | null) => {
+    if (type === "Number") {
+      return "border-emerald-300 bg-emerald-50 text-emerald-700";
+    }
+    if (type === "String") {
+      return "border-amber-300 bg-amber-50 text-amber-700";
+    }
+    if (type === "Boolean") {
+      return "border-violet-300 bg-violet-50 text-violet-700";
+    }
+    if (type === "Array") {
+      return "border-sky-300 bg-sky-50 text-sky-700";
+    }
+    if (type === "Object") {
+      return "border-red-300 bg-red-50 text-red-700";
+    }
+    return "text-slate-400";
+  };
 
-    const choiceButton = (
-      <button
-        type="button"
-        disabled={isRunning}
-        onClick={() => {
-          setOpenSelectorLine(0);
-          setActiveLine(0);
-        }}
-        className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] leading-none font-semibold transition-all ${
-          isRunning
-            ? "cursor-not-allowed opacity-80"
-            : isEmptyChoice
-              ? "cursor-pointer hover:text-slate-500"
-              : "cursor-pointer hover:bg-opacity-80"
-        } ${operatorColor}`}
-      >
-        {selected}
-      </button>
-    );
+  const renderCodeLine = (line: string, lineIndex: number) => {
+    const renderChoiceButton = (
+      targetLine: 2 | 4,
+      selected: TypeChoice | null,
+    ) => {
+      const isEmptyChoice = !selected;
 
-    return (
-      <>
-        <span className="text-blue-700">buah1</span>
-        <span className="text-slate-700"> </span>
-        {choiceButton}
-        <span className="text-slate-700"> </span>
-        <span className="text-blue-700">buah2</span>
-        <span className="text-slate-700">;</span>
-      </>
-    );
+      return (
+        <button
+          type="button"
+          disabled={isRunning}
+          onClick={() => {
+            setOpenSelectorLine(targetLine);
+            setActiveLine(targetLine);
+          }}
+          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] leading-none font-semibold transition-all ${
+            isRunning
+              ? "cursor-not-allowed opacity-80"
+              : isEmptyChoice
+                ? "cursor-pointer hover:text-slate-500"
+                : "cursor-pointer hover:bg-opacity-80"
+          } ${getTypeBadgeColor(selected)}`}
+        >
+          {selected ?? CHOICE_PLACEHOLDER}
+        </button>
+      );
+    };
+
+    if (lineIndex === 0) {
+      return (
+        <>
+          <span className="text-violet-700">let</span>
+          <span className="text-slate-700"> </span>
+          <span className="text-blue-700">daftarBelanja</span>
+          <span className="text-slate-700"> = [</span>
+        </>
+      );
+    }
+
+    if (lineIndex === 1) {
+      return (
+        <>
+          <span className="text-slate-700"> {"{"} </span>
+          <span className="text-blue-700">nama</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-amber-700">"Nasi Goreng"</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">harga</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-emerald-700">15000</span>
+          <span className="text-slate-700">, </span>
+          <span className="text-blue-700">jumlah</span>
+          <span className="text-slate-700">: </span>
+          <span className="text-emerald-700">2</span>
+          <span className="text-slate-700"> {"}"}</span>
+        </>
+      );
+    }
+
+    if (lineIndex === 2) {
+      return (
+        <>
+          <span className="text-slate-700">]; // tipe data: </span>
+          {renderChoiceButton(2, selectedTypes.type1)}
+        </>
+      );
+    }
+
+    if (lineIndex === 4) {
+      return (
+        <>
+          <span className="text-violet-700">let</span>
+          <span className="text-slate-700"> </span>
+          <span className="text-blue-700">totalHarga</span>
+          <span className="text-slate-700"> = </span>
+          <span className="text-emerald-700">30000</span>
+          <span className="text-slate-700">; // tipe data: </span>
+          {renderChoiceButton(4, selectedTypes.type2)}
+        </>
+      );
+    }
+
+    return <span className="text-slate-700">{line}</span>;
   };
 
   useEffect(() => {
@@ -321,7 +431,10 @@ export default function SimulasiKasirKantin() {
   };
 
   const resetSim = () => {
-    setSelectedOperator(null);
+    setSelectedTypes({
+      type1: null,
+      type2: null,
+    });
     setOpenSelectorLine(null);
     setCode(INITIAL_TEMPLATE as string);
     setActiveLine(-1);
@@ -333,6 +446,7 @@ export default function SimulasiKasirKantin() {
     setSimState({
       food: null,
       drink: null,
+      itemQuantity: 0,
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
@@ -343,6 +457,7 @@ export default function SimulasiKasirKantin() {
     simDataRef.current = {
       food: null,
       drink: null,
+      itemQuantity: 0,
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
@@ -360,51 +475,92 @@ export default function SimulasiKasirKantin() {
   const generateEducationalFeedback = (userLine: string): string => {
     const normalized = normalizeCode(userLine);
 
-    if (normalized === "" || normalized.includes("_")) {
-      return `Baris belum diisi.\n\nBagian ini masih kosong dan perlu dilengkapi dengan operator yang sesuai.\n\nPetunjuk: Pilih operator yang tepat untuk menggabungkan buah1 dan buah2: +, -, *, /, atau %`;
-    }
-
     if (
-      !normalized.includes("+") &&
-      !normalized.includes("-") &&
-      !normalized.includes("*") &&
-      !normalized.includes("/") &&
-      !normalized.includes("%")
+      normalized === "" ||
+      normalized.includes("_") ||
+      normalized.includes("[type1]") ||
+      normalized.includes("[type2]")
     ) {
-      return `Operator tidak ditemukan.\n\nBagian yang dipilih belum mengandung operator yang valid.\n\nPetunjuk: Gunakan salah satu operator: +, -, *, /, atau %`;
+      return "Baris belum lengkap.\n\nMasih ada tipe data yang belum dipilih.\n\nPetunjuk: daftarBelanja bertipe Array dan totalHarga bertipe Number.";
     }
 
-    return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali operator yang dipilih.";
+    if (!normalized.includes("array") || !normalized.includes("number")) {
+      return "Tipe data belum sesuai.\n\nPeriksa kembali tipe data pada daftarBelanja dan totalHarga.";
+    }
+
+    return "Ada yang kurang sesuai pada baris ini. Coba periksa kembali pilihan tipe data.";
   };
 
   // ================== EKSEKUSI ALGORITMA ==================
 
   const executeStep = async (): Promise<boolean> => {
-    setActiveLine(0);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
     const userLine = code;
     const expectedLine = EXPECTED_SOLUTION as string;
 
-    const normalizedUser = normalizeCode(userLine);
-    const normalizedExpected = normalizeCode(expectedLine);
+    const normalizedUserLines = userLine.split("\n").map(normalizeCode);
+    const normalizedExpectedLines = expectedLine.split("\n").map(normalizeCode);
 
-    if (normalizedUser !== normalizedExpected) {
-      setErrorLine(0);
-      setShowSuccessCard(false);
-      updateSimData({
-        status: "Operator tidak cocok",
-      });
-      const feedback = generateEducationalFeedback(userLine);
-      addLog(`ERROR: ${feedback}`);
-      setActiveLine(-1);
-      return false;
+    updateSimData({
+      status: "Memeriksa baris per baris...",
+      isCalculating: true,
+    });
+
+    for (let index = 0; index < normalizedExpectedLines.length; index += 1) {
+      setActiveLine(index);
+      addLog(`CHECK: Memeriksa baris ${index + 1}...`);
+
+      if (index === 0) {
+        updateSimData({ status: "Membaca baris 1..." });
+      }
+
+      if (index === 1) {
+        updateSimData({
+          status: "Memproses item Nasi Goreng...",
+          food: KANTIN_ITEM,
+          itemQuantity: KANTIN_ITEM_QUANTITY,
+        });
+        addLog(
+          `STEP 2: Item ${KANTIN_ITEM.name} terdeteksi | Harga: Rp${KANTIN_ITEM.price.toLocaleString("id-ID")} | Jumlah: ${KANTIN_ITEM_QUANTITY}`,
+        );
+      }
+
+      if (index === 4) {
+        updateSimData({ status: "Memvalidasi total harga..." });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 450));
+
+      if (normalizedUserLines[index] !== normalizedExpectedLines[index]) {
+        setErrorLine(index);
+        setShowSuccessCard(false);
+        updateSimData({
+          status: `Baris ${index + 1} tidak sesuai`,
+          isCalculating: false,
+        });
+        const feedback = generateEducationalFeedback(userLine);
+        addLog(`ERROR: ${feedback}`);
+        setActiveLine(index);
+        return false;
+      }
     }
 
+    const totalHarga = KANTIN_ITEM.price * KANTIN_ITEM_QUANTITY;
+    updateSimData({
+      status: "Mencetak struk total harga...",
+      totalPrice: totalHarga,
+      receiptPrinted: true,
+      isCalculating: false,
+    });
+    addLog(
+      `STEP 3: Struk dicetak dengan total Rp${totalHarga.toLocaleString("id-ID")}.`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
     // Eksekusi berhasil
-    updateSimData({ status: "Operator berhasil dijalankan" });
-    addLog(`OPERATOR: ${selectedOperator}`);
-    addLog(`HASIL: buah1 ${selectedOperator} buah2`);
+    updateSimData({ status: "Tipe data berhasil divalidasi" });
+    addLog(`TIPE daftarBelanja: ${selectedTypes.type1}`);
+    addLog(`TIPE totalHarga: ${selectedTypes.type2}`);
+    addLog("HASIL: Struktur data belanja tervalidasi.");
     return true;
   };
 
@@ -417,6 +573,7 @@ export default function SimulasiKasirKantin() {
     simDataRef.current = {
       food: null,
       drink: null,
+      itemQuantity: 0,
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
@@ -427,6 +584,7 @@ export default function SimulasiKasirKantin() {
     setSimState({
       food: null,
       drink: null,
+      itemQuantity: 0,
       isCalculating: false,
       receiptPrinted: false,
       totalPrice: 0,
@@ -435,7 +593,7 @@ export default function SimulasiKasirKantin() {
       status: "Menjalankan...",
     });
 
-    addLog("Sistem: Memulai eksekusi operasi...");
+    addLog("Sistem: Memulai validasi tipe data...");
 
     const success = await executeStep();
     if (!success) {
@@ -447,7 +605,7 @@ export default function SimulasiKasirKantin() {
     setIsRunning(false);
     setActiveLine(-1);
     updateSimData({ status: "Selesai" });
-    addLog("Sukses: Operasi berhasil dijalankan.");
+    addLog("Sukses: Validasi tipe data berhasil.");
     setShowSuccessCard(true);
   };
 
@@ -460,14 +618,14 @@ export default function SimulasiKasirKantin() {
         <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
           <div className="pointer-events-auto bg-card border border-emerald-200 rounded-2xl px-3 py-3 shadow-lg mb-8 mr-6">
             <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">
-              PILIH OPERATOR
+              PILIH TIPE DATA
             </p>
             <div className="flex flex-wrap gap-2">
               {TYPE_OPTIONS.map((option) => (
                 <button
                   key={option.type}
                   type="button"
-                  onClick={() => handleSelectOperator(option.type)}
+                  onClick={() => handleSelectType(option.type)}
                   className={`min-w-[92px] px-3 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl border transition-all ${option.className}`}
                 >
                   {option.label}
@@ -699,23 +857,33 @@ export default function SimulasiKasirKantin() {
                 </div>
                 <div className="relative flex-1 bg-card overflow-hidden">
                   <div className="absolute inset-0 p-5 pt-5 whitespace-pre overflow-hidden z-10">
-                    <div className="relative h-[22px] flex items-center">
-                      {activeLine === 0 && (
-                        <motion.div
-                          layoutId="lineHighlight"
-                          className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
-                            isRunning
-                              ? "bg-emerald-50 border-emerald-500"
-                              : errorLine === 0
-                                ? "bg-red-50 border-red-500"
-                                : "bg-emerald-50/30 border-emerald-200"
-                          }`}
-                        />
-                      )}
-                      <div className="relative z-10 whitespace-pre font-bold">
-                        {renderCodeLine()}
+                    {linesArray.map((line, index) => (
+                      <div
+                        key={`code-line-${index}`}
+                        className="relative h-[22px] flex items-center"
+                      >
+                        {errorLine === index && !isRunning && (
+                          <div className="absolute inset-0 -mx-5 border-l-4 border-rose-500 bg-rose-50/90 z-0" />
+                        )}
+                        {activeLine === index && (
+                          <motion.div
+                            layoutId="lineHighlight"
+                            className={`absolute inset-0 -mx-5 border-l-4 z-0 ${
+                              errorLine === index
+                                ? "bg-rose-50/90 border-rose-500"
+                                : isRunning
+                                  ? "bg-emerald-50 border-emerald-500"
+                                  : errorLine === index
+                                    ? "bg-red-50 border-red-500"
+                                    : "bg-emerald-50/30 border-emerald-200"
+                            }`}
+                          />
+                        )}
+                        <div className="relative z-10 whitespace-pre font-bold">
+                          {renderCodeLine(line, index)}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -874,19 +1042,19 @@ export default function SimulasiKasirKantin() {
                       />
                     </div>
                     <AnimatePresence>
-                      {(simState.receiptPrinted || errorLine === 0) && (
+                      {(simState.receiptPrinted || errorLine !== -1) && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 100, opacity: 1 }}
                           className={`absolute top-2 left-2 right-2 rounded-sm shadow-xl p-2 flex flex-col gap-1 overflow-hidden z-40 border-t-2 border-dashed ${
-                            errorLine === 0
+                            errorLine !== -1
                               ? "bg-rose-50 border-rose-200"
                               : "bg-white border-slate-200"
                           }`}
                         >
                           <div
                             className={`text-[5px] font-black border-b pb-0.5 mb-1 uppercase text-center tracking-tighter ${
-                              errorLine === 0
+                              errorLine !== -1
                                 ? "text-rose-700 border-rose-100"
                                 : "text-emerald-800 border-slate-100"
                             }`}
@@ -894,13 +1062,13 @@ export default function SimulasiKasirKantin() {
                             Receipt #001
                           </div>
                           <div
-                            className={`flex justify-between text-[4px] font-bold uppercase tracking-tighter ${errorLine === 0 ? "text-rose-600" : "text-muted-foreground"}`}
+                            className={`flex justify-between text-[4px] font-bold uppercase tracking-tighter ${errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"}`}
                           >
                             <span>Info</span>
                             <span>Nilai</span>
                           </div>
                           <div
-                            className={`flex justify-between text-[4px] font-bold ${errorLine === 0 ? "text-rose-800" : "text-slate-800"}`}
+                            className={`flex justify-between text-[4px] font-bold ${errorLine !== -1 ? "text-rose-800" : "text-slate-800"}`}
                           >
                             <span>Total</span>
                             <span>
@@ -909,7 +1077,7 @@ export default function SimulasiKasirKantin() {
                           </div>
                           {simState.paidAmount > 0 && (
                             <div
-                              className={`flex justify-between text-[4px] font-bold ${errorLine === 0 ? "text-rose-800" : "text-slate-800"}`}
+                              className={`flex justify-between text-[4px] font-bold ${errorLine !== -1 ? "text-rose-800" : "text-slate-800"}`}
                             >
                               <span>Bayar</span>
                               <span>
@@ -918,7 +1086,7 @@ export default function SimulasiKasirKantin() {
                             </div>
                           )}
                           <div
-                            className={`mt-auto pt-1 border-t border-dashed flex justify-between text-[6px] font-black uppercase ${errorLine === 0 ? "border-rose-200 text-rose-900" : "border-slate-300 text-black"}`}
+                            className={`mt-auto pt-1 border-t border-dashed flex justify-between text-[6px] font-black uppercase ${errorLine !== -1 ? "border-rose-200 text-rose-900" : "border-slate-300 text-black"}`}
                           >
                             <span>Kembali</span>
                             <span>
@@ -932,21 +1100,31 @@ export default function SimulasiKasirKantin() {
                     </AnimatePresence>
                   </div>
 
-                  {/* Display Results */}
-                  {(simState.totalPrice > 0 || errorLine === 0) &&
-                    !simState.isCalculating && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className={`absolute bottom-12 px-6 py-2 rounded-2xl font-mono text-lg font-black shadow-lg z-40 ${
-                          errorLine === 0
-                            ? "bg-rose-50 border-2 border-rose-500 text-rose-600 shadow-rose-500/20"
-                            : "bg-white border-2 border-emerald-500 text-emerald-600 shadow-emerald-500/20"
-                        }`}
-                      >
-                        Operator Hasil
-                      </motion.div>
-                    )}
+                  {simState.food && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute left-1/2 -translate-x-1/2 bottom-36 z-40 flex flex-col items-center"
+                    >
+                      <div className="relative w-[260px] rounded-[20px] border-4 border-slate-800 bg-slate-950 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+                        <div className="absolute left-1/2 top-0 h-1.5 w-24 -translate-x-1/2 rounded-b-xl bg-emerald-400/80" />
+                        <div className="rounded-[14px] border border-emerald-200 bg-[#e8f6f0] px-4 py-3 text-[#0b7a5a] shadow-inner">
+                          <div className="text-[14px] font-black uppercase tracking-tight leading-none">
+                            {simState.food.name}
+                          </div>
+                          <div className="mt-2 text-[11px] font-bold leading-tight">
+                            Harga: Rp
+                            {simState.food.price.toLocaleString("id-ID")}
+                          </div>
+                          <div className="mt-1 text-[11px] font-bold leading-tight">
+                            Jumlah: {simState.itemQuantity}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-4 w-[96px] rounded-b-2xl bg-slate-700 shadow-[0_8px_18px_rgba(0,0,0,0.35)]" />
+                      <div className="h-2 w-[150px] rounded-full bg-slate-800/90 shadow-[0_10px_20px_rgba(0,0,0,0.25)]" />
+                    </motion.div>
+                  )}
 
                   {/* Status Bubble */}
                   <AnimatePresence>
