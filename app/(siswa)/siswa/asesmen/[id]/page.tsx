@@ -356,13 +356,12 @@ export default function SiswaAsesmenDetailPage({
         const soal = soals.find((s) => s.id === j.soal_id);
         if (!soal) return { ...j, is_correct: false, points_earned: 0 };
 
-        totalPoints += soal.points;
-
         let isCorrect: boolean | null = false;
         let pointsEarned = 0;
 
         if (soal.type === "pilihan_ganda") {
-          isCorrect = j.answer === soal.correct_answer;
+          totalPoints += soal.points;
+          isCorrect = isPilihanGandaCorrect(soal, j.answer || "");
           pointsEarned = isCorrect ? soal.points : 0;
         } else {
           // Essay - needs manual grading
@@ -381,6 +380,53 @@ export default function SiswaAsesmenDetailPage({
           points_earned: pointsEarned,
         };
       });
+
+      // Debug: log per-question scoring before saving
+      try {
+        console.log("[DEBUG] scoring_summary", {
+          jawabanWithScore,
+          totalPoints,
+          earnedPoints,
+        });
+        jawabanWithScore.forEach((q) => {
+          const soalObj = soals.find((s) => s.id === q.soal_id);
+          const studentAnswer = q.answer || "";
+          const normalizedSelected = normalizeAnswerValue(studentAnswer);
+          const normalizedCorrect = normalizeAnswerValue(soalObj?.correct_answer);
+          const simplifiedSelected = normalizeAlphaNum(studentAnswer);
+          const simplifiedCorrect = normalizeAlphaNum(soalObj?.correct_answer);
+          let selectedOptionText = "";
+          try {
+            if (soalObj?.options) {
+              if (Object.prototype.hasOwnProperty.call(soalObj.options, studentAnswer)) {
+                selectedOptionText = getOptionText(soalObj.options[studentAnswer as keyof typeof soalObj.options] as OptionValue);
+              } else if (/^\d+$/.test(studentAnswer)) {
+                const idx = parseInt(studentAnswer, 10) - 1;
+                const keys = Object.keys(soalObj.options);
+                if (keys[idx]) selectedOptionText = getOptionText(soalObj.options[keys[idx] as keyof typeof soalObj.options] as OptionValue);
+              }
+            }
+          } catch (e) {
+            selectedOptionText = "";
+          }
+
+          console.log("[DEBUG] soal_score", {
+            soal_id: q.soal_id,
+            answer: q.answer,
+            is_correct: q.is_correct,
+            points_earned: q.points_earned,
+            soal_correct_answer: soalObj?.correct_answer,
+            soal_options: soalObj?.options,
+            normalizedSelected,
+            normalizedCorrect,
+            simplifiedSelected,
+            simplifiedCorrect,
+            selectedOptionText,
+          });
+        });
+      } catch (e) {
+        // ignore logging errors
+      }
 
       // Save all jawaban
       const { error: jawabanError } = await supabase
@@ -447,6 +493,65 @@ export default function SiswaAsesmenDetailPage({
   const getOptionImageUrl = (optionValue?: OptionValue) => {
     if (!optionValue || typeof optionValue === "string") return "";
     return optionValue.image_url || "";
+  };
+
+  const normalizeAnswerValue = (value?: string) =>
+    value?.trim().toLowerCase() || "";
+  const normalizeAlphaNum = (s?: string) =>
+    s?.replace(/[^a-z0-9]/gi, "").trim().toLowerCase() || "";
+
+  const isPilihanGandaCorrect = (soal: Soal, selectedAnswer: string) => {
+    const rawSelected = selectedAnswer || "";
+    const rawCorrect = soal.correct_answer || "";
+
+    const normalizedSelected = normalizeAnswerValue(rawSelected);
+    const normalizedCorrect = normalizeAnswerValue(rawCorrect);
+    const simplifiedSelected = normalizeAlphaNum(rawSelected);
+    const simplifiedCorrect = normalizeAlphaNum(rawCorrect);
+
+    // Direct simplified match (letters/numbers only)
+    if (simplifiedSelected && simplifiedCorrect && simplifiedSelected === simplifiedCorrect)
+      return true;
+
+    // Direct normalized text match
+    if (normalizedSelected && normalizedCorrect && normalizedSelected === normalizedCorrect) return true;
+
+    // Try to resolve selectedAnswer as an option key (case-insensitive)
+    const options = soal.options || {};
+    let selectedOptionText = "";
+
+    const tryKeys = [rawSelected, normalizedSelected, rawSelected.toUpperCase(), rawSelected.toLowerCase()];
+    for (const k of tryKeys) {
+      if (k && Object.prototype.hasOwnProperty.call(options, k)) {
+        selectedOptionText = getOptionText(options[k as keyof typeof options] as OptionValue);
+        break;
+      }
+    }
+
+    // If still not found, try numeric index ("1" -> first option)
+    if (!selectedOptionText && /^\d+$/.test(rawSelected)) {
+      const idx = parseInt(rawSelected, 10) - 1;
+      const keys = Object.keys(options);
+      if (keys[idx]) selectedOptionText = getOptionText(options[keys[idx] as keyof typeof options] as OptionValue);
+    }
+
+    if (selectedOptionText) {
+      if (normalizeAnswerValue(selectedOptionText) === normalizedCorrect) return true;
+      if (normalizeAlphaNum(selectedOptionText) === simplifiedCorrect) return true;
+    }
+
+    // Also accept cases where correct_answer is stored as full option text
+    for (const [k, v] of Object.entries(options)) {
+      const text = getOptionText(v as OptionValue);
+      if (!text) continue;
+      if (normalizeAnswerValue(text) === normalizedCorrect) {
+        // if student selected the corresponding key, accept
+        if (k === rawSelected) return true;
+        if (normalizeAlphaNum(k) === simplifiedSelected) return true;
+      }
+    }
+
+    return false;
   };
 
   if (loading) {
