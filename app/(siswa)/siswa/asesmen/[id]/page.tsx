@@ -392,18 +392,34 @@ export default function SiswaAsesmenDetailPage({
           const soalObj = soals.find((s) => s.id === q.soal_id);
           const studentAnswer = q.answer || "";
           const normalizedSelected = normalizeAnswerValue(studentAnswer);
-          const normalizedCorrect = normalizeAnswerValue(soalObj?.correct_answer);
+          const normalizedCorrect = normalizeAnswerValue(
+            soalObj?.correct_answer,
+          );
           const simplifiedSelected = normalizeAlphaNum(studentAnswer);
           const simplifiedCorrect = normalizeAlphaNum(soalObj?.correct_answer);
           let selectedOptionText = "";
           try {
             if (soalObj?.options) {
-              if (Object.prototype.hasOwnProperty.call(soalObj.options, studentAnswer)) {
-                selectedOptionText = getOptionText(soalObj.options[studentAnswer as keyof typeof soalObj.options] as OptionValue);
+              if (
+                Object.prototype.hasOwnProperty.call(
+                  soalObj.options,
+                  studentAnswer,
+                )
+              ) {
+                selectedOptionText = getOptionText(
+                  soalObj.options[
+                    studentAnswer as keyof typeof soalObj.options
+                  ] as OptionValue,
+                );
               } else if (/^\d+$/.test(studentAnswer)) {
                 const idx = parseInt(studentAnswer, 10) - 1;
                 const keys = Object.keys(soalObj.options);
-                if (keys[idx]) selectedOptionText = getOptionText(soalObj.options[keys[idx] as keyof typeof soalObj.options] as OptionValue);
+                if (keys[idx])
+                  selectedOptionText = getOptionText(
+                    soalObj.options[
+                      keys[idx] as keyof typeof soalObj.options
+                    ] as OptionValue,
+                  );
               }
             }
           } catch (e) {
@@ -498,7 +514,10 @@ export default function SiswaAsesmenDetailPage({
   const normalizeAnswerValue = (value?: string) =>
     value?.trim().toLowerCase() || "";
   const normalizeAlphaNum = (s?: string) =>
-    s?.replace(/[^a-z0-9]/gi, "").trim().toLowerCase() || "";
+    s
+      ?.replace(/[^a-z0-9]/gi, "")
+      .trim()
+      .toLowerCase() || "";
 
   const isPilihanGandaCorrect = (soal: Soal, selectedAnswer: string) => {
     const rawSelected = selectedAnswer || "";
@@ -510,20 +529,36 @@ export default function SiswaAsesmenDetailPage({
     const simplifiedCorrect = normalizeAlphaNum(rawCorrect);
 
     // Direct simplified match (letters/numbers only)
-    if (simplifiedSelected && simplifiedCorrect && simplifiedSelected === simplifiedCorrect)
+    if (
+      simplifiedSelected &&
+      simplifiedCorrect &&
+      simplifiedSelected === simplifiedCorrect
+    )
       return true;
 
     // Direct normalized text match
-    if (normalizedSelected && normalizedCorrect && normalizedSelected === normalizedCorrect) return true;
+    if (
+      normalizedSelected &&
+      normalizedCorrect &&
+      normalizedSelected === normalizedCorrect
+    )
+      return true;
 
     // Try to resolve selectedAnswer as an option key (case-insensitive)
     const options = soal.options || {};
     let selectedOptionText = "";
 
-    const tryKeys = [rawSelected, normalizedSelected, rawSelected.toUpperCase(), rawSelected.toLowerCase()];
+    const tryKeys = [
+      rawSelected,
+      normalizedSelected,
+      rawSelected.toUpperCase(),
+      rawSelected.toLowerCase(),
+    ];
     for (const k of tryKeys) {
       if (k && Object.prototype.hasOwnProperty.call(options, k)) {
-        selectedOptionText = getOptionText(options[k as keyof typeof options] as OptionValue);
+        selectedOptionText = getOptionText(
+          options[k as keyof typeof options] as OptionValue,
+        );
         break;
       }
     }
@@ -532,12 +567,17 @@ export default function SiswaAsesmenDetailPage({
     if (!selectedOptionText && /^\d+$/.test(rawSelected)) {
       const idx = parseInt(rawSelected, 10) - 1;
       const keys = Object.keys(options);
-      if (keys[idx]) selectedOptionText = getOptionText(options[keys[idx] as keyof typeof options] as OptionValue);
+      if (keys[idx])
+        selectedOptionText = getOptionText(
+          options[keys[idx] as keyof typeof options] as OptionValue,
+        );
     }
 
     if (selectedOptionText) {
-      if (normalizeAnswerValue(selectedOptionText) === normalizedCorrect) return true;
-      if (normalizeAlphaNum(selectedOptionText) === simplifiedCorrect) return true;
+      if (normalizeAnswerValue(selectedOptionText) === normalizedCorrect)
+        return true;
+      if (normalizeAlphaNum(selectedOptionText) === simplifiedCorrect)
+        return true;
     }
 
     // Also accept cases where correct_answer is stored as full option text
