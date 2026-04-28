@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useRef, useState, use } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,20 +13,32 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft,
+  Bold,
+  Code2,
+  Image,
   Plus,
   Edit,
   Trash2,
   AlertTriangle,
+  Heading1,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   Upload,
   FileText,
   CheckCircle,
+  Quote,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { compressImageFile } from "@/lib/utils/image-compression";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 
 interface Soal {
   id: string;
@@ -74,6 +86,9 @@ export default function AsesmenDetailPage({
     question: string;
   } | null>(null);
   const [isDeletingSoal, setIsDeletingSoal] = useState(false);
+  const questionTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const questionImageInputRef = useRef<HTMLInputElement | null>(null);
+  const questionSelectionRef = useRef({ start: 0, end: 0 });
 
   const [formData, setFormData] = useState({
     question: "",
@@ -95,7 +110,6 @@ export default function AsesmenDetailPage({
     optionEImageUrl: "",
     correct_answer: "",
     points: Number.NaN,
-    file: null as File | null,
   });
 
   const getOptionText = (optionValue?: OptionValue) => {
@@ -107,6 +121,65 @@ export default function AsesmenDetailPage({
   const getOptionImageUrl = (optionValue?: OptionValue) => {
     if (!optionValue || typeof optionValue === "string") return "";
     return optionValue.image_url || "";
+  };
+
+  const insertQuestionMarkdown = (
+    before: string,
+    after = before,
+    placeholder = "teks",
+  ) => {
+    const textarea = questionTextareaRef.current;
+    if (!textarea) return;
+
+    const start =
+      questionSelectionRef.current.start ??
+      textarea.selectionStart ??
+      formData.question.length;
+    const end =
+      questionSelectionRef.current.end ??
+      textarea.selectionEnd ??
+      formData.question.length;
+    const selectedText = formData.question.slice(start, end) || placeholder;
+
+    const nextQuestion =
+      formData.question.slice(0, start) +
+      before +
+      selectedText +
+      after +
+      formData.question.slice(end);
+
+    setFormData({ ...formData, question: nextQuestion });
+    clearFieldError("question");
+
+    window.requestAnimationFrame(() => {
+      textarea.focus();
+      const selectionStart = start + before.length;
+      const selectionEnd = selectionStart + selectedText.length;
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+    });
+  };
+
+  const handleQuestionSelection = () => {
+    const textarea = questionTextareaRef.current;
+    if (!textarea) return;
+
+    questionSelectionRef.current = {
+      start: textarea.selectionStart ?? 0,
+      end: textarea.selectionEnd ?? 0,
+    };
+  };
+
+  const handleQuestionImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = "";
+    if (!file) return;
+
+    const imageUrl = await handleFileUpload(file);
+    if (!imageUrl) return;
+
+    insertQuestionMarkdown(`\n\n![gambar soal](${imageUrl})\n\n`, "", "");
   };
 
   const clearFieldError = (field: keyof SoalFormErrors) => {
@@ -273,13 +346,6 @@ export default function AsesmenDetailPage({
     const supabase = createClient();
 
     try {
-      let fileUrl = editingSoal?.file_url || null;
-
-      // Upload file if exists
-      if (formData.file) {
-        fileUrl = await handleFileUpload(formData.file);
-      }
-
       let optionAImageUrl = formData.optionAImageUrl;
       let optionBImageUrl = formData.optionBImageUrl;
       let optionCImageUrl = formData.optionCImageUrl;
@@ -312,7 +378,6 @@ export default function AsesmenDetailPage({
         question: formData.question,
         type: formData.type,
         points: formData.points,
-        file_url: fileUrl,
       };
 
       if (formData.type === "pilihan_ganda") {
@@ -402,9 +467,7 @@ export default function AsesmenDetailPage({
       optionEImageUrl: getOptionImageUrl(soal.options?.E),
       correct_answer: soal.correct_answer || "",
       points: soal.points,
-      file: null,
     });
-    setShowForm(true);
   };
 
   const handleDeleteSoal = (soal: Soal) => {
@@ -414,7 +477,6 @@ export default function AsesmenDetailPage({
 
   const confirmDeleteSoal = async () => {
     if (!deleteSoalTarget) return;
-
     setIsDeletingSoal(true);
     const supabase = createClient();
     try {
@@ -423,13 +485,12 @@ export default function AsesmenDetailPage({
         .delete()
         .eq("id", deleteSoalTarget.id);
       if (error) throw error;
-
-      await fetchAsesmenData();
       toast.success("Soal berhasil dihapus");
       setShowDeleteSoalDialog(false);
       setDeleteSoalTarget(null);
-    } catch (error) {
-      console.error("Error deleting soal:", error);
+      await fetchAsesmenData();
+    } catch (err) {
+      console.error("Error deleting soal:", err);
       toast.error("Gagal menghapus soal");
     } finally {
       setIsDeletingSoal(false);
@@ -457,7 +518,6 @@ export default function AsesmenDetailPage({
       optionEImageUrl: "",
       correct_answer: "",
       points: Number.NaN,
-      file: null,
     });
     setFormErrors({});
     setEditingSoal(null);
@@ -563,7 +623,114 @@ export default function AsesmenDetailPage({
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Pertanyaan Soal *
                 </label>
+                <div className="mb-2 flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("**", "**", "tebal")}
+                  >
+                    <Bold className="h-3.5 w-3.5" />
+                    Bold
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("*", "*", "miring")}
+                  >
+                    <Italic className="h-3.5 w-3.5" />
+                    Italic
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("`", "`", "kode")}
+                  >
+                    <Code2 className="h-3.5 w-3.5" />
+                    Code
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("> ", "", "kutipan")}
+                  >
+                    <Quote className="h-3.5 w-3.5" />
+                    Quote
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("- ", "", "poin")}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    List
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("1. ", "", "langkah")}
+                  >
+                    <ListOrdered className="h-3.5 w-3.5" />
+                    Numbered
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => insertQuestionMarkdown("### ", "", "judul")}
+                  >
+                    <Heading1 className="h-3.5 w-3.5" />
+                    Heading
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() =>
+                      insertQuestionMarkdown(
+                        "[",
+                        "](https://contoh.com)",
+                        "tautan",
+                      )
+                    }
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
+                    onClick={() => questionImageInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Image className="h-3.5 w-3.5" />
+                    Gambar
+                  </Button>
+                </div>
+                <Input
+                  ref={questionImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleQuestionImageUpload}
+                />
                 <textarea
+                  ref={questionTextareaRef}
                   className={`w-full px-4 py-3 border rounded-lg text-sm leading-relaxed focus:outline-none focus:ring-2 transition-all duration-150 ${
                     formErrors.question
                       ? "border-red-300 focus:ring-red-200 focus:border-red-400"
@@ -572,61 +739,37 @@ export default function AsesmenDetailPage({
                   rows={5}
                   placeholder="Masukkan pertanyaan soal"
                   value={formData.question}
+                  onSelect={handleQuestionSelection}
+                  onClick={handleQuestionSelection}
+                  onKeyUp={handleQuestionSelection}
+                  onMouseUp={handleQuestionSelection}
                   onChange={(e) => {
                     setFormData({ ...formData, question: e.target.value });
                     clearFieldError("question");
                   }}
                 />
+                <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Preview
+                  </p>
+                  <div className="text-sm leading-relaxed text-gray-800 prose prose-sm max-w-none prose-img:my-3 prose-img:rounded-lg prose-img:border prose-img:border-gray-200 prose-img:shadow-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      components={{
+                        img: ({ ...props }) => (
+                          <img {...props} className="max-w-full h-auto" />
+                        ),
+                      }}
+                    >
+                      {formData.question ||
+                        "Preview pertanyaan akan muncul di sini."}
+                    </ReactMarkdown>
+                  </div>
+                </div>
                 {formErrors.question && (
                   <p className="mt-1 text-xs text-red-500">
                     {formErrors.question}
                   </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Lampiran (opsional)
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="file"
-                    onChange={(e) => {
-                      const selectedFile = e.target.files?.[0] || null;
-                      if (
-                        selectedFile &&
-                        !selectedFile.type.startsWith("image/")
-                      ) {
-                        toast.error("Lampiran soal hanya boleh gambar");
-                        e.target.value = "";
-                        setFormData({
-                          ...formData,
-                          file: null,
-                        });
-                        return;
-                      }
-
-                      setFormData({
-                        ...formData,
-                        file: selectedFile,
-                      });
-                    }}
-                    accept="image/*"
-                  />
-                  {uploading && (
-                    <span className="text-sm text-gray-500">Uploading...</span>
-                  )}
-                </div>
-                {editingSoal?.file_url && (
-                  <a
-                    href={editingSoal.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline mt-2 inline-flex items-center gap-1"
-                  >
-                    <FileText size={14} />
-                    File terlampir
-                  </a>
                 )}
               </div>
             </section>

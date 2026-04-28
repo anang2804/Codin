@@ -14,7 +14,10 @@ import { ArrowLeft, ArrowRight, CheckCircle, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 
 interface Soal {
   id: string;
@@ -554,9 +557,11 @@ export default function SiswaAsesmenDetailPage({
             }`}
           >
             <div className="mb-4 flex-shrink-0">
-              <p className="text-lg font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
-                {currentSoal.question}
-              </p>
+              <div className="text-lg font-medium text-gray-900 dark:text-gray-100 leading-relaxed [&_img]:my-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm">
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                  {currentSoal.question}
+                </ReactMarkdown>
+              </div>
 
               {currentSoal.file_url && (
                 <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
