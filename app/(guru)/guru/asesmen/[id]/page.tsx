@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
   Bold,
   Code2,
   Image,
@@ -44,6 +46,7 @@ interface Soal {
   id: string;
   question: string;
   type: "pilihan_ganda" | "essay";
+  position?: number | null;
   options?: {
     [key: string]: string | { text?: string; image_url?: string | null };
   };
@@ -159,6 +162,47 @@ export default function AsesmenDetailPage({
     });
   };
 
+  const insertCodeMarkdown = (placeholder = "kode") => {
+    const textarea = questionTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart ?? formData.question.length;
+    const end = textarea.selectionEnd ?? formData.question.length;
+    const selectedText = formData.question.slice(start, end);
+
+    // If selection contains newline(s) treat as a code block (fenced)
+    if (selectedText.includes("\n")) {
+      const nextQuestion =
+        formData.question.slice(0, start) +
+        "```\n" +
+        selectedText +
+        "\n```" +
+        formData.question.slice(end);
+
+      setFormData({ ...formData, question: nextQuestion });
+      window.requestAnimationFrame(() => {
+        textarea.focus();
+        const s = start + 4; // position after ```\n
+        textarea.setSelectionRange(s, s + selectedText.length);
+      });
+      return;
+    }
+
+    // No newline -> insert inline code
+    insertQuestionMarkdown("`", "`", placeholder);
+  };
+
+  const normalizeCodeBlocks = (text: string) => {
+    if (!text) return text;
+    // Replace single-backtick blocks that contain newlines with fenced code blocks
+    return text.replace(/`([\s\S]*?)`/g, (match, g1) => {
+      if (g1.includes("\n")) {
+        return "```\n" + g1 + "\n```";
+      }
+      return match;
+    });
+  };
+
   const handleQuestionSelection = () => {
     const textarea = questionTextareaRef.current;
     if (!textarea) return;
@@ -265,12 +309,12 @@ export default function AsesmenDetailPage({
         setMapel(mapelData);
       }
 
-      // Fetch soals
+      // Fetch soals (order by position when available)
       const { data: soalsData } = await supabase
         .from("soal")
         .select("*")
         .eq("asesmen_id", id)
-        .order("created_at", { ascending: true });
+        .order("position", { ascending: true });
 
       console.log("Fetched soals:", soalsData);
       console.log("Soals length:", soalsData?.length || 0);
@@ -420,7 +464,22 @@ export default function AsesmenDetailPage({
         }
         console.log("Update success:", data);
       } else {
-        // Insert
+        // Insert - determine position (append to end)
+        try {
+          const { data: maxPosData } = await supabase
+            .from("soal")
+            .select("position")
+            .eq("asesmen_id", id)
+            .order("position", { ascending: false })
+            .limit(1);
+
+          const maxPos =
+            (maxPosData && maxPosData[0] && maxPosData[0].position) || 0;
+          soalData.position = maxPos + 1;
+        } catch (err) {
+          // ignore and let position be null - fallback ordering will use created_at
+        }
+
         const { data, error } = await supabase
           .from("soal")
           .insert(soalData)
@@ -502,6 +561,30 @@ export default function AsesmenDetailPage({
     }
   };
 
+  const swapSoalPosition = async (index: number, direction: "up" | "down") => {
+    const otherIndex = direction === "up" ? index - 1 : index + 1;
+    if (otherIndex < 0 || otherIndex >= soals.length) return;
+    const current = soals[index];
+    const other = soals[otherIndex];
+    if (!current || !other) return;
+
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase.rpc("swap_soal_position", {
+        p_soal_id: current.id,
+        p_direction: direction,
+      });
+      if (error) throw error;
+
+      await fetchAsesmenData();
+      toast.success("Urutan soal diperbarui");
+    } catch (err) {
+      console.error("Error swapping soal positions:", err);
+      toast.error("Gagal memindahkan soal");
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       question: "",
@@ -528,6 +611,11 @@ export default function AsesmenDetailPage({
     setEditingSoal(null);
     setShowForm(false);
   };
+
+  const totalPoinSoal = soals.reduce(
+    (sum, soal) => sum + (Number.isFinite(soal.points) ? soal.points : 0),
+    0,
+  );
 
   if (loading) {
     return (
@@ -573,8 +661,13 @@ export default function AsesmenDetailPage({
       </Card>
 
       {/* Add Soal Button */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Daftar Soal</h2>
+      <div className="flex justify-between items-center mb-6 gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900">Daftar Soal</h2>
+          <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-100">
+            Total Poin: {totalPoinSoal}
+          </span>
+        </div>
         <Button
           onClick={() => {
             resetForm();
@@ -589,7 +682,7 @@ export default function AsesmenDetailPage({
 
       {/* Form Add/Edit Soal */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900">
               {editingSoal ? "Edit Soal" : "Tambah Soal Baru"}
@@ -599,7 +692,7 @@ export default function AsesmenDetailPage({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmitSoal} className="space-y-6 pt-2">
+          <form onSubmit={handleSubmitSoal} className="space-y-6 pt-2 min-w-0">
             <section className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-900">
                 Informasi Soal
@@ -654,7 +747,7 @@ export default function AsesmenDetailPage({
                     variant="outline"
                     size="sm"
                     className="h-8 gap-1.5 border-gray-200 bg-white text-xs"
-                    onClick={() => insertQuestionMarkdown("`", "`", "kode")}
+                    onClick={() => insertCodeMarkdown()}
                   >
                     <Code2 className="h-3.5 w-3.5" />
                     Code
@@ -757,14 +850,17 @@ export default function AsesmenDetailPage({
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                     Preview
                   </p>
-                  <div className="text-sm leading-relaxed text-gray-800 prose prose-sm max-w-none prose-img:my-3 prose-img:rounded-lg prose-img:border prose-img:border-gray-200 prose-img:shadow-sm">
+                  <div className="text-sm leading-relaxed text-gray-800 min-w-0">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
                         img: ({ ...props }) => (
-                          <img {...props} className="max-w-full h-auto" />
+                          <img
+                            {...props}
+                            className="my-3 max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                          />
                         ),
-                        code: ({ inline, ...props }) => {
+                        code: ({ inline, className, ...props }) => {
                           if (inline) {
                             return (
                               <code
@@ -773,17 +869,17 @@ export default function AsesmenDetailPage({
                               />
                             );
                           }
-                          return <code {...props} />;
+                          return <code {...props} className="font-mono" />;
                         },
-                        pre: (props) => (
+                        pre: ({ ...props }) => (
                           <pre
                             {...props}
-                            className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm leading-relaxed"
+                            className="max-w-full bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm leading-relaxed my-3"
                           />
                         ),
                       }}
                     >
-                      {formData.question ||
+                      {normalizeCodeBlocks(formData.question) ||
                         "Preview pertanyaan akan muncul di sini."}
                     </ReactMarkdown>
                   </div>
@@ -839,7 +935,7 @@ export default function AsesmenDetailPage({
                   ).map((option) => (
                     <div
                       key={option.key}
-                      className={`rounded-lg border p-3 space-y-2.5 transition-all duration-150 ${
+                      className={`min-w-0 rounded-lg border p-3 space-y-2.5 transition-all duration-150 ${
                         formData.correct_answer === option.key
                           ? "bg-green-50 border-green-200"
                           : "bg-gray-50/70 border-gray-200"
@@ -1176,6 +1272,28 @@ export default function AsesmenDetailPage({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  {index > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => swapSoalPosition(index, "up")}
+                      title="Pindah ke atas"
+                      className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
+                    >
+                      <ArrowUp size={15} />
+                    </Button>
+                  )}
+                  {index < soals.length - 1 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => swapSoalPosition(index, "down")}
+                      title="Pindah ke bawah"
+                      className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
+                    >
+                      <ArrowDown size={15} />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
