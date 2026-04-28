@@ -483,7 +483,7 @@ export default function SiswaAsesmenDetailPage({
     .map((item) => item.index);
 
   return (
-    <div className="h-screen flex flex-col p-4 max-w-6xl mx-auto bg-gray-50 dark:bg-background">
+    <div className="min-h-screen p-4 max-w-6xl mx-auto bg-gray-50 dark:bg-background">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={openExitDialog}>
@@ -507,8 +507,8 @@ export default function SiswaAsesmenDetailPage({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="w-full max-w-4xl mx-auto h-full flex flex-col gap-3">
+      <div>
+        <div className="w-full max-w-4xl mx-auto space-y-3">
           <Card className="p-3 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm flex-shrink-0 bg-card">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -550,7 +550,7 @@ export default function SiswaAsesmenDetailPage({
           </Card>
 
           <Card
-            className={`p-5 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm flex-1 flex flex-col min-h-0 transition-all duration-300 bg-card ${
+            className={`p-5 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm transition-all duration-300 bg-card ${
               questionVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-2"
@@ -622,51 +622,53 @@ export default function SiswaAsesmenDetailPage({
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2.5 mb-4 pr-1">
+            <div className="space-y-2.5 mb-4">
               {currentSoal.type === "pilihan_ganda" && currentSoal.options ? (
-                Object.entries(currentSoal.options).map(([key, value]) => {
-                  const optionText = getOptionText(value as OptionValue);
-                  const optionImageUrl = getOptionImageUrl(
-                    value as OptionValue,
-                  );
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+                  {Object.entries(currentSoal.options).map(([key, value]) => {
+                    const optionText = getOptionText(value as OptionValue);
+                    const optionImageUrl = getOptionImageUrl(
+                      value as OptionValue,
+                    );
 
-                  return (
-                    <label
-                      key={key}
-                      className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all duration-150 shadow-sm ${
-                        currentJawaban?.answer === key
-                          ? "border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/30"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-card hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/20"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`soal-${currentSoal.id}`}
-                        value={key}
-                        checked={currentJawaban?.answer === key}
-                        onChange={(e) =>
-                          handleAnswerChange(currentSoal.id, e.target.value)
-                        }
-                        className="mt-1 mr-3 flex-shrink-0"
-                      />
-                      <span className="flex-1 text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          {key}.
-                        </span>{" "}
-                        {optionText}
-                        {optionImageUrl && (
-                          <span className="block mt-2">
-                            <img
-                              src={optionImageUrl}
-                              alt={`Gambar opsi ${key}`}
-                              className="h-20 w-auto rounded border border-gray-200 dark:border-gray-700 object-contain"
-                            />
-                          </span>
-                        )}
-                      </span>
-                    </label>
-                  );
-                })
+                    return (
+                      <label
+                        key={key}
+                        className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all duration-150 shadow-sm ${
+                          currentJawaban?.answer === key
+                            ? "border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/30"
+                            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-card hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/20"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`soal-${currentSoal.id}`}
+                          value={key}
+                          checked={currentJawaban?.answer === key}
+                          onChange={(e) =>
+                            handleAnswerChange(currentSoal.id, e.target.value)
+                          }
+                          className="mt-1 mr-3 flex-shrink-0"
+                        />
+                        <span className="flex-1 text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            {key}.
+                          </span>{" "}
+                          {optionText}
+                          {optionImageUrl && (
+                            <span className="block mt-2">
+                              <img
+                                src={optionImageUrl}
+                                alt={`Gambar opsi ${key}`}
+                                className="h-20 w-auto rounded border border-gray-200 dark:border-gray-700 object-contain"
+                              />
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
               ) : (
                 <textarea
                   value={currentJawaban?.answer || ""}
@@ -674,7 +676,7 @@ export default function SiswaAsesmenDetailPage({
                     handleAnswerChange(currentSoal.id, e.target.value)
                   }
                   placeholder="Tulis jawaban Anda di sini..."
-                  className="w-full h-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-input text-gray-900 dark:text-gray-100 rounded-lg focus:border-green-500 dark:focus:border-green-600 focus:outline-none text-sm resize-none"
+                  className="w-full min-h-[180px] px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-input text-gray-900 dark:text-gray-100 rounded-lg focus:border-green-500 dark:focus:border-green-600 focus:outline-none text-sm resize-y"
                 />
               )}
             </div>
