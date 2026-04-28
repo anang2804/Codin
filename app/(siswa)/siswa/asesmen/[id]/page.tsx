@@ -558,7 +558,28 @@ export default function SiswaAsesmenDetailPage({
           >
             <div className="mb-4 flex-shrink-0">
               <div className="text-lg font-medium text-gray-900 dark:text-gray-100 leading-relaxed [&_img]:my-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm">
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code: ({ inline, ...props }) => {
+                      if (inline) {
+                        return (
+                          <code
+                            {...props}
+                            className="dark:bg-gray-800 dark:text-orange-400 bg-gray-200 px-1.5 py-0.5 rounded text-red-600 font-mono text-xs"
+                          />
+                        );
+                      }
+                      return <code {...props} />;
+                    },
+                    pre: (props) => (
+                      <pre
+                        {...props}
+                        className="dark:bg-gray-950 dark:text-gray-100 bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm leading-relaxed"
+                      />
+                    ),
+                  }}
+                >
                   {currentSoal.question}
                 </ReactMarkdown>
               </div>

@@ -759,10 +759,27 @@ export default function AsesmenDetailPage({
                   </p>
                   <div className="text-sm leading-relaxed text-gray-800 prose prose-sm max-w-none prose-img:my-3 prose-img:rounded-lg prose-img:border prose-img:border-gray-200 prose-img:shadow-sm">
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      remarkPlugins={[remarkGfm]}
                       components={{
                         img: ({ ...props }) => (
                           <img {...props} className="max-w-full h-auto" />
+                        ),
+                        code: ({ inline, ...props }) => {
+                          if (inline) {
+                            return (
+                              <code
+                                {...props}
+                                className="bg-gray-200 px-1.5 py-0.5 rounded text-red-600 font-mono text-xs"
+                              />
+                            );
+                          }
+                          return <code {...props} />;
+                        },
+                        pre: (props) => (
+                          <pre
+                            {...props}
+                            className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm leading-relaxed"
+                          />
                         ),
                       }}
                     >
