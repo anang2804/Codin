@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,109 +46,130 @@ export default function SiswaAsesmenPage() {
     }).format(date);
   };
 
-  useEffect(() => {
-    const fetchAsesmen = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchAsesmen = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
 
-      if (!user) return;
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("kelas")
-          .eq("id", user.id)
+    if (!user) {
+      if (!silent) setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("kelas")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.kelas) {
+        const { data: kelasData } = await supabase
+          .from("kelas")
+          .select("id")
+          .eq("name", profile.kelas)
           .single();
 
-        if (profile?.kelas) {
-          const { data: kelasData } = await supabase
-            .from("kelas")
-            .select("id")
-            .eq("name", profile.kelas)
-            .single();
+        if (kelasData) {
+          const { data: asesmenData } = await supabase
+            .from("asesmen")
+            .select("*")
+            .eq("kelas_id", kelasData.id)
+            .order("created_at", { ascending: false });
 
-          if (kelasData) {
-            const { data: asesmenData } = await supabase
-              .from("asesmen")
-              .select("*")
-              .eq("kelas_id", kelasData.id)
-              .order("created_at", { ascending: false });
+          if (asesmenData) {
+            const asesmenWithDetails = await Promise.all(
+              asesmenData.map(async (a) => {
+                const { count } = await supabase
+                  .from("soal")
+                  .select("*", { count: "exact", head: true })
+                  .eq("asesmen_id", a.id);
 
-            if (asesmenData) {
-              const asesmenWithDetails = await Promise.all(
-                asesmenData.map(async (a) => {
-                  const { count } = await supabase
-                    .from("soal")
-                    .select("*", { count: "exact", head: true })
-                    .eq("asesmen_id", a.id);
+                let mapelData = null;
+                if (a.mapel_id) {
+                  const { data } = await supabase
+                    .from("mapel")
+                    .select("name")
+                    .eq("id", a.mapel_id)
+                    .single();
+                  mapelData = data;
+                }
 
-                  let mapelData = null;
-                  if (a.mapel_id) {
-                    const { data } = await supabase
-                      .from("mapel")
-                      .select("name")
-                      .eq("id", a.mapel_id)
-                      .single();
-                    mapelData = data;
-                  }
+                const { data: jawabanData, error: jawabanError } =
+                  await supabase
+                    .from("jawaban_siswa")
+                    .select("id")
+                    .eq("asesmen_id", a.id)
+                    .eq("siswa_id", user.id)
+                    .limit(1);
 
-                  const { data: jawabanData, error: jawabanError } =
-                    await supabase
-                      .from("jawaban_siswa")
-                      .select("id")
-                      .eq("asesmen_id", a.id)
-                      .eq("siswa_id", user.id)
-                      .limit(1);
+                if (jawabanError) {
+                  console.error("Error checking jawaban:", jawabanError);
+                }
 
-                  if (jawabanError) {
-                    console.error("Error checking jawaban:", jawabanError);
-                  }
+                const isCompleted = Boolean(
+                  jawabanData && jawabanData.length > 0,
+                );
 
-                  const isCompleted = Boolean(
-                    jawabanData && jawabanData.length > 0,
-                  );
+                let nilaiData = null;
+                if (isCompleted) {
+                  const { data } = await supabase
+                    .from("nilai")
+                    .select("score, completed_at")
+                    .eq("asesmen_id", a.id)
+                    .eq("siswa_id", user.id)
+                    .order("completed_at", { ascending: false })
+                    .limit(1)
+                    .single();
+                  nilaiData = data;
+                }
 
-                  let nilaiData = null;
-                  if (isCompleted) {
-                    const { data } = await supabase
-                      .from("nilai")
-                      .select("score, completed_at")
-                      .eq("asesmen_id", a.id)
-                      .eq("siswa_id", user.id)
-                      .order("completed_at", { ascending: false })
-                      .limit(1)
-                      .single();
-                    nilaiData = data;
-                  }
-
-                  return {
-                    ...a,
-                    soal_count: count || 0,
-                    mapel: mapelData,
-                    nilai: nilaiData,
-                    is_completed: isCompleted,
-                    schedule_status: getScheduleStatus(
-                      a.waktu_mulai,
-                      a.waktu_selesai,
-                    ),
-                  };
-                }),
-              );
-              setAsesmen(asesmenWithDetails);
-            }
+                return {
+                  ...a,
+                  soal_count: count || 0,
+                  mapel: mapelData,
+                  nilai: nilaiData,
+                  is_completed: isCompleted,
+                  schedule_status: getScheduleStatus(
+                    a.waktu_mulai,
+                    a.waktu_selesai,
+                  ),
+                };
+              }),
+            );
+            setAsesmen(asesmenWithDetails);
           }
         }
-      } catch (error) {
-        console.error("Error fetching asesmen:", error);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchAsesmen();
+    } catch (error) {
+      console.error("Error fetching asesmen:", error);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAsesmen();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("siswa-asesmen-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "asesmen" },
+        () => {
+          fetchAsesmen(true);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAsesmen]);
 
   useEffect(() => {
     if (!loading) {

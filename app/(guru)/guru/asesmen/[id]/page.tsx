@@ -47,6 +47,7 @@ type SoalFormErrors = Partial<{
   optionB: string;
   optionC: string;
   optionD: string;
+  optionE: string;
   correct_answer: string;
   points: string;
 }>;
@@ -89,6 +90,9 @@ export default function AsesmenDetailPage({
     optionD: "",
     optionDImageFile: null as File | null,
     optionDImageUrl: "",
+    optionE: "",
+    optionEImageFile: null as File | null,
+    optionEImageUrl: "",
     correct_answer: "",
     points: Number.NaN,
     file: null as File | null,
@@ -133,6 +137,9 @@ export default function AsesmenDetailPage({
       }
       if (!formData.optionD.trim()) {
         errors.optionD = "Jawaban opsi D wajib diisi";
+      }
+      if (!formData.optionE.trim()) {
+        errors.optionE = "Jawaban opsi E wajib diisi";
       }
       if (!formData.correct_answer) {
         errors.correct_answer = "Pilih kunci jawaban yang benar";
@@ -272,6 +279,7 @@ export default function AsesmenDetailPage({
       let optionBImageUrl = formData.optionBImageUrl;
       let optionCImageUrl = formData.optionCImageUrl;
       let optionDImageUrl = formData.optionDImageUrl;
+      let optionEImageUrl = formData.optionEImageUrl;
 
       if (formData.optionAImageFile) {
         optionAImageUrl =
@@ -288,6 +296,10 @@ export default function AsesmenDetailPage({
       if (formData.optionDImageFile) {
         optionDImageUrl =
           (await handleFileUpload(formData.optionDImageFile)) || "";
+      }
+      if (formData.optionEImageFile) {
+        optionEImageUrl =
+          (await handleFileUpload(formData.optionEImageFile)) || "";
       }
 
       const soalData: any = {
@@ -315,6 +327,10 @@ export default function AsesmenDetailPage({
           D: {
             text: formData.optionD,
             image_url: optionDImageUrl || null,
+          },
+          E: {
+            text: formData.optionE,
+            image_url: optionEImageUrl || null,
           },
         };
         soalData.correct_answer = formData.correct_answer;
@@ -376,6 +392,9 @@ export default function AsesmenDetailPage({
       optionD: getOptionText(soal.options?.D),
       optionDImageFile: null,
       optionDImageUrl: getOptionImageUrl(soal.options?.D),
+      optionE: getOptionText(soal.options?.E),
+      optionEImageFile: null,
+      optionEImageUrl: getOptionImageUrl(soal.options?.E),
       correct_answer: soal.correct_answer || "",
       points: soal.points,
       file: null,
@@ -428,6 +447,9 @@ export default function AsesmenDetailPage({
       optionD: "",
       optionDImageFile: null,
       optionDImageUrl: "",
+      optionE: "",
+      optionEImageFile: null,
+      optionEImageUrl: "",
       correct_answer: "",
       points: Number.NaN,
       file: null,
@@ -623,6 +645,12 @@ export default function AsesmenDetailPage({
                         imageFile: formData.optionDImageFile,
                         imageUrl: formData.optionDImageUrl,
                       },
+                      {
+                        key: "E",
+                        text: formData.optionE,
+                        imageFile: formData.optionEImageFile,
+                        imageUrl: formData.optionEImageUrl,
+                      },
                     ] as const
                   ).map((option) => (
                     <div
@@ -668,12 +696,20 @@ export default function AsesmenDetailPage({
                             });
                             clearFieldError("optionD");
                           }
+                          if (option.key === "E") {
+                            setFormData({
+                              ...formData,
+                              optionE: e.target.value,
+                            });
+                            clearFieldError("optionE");
+                          }
                         }}
                         className={`text-sm transition-all duration-150 bg-white ${
                           (option.key === "A" && formErrors.optionA) ||
                           (option.key === "B" && formErrors.optionB) ||
                           (option.key === "C" && formErrors.optionC) ||
-                          (option.key === "D" && formErrors.optionD)
+                          (option.key === "D" && formErrors.optionD) ||
+                          (option.key === "E" && formErrors.optionE)
                             ? "border-red-300 focus-visible:border-red-400 focus-visible:ring-red-200"
                             : "border-gray-200 focus-visible:border-green-500 focus-visible:ring-green-500/30"
                         }`}
@@ -697,6 +733,11 @@ export default function AsesmenDetailPage({
                       {option.key === "D" && formErrors.optionD && (
                         <p className="mt-1 text-xs text-red-500">
                           {formErrors.optionD}
+                        </p>
+                      )}
+                      {option.key === "E" && formErrors.optionE && (
+                        <p className="mt-1 text-xs text-red-500">
+                          {formErrors.optionE}
                         </p>
                       )}
 
@@ -731,6 +772,12 @@ export default function AsesmenDetailPage({
                               setFormData({
                                 ...formData,
                                 optionDImageFile: selected,
+                              });
+                            }
+                            if (option.key === "E") {
+                              setFormData({
+                                ...formData,
+                                optionEImageFile: selected,
                               });
                             }
                           }}
@@ -787,6 +834,7 @@ export default function AsesmenDetailPage({
                       <option value="B">B</option>
                       <option value="C">C</option>
                       <option value="D">D</option>
+                      <option value="E">E</option>
                     </select>
                     {formErrors.correct_answer && (
                       <p className="mt-1 text-xs text-red-500">

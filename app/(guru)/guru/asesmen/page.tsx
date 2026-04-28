@@ -54,6 +54,7 @@ export default function GuruAsesmenPage() {
     mapel_id: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
     {},
@@ -138,100 +139,103 @@ export default function GuruAsesmenPage() {
     }).format(date);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchData = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Fetch asesmen
-        const { data: asesmenData, error: asesmenError } = await supabase
-          .from("asesmen")
-          .select("*")
-          .eq("created_by", user.id)
-          .order("created_at", { ascending: false });
+    try {
+      // Fetch asesmen
+      const { data: asesmenData, error: asesmenError } = await supabase
+        .from("asesmen")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false });
 
-        if (asesmenError) {
-          console.error("Error fetching asesmen:", asesmenError);
-          setAsesmen([]);
-          return;
-        }
-
+      if (asesmenError) {
+        console.error("Error fetching asesmen:", asesmenError);
+        setAsesmen([]);
+      } else if (asesmenData) {
         // Fetch soal count, kelas, and mapel for each asesmen
-        if (asesmenData) {
-          const asesmenWithDetails = await Promise.all(
-            asesmenData.map(async (a) => {
-              // Get soal count
-              const { count } = await supabase
-                .from("soal")
-                .select("*", { count: "exact", head: true })
-                .eq("asesmen_id", a.id);
+        const asesmenWithDetails = await Promise.all(
+          asesmenData.map(async (a) => {
+            // Get soal count
+            const { count } = await supabase
+              .from("soal")
+              .select("*", { count: "exact", head: true })
+              .eq("asesmen_id", a.id);
 
-              // Get kelas
-              let kelasData = null;
-              if (a.kelas_id) {
-                const { data } = await supabase
-                  .from("kelas")
-                  .select("id, name")
-                  .eq("id", a.kelas_id)
-                  .single();
-                kelasData = data;
-              }
+            // Get kelas
+            let kelasData = null;
+            if (a.kelas_id) {
+              const { data } = await supabase
+                .from("kelas")
+                .select("id, name")
+                .eq("id", a.kelas_id)
+                .single();
+              kelasData = data;
+            }
 
-              // Get mapel
-              let mapelData = null;
-              if (a.mapel_id) {
-                const { data } = await supabase
-                  .from("mapel")
-                  .select("id, name")
-                  .eq("id", a.mapel_id)
-                  .single();
-                mapelData = data;
-              }
+            // Get mapel
+            let mapelData = null;
+            if (a.mapel_id) {
+              const { data } = await supabase
+                .from("mapel")
+                .select("id, name")
+                .eq("id", a.mapel_id)
+                .single();
+              mapelData = data;
+            }
 
-              return {
-                ...a,
-                soal_count: count || 0,
-                kelas: kelasData,
-                mapel: mapelData,
-              };
-            }),
-          );
-          setAsesmen(asesmenWithDetails);
-        } else {
-          setAsesmen([]);
-        }
+            return {
+              ...a,
+              soal_count: count || 0,
+              kelas: kelasData,
+              mapel: mapelData,
+            };
+          }),
+        );
 
-        // Fetch kelas
-        const { data: kelasData } = await supabase
-          .from("kelas")
-          .select("*")
-          .order("name", { ascending: true });
-
-        setKelas(kelasData || []);
-
-        // Fetch all mapel
-        const { data: mapelData } = await supabase
-          .from("mapel")
-          .select("*")
-          .order("name", { ascending: true });
-
-        setMapel(mapelData || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
+        setAsesmen(asesmenWithDetails);
+      } else {
+        setAsesmen([]);
       }
-    };
 
+      // Fetch kelas
+      const { data: kelasData } = await supabase
+        .from("kelas")
+        .select("*")
+        .order("name", { ascending: true });
+
+      setKelas(kelasData || []);
+
+      // Fetch all mapel
+      const { data: mapelData } = await supabase
+        .from("mapel")
+        .select("*")
+        .order("name", { ascending: true });
+
+      setMapel(mapelData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // fetchData is declared above so we can call it elsewhere
     fetchData();
   }, []);
 
-  const handleAddAsesmen = async (e: React.FormEvent) => {
+  const handleSaveAsesmen = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
 
@@ -252,23 +256,165 @@ export default function GuruAsesmenPage() {
     }
 
     try {
-      const { data: newAsesmen, error } = await supabase
-        .from("asesmen")
-        .insert({
+      if (editingId) {
+        // Optimistic update: apply changes locally immediately
+        const prevAsesmen = asesmen;
+        const existing = asesmen.find((p) => p.id === editingId) || {};
+        const selectedMapel =
+          mapel.find((m) => m.id === formData.mapel_id) || null;
+        const selectedKelas =
+          kelas.find((k) => k.id === formData.kelas_id) || null;
+        const optimistic = {
+          ...existing,
+          title: formData.title,
+          description: formData.description,
+          duration: formData.duration,
+          kelas_id: formData.kelas_id || null,
+          mapel_id: formData.mapel_id || null,
+          mapel: selectedMapel
+            ? { id: selectedMapel.id, name: selectedMapel.name }
+            : existing.mapel,
+          kelas: selectedKelas
+            ? { id: selectedKelas.id, name: selectedKelas.name }
+            : existing.kelas,
+          // keep local datetime format so UI shows exactly what user entered
+          waktu_mulai: formData.waktu_mulai || existing.waktu_mulai,
+          waktu_selesai: formData.waktu_selesai || existing.waktu_selesai,
+        };
+        setAsesmen((prev) =>
+          prev.map((p) => (p.id === editingId ? optimistic : p)),
+        );
+
+        // Update existing asesmen on server
+        console.debug("Saving asesmen - editingId:", editingId);
+        const updatePayload = {
+          title: formData.title,
+          description: formData.description,
+          duration: formData.duration,
+          kelas_id: formData.kelas_id || null,
+          mapel_id: formData.mapel_id || null,
+          waktu_mulai: formData.waktu_mulai
+            ? new Date(formData.waktu_mulai).toISOString()
+            : null,
+          waktu_selesai: formData.waktu_selesai
+            ? new Date(formData.waktu_selesai).toISOString()
+            : null,
+        };
+        console.debug("Saving asesmen - payload:", updatePayload);
+        const updateResponse = await supabase
+          .from("asesmen")
+          .update(updatePayload)
+          .eq("id", editingId)
+          .eq("created_by", user.id)
+          .select();
+
+        // Log full response for better debugging
+        console.debug("Supabase update response:", updateResponse);
+
+        if (updateResponse.error) {
+          console.error("Supabase update error (full):", updateResponse.error);
+          // revert optimistic update
+          setAsesmen(prevAsesmen);
+          throw new Error(
+            updateResponse.error.message ||
+              updateResponse.error.details ||
+              JSON.stringify(updateResponse.error),
+          );
+        }
+
+        const updated = Array.isArray(updateResponse.data)
+          ? updateResponse.data[0]
+          : updateResponse.data;
+
+        if (!updated) {
+          // If no row returned, likely blocked by RLS/policy or ID mismatch.
+          setAsesmen(prevAsesmen);
+          throw new Error(
+            "Data kuis tidak ter-update (0 row). Kemungkinan policy RLS UPDATE untuk tabel asesmen belum aktif.",
+          );
+        }
+
+        // merge server result into state (keeps soal_count, etc.)
+        setAsesmen((prev) =>
+          prev.map((p) =>
+            p.id === editingId
+              ? {
+                  ...p,
+                  ...updated,
+                  // keep resolved relation names in card after edit
+                  mapel: selectedMapel
+                    ? { id: selectedMapel.id, name: selectedMapel.name }
+                    : p.mapel,
+                  kelas: selectedKelas
+                    ? { id: selectedKelas.id, name: selectedKelas.name }
+                    : p.kelas,
+                  // keep user input display to avoid timezone jump in immediate UI
+                  waktu_mulai: formData.waktu_mulai || updated.waktu_mulai,
+                  waktu_selesai:
+                    formData.waktu_selesai || updated.waktu_selesai,
+                }
+              : p,
+          ),
+        );
+
+        toast.success("Informasi kuis berhasil diperbarui");
+      } else {
+        // Create new asesmen
+        const createPayload = {
           title: formData.title,
           description: formData.description,
           duration: formData.duration,
           kelas_id: formData.kelas_id || null,
           mapel_id: formData.mapel_id || null,
           created_by: user.id,
-          waktu_mulai: new Date(formData.waktu_mulai).toISOString(),
-          waktu_selesai: new Date(formData.waktu_selesai).toISOString(),
-        })
-        .select();
+          waktu_mulai: formData.waktu_mulai
+            ? new Date(formData.waktu_mulai).toISOString()
+            : null,
+          waktu_selesai: formData.waktu_selesai
+            ? new Date(formData.waktu_selesai).toISOString()
+            : null,
+        };
+        console.debug("Creating asesmen - payload:", createPayload);
+        const { data: newAsesmen, error } = await supabase
+          .from("asesmen")
+          .insert(createPayload)
+          .select();
 
-      if (error) throw error;
+        if (error) {
+          console.error("Supabase insert error:", error);
+          throw new Error(
+            error.message || error.details || JSON.stringify(error),
+          );
+        }
 
-      setAsesmen([newAsesmen[0], ...asesmen]);
+        const created = Array.isArray(newAsesmen) ? newAsesmen[0] : null;
+        if (!created) {
+          throw new Error("Data kuis baru tidak dikembalikan server");
+        }
+
+        const selectedMapel =
+          mapel.find((m) => m.id === formData.mapel_id) || null;
+        const selectedKelas =
+          kelas.find((k) => k.id === formData.kelas_id) || null;
+
+        setAsesmen((prev) => [
+          {
+            ...created,
+            soal_count: 0,
+            mapel: selectedMapel
+              ? { id: selectedMapel.id, name: selectedMapel.name }
+              : null,
+            kelas: selectedKelas
+              ? { id: selectedKelas.id, name: selectedKelas.name }
+              : null,
+          },
+          ...prev,
+        ]);
+
+        toast.success("Kuis berhasil dibuat");
+      }
+
+      // reset form
       setFormData({
         title: "",
         description: "",
@@ -281,10 +427,10 @@ export default function GuruAsesmenPage() {
       setTouchedFields({});
       setSubmitAttempted(false);
       setShowForm(false);
-      toast.success("Kuis berhasil dibuat");
+      setEditingId(null);
     } catch (error) {
-      console.error("Error adding asesmen:", error);
-      toast.error("Gagal membuat kuis");
+      console.error("Error saving asesmen:", error);
+      toast.error(editingId ? "Gagal memperbarui kuis" : "Gagal membuat kuis");
     } finally {
       setIsSaving(false);
     }
@@ -336,6 +482,22 @@ export default function GuruAsesmenPage() {
     }
   };
 
+  const handleEditAsesmen = (a: any) => {
+    setEditingId(a.id);
+    setFormData({
+      title: a.title || "",
+      description: a.description || "",
+      duration: a.duration ?? Number.NaN,
+      kelas_id: a.kelas_id || "",
+      mapel_id: a.mapel_id || "",
+      waktu_mulai: formatDateTimeLocalValue(a.waktu_mulai),
+      waktu_selesai: formatDateTimeLocalValue(a.waktu_selesai),
+    });
+    setTouchedFields({});
+    setSubmitAttempted(false);
+    setShowForm(true);
+  };
+
   return (
     <div>
       <div className="mb-8 flex items-start justify-between gap-4">
@@ -356,7 +518,11 @@ export default function GuruAsesmenPage() {
 
       {showForm && (
         <Card className="mb-8 rounded-xl border border-gray-100 p-6 shadow-sm">
-          <form onSubmit={handleAddAsesmen} className="space-y-7">
+          <form
+            onSubmit={handleSaveAsesmen}
+            aria-busy={isSaving}
+            className="space-y-7"
+          >
             <div className="space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900">
@@ -372,6 +538,7 @@ export default function GuruAsesmenPage() {
                   type="text"
                   placeholder="Masukkan judul kuis"
                   value={formData.title}
+                  disabled={isSaving}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
@@ -394,6 +561,7 @@ export default function GuruAsesmenPage() {
                   type="text"
                   placeholder="Masukkan deskripsi kuis"
                   value={formData.description}
+                  disabled={isSaving}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
@@ -416,6 +584,7 @@ export default function GuruAsesmenPage() {
                   </label>
                   <select
                     value={formData.mapel_id}
+                    disabled={isSaving}
                     onChange={(e) =>
                       setFormData({ ...formData, mapel_id: e.target.value })
                     }
@@ -445,6 +614,7 @@ export default function GuruAsesmenPage() {
                   </label>
                   <select
                     value={formData.kelas_id}
+                    disabled={isSaving}
                     onChange={(e) =>
                       setFormData({ ...formData, kelas_id: e.target.value })
                     }
@@ -480,6 +650,7 @@ export default function GuruAsesmenPage() {
                     value={
                       Number.isNaN(formData.duration) ? "" : formData.duration
                     }
+                    disabled={isSaving}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -510,6 +681,7 @@ export default function GuruAsesmenPage() {
                     type="datetime-local"
                     step={60}
                     value={formatDateTimeLocalValue(formData.waktu_mulai)}
+                    disabled={isSaving}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -540,6 +712,7 @@ export default function GuruAsesmenPage() {
                     type="datetime-local"
                     step={60}
                     value={formatDateTimeLocalValue(formData.waktu_selesai)}
+                    disabled={isSaving}
                     onChange={(e) => {
                       const inputElement = e.currentTarget;
                       setFormData({
@@ -577,6 +750,8 @@ export default function GuruAsesmenPage() {
                     <Loader2 size={15} className="mr-2 animate-spin" />
                     Menyimpan...
                   </>
+                ) : editingId ? (
+                  "Simpan Perubahan"
                 ) : (
                   "Simpan Kuis"
                 )}
@@ -587,6 +762,7 @@ export default function GuruAsesmenPage() {
                   setShowForm(false);
                   setTouchedFields({});
                   setSubmitAttempted(false);
+                  setEditingId(null);
                 }}
                 variant="outline"
                 disabled={isSaving}
@@ -664,14 +840,13 @@ export default function GuruAsesmenPage() {
                     </Button>
                   </Link>
 
-                  <Link href={`/guru/asesmen/${a.id}`}>
-                    <Button
-                      variant="outline"
-                      className="h-9 w-9 p-0 border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-[1.03] transition-all duration-150"
-                    >
-                      <Edit size={15} />
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleEditAsesmen(a)}
+                    className="h-9 w-9 p-0 border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-[1.03] transition-all duration-150"
+                  >
+                    <Edit size={15} />
+                  </Button>
 
                   <Button
                     variant="outline"
