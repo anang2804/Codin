@@ -72,6 +72,9 @@ type CommandChoice =
   | "-"
   | "*"
   | "/"
+  | "%"
+  | "**"
+  | "!="
   | ">"
   | ">="
   | "<="
@@ -152,6 +155,21 @@ const COMMAND_DETAILS: Record<
     title: "KALI (*)",
     desc: "Operator perkalian",
     color: "bg-violet-50 border-violet-200",
+  },
+  "%": {
+    title: "MODULO (%)",
+    desc: "Operator sisa pembagian",
+    color: "bg-amber-50 border-amber-200",
+  },
+  "**": {
+    title: "PANGKAT (**)",
+    desc: "Operator perpangkatan",
+    color: "bg-fuchsia-50 border-fuchsia-200",
+  },
+  "!=": {
+    title: "TIDAK SAMA DENGAN (!=)",
+    desc: "Mengecek apakah dua nilai berbeda",
+    color: "bg-orange-50 border-orange-200",
   },
   "/": {
     title: "BAGI (/)",
@@ -270,7 +288,7 @@ export default function VariabelFoodDeliveryMenengahPage() {
   const currentChoice =
     activeLine !== -1 ? selectedCommands[activeLine] : undefined;
   const currentDesc = currentChoice
-    ? COMMAND_DETAILS[currentChoice]
+    ? COMMAND_DETAILS[currentChoice] || COMMAND_DETAILS.default
     : COMMAND_DETAILS.default;
 
   useEffect(() => {
@@ -390,6 +408,9 @@ export default function VariabelFoodDeliveryMenengahPage() {
     "+": "Perhatikan operasi penjumlahan untuk menggabungkan dua nilai.",
     "-": "Token ini dipakai saat operasi pengurangan nilai.",
     "*": "Perhatikan operasi perkalian untuk menghitung total ongkir.",
+    "%": "Token ini dipakai untuk operasi modulo atau sisa pembagian.",
+    "**": "Token ini dipakai untuk operasi perpangkatan.",
+    "!=": "Token ini dipakai untuk membandingkan dua nilai yang berbeda.",
     "/": "Token ini dipakai saat operasi pembagian nilai.",
     ">": "Gunakan pembanding untuk mengecek nilai lebih besar dari batas.",
     ">=": "Gunakan pembanding untuk mengecek nilai lebih besar atau sama dengan batas.",
