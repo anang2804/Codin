@@ -214,13 +214,18 @@ export default function AsesmenDetailPage({
     const supabase = createClient();
 
     try {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Lampiran soal hanya boleh gambar");
+        return null;
+      }
+
       const isImage = file.type.startsWith("image/");
       const compressed = isImage
         ? await compressImageFile(file, {
             maxWidth: 1920,
             maxHeight: 1920,
             quality: 0.78,
-            targetType: "image/webp",
+            targetType: file.type === "image/png" ? "image/png" : "image/jpeg",
           })
         : {
             file,
@@ -586,13 +591,27 @@ export default function AsesmenDetailPage({
                 <div className="flex items-center gap-2">
                   <Input
                     type="file"
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const selectedFile = e.target.files?.[0] || null;
+                      if (
+                        selectedFile &&
+                        !selectedFile.type.startsWith("image/")
+                      ) {
+                        toast.error("Lampiran soal hanya boleh gambar");
+                        e.target.value = "";
+                        setFormData({
+                          ...formData,
+                          file: null,
+                        });
+                        return;
+                      }
+
                       setFormData({
                         ...formData,
-                        file: e.target.files?.[0] || null,
-                      })
-                    }
-                    accept="image/*,application/pdf"
+                        file: selectedFile,
+                      });
+                    }}
+                    accept="image/*"
                   />
                   {uploading && (
                     <span className="text-sm text-gray-500">Uploading...</span>

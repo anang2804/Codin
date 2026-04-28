@@ -17,7 +17,7 @@ const DEFAULT_OPTIONS: Required<CompressImageOptions> = {
   maxWidth: 1600,
   maxHeight: 1600,
   quality: 0.78,
-  targetType: "image/webp",
+  targetType: "image/jpeg",
   minBytesToCompress: 200 * 1024,
 };
 

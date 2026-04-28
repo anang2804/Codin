@@ -559,15 +559,23 @@ export default function SiswaAsesmenDetailPage({
               </p>
 
               {currentSoal.file_url && (
-                <div className="mt-2">
-                  <a
-                    href={currentSoal.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-600 hover:text-green-700 underline text-xs"
-                  >
-                    📎 Lihat Lampiran
-                  </a>
+                <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
+                  <img
+                    src={currentSoal.file_url}
+                    alt="Lampiran soal"
+                    className="w-full max-h-72 rounded object-contain bg-white"
+                  />
+
+                  <div className="mt-1">
+                    <a
+                      href={currentSoal.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-700 underline text-xs"
+                    >
+                      📎 Lihat Lampiran
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
