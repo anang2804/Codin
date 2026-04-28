@@ -468,6 +468,11 @@ export default function AsesmenDetailPage({
       correct_answer: soal.correct_answer || "",
       points: soal.points,
     });
+    setShowForm(true);
+    // focus the question textarea after the dialog opens
+    window.requestAnimationFrame(() => {
+      questionTextareaRef.current?.focus();
+    });
   };
 
   const handleDeleteSoal = (soal: Soal) => {
