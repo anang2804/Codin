@@ -172,6 +172,84 @@ export default function SiswaAsesmenPage() {
   }, [fetchAsesmen]);
 
   useEffect(() => {
+    const supabase = createClient();
+    let refreshTimer: number | undefined;
+    let realtimeChannel: any = null;
+
+    const scheduleRefresh = () => {
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
+      }
+
+      refreshTimer = window.setTimeout(() => {
+        void fetchAsesmen(true);
+      }, 200);
+    };
+
+    const initRealtime = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return;
+      }
+
+      realtimeChannel = supabase
+        .channel(`siswa-asesmen-live:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jawaban_siswa",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "nilai",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(),
+        )
+        .subscribe();
+    };
+
+    void initRealtime();
+
+    const handleFocus = () => {
+      scheduleRefresh();
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        scheduleRefresh();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
+      }
+
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handlePageShow);
+
+      if (realtimeChannel) {
+        void supabase.removeChannel(realtimeChannel);
+      }
+    };
+  }, [fetchAsesmen]);
+
+  useEffect(() => {
     if (!loading) {
       const timer = window.setTimeout(() => setAnimateCards(true), 40);
       return () => window.clearTimeout(timer);

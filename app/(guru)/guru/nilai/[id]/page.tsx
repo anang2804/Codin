@@ -163,19 +163,23 @@ export default function GuruNilaiDetailPage({
     if (!resetDialog.siswaId) return;
 
     setIsResetting(true);
-    const supabase = createClient();
     try {
-      // Only delete jawaban siswa, keep nilai for history
-      const { error: jawabanError } = await supabase
-        .from("jawaban_siswa")
-        .delete()
-        .eq("asesmen_id", id)
-        .eq("siswa_id", resetDialog.siswaId);
+      const response = await fetch(`/api/guru/nilai/${id}/reset-siswa`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ siswa_id: resetDialog.siswaId }),
+      });
 
-      if (jawabanError) throw jawabanError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal membuka ulang asesmen");
+      }
 
       toast.success(
-        "Berhasil membuka ulang asesmen. Siswa dapat mengerjakan ulang. Nilai lama tetap tersimpan.",
+        "Berhasil membuka ulang asesmen. Riwayat lama sudah dibersihkan.",
       );
       setResetDialog({ open: false, siswaId: "", siswaName: "" });
       fetchData();
@@ -432,22 +436,20 @@ export default function GuruNilaiDetailPage({
                                   Riwayat
                                 </Button>
                               )}
-                              {hasScore && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    handleReset(
-                                      n.siswa_id,
-                                      n.profiles?.full_name || "Unknown",
-                                    )
-                                  }
-                                  className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                                >
-                                  <RefreshCw size={14} className="mr-1" />
-                                  Buka Ulang
-                                </Button>
-                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleReset(
+                                    n.siswa_id,
+                                    n.profiles?.full_name || "Unknown",
+                                  )
+                                }
+                                className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                              >
+                                <RefreshCw size={14} className="mr-1" />
+                                Buka Ulang
+                              </Button>
                             </div>
                           </td>
                         </tr>

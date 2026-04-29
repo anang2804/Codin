@@ -248,60 +248,10 @@ export default function SiswaAsesmenDetailPage({
           answer: "",
         })) || [];
 
-      const savedDraftRaw = localStorage.getItem(getDraftKey());
-
-      if (savedDraftRaw && soalsData && soalsData.length > 0) {
-        try {
-          const savedDraft = JSON.parse(savedDraftRaw) as QuizDraft;
-
-          if (
-            savedDraft.asesmenId === id &&
-            savedDraft.expiresAt > Date.now()
-          ) {
-            const restoredJawaban = initialJawaban.map((item) => {
-              const savedAnswer = savedDraft.jawaban.find(
-                (draftItem) => draftItem.soal_id === item.soal_id,
-              );
-
-              return savedAnswer
-                ? { ...item, answer: savedAnswer.answer }
-                : item;
-            });
-
-            setJawaban(restoredJawaban);
-            setFlaggedSoalIds(savedDraft.flaggedSoalIds || []);
-            setCurrentSoalIndex(
-              Math.min(
-                Math.max(savedDraft.currentSoalIndex || 0, 0),
-                Math.max(soalsData.length - 1, 0),
-              ),
-            );
-
-            if (savedDraft.expiresAt) {
-              const remainingTime = Math.max(
-                0,
-                Math.floor((savedDraft.expiresAt - Date.now()) / 1000),
-              );
-              setTimeLeft((prev) => Math.min(prev, remainingTime));
-            }
-
-            toast.info(
-              "Progress kuis dipulihkan. Lanjutkan dari sesi terakhir.",
-            );
-          } else {
-            setJawaban(initialJawaban);
-            setFlaggedSoalIds([]);
-            clearQuizDraft();
-          }
-        } catch {
-          setJawaban(initialJawaban);
-          setFlaggedSoalIds([]);
-          clearQuizDraft();
-        }
-      } else {
-        setJawaban(initialJawaban);
-        setFlaggedSoalIds([]);
-      }
+      setJawaban(initialJawaban);
+      setFlaggedSoalIds([]);
+      setCurrentSoalIndex(0);
+      clearQuizDraft();
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -712,7 +662,7 @@ export default function SiswaAsesmenDetailPage({
                         className="my-3 max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
                       />
                     ),
-                    code: ({ inline, className, ...props }) => {
+                    code: ({ inline, className, ...props }: any) => {
                       if (inline) {
                         return (
                           <code

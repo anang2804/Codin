@@ -185,11 +185,9 @@ export default function SiswaDashboard() {
             {
               ...asesmenData[0],
               question_count: soalCount ?? asesmenData[0].total_questions ?? 0,
-              nilai: nilaiData ? [nilaiData] : [],
-              is_completed:
-                Boolean(nilaiData?.completed_at) ||
-                Boolean(nilaiData) ||
-                (jawabanData?.length || 0) > 0,
+              nilai:
+                (jawabanData?.length || 0) > 0 && nilaiData ? [nilaiData] : [],
+              is_completed: (jawabanData?.length || 0) > 0,
             },
           ]);
         } else {
@@ -254,6 +252,16 @@ export default function SiswaDashboard() {
             event: "*",
             schema: "public",
             table: "nilai",
+            filter: `siswa_id=eq.${user.id}`,
+          },
+          () => scheduleRefresh(user.id),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jawaban_siswa",
             filter: `siswa_id=eq.${user.id}`,
           },
           () => scheduleRefresh(user.id),
@@ -542,9 +550,7 @@ export default function SiswaDashboard() {
           <div className="space-y-2.5">
             {recentAsesmen.length > 0 ? (
               recentAsesmen.map((asesmen) => {
-                const isCompleted =
-                  Boolean(asesmen.is_completed) ||
-                  Boolean(asesmen.nilai && asesmen.nilai.length > 0);
+                const isCompleted = Boolean(asesmen.is_completed);
 
                 return (
                   <Card
