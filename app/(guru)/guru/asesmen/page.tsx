@@ -29,6 +29,8 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { toast } from "sonner";
 
+const QUIZ_TIME_ZONE = "Asia/Jakarta";
+
 type FormErrors = {
   title?: string;
   mapel_id?: string;
@@ -136,6 +138,7 @@ export default function GuruAsesmenPage() {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: QUIZ_TIME_ZONE,
     }).format(date);
   };
 

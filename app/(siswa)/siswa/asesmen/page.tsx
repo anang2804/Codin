@@ -13,7 +13,10 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getServerTimeMs } from "@/lib/supabase/server-time";
 import Link from "next/link";
+
+const QUIZ_TIME_ZONE = "Asia/Jakarta";
 
 export default function SiswaAsesmenPage() {
   const [asesmen, setAsesmen] = useState<any[]>([]);
@@ -23,13 +26,13 @@ export default function SiswaAsesmenPage() {
   const getScheduleStatus = (
     startAt?: string | null,
     endAt?: string | null,
+    nowMs: number = Date.now(),
   ) => {
-    const now = Date.now();
     const startMs = startAt ? new Date(startAt).getTime() : Number.NaN;
     const endMs = endAt ? new Date(endAt).getTime() : Number.NaN;
 
-    if (!Number.isNaN(startMs) && now < startMs) return "upcoming" as const;
-    if (!Number.isNaN(endMs) && now > endMs) return "closed" as const;
+    if (!Number.isNaN(startMs) && nowMs < startMs) return "upcoming" as const;
+    if (!Number.isNaN(endMs) && nowMs > endMs) return "closed" as const;
     return "open" as const;
   };
 
@@ -43,6 +46,7 @@ export default function SiswaAsesmenPage() {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: QUIZ_TIME_ZONE,
     }).format(date);
   };
 
@@ -60,6 +64,8 @@ export default function SiswaAsesmenPage() {
     }
 
     try {
+      const serverNowMs = await getServerTimeMs();
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("kelas")
@@ -136,6 +142,7 @@ export default function SiswaAsesmenPage() {
                   schedule_status: getScheduleStatus(
                     a.waktu_mulai,
                     a.waktu_selesai,
+                    serverNowMs,
                   ),
                 };
               }),

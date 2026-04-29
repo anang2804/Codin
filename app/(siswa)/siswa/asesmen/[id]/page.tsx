@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, ArrowRight, CheckCircle, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getServerTimeMs } from "@/lib/supabase/server-time";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -162,6 +163,8 @@ export default function SiswaAsesmenDetailPage({
     }
 
     try {
+      const serverNowMs = await getServerTimeMs();
+
       // Check if there are existing answers (not nilai)
       const { data: jawabanData } = await supabase
         .from("jawaban_siswa")
@@ -205,13 +208,13 @@ export default function SiswaAsesmenDetailPage({
         ? new Date(asesmenData.waktu_selesai).getTime()
         : Number.NaN;
 
-      if (!Number.isNaN(startMs) && nowMs < startMs) {
+      if (!Number.isNaN(startMs) && serverNowMs < startMs) {
         toast.error("Kuis belum dibuka sesuai jadwal.");
         router.push("/siswa/asesmen");
         return;
       }
 
-      if (!Number.isNaN(endMs) && nowMs > endMs) {
+      if (!Number.isNaN(endMs) && serverNowMs > endMs) {
         toast.error("Waktu pengerjaan kuis sudah ditutup.");
         router.push("/siswa/asesmen");
         return;
@@ -226,7 +229,7 @@ export default function SiswaAsesmenDetailPage({
       if (!Number.isNaN(endMs)) {
         const secondsUntilEnd = Math.max(
           0,
-          Math.floor((endMs - Date.now()) / 1000),
+          Math.floor((endMs - serverNowMs) / 1000),
         );
         nextTimeLeft = Math.min(nextTimeLeft, secondsUntilEnd);
       }
