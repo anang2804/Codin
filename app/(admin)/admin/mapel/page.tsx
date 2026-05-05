@@ -30,25 +30,6 @@ import {
 import { useGuru } from "@/lib/hooks/use-guru";
 import { useToast } from "@/hooks/use-toast";
 
-function generateMapelCode(name: string) {
-  const normalized = name
-    .toUpperCase()
-    .replace(/[^A-Z0-9\s]/g, " ")
-    .trim();
-
-  if (!normalized) {
-    return "MAP";
-  }
-
-  const words = normalized.split(/\s+/).filter(Boolean);
-  const baseCode =
-    words.length > 1
-      ? words.map((word) => word[0]).join("")
-      : words[0].slice(0, 3);
-
-  return baseCode.replace(/[^A-Z0-9]/g, "") || "MAP";
-}
-
 function formatMapelName(name: string) {
   return name
     .trim()
@@ -70,7 +51,6 @@ export default function AdminMapelPage() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    code: "",
     description: "",
     guru_id: "",
     semester: "",
@@ -100,10 +80,6 @@ export default function AdminMapelPage() {
 
     const normalizedName = formatMapelName(formData.name);
 
-    const codeValue = editingId
-      ? formData.code.trim().toUpperCase()
-      : generateMapelCode(normalizedName);
-
     const nextErrors = {
       name: normalizedName ? "" : "Nama mata pelajaran wajib diisi.",
       guru_id: formData.guru_id ? "" : "Guru pengampu wajib dipilih.",
@@ -132,7 +108,6 @@ export default function AdminMapelPage() {
         await updateMapel.mutateAsync({
           id: editingId,
           name: normalizedName,
-          code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
           semester: formData.semester || undefined,
@@ -146,7 +121,6 @@ export default function AdminMapelPage() {
       } else {
         await createMapel.mutateAsync({
           name: normalizedName,
-          code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
           semester: formData.semester || undefined,
@@ -160,7 +134,6 @@ export default function AdminMapelPage() {
 
       setFormData({
         name: "",
-        code: "",
         description: "",
         guru_id: "",
         semester: "",
@@ -182,7 +155,6 @@ export default function AdminMapelPage() {
   const handleEditMapel = (mapelItem: any) => {
     setFormData({
       name: mapelItem.name,
-      code: mapelItem.code,
       description: mapelItem.description || "",
       guru_id: mapelItem.guru_id || "",
       semester: mapelItem.semester || "",
@@ -225,7 +197,6 @@ export default function AdminMapelPage() {
     setShowForm(false);
     setFormData({
       name: "",
-      code: "",
       description: "",
       guru_id: "",
       semester: "",
@@ -256,7 +227,6 @@ export default function AdminMapelPage() {
             if (!showForm) {
               setFormData({
                 name: "",
-                code: "",
                 description: "",
                 guru_id: "",
                 semester: "",
@@ -301,9 +271,6 @@ export default function AdminMapelPage() {
                     setFormData({
                       ...formData,
                       name: value,
-                      code: editingId
-                        ? formData.code
-                        : generateMapelCode(value),
                     });
                     if (formErrors.name) {
                       setFormErrors((prev) => ({ ...prev, name: "" }));
@@ -320,17 +287,6 @@ export default function AdminMapelPage() {
                 {formErrors.name && (
                   <p className="mt-1 text-xs text-red-500">{formErrors.name}</p>
                 )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Kode Mapel Otomatis
-                </label>
-                <p className="mb-1 text-xs text-gray-400">
-                  Kode dibuat otomatis dari nama mata pelajaran.
-                </p>
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
-                  {editingId ? formData.code : generateMapelCode(formData.name)}
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -535,9 +491,8 @@ export default function AdminMapelPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
+          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.8fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
             <div>Nama Mata Pelajaran</div>
-            <div>Kode</div>
             <div>Semester</div>
             <div>Tahun Ajaran</div>
             <div>Guru Pengampu</div>
@@ -550,7 +505,7 @@ export default function AdminMapelPage() {
                   key={m.id}
                   className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.8fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
                     {/* Nama Mata Pelajaran */}
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
@@ -564,21 +519,6 @@ export default function AdminMapelPage() {
                           {formatMapelName(m.name)}
                         </p>
                       </div>
-                    </div>
-
-                    {/* Kode */}
-                    <div className="hidden lg:block">
-                      <span className="inline-block px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
-                        {m.code}
-                      </span>
-                    </div>
-                    <div className="lg:hidden flex gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-16">
-                        Kode
-                      </p>
-                      <span className="inline-block px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
-                        {m.code}
-                      </span>
                     </div>
 
                     {/* Semester */}

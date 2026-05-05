@@ -37,7 +37,7 @@ export function useCreateMapel() {
   return useMutation({
     mutationFn: async (data: {
       name: string;
-      code: string;
+      code?: string;
       description?: string;
       guru_id?: string;
       semester?: string;
@@ -67,7 +67,7 @@ export function useUpdateMapel() {
     }: {
       id: string;
       name: string;
-      code: string;
+      code?: string;
       description?: string;
       guru_id?: string;
       semester?: string;
