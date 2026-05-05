@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export interface Mapel {
   id: string;
   name: string;
-  code: string;
   description: string | null;
   guru_id: string | null;
   semester?: string | null;
@@ -37,7 +36,6 @@ export function useCreateMapel() {
   return useMutation({
     mutationFn: async (data: {
       name: string;
-      code?: string;
       description?: string;
       guru_id?: string;
       semester?: string;
@@ -67,7 +65,6 @@ export function useUpdateMapel() {
     }: {
       id: string;
       name: string;
-      code?: string;
       description?: string;
       guru_id?: string;
       semester?: string;

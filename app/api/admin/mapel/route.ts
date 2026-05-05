@@ -11,53 +11,6 @@ function normalizeMapelName(name: string) {
     .join(" ");
 }
 
-function generateMapelCodeBase(name: string) {
-  const normalized = name
-    .toUpperCase()
-    .replace(/[^A-Z0-9\s]/g, " ")
-    .trim();
-
-  if (!normalized) {
-    return "MAP";
-  }
-
-  const words = normalized.split(/\s+/).filter(Boolean);
-  const baseCode =
-    words.length > 1
-      ? words.map((word) => word[0]).join("")
-      : words[0].slice(0, 3);
-
-  return baseCode.replace(/[^A-Z0-9]/g, "") || "MAP";
-}
-
-async function generateUniqueMapelCode(name: string) {
-  const baseCode = generateMapelCodeBase(name);
-
-  const existingMapel = await prisma.mapel.findMany({
-    where: {
-      code: {
-        startsWith: baseCode,
-      },
-    },
-    select: {
-      code: true,
-    },
-  });
-
-  const existingCodes = new Set(existingMapel.map((item) => item.code));
-
-  if (!existingCodes.has(baseCode)) {
-    return baseCode;
-  }
-
-  let suffix = 2;
-  while (existingCodes.has(`${baseCode}${suffix}`)) {
-    suffix += 1;
-  }
-
-  return `${baseCode}${suffix}`;
-}
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -75,10 +28,7 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { code: { contains: search, mode: "insensitive" } },
-      ];
+      where.OR = [{ name: { contains: search, mode: "insensitive" } }];
     }
 
     const mapel = await prisma.mapel.findMany({
@@ -86,7 +36,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        code: true,
         description: true,
         guru_id: true,
         semester: true,
@@ -145,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, code, description, guru_id, semester, tahun_ajaran } = body;
+    const { name, description, guru_id, semester, tahun_ajaran } = body;
 
     const normalizedName = normalizeMapelName(
       typeof name === "string" ? name : "",
@@ -158,15 +107,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedCode =
-      typeof code === "string" ? code.trim().toUpperCase() : "";
-    const finalCode =
-      normalizedCode || (await generateUniqueMapelCode(normalizedName));
-
     const newMapel = await prisma.mapel.create({
       data: {
         name: normalizedName,
-        code: finalCode,
         description,
         guru_id: guru_id || null,
         semester: semester || null,
@@ -206,26 +149,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, code, description, guru_id, semester, tahun_ajaran } =
-      body;
+    const { id, name, description, guru_id, semester, tahun_ajaran } = body;
 
     const normalizedName =
       typeof name === "string" ? normalizeMapelName(name) : "";
 
-    const existingMapel = await prisma.mapel.findUnique({
-      where: { id },
-      select: { code: true },
-    });
-
-    const finalCode =
-      typeof code === "string" && code.trim()
-        ? code.trim().toUpperCase()
-        : existingMapel?.code;
-
     const updateData: any = {};
 
     if (normalizedName) updateData.name = normalizedName;
-    if (finalCode) updateData.code = finalCode;
     if (description !== undefined) updateData.description = description;
     updateData.guru_id = guru_id || null;
     updateData.semester = semester || null;
