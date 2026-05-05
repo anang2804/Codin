@@ -1508,7 +1508,7 @@ export default function AdminSiswaPage() {
           )}
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.6fr_1.8fr_1.4fr_1.2fr_1.3fr_auto] lg:gap-4">
             <div>Nama Siswa</div>
             <div>Email</div>
@@ -1517,7 +1517,7 @@ export default function AdminSiswaPage() {
             <div>Jenis Kelamin</div>
             <div className="text-right">Aksi</div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[calc(100vh-500px)] overflow-y-auto pr-2">
             {paginatedSiswa.map((s) => (
               <div
                 key={s.id}
@@ -2039,9 +2039,9 @@ export default function AdminSiswaPage() {
               </div>
             ))}
           </div>
-          <div className="sticky bottom-0 z-10 -mx-1 rounded-xl border border-gray-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.04)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
+          <div className="border-t border-gray-200 rounded-b-xl bg-white px-4 py-4 shadow-lg sticky bottom-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
                 <span>Rows per page:</span>
                 <select
                   value={siswaRowsPerPage}
@@ -2049,7 +2049,7 @@ export default function AdminSiswaPage() {
                     setSiswaRowsPerPage(Number(e.target.value));
                     setSiswaPage(0);
                   }}
-                  className="h-8 rounded-md border border-gray-200 bg-white px-2 text-sm text-gray-700 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+                  className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 font-semibold focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
                 >
                   {[5, 10, 20, 50].map((value) => (
                     <option key={value} value={value}>
@@ -2057,7 +2057,7 @@ export default function AdminSiswaPage() {
                     </option>
                   ))}
                 </select>
-                <span className="text-gray-500">
+                <span className="font-semibold text-gray-700">
                   {filteredSiswa.length === 0
                     ? "0-0 of 0"
                     : `${siswaStartIndex}-${siswaEndIndex} of ${filteredSiswa.length}`}
