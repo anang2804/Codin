@@ -73,10 +73,14 @@ export default function AdminMapelPage() {
     code: "",
     description: "",
     guru_id: "",
+    semester: "",
+    tahun_ajaran: "",
   });
   const [formErrors, setFormErrors] = useState({
     name: "",
     guru_id: "",
+    semester: "",
+    tahun_ajaran: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -103,11 +107,18 @@ export default function AdminMapelPage() {
     const nextErrors = {
       name: normalizedName ? "" : "Nama mata pelajaran wajib diisi.",
       guru_id: formData.guru_id ? "" : "Guru pengampu wajib dipilih.",
+      semester: formData.semester ? "" : "Semester wajib dipilih.",
+      tahun_ajaran: formData.tahun_ajaran ? "" : "Tahun ajaran wajib diisi.",
     };
 
     setFormErrors(nextErrors);
 
-    if (nextErrors.name || nextErrors.guru_id) {
+    if (
+      nextErrors.name ||
+      nextErrors.guru_id ||
+      nextErrors.semester ||
+      nextErrors.tahun_ajaran
+    ) {
       toast({
         title: "Periksa kembali form",
         description: "Lengkapi field yang wajib diisi sebelum menyimpan.",
@@ -124,6 +135,8 @@ export default function AdminMapelPage() {
           code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
+          semester: formData.semester || undefined,
+          tahun_ajaran: formData.tahun_ajaran || undefined,
         });
         toast({
           title: "Berhasil",
@@ -136,6 +149,8 @@ export default function AdminMapelPage() {
           code: codeValue,
           description: formData.description,
           guru_id: formData.guru_id || undefined,
+          semester: formData.semester || undefined,
+          tahun_ajaran: formData.tahun_ajaran || undefined,
         });
         toast({
           title: "Berhasil",
@@ -143,8 +158,15 @@ export default function AdminMapelPage() {
         });
       }
 
-      setFormData({ name: "", code: "", description: "", guru_id: "" });
-      setFormErrors({ name: "", guru_id: "" });
+      setFormData({
+        name: "",
+        code: "",
+        description: "",
+        guru_id: "",
+        semester: "",
+        tahun_ajaran: "",
+      });
+      setFormErrors({ name: "", guru_id: "", semester: "", tahun_ajaran: "" });
       setShowForm(false);
     } catch (error) {
       toast({
@@ -163,6 +185,8 @@ export default function AdminMapelPage() {
       code: mapelItem.code,
       description: mapelItem.description || "",
       guru_id: mapelItem.guru_id || "",
+      semester: mapelItem.semester || "",
+      tahun_ajaran: mapelItem.tahun_ajaran || "",
     });
     setEditingId(mapelItem.id);
     setShowForm(true);
@@ -199,8 +223,15 @@ export default function AdminMapelPage() {
 
   const handleCancelForm = () => {
     setShowForm(false);
-    setFormData({ name: "", code: "", description: "", guru_id: "" });
-    setFormErrors({ name: "", guru_id: "" });
+    setFormData({
+      name: "",
+      code: "",
+      description: "",
+      guru_id: "",
+      semester: "",
+      tahun_ajaran: "",
+    });
+    setFormErrors({ name: "", guru_id: "", semester: "", tahun_ajaran: "" });
     setEditingId(null);
   };
 
@@ -223,7 +254,14 @@ export default function AdminMapelPage() {
           onClick={() => {
             setShowForm(!showForm);
             if (!showForm) {
-              setFormData({ name: "", code: "", description: "", guru_id: "" });
+              setFormData({
+                name: "",
+                code: "",
+                description: "",
+                guru_id: "",
+                semester: "",
+                tahun_ajaran: "",
+              });
               setEditingId(null);
             }
           }}
@@ -341,6 +379,64 @@ export default function AdminMapelPage() {
                   </p>
                 )}
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Semester <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.semester}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, semester: value });
+                      if (formErrors.semester) {
+                        setFormErrors({ ...formErrors, semester: "" });
+                      }
+                    }}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 transition ${
+                      formErrors.semester
+                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-400 focus:ring-green-100"
+                    }`}
+                  >
+                    <option value="">Pilih Semester</option>
+                    <option value="ganjil">Ganjil</option>
+                    <option value="genap">Genap</option>
+                  </select>
+                  {formErrors.semester && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {formErrors.semester}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Tahun Ajaran <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Contoh: 2023/2024"
+                    value={formData.tahun_ajaran}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, tahun_ajaran: value });
+                      if (formErrors.tahun_ajaran) {
+                        setFormErrors({ ...formErrors, tahun_ajaran: "" });
+                      }
+                    }}
+                    className={`transition ${
+                      formErrors.tahun_ajaran
+                        ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                    }`}
+                  />
+                  {formErrors.tahun_ajaran && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {formErrors.tahun_ajaran}
+                    </p>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
@@ -439,11 +535,12 @@ export default function AdminMapelPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.6fr_1.2fr_1.6fr_1.8fr_auto] lg:gap-4 lg:items-center">
+          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
             <div>Nama Mata Pelajaran</div>
             <div>Kode</div>
+            <div>Semester</div>
+            <div>Tahun Ajaran</div>
             <div>Guru Pengampu</div>
-            <div>Deskripsi</div>
             <div className="text-right">Aksi</div>
           </div>
           <div className="space-y-3">
@@ -453,7 +550,7 @@ export default function AdminMapelPage() {
                   key={m.id}
                   className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1.2fr_1.6fr_1.8fr_auto] lg:gap-4 lg:items-center">
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_1.2fr_auto] lg:gap-3 lg:items-center">
                     {/* Nama Mata Pelajaran */}
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
@@ -476,12 +573,48 @@ export default function AdminMapelPage() {
                       </span>
                     </div>
                     <div className="lg:hidden flex gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-16">
                         Kode
                       </p>
                       <span className="inline-block px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
                         {m.code}
                       </span>
+                    </div>
+
+                    {/* Semester */}
+                    <div className="hidden lg:block">
+                      <p className="text-sm text-gray-700">
+                        {m.semester
+                          ? m.semester.charAt(0).toUpperCase() +
+                            m.semester.slice(1)
+                          : "-"}
+                      </p>
+                    </div>
+                    <div className="lg:hidden flex gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-16">
+                        Semester
+                      </p>
+                      <p className="text-sm text-gray-700 flex-1">
+                        {m.semester
+                          ? m.semester.charAt(0).toUpperCase() +
+                            m.semester.slice(1)
+                          : "-"}
+                      </p>
+                    </div>
+
+                    {/* Tahun Ajaran */}
+                    <div className="hidden lg:block">
+                      <p className="text-sm text-gray-700">
+                        {m.tahun_ajaran || "-"}
+                      </p>
+                    </div>
+                    <div className="lg:hidden flex gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-24">
+                        Tahun Ajaran
+                      </p>
+                      <p className="text-sm text-gray-700 flex-1">
+                        {m.tahun_ajaran || "-"}
+                      </p>
                     </div>
 
                     {/* Guru Pengampu */}
@@ -491,26 +624,11 @@ export default function AdminMapelPage() {
                       </p>
                     </div>
                     <div className="lg:hidden flex gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-16">
                         Guru
                       </p>
                       <p className="text-sm text-gray-700 flex-1 truncate">
                         {m.guru ? m.guru.full_name || m.guru.email : "-"}
-                      </p>
-                    </div>
-
-                    {/* Deskripsi */}
-                    <div className="hidden lg:block">
-                      <p className="text-sm text-gray-600 line-clamp-1">
-                        {m.description || "-"}
-                      </p>
-                    </div>
-                    <div className="lg:hidden flex gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
-                        Deskripsi
-                      </p>
-                      <p className="text-sm text-gray-600 flex-1 line-clamp-1">
-                        {m.description || "-"}
                       </p>
                     </div>
 

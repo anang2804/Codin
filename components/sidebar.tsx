@@ -103,6 +103,11 @@ export function Sidebar({ role }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
+        onMouseLeave={() => {
+          if (window.matchMedia("(min-width: 768px)").matches) {
+            setCollapsed(true);
+          }
+        }}
         className={`sidebar-shell fixed left-0 top-0 h-screen bg-card dark:bg-sidebar border-r border-border dark:border-sidebar-border shadow-sm p-4 md:p-6 transition-transform duration-300 z-[60] ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } ${collapsed ? "sidebar-collapsed" : ""}`}

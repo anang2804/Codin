@@ -8,6 +8,8 @@ export interface Mapel {
   code: string;
   description: string | null;
   guru_id: string | null;
+  semester?: string | null;
+  tahun_ajaran?: string | null;
   created_at: string;
   created_by: string;
   guru?: {
@@ -38,6 +40,8 @@ export function useCreateMapel() {
       code: string;
       description?: string;
       guru_id?: string;
+      semester?: string;
+      tahun_ajaran?: string;
     }) => {
       const response = await fetch("/api/admin/mapel", {
         method: "POST",
@@ -66,6 +70,8 @@ export function useUpdateMapel() {
       code: string;
       description?: string;
       guru_id?: string;
+      semester?: string;
+      tahun_ajaran?: string;
     }) => {
       const response = await fetch("/api/admin/mapel", {
         method: "PUT",

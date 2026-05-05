@@ -89,6 +89,8 @@ export async function GET(request: NextRequest) {
         code: true,
         description: true,
         guru_id: true,
+        semester: true,
+        tahun_ajaran: true,
         created_at: true,
         created_by: true,
         guru: {
@@ -143,7 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, code, description, guru_id } = body;
+    const { name, code, description, guru_id, semester, tahun_ajaran } = body;
 
     const normalizedName = normalizeMapelName(
       typeof name === "string" ? name : "",
@@ -167,6 +169,8 @@ export async function POST(request: NextRequest) {
         code: finalCode,
         description,
         guru_id: guru_id || null,
+        semester: semester || null,
+        tahun_ajaran: tahun_ajaran || null,
         created_by: user.id,
       },
     });
@@ -202,7 +206,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, code, description, guru_id } = body;
+    const { id, name, code, description, guru_id, semester, tahun_ajaran } =
+      body;
 
     const normalizedName =
       typeof name === "string" ? normalizeMapelName(name) : "";
@@ -217,14 +222,18 @@ export async function PUT(request: NextRequest) {
         ? code.trim().toUpperCase()
         : existingMapel?.code;
 
+    const updateData: any = {};
+
+    if (normalizedName) updateData.name = normalizedName;
+    if (finalCode) updateData.code = finalCode;
+    if (description !== undefined) updateData.description = description;
+    updateData.guru_id = guru_id || null;
+    updateData.semester = semester || null;
+    updateData.tahun_ajaran = tahun_ajaran || null;
+
     const updatedMapel = await prisma.mapel.update({
       where: { id },
-      data: {
-        ...(normalizedName ? { name: normalizedName } : {}),
-        ...(finalCode ? { code: finalCode } : {}),
-        description,
-        guru_id: guru_id || null,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, data: updatedMapel });
