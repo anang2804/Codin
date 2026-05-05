@@ -30,6 +30,10 @@ import {
   FileUp,
   X as XIcon,
   GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -100,6 +104,8 @@ export default function AdminGuruPage() {
   const [loadingPasswordRequests, setLoadingPasswordRequests] = useState(false);
   const [processingPasswordRequestId, setProcessingPasswordRequestId] =
     useState<string | null>(null);
+  const [guruRowsPerPage, setGuruRowsPerPage] = useState(10);
+  const [guruPage, setGuruPage] = useState(0);
 
   // Add form state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -343,6 +349,30 @@ export default function AdminGuruPage() {
       );
     }
   }, [searchTerm, guru]);
+
+  useEffect(() => {
+    setGuruPage(0);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredGuru.length / guruRowsPerPage),
+    );
+    setGuruPage((prev) => Math.min(prev, totalPages - 1));
+  }, [filteredGuru.length, guruRowsPerPage]);
+
+  useEffect(() => {
+    setGuruPage(0);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredGuru.length / guruRowsPerPage),
+    );
+    setGuruPage((prev) => Math.min(prev, totalPages - 1));
+  }, [filteredGuru.length, guruRowsPerPage]);
 
   // Check password status
   const checkPasswordStatus = async (userIds: string[]) => {
@@ -1318,6 +1348,50 @@ export default function AdminGuruPage() {
     editForm.password.trim().length > 0 &&
     editForm.password.trim().length < 8;
 
+  const getGuruMapelName = (guruItem: Guru) => {
+    const mapelList: any =
+      (guruItem as any).mapel ||
+      (guruItem as any).mapel_guru ||
+      (guruItem as any).mapel_diajar ||
+      [];
+    const firstMapel = Array.isArray(mapelList) ? mapelList[0] : null;
+
+    return (
+      firstMapel?.name ||
+      firstMapel?.title ||
+      firstMapel?.mapel_name ||
+      "Belum ada mapel"
+    );
+  };
+
+  const getGuruPasswordPreview = (guruItem: Guru) => {
+    const currentPassword =
+      userPasswords.get(guruItem.id)?.password ||
+      getTemporaryPassword({ id: guruItem.id, email: guruItem.email });
+
+    if (!currentPassword) return "-";
+    if (currentPassword.length <= 4) return currentPassword;
+
+    return `${currentPassword.slice(0, 1)}${"•".repeat(
+      Math.max(4, currentPassword.length - 4),
+    )}${currentPassword.slice(-3)}`;
+  };
+
+  const totalGuruPages = Math.max(
+    1,
+    Math.ceil(filteredGuru.length / guruRowsPerPage),
+  );
+  const paginatedGuru = filteredGuru.slice(
+    guruPage * guruRowsPerPage,
+    guruPage * guruRowsPerPage + guruRowsPerPage,
+  );
+  const guruStartIndex =
+    filteredGuru.length === 0 ? 0 : guruPage * guruRowsPerPage + 1;
+  const guruEndIndex = Math.min(
+    (guruPage + 1) * guruRowsPerPage,
+    filteredGuru.length,
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -1391,645 +1465,632 @@ export default function AdminGuruPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {filteredGuru.map((g) => (
-            <Card
-              key={g.id}
-              className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              {editingId === g.id ? (
-                // Edit Mode
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {/* Edit Header */}
-                  <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                      {g.full_name ? g.full_name.charAt(0).toUpperCase() : "G"}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {g.full_name}
-                      </p>
-                      <p className="text-[11px] text-gray-400 truncate">
-                        {g.email}
-                      </p>
-                    </div>
-                    <button
-                      onClick={cancelEdit}
-                      disabled={saving}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150 flex-shrink-0"
-                    >
-                      <X size={13} />
-                    </button>
-                  </div>
-
-                  {/* Fields grid */}
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                    {/* Nama Lengkap */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Nama Lengkap
-                      </label>
-                      <div className="relative">
-                        <User
-                          size={12}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                        <Input
-                          value={editForm.full_name || ""}
-                          onChange={(e) => {
-                            setEditForm({
-                              ...editForm,
-                              full_name: e.target.value,
-                            });
-                            clearEditValidationError("full_name");
-                          }}
-                          placeholder="Nama lengkap"
-                          className={`h-8 text-sm pl-7 transition ${
-                            editValidationErrors.full_name
-                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                          }`}
-                        />
+        <div className="space-y-3">
+          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.6fr_1.8fr_1.4fr_1.3fr_1.4fr_auto] lg:gap-4">
+            <div>Nama Guru</div>
+            <div>Email</div>
+            <div>Password</div>
+            <div>Kelas</div>
+            <div>Mata Pelajaran</div>
+            <div className="text-right">Aksi</div>
+          </div>
+          <div className="space-y-3">
+            {paginatedGuru.map((g) => (
+              <Card
+                key={g.id}
+                className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                {editingId === g.id ? (
+                  // Edit Mode
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {/* Edit Header */}
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                      <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {g.full_name
+                          ? g.full_name.charAt(0).toUpperCase()
+                          : "G"}
                       </div>
-                      {editValidationErrors.full_name && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          Nama lengkap wajib diisi.
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {g.full_name}
                         </p>
-                      )}
-                    </div>
-                    {/* Email */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Email
-                      </label>
-                      <div className="relative">
-                        <Mail
-                          size={12}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                        <Input
-                          type="email"
-                          value={editForm.email || ""}
-                          onChange={(e) => {
-                            setEditForm({
-                              ...editForm,
-                              email: e.target.value,
-                            });
-                            clearEditValidationError("email");
-                          }}
-                          placeholder="email@gmail.com"
-                          className={`h-8 text-sm pl-7 transition ${
-                            editValidationErrors.email
-                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                          }`}
-                        />
+                        <p className="text-[11px] text-gray-400 truncate">
+                          {g.email}
+                        </p>
                       </div>
-                      {editValidationErrors.email && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          Email wajib diisi dengan format yang valid.
-                        </p>
-                      )}
-                    </div>
-                    {/* No. Telepon */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        No. Telepon
-                      </label>
-                      <div className="relative">
-                        <Phone
-                          size={12}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                        <Input
-                          value={editForm.no_telepon || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value && /\D/.test(value)) {
-                              setEditPhoneError(
-                                "No. Telepon hanya boleh berisi angka.",
-                              );
-                            } else {
-                              setEditPhoneError("");
-                              clearEditValidationError("no_telepon");
-                            }
-                            setEditForm({
-                              ...editForm,
-                              no_telepon: value,
-                            });
-                          }}
-                          inputMode="numeric"
-                          placeholder="08xxxxxxxxxx"
-                          className={`h-8 text-sm pl-7 transition ${
-                            editValidationErrors.no_telepon
-                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                          }`}
-                        />
-                      </div>
-                      {(editValidationErrors.no_telepon ||
-                        !!editPhoneError) && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          {editPhoneError}
-                        </p>
-                      )}
-                    </div>
-                    {/* NUPTK */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        NUPTK
-                      </label>
-                      <div className="relative">
-                        <Key
-                          size={12}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                        <Input
-                          value={editForm.nuptk || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value && /\D/.test(value)) {
-                              setEditValidationErrors((prev) => ({
-                                ...prev,
-                                nuptk: true,
-                              }));
-                            } else {
-                              clearEditValidationError("nuptk");
-                            }
-                            setEditForm({
-                              ...editForm,
-                              nuptk: value,
-                            });
-                          }}
-                          inputMode="numeric"
-                          placeholder="NUPTK guru"
-                          className={`h-8 text-sm pl-7 transition ${
-                            editValidationErrors.nuptk
-                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                          }`}
-                        />
-                      </div>
-                      {editValidationErrors.nuptk && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          NUPTK wajib diisi dan hanya boleh berisi angka.
-                        </p>
-                      )}
-                    </div>
-                    {/* Jenis Kelamin */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Jenis Kelamin
-                      </label>
-                      <select
-                        value={editForm.jenis_kelamin || ""}
-                        onChange={(e) => {
-                          setEditForm({
-                            ...editForm,
-                            jenis_kelamin: e.target.value || null,
-                          });
-                          clearEditValidationError("jenis_kelamin");
-                        }}
-                        className={`h-8 w-full text-sm px-2.5 rounded-md border transition bg-white ${
-                          editValidationErrors.jenis_kelamin
-                            ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                            : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                        }`}
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150 flex-shrink-0"
                       >
-                        <option value="">Pilih jenis kelamin</option>
-                        <option value="Laki-laki">Laki-laki</option>
-                        <option value="Perempuan">Perempuan</option>
-                      </select>
-                      {editValidationErrors.jenis_kelamin && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          Jenis kelamin wajib diisi.
-                        </p>
-                      )}
+                        <X size={13} />
+                      </button>
                     </div>
-                    {/* Mata Pelajaran */}
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Mata Pelajaran
-                      </label>
-                      {loadingMapelOptions ? (
-                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
-                          Memuat daftar mata pelajaran...
+
+                    {/* Fields grid */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      {/* Nama Lengkap */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Nama Lengkap
+                        </label>
+                        <div className="relative">
+                          <User
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                          />
+                          <Input
+                            value={editForm.full_name || ""}
+                            onChange={(e) => {
+                              setEditForm({
+                                ...editForm,
+                                full_name: e.target.value,
+                              });
+                              clearEditValidationError("full_name");
+                            }}
+                            placeholder="Nama lengkap"
+                            className={`h-8 text-sm pl-7 transition ${
+                              editValidationErrors.full_name
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
+                          />
                         </div>
-                      ) : mapelOptions.length === 0 ? (
-                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
-                          Belum ada data mata pelajaran
+                        {editValidationErrors.full_name && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            Nama lengkap wajib diisi.
+                          </p>
+                        )}
+                      </div>
+                      {/* Email */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Email
+                        </label>
+                        <div className="relative">
+                          <Mail
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                          />
+                          <Input
+                            type="email"
+                            value={editForm.email || ""}
+                            onChange={(e) => {
+                              setEditForm({
+                                ...editForm,
+                                email: e.target.value,
+                              });
+                              clearEditValidationError("email");
+                            }}
+                            placeholder="email@gmail.com"
+                            className={`h-8 text-sm pl-7 transition ${
+                              editValidationErrors.email
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
+                          />
                         </div>
-                      ) : (
+                        {editValidationErrors.email && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            Email wajib diisi dengan format yang valid.
+                          </p>
+                        )}
+                      </div>
+                      {/* No. Telepon */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          No. Telepon
+                        </label>
+                        <div className="relative">
+                          <Phone
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                          />
+                          <Input
+                            value={editForm.no_telepon || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value && /\D/.test(value)) {
+                                setEditPhoneError(
+                                  "No. Telepon hanya boleh berisi angka.",
+                                );
+                              } else {
+                                setEditPhoneError("");
+                                clearEditValidationError("no_telepon");
+                              }
+                              setEditForm({
+                                ...editForm,
+                                no_telepon: value,
+                              });
+                            }}
+                            inputMode="numeric"
+                            placeholder="08xxxxxxxxxx"
+                            className={`h-8 text-sm pl-7 transition ${
+                              editValidationErrors.no_telepon
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
+                          />
+                        </div>
+                        {(editValidationErrors.no_telepon ||
+                          !!editPhoneError) && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            {editPhoneError}
+                          </p>
+                        )}
+                      </div>
+                      {/* NUPTK */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          NUPTK
+                        </label>
+                        <div className="relative">
+                          <Key
+                            size={12}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                          />
+                          <Input
+                            value={editForm.nuptk || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value && /\D/.test(value)) {
+                                setEditValidationErrors((prev) => ({
+                                  ...prev,
+                                  nuptk: true,
+                                }));
+                              } else {
+                                clearEditValidationError("nuptk");
+                              }
+                              setEditForm({
+                                ...editForm,
+                                nuptk: value,
+                              });
+                            }}
+                            inputMode="numeric"
+                            placeholder="NUPTK guru"
+                            className={`h-8 text-sm pl-7 transition ${
+                              editValidationErrors.nuptk
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
+                          />
+                        </div>
+                        {editValidationErrors.nuptk && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            NUPTK wajib diisi dan hanya boleh berisi angka.
+                          </p>
+                        )}
+                      </div>
+                      {/* Jenis Kelamin */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Jenis Kelamin
+                        </label>
                         <select
-                          value={editSelectedMapelId || ""}
-                          onChange={(e) =>
-                            setEditSelectedMapelId(e.target.value || "")
-                          }
+                          value={editForm.jenis_kelamin || ""}
+                          onChange={(e) => {
+                            setEditForm({
+                              ...editForm,
+                              jenis_kelamin: e.target.value || null,
+                            });
+                            clearEditValidationError("jenis_kelamin");
+                          }}
                           className={`h-8 w-full text-sm px-2.5 rounded-md border transition bg-white ${
                             editValidationErrors.jenis_kelamin
                               ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
                               : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
                           }`}
                         >
-                          <option value="">Pilih mata pelajaran</option>
-                          {mapelOptions.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.name}
-                            </option>
-                          ))}
+                          <option value="">Pilih jenis kelamin</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
                         </select>
-                      )}
-                    </div>
-                    {/* Kelas yang diajar */}
-                    <div className="col-span-2">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Kelas yang Diajar
-                      </label>
-                      {loadingKelasOptions ? (
-                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
-                          Memuat daftar kelas...
-                        </div>
-                      ) : kelasOptions.length === 0 ? (
-                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
-                          Belum ada data kelas
-                        </div>
-                      ) : (
-                        <select
-                          value={editSelectedKelasIds[0] || ""}
-                          onChange={(e) =>
-                            setEditSelectedKelasIds(
-                              e.target.value ? [e.target.value] : [],
-                            )
-                          }
-                          className="h-8 w-full text-sm px-2.5 rounded-md border transition bg-white border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                        >
-                          <option value="">Pilih kelas</option>
-                          {kelasOptions.map((kelas) => (
-                            <option key={kelas.id} value={kelas.id}>
-                              {kelas.name}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                    {/* Alamat — full width */}
-                    <div className="col-span-2">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                        Alamat
-                      </label>
-                      <div className="relative">
-                        <MapPin
-                          size={12}
-                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                        <Input
-                          value={editForm.alamat || ""}
-                          onChange={(e) => {
-                            setEditForm({
-                              ...editForm,
-                              alamat: e.target.value,
-                            });
-                            clearEditValidationError("alamat");
-                          }}
-                          placeholder="Alamat lengkap"
-                          className={`h-8 text-sm pl-7 transition ${
-                            editValidationErrors.alamat
-                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                          }`}
-                        />
+                        {editValidationErrors.jenis_kelamin && (
+                          <p className="mt-1 text-[11px] text-red-600">
+                            Jenis kelamin wajib diisi.
+                          </p>
+                        )}
                       </div>
-                      {editValidationErrors.alamat && (
-                        <p className="mt-1 text-[11px] text-red-600">
-                          Alamat wajib diisi.
-                        </p>
-                      )}
-                    </div>
-                    {/* Password row — current pw left, new pw right */}
-                    <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
-                      {/* Current password display */}
-                      {(() => {
-                        const currentPw = userPasswords.get(g.id)?.password;
-                        const tempPw = getTemporaryPassword({
-                          id: g.id,
-                          email: g.email,
-                        });
-                        const displayPw = currentPw || tempPw;
-                        return (
-                          <div>
-                            <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                              Password Saat Ini
-                            </label>
-                            <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-100 bg-gray-50">
-                              <Key
-                                size={11}
-                                className="text-gray-400 flex-shrink-0"
-                              />
-                              {displayPw ? (
-                                <code className="text-xs font-mono text-gray-700 flex-1 truncate">
-                                  {displayPw}
-                                </code>
-                              ) : (
-                                <span className="text-[11px] text-gray-400 italic flex-1">
-                                  Belum tersimpan
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => getUserPassword(g.id)}
-                                className="text-gray-400 hover:text-green-600 transition flex-shrink-0"
-                                title="Refresh"
-                              >
-                                <RefreshCw size={10} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {/* New password input */}
+                      {/* Mata Pelajaran */}
                       <div>
                         <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                          Password Baru{" "}
-                          <span className="text-gray-400 font-normal">
-                            (opsional)
-                          </span>
+                          Mata Pelajaran
+                        </label>
+                        {loadingMapelOptions ? (
+                          <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                            Memuat daftar mata pelajaran...
+                          </div>
+                        ) : mapelOptions.length === 0 ? (
+                          <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                            Belum ada data mata pelajaran
+                          </div>
+                        ) : (
+                          <select
+                            value={editSelectedMapelId || ""}
+                            onChange={(e) =>
+                              setEditSelectedMapelId(e.target.value || "")
+                            }
+                            className={`h-8 w-full text-sm px-2.5 rounded-md border transition bg-white ${
+                              editValidationErrors.jenis_kelamin
+                                ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                            }`}
+                          >
+                            <option value="">Pilih mata pelajaran</option>
+                            {mapelOptions.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                      {/* Kelas yang diajar */}
+                      <div className="col-span-2">
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Kelas yang Diajar
+                        </label>
+                        {loadingKelasOptions ? (
+                          <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                            Memuat daftar kelas...
+                          </div>
+                        ) : kelasOptions.length === 0 ? (
+                          <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                            Belum ada data kelas
+                          </div>
+                        ) : (
+                          <select
+                            value={editSelectedKelasIds[0] || ""}
+                            onChange={(e) =>
+                              setEditSelectedKelasIds(
+                                e.target.value ? [e.target.value] : [],
+                              )
+                            }
+                            className="h-8 w-full text-sm px-2.5 rounded-md border transition bg-white border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          >
+                            <option value="">Pilih kelas</option>
+                            {kelasOptions.map((kelas) => (
+                              <option key={kelas.id} value={kelas.id}>
+                                {kelas.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                      {/* Alamat — full width */}
+                      <div className="col-span-2">
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          Alamat
                         </label>
                         <div className="relative">
-                          <Lock
+                          <MapPin
                             size={12}
                             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                           />
                           <Input
-                            type={showEditPassword ? "text" : "password"}
-                            value={editForm.password || ""}
+                            value={editForm.alamat || ""}
                             onChange={(e) => {
-                              const password = e.target.value;
                               setEditForm({
                                 ...editForm,
-                                password,
+                                alamat: e.target.value,
                               });
-                              if (
-                                !password.trim() ||
-                                password.trim().length >= 8
-                              ) {
-                                setShowEditPasswordError(false);
-                              }
+                              clearEditValidationError("alamat");
                             }}
-                            placeholder="Min. 8 karakter"
-                            className={`h-8 text-sm pl-7 pr-8 transition ${
-                              isEditPasswordTooShort
+                            placeholder="Alamat lengkap"
+                            className={`h-8 text-sm pl-7 transition ${
+                              editValidationErrors.alamat
                                 ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
                                 : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
                             }`}
                           />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowEditPassword(!showEditPassword)
-                            }
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                          >
-                            {showEditPassword ? (
-                              <EyeOff size={12} />
-                            ) : (
-                              <Eye size={12} />
-                            )}
-                          </button>
                         </div>
-                        {isEditPasswordTooShort && (
+                        {editValidationErrors.alamat && (
                           <p className="mt-1 text-[11px] text-red-600">
-                            Password minimal 8 karakter.
+                            Alamat wajib diisi.
                           </p>
                         )}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
-                    <Button
-                      variant="outline"
-                      onClick={cancelEdit}
-                      disabled={saving}
-                      className="h-8 text-sm px-3 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg"
-                    >
-                      Batal
-                    </Button>
-                    <Button
-                      onClick={saveEdit}
-                      disabled={saving}
-                      className="h-8 text-sm px-4 bg-green-600 hover:bg-green-700 rounded-lg min-w-[90px] transition"
-                    >
-                      {saving ? (
-                        <span className="flex items-center gap-1.5">
-                          <svg
-                            className="animate-spin h-3.5 w-3.5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                          </svg>
-                          Menyimpan...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5">
-                          <Save size={13} />
-                          Simpan
-                        </span>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                // View Mode
-                <div>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 text-sm font-semibold">
-                        {(g.full_name || g.email || "?")[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">
-                          {g.full_name}
-                        </h3>
-                        <div className="flex flex-col gap-1 mt-1 text-xs text-gray-500">
-                          <div className="flex items-center gap-1.5">
-                            <Mail size={13} />
-                            {g.email}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar size={13} />
-                            Terdaftar:{" "}
-                            {new Date(g.created_at).toLocaleDateString("id-ID")}
-                          </div>
-                          {(() => {
-                            const kelasDiajar = g.kelas_diajar || [];
-                            const totalSiswaKelasDiajar =
-                              g.total_siswa_kelas_diajar ??
-                              kelasDiajar.reduce(
-                                (acc, kelas) => acc + (kelas.total_siswa || 0),
-                                0,
-                              );
-
-                            if (kelasDiajar.length === 0) {
-                              return (
-                                <div className="flex items-center gap-1.5 text-amber-600">
-                                  <GraduationCap size={13} />
-                                  Belum ada kelas yang diajar
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div className="flex flex-col gap-1.5 pt-1">
-                                <div className="flex items-center gap-1.5 text-emerald-700">
-                                  <GraduationCap size={13} />
-                                  {kelasDiajar.length} kelas diajar • total{" "}
-                                  {totalSiswaKelasDiajar} siswa
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {kelasDiajar.map((kelas) => (
-                                    <span
-                                      key={kelas.id}
-                                      className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                    >
-                                      {kelas.name}: {kelas.total_siswa} siswa
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
-                        onClick={() => startEdit(g)}
-                        title="Edit"
-                      >
-                        <Edit size={15} />
-                      </button>
-                      <button
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
-                        onClick={() => handleDelete(g.id, g.full_name)}
-                        title="Hapus"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Password Management Section */}
-                  {(() => {
-                    const tempPassword = getTemporaryPassword({
-                      id: g.id,
-                      email: g.email,
-                    });
-                    const hasPassword = tempPassword.length > 0;
-                    const currentPassword = userPasswords.get(g.id);
-                    const displayPassword =
-                      currentPassword?.password ||
-                      (hasPassword ? tempPassword : "");
-                    const isDatabasePassword = Boolean(
-                      currentPassword?.password,
-                    );
-
-                    return (
-                      <div className="border-t border-gray-100 mt-4 pt-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Key size={13} className="text-gray-400" />
-                          <span className="text-xs font-medium text-gray-500">
-                            Password
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          {displayPassword ? (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <code
-                                className={`text-xs font-mono px-2 py-1 rounded border ${
-                                  isDatabasePassword
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-green-50 text-green-700 border-green-200"
-                                }`}
-                              >
-                                {displayPassword}
-                              </code>
-                              {isDatabasePassword &&
-                                currentPassword?.updatedAt && (
-                                  <span className="text-xs text-gray-500">
-                                    {new Date(
-                                      currentPassword.updatedAt,
-                                    ).toLocaleString("id-ID", {
-                                      dateStyle: "short",
-                                      timeStyle: "short",
-                                    })}
+                      {/* Password row — current pw left, new pw right */}
+                      <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
+                        {/* Current password display */}
+                        {(() => {
+                          const currentPw = userPasswords.get(g.id)?.password;
+                          const tempPw = getTemporaryPassword({
+                            id: g.id,
+                            email: g.email,
+                          });
+                          const displayPw = currentPw || tempPw;
+                          return (
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                                Password Saat Ini
+                              </label>
+                              <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-100 bg-gray-50">
+                                <Key
+                                  size={11}
+                                  className="text-gray-400 flex-shrink-0"
+                                />
+                                {displayPw ? (
+                                  <code className="text-xs font-mono text-gray-700 flex-1 truncate">
+                                    {displayPw}
+                                  </code>
+                                ) : (
+                                  <span className="text-[11px] text-gray-400 italic flex-1">
+                                    Belum tersimpan
                                   </span>
                                 )}
-                              <Button
-                                size="sm"
-                                variant={
-                                  isDatabasePassword ? "ghost" : "outline"
+                                <button
+                                  type="button"
+                                  onClick={() => getUserPassword(g.id)}
+                                  className="text-gray-400 hover:text-green-600 transition flex-shrink-0"
+                                  title="Refresh"
+                                >
+                                  <RefreshCw size={10} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        {/* New password input */}
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                            Password Baru{" "}
+                            <span className="text-gray-400 font-normal">
+                              (opsional)
+                            </span>
+                          </label>
+                          <div className="relative">
+                            <Lock
+                              size={12}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                            />
+                            <Input
+                              type={showEditPassword ? "text" : "password"}
+                              value={editForm.password || ""}
+                              onChange={(e) => {
+                                const password = e.target.value;
+                                setEditForm({
+                                  ...editForm,
+                                  password,
+                                });
+                                if (
+                                  !password.trim() ||
+                                  password.trim().length >= 8
+                                ) {
+                                  setShowEditPasswordError(false);
                                 }
-                                onClick={() => getUserPassword(g.id)}
-                                className="text-xs h-6 px-2"
-                                title="Refresh password"
-                              >
-                                🔄
-                              </Button>
-                            </div>
-                          ) : passwordLoadingUsers.has(g.id) ||
-                            !passwordRequestedUsers.has(g.id) ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">
-                                Loading...
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => getUserPassword(g.id)}
-                                className="text-xs h-6 px-2"
-                              >
-                                Muat
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">
-                                Tidak ada password tersimpan
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => getUserPassword(g.id)}
-                                className="text-xs h-6 px-2"
-                              >
-                                Coba lagi
-                              </Button>
-                            </div>
+                              }}
+                              placeholder="Min. 8 karakter"
+                              className={`h-8 text-sm pl-7 pr-8 transition ${
+                                isEditPasswordTooShort
+                                  ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                  : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                              }`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowEditPassword(!showEditPassword)
+                              }
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                            >
+                              {showEditPassword ? (
+                                <EyeOff size={12} />
+                              ) : (
+                                <Eye size={12} />
+                              )}
+                            </button>
+                          </div>
+                          {isEditPasswordTooShort && (
+                            <p className="mt-1 text-[11px] text-red-600">
+                              Password minimal 8 karakter.
+                            </p>
                           )}
                         </div>
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </Card>
-          ))}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                      <Button
+                        variant="outline"
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="h-8 text-sm px-3 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg"
+                      >
+                        Batal
+                      </Button>
+                      <Button
+                        onClick={saveEdit}
+                        disabled={saving}
+                        className="h-8 text-sm px-4 bg-green-600 hover:bg-green-700 rounded-lg min-w-[90px] transition"
+                      >
+                        {saving ? (
+                          <span className="flex items-center gap-1.5">
+                            <svg
+                              className="animate-spin h-3.5 w-3.5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                              />
+                            </svg>
+                            Menyimpan...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5">
+                            <Save size={13} />
+                            Simpan
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // View Mode
+                  <div className="grid gap-4 lg:grid-cols-[1.6fr_1.8fr_1.4fr_1.4fr_1.4fr_auto] lg:items-center">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 text-sm font-semibold">
+                        {(g.full_name || g.email || "?")[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 truncate">
+                          {g.full_name}
+                        </h3>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500">
+                          <Calendar size={12} />
+                          {new Date(g.created_at).toLocaleDateString("id-ID")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="min-w-0 text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Mail size={13} className="shrink-0 text-gray-400" />
+                        <span className="truncate">{g.email}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code
+                        className={
+                          getGuruPasswordPreview(g) === "-"
+                            ? "text-xs font-mono px-2.5 py-1 rounded-md border bg-gray-50 text-gray-400 border-gray-200"
+                            : "text-xs font-mono px-2.5 py-1 rounded-md border bg-green-50 text-green-700 border-green-200"
+                        }
+                      >
+                        {getGuruPasswordPreview(g)}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => getUserPassword(g.id)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:border-green-200 hover:bg-green-50 hover:text-green-600"
+                        title="Refresh password"
+                      >
+                        <RefreshCw size={12} />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {g.kelas_diajar && g.kelas_diajar.length > 0 ? (
+                        g.kelas_diajar.map((kelas) => (
+                          <span
+                            key={kelas.id}
+                            className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700"
+                          >
+                            {kelas.name}: {kelas.total_siswa} siswa
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-400">
+                          Belum ada kelas
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {getGuruMapelName(g)}
+                    </div>
+                    <div className="flex items-center gap-1.5 lg:justify-end">
+                      <button
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-amber-400 text-white transition hover:bg-amber-500"
+                        onClick={() => startEdit(g)}
+                        title="Edit"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-500 text-white transition hover:bg-red-600"
+                        onClick={() => handleDelete(g.id, g.full_name)}
+                        title="Hapus"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+          <div className="sticky bottom-0 z-10 -mx-1 rounded-xl border border-gray-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.04)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Rows per page:</span>
+                <select
+                  value={guruRowsPerPage}
+                  onChange={(e) => {
+                    setGuruRowsPerPage(Number(e.target.value));
+                    setGuruPage(0);
+                  }}
+                  className="h-8 rounded-md border border-gray-200 bg-white px-2 text-sm text-gray-700 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+                >
+                  {[5, 10, 20, 50].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-gray-500">
+                  {filteredGuru.length === 0
+                    ? "0-0 of 0"
+                    : `${guruStartIndex}-${guruEndIndex} of ${filteredGuru.length}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setGuruPage(0)}
+                  disabled={guruPage === 0}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Halaman pertama"
+                >
+                  <ChevronsLeft size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGuruPage((prev) => Math.max(0, prev - 1))}
+                  disabled={guruPage === 0}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Sebelumnya"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="px-2 text-sm text-gray-500">
+                  {guruPage + 1} / {totalGuruPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGuruPage((prev) =>
+                      Math.min(totalGuruPages - 1, prev + 1),
+                    )
+                  }
+                  disabled={guruPage >= totalGuruPages - 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Berikutnya"
+                >
+                  <ChevronRight size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGuruPage(totalGuruPages - 1)}
+                  disabled={guruPage >= totalGuruPages - 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Halaman terakhir"
+                >
+                  <ChevronsRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
