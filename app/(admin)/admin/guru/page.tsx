@@ -67,6 +67,15 @@ interface KelasOption {
   wali_kelas_id?: string | null;
 }
 
+interface PasswordChangeRequest {
+  id: string;
+  user_id: string;
+  guru_name: string;
+  guru_email: string;
+  requested_at: string;
+  status: "pending" | "approved" | "rejected";
+}
+
 export default function AdminGuruPage() {
   const PHONE_NUMBER_REGEX = /^\d+$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,6 +86,19 @@ export default function AdminGuruPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([]);
   const [loadingKelasOptions, setLoadingKelasOptions] = useState(false);
+  const [mapelOptions, setMapelOptions] = useState<
+    {
+      id: string;
+      name: string;
+    }[]
+  >([]);
+  const [loadingMapelOptions, setLoadingMapelOptions] = useState(false);
+  const [passwordChangeRequests, setPasswordChangeRequests] = useState<
+    PasswordChangeRequest[]
+  >([]);
+  const [loadingPasswordRequests, setLoadingPasswordRequests] = useState(false);
+  const [processingPasswordRequestId, setProcessingPasswordRequestId] =
+    useState<string | null>(null);
 
   // Add form state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -90,6 +112,7 @@ export default function AdminGuruPage() {
     no_telepon: "",
   });
   const [addSelectedKelasIds, setAddSelectedKelasIds] = useState<string[]>([]);
+  const [addSelectedMapelId, setAddSelectedMapelId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<{
     email: string;
@@ -137,6 +160,9 @@ export default function AdminGuruPage() {
   const [editSelectedKelasIds, setEditSelectedKelasIds] = useState<string[]>(
     [],
   );
+  const [editSelectedMapelId, setEditSelectedMapelId] = useState<string>("");
+  const [showPasswordRequestsModal, setShowPasswordRequestsModal] =
+    useState(false);
 
   const clearEditValidationError = (field: string) => {
     setEditValidationErrors((prev) => {
@@ -298,6 +324,8 @@ export default function AdminGuruPage() {
   useEffect(() => {
     fetchGuru();
     fetchKelasOptions();
+    fetchMapelOptions();
+    fetchPasswordChangeRequests();
   }, []);
 
   useEffect(() => {
@@ -480,6 +508,78 @@ export default function AdminGuruPage() {
       setKelasOptions([]);
     } finally {
       setLoadingKelasOptions(false);
+    }
+  };
+
+  const fetchMapelOptions = async () => {
+    setLoadingMapelOptions(true);
+    try {
+      const response = await fetch(`/api/admin/mapel?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "Failed to fetch mapel");
+      setMapelOptions(Array.isArray(json.data) ? json.data : []);
+    } catch (err) {
+      console.error("Error fetching mapel options:", err);
+      setMapelOptions([]);
+    } finally {
+      setLoadingMapelOptions(false);
+    }
+  };
+
+  const fetchPasswordChangeRequests = async () => {
+    setLoadingPasswordRequests(true);
+    try {
+      const response = await fetch(
+        `/api/admin/password-change-requests?t=${Date.now()}`,
+        {
+          cache: "no-store",
+        },
+      );
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          json.error || "Failed to fetch password change requests",
+        );
+      }
+      setPasswordChangeRequests(Array.isArray(json.data) ? json.data : []);
+    } catch (error) {
+      console.error("Error fetching password change requests:", error);
+      setPasswordChangeRequests([]);
+    } finally {
+      setLoadingPasswordRequests(false);
+    }
+  };
+
+  const processPasswordChangeRequest = async (
+    requestId: string,
+    action: "approve" | "reject",
+  ) => {
+    setProcessingPasswordRequestId(requestId);
+    try {
+      const response = await fetch("/api/admin/password-change-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal memproses permintaan");
+      }
+
+      toast.success(
+        action === "approve"
+          ? "Permintaan ganti password disetujui"
+          : "Permintaan ganti password ditolak",
+      );
+
+      await Promise.all([fetchPasswordChangeRequests(), fetchGuru()]);
+    } catch (error: any) {
+      console.error("Error processing password request:", error);
+      toast.error(error?.message || "Gagal memproses permintaan");
+    } finally {
+      setProcessingPasswordRequestId(null);
     }
   };
 
@@ -779,6 +879,7 @@ export default function AdminGuruPage() {
           jenis_kelamin: normalizedGender,
           no_telepon: normalizedPhone || null,
           kelas_ids: addSelectedKelasIds,
+          mapel_id: addSelectedMapelId || null,
           sendEmail: false,
         }),
       });
@@ -824,6 +925,7 @@ export default function AdminGuruPage() {
         no_telepon: "",
       });
       setAddSelectedKelasIds([]);
+      setAddSelectedMapelId("");
       setAddNuptkError("");
       setAddGenderError("");
       setAddPhoneError("");
@@ -853,6 +955,17 @@ export default function AdminGuruPage() {
     setEditForm({ ...guru });
     setOriginalEditForm({ ...guru });
     setEditSelectedKelasIds((guru.kelas_diajar || []).map((kelas) => kelas.id));
+    // Try to populate selected mapel ids from known possible fields
+    const mapelList: any =
+      (guru as any).mapel ||
+      (guru as any).mapel_guru ||
+      (guru as any).mapel_diajar ||
+      [];
+    setEditSelectedMapelId(
+      Array.isArray(mapelList) && mapelList.length > 0
+        ? String(mapelList[0].id)
+        : "",
+    );
     setEditValidationErrors({});
     setEditPhoneError("");
     setShowEditPasswordError(false);
@@ -864,6 +977,7 @@ export default function AdminGuruPage() {
     setEditValidationErrors({});
     setEditPhoneError("");
     setShowEditPasswordError(false);
+    setEditSelectedMapelId("");
   }
 
   async function saveEdit() {
@@ -872,6 +986,9 @@ export default function AdminGuruPage() {
 
     const normalizedEditData = {
       full_name: String(editForm.full_name ?? "").trim(),
+      email: String(editForm.email ?? "")
+        .trim()
+        .toLowerCase(),
       nuptk: String(editForm.nuptk ?? "").trim(),
       jenis_kelamin: String(editForm.jenis_kelamin ?? "").trim(),
       no_telepon: String(editForm.no_telepon ?? "").trim(),
@@ -880,6 +997,7 @@ export default function AdminGuruPage() {
 
     const requiredFields = [
       { key: "full_name", label: "Nama lengkap" },
+      { key: "email", label: "Email" },
       { key: "nuptk", label: "NUPTK" },
       { key: "jenis_kelamin", label: "Jenis kelamin" },
       { key: "alamat", label: "Alamat" },
@@ -921,6 +1039,12 @@ export default function AdminGuruPage() {
       return;
     }
 
+    if (!EMAIL_REGEX.test(normalizedEditData.email)) {
+      setEditValidationErrors((prev) => ({ ...prev, email: true }));
+      toast.error("Format email tidak valid");
+      return;
+    }
+
     setEditValidationErrors({});
     setEditPhoneError("");
 
@@ -942,11 +1066,13 @@ export default function AdminGuruPage() {
       const updateData: any = {
         id: editingId,
         full_name: normalizedEditData.full_name,
+        email: normalizedEditData.email,
         nuptk: normalizedEditData.nuptk,
         jenis_kelamin: normalizedEditData.jenis_kelamin,
         no_telepon: normalizedEditData.no_telepon,
         alamat: normalizedEditData.alamat,
         kelas_ids: editSelectedKelasIds,
+        mapel_id: editSelectedMapelId || null,
       };
 
       // Only include password if it's been provided
@@ -971,6 +1097,7 @@ export default function AdminGuruPage() {
             ? {
                 ...g,
                 full_name: normalizedEditData.full_name,
+                email: normalizedEditData.email,
                 nuptk: normalizedEditData.nuptk,
                 no_telepon: normalizedEditData.no_telepon,
                 alamat: normalizedEditData.alamat,
@@ -985,6 +1112,7 @@ export default function AdminGuruPage() {
             ? {
                 ...g,
                 full_name: normalizedEditData.full_name,
+                email: normalizedEditData.email,
                 nuptk: normalizedEditData.nuptk,
                 no_telepon: normalizedEditData.no_telepon,
                 alamat: normalizedEditData.alamat,
@@ -1002,6 +1130,7 @@ export default function AdminGuruPage() {
       setShowEditPasswordError(false);
       setShowEditPassword(false);
       setEditSelectedKelasIds([]);
+      setEditSelectedMapelId("");
       fetchGuru();
     } catch (err: any) {
       console.error("Error updating guru:", err);
@@ -1201,6 +1330,25 @@ export default function AdminGuruPage() {
         </div>
         <div className="flex gap-2">
           <Button
+            onClick={() => {
+              setShowPasswordRequestsModal(true);
+              fetchPasswordChangeRequests();
+            }}
+            className="bg-slate-600 hover:bg-slate-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02] relative"
+          >
+            <div className="inline-flex items-center">
+              <Lock size={16} className="mr-2" />
+              <span>Permintaan Ganti Password</span>
+            </div>
+            {passwordChangeRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-red-600 text-white text-[10px] font-semibold">
+                {passwordChangeRequests.length > 99
+                  ? "99+"
+                  : passwordChangeRequests.length}
+              </span>
+            )}
+          </Button>
+          <Button
             onClick={() => setShowAddDialog(true)}
             className="bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
           >
@@ -1319,11 +1467,28 @@ export default function AdminGuruPage() {
                           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                         />
                         <Input
-                          value={g.email}
-                          disabled
-                          className="h-8 text-sm pl-7 bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
+                          type="email"
+                          value={editForm.email || ""}
+                          onChange={(e) => {
+                            setEditForm({
+                              ...editForm,
+                              email: e.target.value,
+                            });
+                            clearEditValidationError("email");
+                          }}
+                          placeholder="email@gmail.com"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.email
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.email && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Email wajib diisi dengan format yang valid.
+                        </p>
+                      )}
                     </div>
                     {/* No. Telepon */}
                     <div>
@@ -1440,6 +1605,40 @@ export default function AdminGuruPage() {
                         </p>
                       )}
                     </div>
+                    {/* Mata Pelajaran */}
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        Mata Pelajaran
+                      </label>
+                      {loadingMapelOptions ? (
+                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                          Memuat daftar mata pelajaran...
+                        </div>
+                      ) : mapelOptions.length === 0 ? (
+                        <div className="h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-[12px] text-gray-500 flex items-center">
+                          Belum ada data mata pelajaran
+                        </div>
+                      ) : (
+                        <select
+                          value={editSelectedMapelId || ""}
+                          onChange={(e) =>
+                            setEditSelectedMapelId(e.target.value || "")
+                          }
+                          className={`h-8 w-full text-sm px-2.5 rounded-md border transition bg-white ${
+                            editValidationErrors.jenis_kelamin
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
+                        >
+                          <option value="">Pilih mata pelajaran</option>
+                          {mapelOptions.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                     {/* Kelas yang diajar */}
                     <div className="col-span-2">
                       <label className="block text-[11px] font-medium text-gray-500 mb-1">
@@ -1454,27 +1653,22 @@ export default function AdminGuruPage() {
                           Belum ada data kelas
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 gap-1.5 p-2 rounded-md border border-gray-200 bg-gray-50">
-                          {kelasOptions.map((kelas) => {
-                            const checked = editSelectedKelasIds.includes(
-                              kelas.id,
-                            );
-                            return (
-                              <label
-                                key={kelas.id}
-                                className="flex items-center gap-2 text-[12px] text-gray-700"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => toggleEditKelas(kelas.id)}
-                                  className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                                />
-                                <span className="truncate">{kelas.name}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
+                        <select
+                          value={editSelectedKelasIds[0] || ""}
+                          onChange={(e) =>
+                            setEditSelectedKelasIds(
+                              e.target.value ? [e.target.value] : [],
+                            )
+                          }
+                          className="h-8 w-full text-sm px-2.5 rounded-md border transition bg-white border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                        >
+                          <option value="">Pilih kelas</option>
+                          {kelasOptions.map((kelas) => (
+                            <option key={kelas.id} value={kelas.id}>
+                              {kelas.name}
+                            </option>
+                          ))}
+                        </select>
                       )}
                     </div>
                     {/* Alamat — full width */}
@@ -1853,6 +2047,7 @@ export default function AdminGuruPage() {
             setAddNuptkError("");
             setAddGenderError("");
             setAddPasswordError("");
+            setAddSelectedMapelId("");
           }
         }}
       >
@@ -2114,6 +2309,35 @@ export default function AdminGuruPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Mata Pelajaran
+                </label>
+                {loadingMapelOptions ? (
+                  <div className="h-10 px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-500 flex items-center">
+                    Memuat daftar mata pelajaran...
+                  </div>
+                ) : mapelOptions.length === 0 ? (
+                  <div className="h-10 px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-500 flex items-center">
+                    Belum ada data mata pelajaran
+                  </div>
+                ) : (
+                  <select
+                    value={addSelectedMapelId || ""}
+                    onChange={(e) =>
+                      setAddSelectedMapelId(e.target.value || "")
+                    }
+                    className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm transition border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100`}
+                  >
+                    <option value="">Pilih mata pelajaran</option>
+                    {mapelOptions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -2202,25 +2426,22 @@ export default function AdminGuruPage() {
                     Belum ada data kelas
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2 p-3 rounded-md border border-gray-200 bg-gray-50 max-h-44 overflow-y-auto">
-                    {kelasOptions.map((kelas) => {
-                      const checked = addSelectedKelasIds.includes(kelas.id);
-                      return (
-                        <label
-                          key={kelas.id}
-                          className="flex items-center gap-2 text-sm text-gray-700"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleAddKelas(kelas.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                          />
-                          <span className="truncate">{kelas.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <select
+                    value={addSelectedKelasIds[0] || ""}
+                    onChange={(e) =>
+                      setAddSelectedKelasIds(
+                        e.target.value ? [e.target.value] : [],
+                      )
+                    }
+                    className="w-full rounded-md border bg-white px-3 py-2.5 text-sm transition border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  >
+                    <option value="">Pilih kelas</option>
+                    {kelasOptions.map((kelas) => (
+                      <option key={kelas.id} value={kelas.id}>
+                        {kelas.name}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
               <div className="flex gap-3 pt-1">
@@ -2237,6 +2458,7 @@ export default function AdminGuruPage() {
                       no_telepon: "",
                     });
                     setAddSelectedKelasIds([]);
+                    setAddSelectedMapelId("");
                     setAddPhoneError("");
                     setAddNuptkError("");
                     setAddGenderError("");
@@ -2581,6 +2803,102 @@ export default function AdminGuruPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Change Requests Modal */}
+      <Dialog
+        open={showPasswordRequestsModal}
+        onOpenChange={setShowPasswordRequestsModal}
+      >
+        <DialogContent className="max-w-2xl rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Permintaan Ganti Password Guru
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              Guru tidak langsung ganti password. Admin perlu menyetujui
+              permintaan berikut.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 max-h-96 overflow-y-auto space-y-3">
+            {loadingPasswordRequests ? (
+              <p className="text-sm text-gray-500 py-8 text-center">
+                Memuat permintaan...
+              </p>
+            ) : passwordChangeRequests.length === 0 ? (
+              <p className="text-sm text-gray-500 py-8 text-center">
+                Tidak ada permintaan ganti password yang menunggu konfirmasi.
+              </p>
+            ) : (
+              passwordChangeRequests.map((req) => (
+                <div
+                  key={req.id}
+                  className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {req.guru_name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {req.guru_email}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Diajukan:{" "}
+                        {new Date(req.requested_at).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          processPasswordChangeRequest(req.id, "approve")
+                        }
+                        disabled={processingPasswordRequestId === req.id}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle2 size={14} className="mr-1.5" />
+                        Setujui
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          processPasswordChangeRequest(req.id, "reject")
+                        }
+                        disabled={processingPasswordRequestId === req.id}
+                        className="border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        <XIcon size={14} className="mr-1.5" />
+                        Tolak
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="mt-6 flex justify-between items-center border-t border-gray-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchPasswordChangeRequests}
+              className="border-gray-200"
+            >
+              <RefreshCw size={14} className="mr-1.5" />
+              Muat Ulang
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowPasswordRequestsModal(false)}
+              className="border-gray-200"
+            >
+              Tutup
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

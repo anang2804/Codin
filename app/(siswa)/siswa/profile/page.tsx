@@ -359,32 +359,32 @@ export default function SiswaProfilePage() {
     try {
       setSaving(true);
 
-      const res = await fetch("/api/auth/update-password", {
+      const res = await fetch("/api/siswa/password-change-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentPassword: oldPassword,
-          password: newPassword,
+          newPassword: newPassword,
+          confirmPassword,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || "Gagal mengubah password");
-      }
+      if (!res.ok) throw new Error(json.error || "Gagal mengirim permintaan");
 
-      setPasswordSuccess("Password berhasil diubah!");
+      setPasswordSuccess(
+        "Permintaan perubahan password berhasil dikirim. Menunggu persetujuan admin.",
+      );
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordForm(false);
 
       setTimeout(() => {
-        setPasswordSuccess("");
         loadProfile();
       }, 1000);
     } catch (error: any) {
-      setPasswordError(error.message || "Gagal mengubah password");
+      setPasswordError(error.message || "Gagal mengirim permintaan");
     } finally {
       setSaving(false);
     }
@@ -685,13 +685,19 @@ export default function SiswaProfilePage() {
                 </div>
               )}
 
+              <div className="mb-4 p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs">
+                Jika lupa password dan tidak bisa masuk, hubungi admin untuk
+                reset akun. Setelah reset, segera login dan ubah password
+                pribadi.
+              </div>
+
               {!showPasswordForm ? (
                 <button
                   onClick={() => setShowPasswordForm(true)}
                   className="group w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-emerald-50 hover:border-emerald-100 transition-all duration-200"
                 >
                   <span className="text-sm font-medium text-gray-600 group-hover:text-emerald-700">
-                    Ubah Kata Sandi Akun
+                    Ajukan Perubahan Kata Sandi
                   </span>
                   <ChevronRight
                     size={15}
@@ -786,13 +792,15 @@ export default function SiswaProfilePage() {
                       disabled={saving}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
                     >
-                      {saving ? "Menyimpan..." : "Update Password"}
+                      {saving ? "Menyimpan..." : "Kirim Permintaan"}
                     </button>
                     <button
                       type="button"
                       onClick={() => {
                         setShowPasswordForm(false);
                         setOldPassword("");
+                        setNewPassword("");
+                        setConfirmPassword("");
                         setPasswordError("");
                       }}
                       className="px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-sm font-medium transition-colors"

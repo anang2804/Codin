@@ -193,6 +193,21 @@ export default function AdminSiswaPage() {
   const [passwordLoadingUsers, setPasswordLoadingUsers] = useState<Set<string>>(
     new Set(),
   );
+  const [passwordChangeRequests, setPasswordChangeRequests] = useState<
+    Array<{
+      id: string;
+      user_id: string;
+      guru_name: string;
+      guru_email: string;
+      requested_at: string;
+      status: string;
+    }>
+  >([]);
+  const [loadingPasswordRequests, setLoadingPasswordRequests] = useState(false);
+  const [processingPasswordRequestId, setProcessingPasswordRequestId] =
+    useState<string | null>(null);
+  const [showPasswordRequestsModal, setShowPasswordRequestsModal] =
+    useState(false);
   const isCheckingPasswordStatusRef = useRef(false);
   const hasLoggedPasswordFetchErrorRef = useRef(false);
 
@@ -695,6 +710,9 @@ export default function AdminSiswaPage() {
     const targetId = editingId;
 
     const normalizedEditData = {
+      email: String(editForm.email ?? "")
+        .trim()
+        .toLowerCase(),
       full_name: String(editForm.full_name ?? "").trim(),
       kelas: String(editForm.kelas ?? "").trim(),
       tanggal_lahir: String(editForm.tanggal_lahir ?? "").trim(),
@@ -739,6 +757,16 @@ export default function AdminSiswaPage() {
       return;
     }
 
+    // Validate email format if provided
+    if (
+      normalizedEditData.email &&
+      !EMAIL_REGEX.test(String(normalizedEditData.email))
+    ) {
+      setEditValidationErrors((prev) => ({ ...prev, email: true }));
+      toast.error("Format email tidak valid");
+      return;
+    }
+
     setEditValidationErrors({});
     setEditPhoneError("");
 
@@ -759,6 +787,7 @@ export default function AdminSiswaPage() {
     try {
       const updateData: any = {
         id: editingId,
+        email: normalizedEditData.email,
         full_name: normalizedEditData.full_name,
         kelas: normalizedEditData.kelas,
         tanggal_lahir: normalizedEditData.tanggal_lahir,
@@ -1229,6 +1258,61 @@ export default function AdminSiswaPage() {
     editForm.password.trim().length > 0 &&
     editForm.password.trim().length < 8;
 
+  const fetchPasswordChangeRequests = async () => {
+    setLoadingPasswordRequests(true);
+    try {
+      const response = await fetch(
+        `/api/admin/password-change-requests?t=${Date.now()}`,
+        {
+          cache: "no-store",
+        },
+      );
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          json.error || "Failed to fetch password change requests",
+        );
+      }
+      setPasswordChangeRequests(Array.isArray(json.data) ? json.data : []);
+    } catch (error) {
+      console.error("Error fetching password change requests:", error);
+      setPasswordChangeRequests([]);
+    } finally {
+      setLoadingPasswordRequests(false);
+    }
+  };
+
+  const processPasswordChangeRequest = async (
+    requestId: string,
+    action: "approve" | "reject",
+  ) => {
+    setProcessingPasswordRequestId(requestId);
+    try {
+      const response = await fetch("/api/admin/password-change-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal memproses permintaan");
+      }
+
+      toast.success(
+        action === "approve"
+          ? "Permintaan ganti password disetujui"
+          : "Permintaan ganti password ditolak",
+      );
+
+      await Promise.all([fetchPasswordChangeRequests(), fetchSiswa()]);
+    } catch (error: any) {
+      console.error("Error processing password request:", error);
+      toast.error(error?.message || "Gagal memproses permintaan");
+    } finally {
+      setProcessingPasswordRequestId(null);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -1255,13 +1339,34 @@ export default function AdminSiswaPage() {
             )}
           </p>
         </div>
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          className="bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
-        >
-          <Plus size={16} className="mr-2" />
-          Tambah Siswa
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              setShowPasswordRequestsModal(true);
+              fetchPasswordChangeRequests();
+            }}
+            className="bg-slate-600 hover:bg-slate-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02] relative"
+          >
+            <div className="inline-flex items-center">
+              <Lock size={16} className="mr-2" />
+              <span>Permintaan Ganti Password</span>
+            </div>
+            {passwordChangeRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-red-600 text-white text-[10px] font-semibold">
+                {passwordChangeRequests.length > 99
+                  ? "99+"
+                  : passwordChangeRequests.length}
+              </span>
+            )}
+          </Button>
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            className="bg-green-600 hover:bg-green-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
+          >
+            <Plus size={16} className="mr-2" />
+            Tambah Siswa
+          </Button>
+        </div>
       </div>
       {/* Filter by Kelas */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 mb-4">
@@ -1433,11 +1538,24 @@ export default function AdminSiswaPage() {
                           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                         />
                         <Input
-                          value={s.email}
-                          disabled
-                          className="h-8 text-sm pl-7 bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
+                          value={editForm.email || s.email || ""}
+                          onChange={(e) => {
+                            setEditForm({ ...editForm, email: e.target.value });
+                            clearEditValidationError("email");
+                          }}
+                          placeholder="email@example.com"
+                          className={`h-8 text-sm pl-7 transition ${
+                            editValidationErrors.email
+                              ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                              : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                          }`}
                         />
                       </div>
+                      {editValidationErrors.email && (
+                        <p className="mt-1 text-[11px] text-red-600">
+                          Format email tidak valid.
+                        </p>
+                      )}
                     </div>
                     {/* Kelas */}
                     <div>
@@ -2826,6 +2944,101 @@ export default function AdminSiswaPage() {
               className="bg-red-600 hover:bg-red-700"
             >
               {isDeleting ? "Menghapus..." : "Hapus"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Password Change Requests Modal */}
+      <Dialog
+        open={showPasswordRequestsModal}
+        onOpenChange={setShowPasswordRequestsModal}
+      >
+        <DialogContent className="max-w-2xl rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Permintaan Ganti Password Siswa
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+              Siswa tidak langsung ganti password. Admin perlu menyetujui
+              permintaan berikut.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-6 max-h-96 overflow-y-auto space-y-3">
+            {loadingPasswordRequests ? (
+              <p className="text-sm text-gray-500 py-8 text-center">
+                Memuat permintaan...
+              </p>
+            ) : passwordChangeRequests.length === 0 ? (
+              <p className="text-sm text-gray-500 py-8 text-center">
+                Tidak ada permintaan ganti password yang menunggu konfirmasi.
+              </p>
+            ) : (
+              passwordChangeRequests.map((req) => (
+                <div
+                  key={req.id}
+                  className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {req.guru_name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {req.guru_email}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Diajukan:{" "}
+                        {new Date(req.requested_at).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          processPasswordChangeRequest(req.id, "approve")
+                        }
+                        disabled={processingPasswordRequestId === req.id}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle2 size={14} className="mr-1.5" />
+                        Setujui
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          processPasswordChangeRequest(req.id, "reject")
+                        }
+                        disabled={processingPasswordRequestId === req.id}
+                        className="border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        <XIcon size={14} className="mr-1.5" />
+                        Tolak
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="mt-6 flex justify-between items-center border-t border-gray-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchPasswordChangeRequests}
+              className="border-gray-200"
+            >
+              <RefreshCw size={14} className="mr-1.5" />
+              Muat Ulang
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowPasswordRequestsModal(false)}
+              className="border-gray-200"
+            >
+              Tutup
             </Button>
           </div>
         </DialogContent>

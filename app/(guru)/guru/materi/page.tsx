@@ -42,6 +42,7 @@ import {
 export default function GuruMateriPage() {
   // React Query hooks
   const { data: mapelList = [], isLoading: mapelLoading } = useMapel();
+  const [currentGuruId, setCurrentGuruId] = useState<string | null>(null);
   const { data: materi = [], isLoading: materiLoading } = useMateri();
   const createMateri = useCreateMateri();
   const updateMateri = useUpdateMateri();
@@ -66,6 +67,29 @@ export default function GuruMateriPage() {
 
   const supabase = createClient();
   const loading = mapelLoading || materiLoading;
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUser = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (mounted && data?.user) setCurrentGuruId(data.user.id);
+      } catch (err) {
+        console.error("Failed to get current user:", err);
+      }
+    };
+    fetchUser();
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
+
+  const filteredMapelList = useMemo(() => {
+    if (!currentGuruId) return [];
+    return Array.isArray(mapelList)
+      ? mapelList.filter((m) => m.guru_id === currentGuruId)
+      : [];
+  }, [mapelList, currentGuruId]);
 
   // Fetch kelas list
   useEffect(() => {
@@ -299,8 +323,8 @@ export default function GuruMateriPage() {
             className="h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 min-w-[200px]"
           >
             <option value="all">Semua Mata Pelajaran</option>
-            {Array.isArray(mapelList) &&
-              mapelList.map((m) => (
+            {Array.isArray(filteredMapelList) &&
+              filteredMapelList.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
@@ -473,8 +497,8 @@ export default function GuruMateriPage() {
                   className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
                 >
                   <option value="">Pilih Mata Pelajaran</option>
-                  {Array.isArray(mapelList) &&
-                    mapelList.map((m) => (
+                  {Array.isArray(filteredMapelList) &&
+                    filteredMapelList.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name}
                       </option>

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ArrowLeft,
   Briefcase,
+  BookOpen,
   Phone,
   MapPin,
   Eye,
@@ -34,6 +35,7 @@ export default function GuruProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [assignedMapelNames, setAssignedMapelNames] = useState<string[]>([]);
   const [profileErrors, setProfileErrors] = useState<
     Partial<
       Record<"full_name" | "jenis_kelamin" | "no_telepon" | "alamat", string>
@@ -174,8 +176,17 @@ export default function GuruProfilePage() {
 
       if (error) throw error;
 
+      const { data: mapelData, error: mapelError } = await supabase
+        .from("mapel")
+        .select("name")
+        .eq("guru_id", user.id)
+        .order("name", { ascending: true });
+
+      if (mapelError) throw mapelError;
+
       setProfile(data);
       setFormData(data);
+      setAssignedMapelNames((mapelData || []).map((item: any) => item.name));
     } catch (error: any) {
       console.error("Error loading profile:", error);
       toast.error("Gagal memuat profil");
@@ -308,19 +319,22 @@ export default function GuruProfilePage() {
       setSaving(true);
 
       // Update password via API
-      const res = await fetch("/api/auth/update-password", {
+      const res = await fetch("/api/guru/password-change-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentPassword: oldPassword,
           password: newPassword,
+          confirmPassword,
         }),
       });
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal mengubah password");
 
-      setPasswordSuccess("Password berhasil diubah!");
+      setPasswordSuccess(
+        "Permintaan perubahan password berhasil dikirim. Menunggu persetujuan admin.",
+      );
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -330,7 +344,7 @@ export default function GuruProfilePage() {
         loadProfile();
       }, 1000);
     } catch (error: any) {
-      setPasswordError(error.message || "Gagal mengubah password");
+      setPasswordError(error.message || "Gagal mengirim permintaan");
     } finally {
       setSaving(false);
     }
@@ -455,6 +469,16 @@ export default function GuruProfilePage() {
 
               {editMode ? (
                 <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block">
+                      Mata Pelajaran
+                    </label>
+                    <div className="w-full min-h-11 px-4 py-3 bg-muted/30 border border-border rounded-xl text-sm text-foreground">
+                      {assignedMapelNames.length > 0
+                        ? assignedMapelNames.join(", ")
+                        : "Belum ada mata pelajaran yang ditetapkan admin"}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <InputMinimal
                       label="Nama Lengkap"
@@ -535,7 +559,23 @@ export default function GuruProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                   <ItemStatic label="Nama Lengkap" value={profile.full_name} />
-                  <ItemStatic label="Email" value={profile.email} />
+                  <ItemStatic
+                    label="Email"
+                    value={profile.email}
+                    helperText="Perubahan email harus diajukan ke admin untuk verifikasi."
+                  />
+                  <ItemStatic
+                    label="Mata Pelajaran"
+                    value={
+                      assignedMapelNames.length > 0
+                        ? assignedMapelNames.join(", ")
+                        : "Belum ada mata pelajaran yang ditetapkan admin"
+                    }
+                    icon={
+                      <BookOpen size={14} className="text-muted-foreground" />
+                    }
+                    fullWidth
+                  />
                   <ItemStatic
                     label="Jenis Kelamin"
                     value={displayGender(profile.jenis_kelamin)}
@@ -578,13 +618,19 @@ export default function GuruProfilePage() {
                 </div>
               )}
 
+              <div className="mb-4 p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs">
+                Jika lupa password dan tidak bisa masuk, hubungi admin untuk
+                reset akun. Setelah reset, segera login dan ubah password
+                pribadi.
+              </div>
+
               {!showPasswordForm ? (
                 <button
                   onClick={() => setShowPasswordForm(true)}
                   className="group w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-emerald-50 hover:border-emerald-100 transition-all duration-200"
                 >
                   <span className="text-sm font-medium text-gray-600 group-hover:text-emerald-700">
-                    Ubah Kata Sandi Akun
+                    Ajukan Perubahan Kata Sandi
                   </span>
                   <ChevronRight
                     size={15}
@@ -679,7 +725,7 @@ export default function GuruProfilePage() {
                       disabled={saving}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
                     >
-                      {saving ? "Menyimpan..." : "Update Password"}
+                      {saving ? "Mengirim..." : "Kirim Permintaan"}
                     </button>
                     <button
                       type="button"
@@ -710,11 +756,13 @@ function ItemStatic({
   value,
   icon,
   fullWidth,
+  helperText,
 }: {
   label: string;
   value?: string;
   icon?: React.ReactNode;
   fullWidth?: boolean;
+  helperText?: string;
 }) {
   return (
     <div className={fullWidth ? "sm:col-span-2" : ""}>
@@ -723,7 +771,12 @@ function ItemStatic({
       </p>
       <div className="flex items-start gap-2">
         {icon ? <span className="mt-0.5">{icon}</span> : null}
-        <p className="text-sm font-medium text-foreground">{value || "-"}</p>
+        <div>
+          <p className="text-sm font-medium text-foreground">{value || "-"}</p>
+          {helperText ? (
+            <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>
+          ) : null}
+        </div>
       </div>
     </div>
   );

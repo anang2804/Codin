@@ -209,6 +209,47 @@ export async function POST(req: Request) {
       }
     }
 
+    // Assign mapel to guru if provided
+    if (body.mapel_id !== undefined) {
+      const mapelId = String(body.mapel_id || "").trim();
+      if (mapelId) {
+        // Clear any other mapel rows that currently reference this guru (except the selected one)
+        const { error: clearOtherErr } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: null })
+          .eq("guru_id", created.user.id)
+          .neq("id", mapelId);
+
+        if (clearOtherErr) {
+          throw new Error(
+            clearOtherErr.message || "Failed to clear mapel assignments",
+          );
+        }
+
+        const { error: assignMapelErr } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: created.user.id })
+          .eq("id", mapelId);
+
+        if (assignMapelErr) {
+          throw new Error(
+            assignMapelErr.message || "Failed to assign mapel to guru",
+          );
+        }
+      } else {
+        // If explicit null/empty provided, clear all mapel assignments for this guru
+        const { error: clearErr } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: null })
+          .eq("guru_id", created.user.id);
+
+        if (clearErr) {
+          throw new Error(
+            clearErr.message || "Failed to clear mapel assignments",
+          );
+        }
+      }
+    }
     return NextResponse.json({
       id: created.user.id,
       email,
@@ -272,6 +313,14 @@ export async function GET(req: Request) {
       throw kelasError;
     }
 
+    const { data: mapelRows, error: mapelError } = await supabaseAdmin
+      .from("mapel")
+      .select("id, name, guru_id");
+
+    if (mapelError) {
+      throw mapelError;
+    }
+
     const { data: siswaRows, error: siswaError } = await supabaseAdmin
       .from("profiles")
       .select("kelas")
@@ -330,6 +379,9 @@ export async function GET(req: Request) {
         alamat: g.alamat ?? null,
         kelas_diajar: kelasDiajar,
         total_siswa_kelas_diajar: totalSiswaKelasDiajar,
+        mapel_guru: (mapelRows || [])
+          .filter((mp: any) => String(mp.guru_id || "").trim() === String(g.id))
+          .map((mp: any) => ({ id: mp.id, name: mp.name })),
       };
     });
 
@@ -391,6 +443,7 @@ export async function PUT(req: Request) {
       alamat,
       nuptk,
       kelas_ids,
+      mapel_id,
     } = body;
     const normalizedKelasIds = Array.isArray(kelas_ids)
       ? [
@@ -540,6 +593,54 @@ export async function PUT(req: Request) {
                 assignSelectedAssignmentsError.message ||
                 "Failed to assign selected kelas",
             },
+            { status: 500 },
+          );
+        }
+      }
+    }
+
+    // Handle mapel assignment for update when provided
+    if (body.hasOwnProperty("mapel_id")) {
+      const mapelId = mapel_id ? String(mapel_id).trim() : null;
+      if (mapelId) {
+        const { error: clearOther } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: null })
+          .eq("guru_id", id)
+          .neq("id", mapelId);
+
+        if (clearOther) {
+          return NextResponse.json(
+            {
+              error:
+                clearOther.message ||
+                "Failed to clear existing mapel assignments",
+            },
+            { status: 500 },
+          );
+        }
+
+        const { error: assignErr } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: id })
+          .eq("id", mapelId);
+
+        if (assignErr) {
+          return NextResponse.json(
+            { error: assignErr.message || "Failed to assign selected mapel" },
+            { status: 500 },
+          );
+        }
+      } else {
+        // clear all mapel assignments for this guru
+        const { error: clearErr } = await supabaseAdmin
+          .from("mapel")
+          .update({ guru_id: null })
+          .eq("guru_id", id);
+
+        if (clearErr) {
+          return NextResponse.json(
+            { error: clearErr.message || "Failed to clear mapel assignments" },
             { status: 500 },
           );
         }
