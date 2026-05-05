@@ -43,7 +43,7 @@ const ensureAdminCaller = async () => {
   return { ok: true as const, callerId: caller.id };
 };
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const auth = await ensureAdminCaller();
     if (!auth.ok) {
@@ -56,6 +56,15 @@ export async function GET() {
         { error: "Server credentials not configured" },
         { status: 500 },
       );
+    }
+
+    // allow optional ?role=siswa|guru to filter requests by user role
+    let roleParam: string | null = null;
+    try {
+      const { searchParams } = new URL(req.url);
+      roleParam = searchParams.get("role");
+    } catch (e) {
+      roleParam = null;
     }
 
     const { data: requests, error: requestError } = await supabaseAdmin
@@ -77,7 +86,7 @@ export async function GET() {
     if (userIds.length > 0) {
       const { data: profiles, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, role")
         .in("id", userIds);
 
       if (profileError) {
@@ -91,19 +100,29 @@ export async function GET() {
     }
 
     const profileMap = new Map(profileRows.map((p: any) => [String(p.id), p]));
-    const mapped = (requests || []).map((item: any) => {
-      const profile = profileMap.get(String(item.user_id));
-      return {
-        id: item.id,
-        user_id: item.user_id,
-        status: item.status,
-        requested_at: item.requested_at,
-        guru_name: profile?.full_name || "User",
-        guru_email: profile?.email || "-",
-      };
-    });
+    const mappedWithRole = (requests || [])
+      .map((item: any) => {
+        const profile = profileMap.get(String(item.user_id));
+        return profile
+          ? {
+              id: item.id,
+              user_id: item.user_id,
+              status: item.status,
+              requested_at: item.requested_at,
+              name: profile?.full_name || "User",
+              email: profile?.email || "-",
+              role: profile?.role || null,
+            }
+          : null;
+      })
+      .filter(Boolean) as Array<any>;
 
-    return NextResponse.json({ data: mapped });
+    // if role param is given, filter by role
+    const finalList = roleParam
+      ? mappedWithRole.filter((r) => String(r.role) === String(roleParam))
+      : mappedWithRole;
+
+    return NextResponse.json({ data: finalList });
   } catch (err: any) {
     console.error("Error fetching password change requests:", err);
     return NextResponse.json(

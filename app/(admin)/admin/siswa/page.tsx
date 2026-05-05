@@ -197,8 +197,9 @@ export default function AdminSiswaPage() {
     Array<{
       id: string;
       user_id: string;
-      guru_name: string;
-      guru_email: string;
+      name: string;
+      email: string;
+      role?: string | null;
       requested_at: string;
       status: string;
     }>
@@ -1262,7 +1263,7 @@ export default function AdminSiswaPage() {
     setLoadingPasswordRequests(true);
     try {
       const response = await fetch(
-        `/api/admin/password-change-requests?t=${Date.now()}`,
+        `/api/admin/password-change-requests?t=${Date.now()}&role=siswa`,
         {
           cache: "no-store",
         },
@@ -2982,10 +2983,10 @@ export default function AdminSiswaPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {req.guru_name}
+                        {req.name}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {req.guru_email}
+                        {req.email}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Diajukan:{" "}
