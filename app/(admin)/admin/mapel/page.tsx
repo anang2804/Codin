@@ -206,10 +206,19 @@ export default function AdminMapelPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Kelola Mata Pelajaran
-        </h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Kelola Mata Pelajaran
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Total{" "}
+            <span className="font-semibold text-green-600">
+              {mapel?.length || 0}
+            </span>{" "}
+            mata pelajaran terdaftar
+          </p>
+        </div>
         <Button
           onClick={() => {
             setShowForm(!showForm);
@@ -218,9 +227,9 @@ export default function AdminMapelPage() {
               setEditingId(null);
             }
           }}
-          className="bg-green-600 hover:bg-green-700 gap-2"
+          className="bg-green-600 hover:bg-green-700 gap-2 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           Tambah Mata Pelajaran
         </Button>
       </div>
@@ -429,61 +438,103 @@ export default function AdminMapelPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {Array.isArray(mapel) &&
-            mapel.map((m) => (
-              <Card
-                key={m.id}
-                className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <BookOpen size={18} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-semibold text-gray-900">
-                          {formatMapelName(m.name)}
-                        </h3>
-                        <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
-                          {m.code}
-                        </span>
+        <div className="flex flex-col gap-3">
+          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.6fr_1.2fr_1.6fr_1.8fr_auto] lg:gap-4 lg:items-center">
+            <div>Nama Mata Pelajaran</div>
+            <div>Kode</div>
+            <div>Guru Pengampu</div>
+            <div>Deskripsi</div>
+            <div className="text-right">Aksi</div>
+          </div>
+          <div className="space-y-3">
+            {Array.isArray(mapel) &&
+              mapel.map((m) => (
+                <Card
+                  key={m.id}
+                  className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1.2fr_1.6fr_1.8fr_auto] lg:gap-4 lg:items-center">
+                    {/* Nama Mata Pelajaran */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                        <BookOpen size={18} />
                       </div>
-                      {m.description && (
-                        <p className="text-gray-500 text-sm mt-1">
-                          {m.description}
+                      <div className="min-w-0 flex-1 lg:flex-none">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:hidden mb-1">
+                          Nama Mata Pelajaran
                         </p>
-                      )}
-                      {m.guru && (
-                        <p className="text-gray-400 text-xs mt-1">
-                          <span className="font-medium text-gray-500">
-                            Guru:
-                          </span>{" "}
-                          {m.guru.full_name || m.guru.email}
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {formatMapelName(m.name)}
                         </p>
-                      )}
+                      </div>
+                    </div>
+
+                    {/* Kode */}
+                    <div className="hidden lg:block">
+                      <span className="inline-block px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
+                        {m.code}
+                      </span>
+                    </div>
+                    <div className="lg:hidden flex gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
+                        Kode
+                      </p>
+                      <span className="inline-block px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-md border border-green-100">
+                        {m.code}
+                      </span>
+                    </div>
+
+                    {/* Guru Pengampu */}
+                    <div className="hidden lg:block">
+                      <p className="text-sm text-gray-700 truncate">
+                        {m.guru ? m.guru.full_name || m.guru.email : "-"}
+                      </p>
+                    </div>
+                    <div className="lg:hidden flex gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
+                        Guru
+                      </p>
+                      <p className="text-sm text-gray-700 flex-1 truncate">
+                        {m.guru ? m.guru.full_name || m.guru.email : "-"}
+                      </p>
+                    </div>
+
+                    {/* Deskripsi */}
+                    <div className="hidden lg:block">
+                      <p className="text-sm text-gray-600 line-clamp-1">
+                        {m.description || "-"}
+                      </p>
+                    </div>
+                    <div className="lg:hidden flex gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-20">
+                        Deskripsi
+                      </p>
+                      <p className="text-sm text-gray-600 flex-1 line-clamp-1">
+                        {m.description || "-"}
+                      </p>
+                    </div>
+
+                    {/* Aksi */}
+                    <div className="flex gap-1 justify-end">
+                      <button
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-amber-400 text-white transition hover:bg-amber-500"
+                        onClick={() => handleEditMapel(m)}
+                        title="Edit"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-500 text-white transition hover:bg-red-600"
+                        onClick={() => handleDeleteMapel(m.id)}
+                        title="Hapus"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1 ml-4">
-                    <button
-                      className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
-                      onClick={() => handleEditMapel(m)}
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
-                      onClick={() => handleDeleteMapel(m.id)}
-                      title="Hapus"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+          </div>
         </div>
       )}
     </div>

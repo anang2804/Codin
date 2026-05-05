@@ -131,13 +131,22 @@ export default function AdminKelasPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Kelola Kelas</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Kelola Kelas</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Total{" "}
+            <span className="font-semibold text-green-600">
+              {kelas?.length || 0}
+            </span>{" "}
+            kelas terdaftar
+          </p>
+        </div>
         <Button
           onClick={openAddForm}
-          className="bg-green-600 hover:bg-green-700 gap-2"
+          className="bg-green-600 hover:bg-green-700 gap-2 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           Tambah Kelas
         </Button>
       </div>
@@ -269,46 +278,70 @@ export default function AdminKelasPage() {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {kelas.map((k) => (
-            <Card
-              key={k.id}
-              className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <div className="flex justify-between items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                    <GraduationCap size={18} />
+        <div className="flex flex-col gap-3">
+          <div className="hidden rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[1.6fr_1.6fr_auto] lg:gap-4 lg:items-center">
+            <div>Nama Kelas</div>
+            <div>Dibuat</div>
+            <div className="text-right">Aksi</div>
+          </div>
+          <div className="space-y-3">
+            {kelas.map((k) => (
+              <Card
+                key={k.id}
+                className="p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1.6fr_auto] lg:gap-4 lg:items-center">
+                  {/* Nama Kelas */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                      <GraduationCap size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1 lg:flex-none">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 lg:hidden mb-1">
+                        Nama Kelas
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {k.name}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900">
-                      {k.name}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Dibuat:{" "}
+
+                  {/* Dibuat */}
+                  <div className="hidden lg:block">
+                    <p className="text-sm text-gray-600">
                       {new Date(k.created_at).toLocaleDateString("id-ID")}
                     </p>
                   </div>
+                  <div className="lg:hidden flex gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-16">
+                      Dibuat
+                    </p>
+                    <p className="text-sm text-gray-600 flex-1">
+                      {new Date(k.created_at).toLocaleDateString("id-ID")}
+                    </p>
+                  </div>
+
+                  {/* Aksi */}
+                  <div className="flex gap-1 justify-end">
+                    <button
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-amber-400 text-white transition hover:bg-amber-500"
+                      onClick={() => openEditForm(k)}
+                      title="Edit"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-500 text-white transition hover:bg-red-600"
+                      onClick={() => handleDeleteKelas(k.id)}
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button
-                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
-                    onClick={() => openEditForm(k)}
-                    title="Edit"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
-                    onClick={() => handleDeleteKelas(k.id)}
-                    title="Hapus"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>
