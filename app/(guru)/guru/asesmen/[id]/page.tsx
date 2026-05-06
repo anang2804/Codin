@@ -287,6 +287,54 @@ export default function AsesmenDetailPage({
     }
   }, [soals, activeSoalIndex]);
 
+  useEffect(() => {
+    if (soals.length === 0) return;
+
+    const updateActiveFromScroll = () => {
+      const stickyOffset = 140;
+      let closestAboveIndex = -1;
+      let closestAboveDistance = Number.NEGATIVE_INFINITY;
+      let closestBelowIndex = -1;
+      let closestBelowDistance = Number.POSITIVE_INFINITY;
+
+      soals.forEach((soal, index) => {
+        const element = soalCardRefs.current[soal.id];
+        if (!element) return;
+
+        const topWithOffset =
+          element.getBoundingClientRect().top - stickyOffset;
+
+        if (topWithOffset <= 0 && topWithOffset > closestAboveDistance) {
+          closestAboveDistance = topWithOffset;
+          closestAboveIndex = index;
+        }
+
+        if (topWithOffset > 0 && topWithOffset < closestBelowDistance) {
+          closestBelowDistance = topWithOffset;
+          closestBelowIndex = index;
+        }
+      });
+
+      const nextIndex =
+        closestAboveIndex !== -1 ? closestAboveIndex : closestBelowIndex;
+
+      if (nextIndex !== -1) {
+        setActiveSoalIndex((prev) => (prev === nextIndex ? prev : nextIndex));
+      }
+    };
+
+    updateActiveFromScroll();
+    window.addEventListener("scroll", updateActiveFromScroll, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateActiveFromScroll);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveFromScroll);
+      window.removeEventListener("resize", updateActiveFromScroll);
+    };
+  }, [soals]);
+
   const fetchAsesmenData = async () => {
     const supabase = createClient();
     try {
