@@ -5,6 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   RefreshCw,
   History,
   Users,
@@ -60,6 +64,8 @@ export default function GuruNilaiDetailPage({
     siswaName: string;
   }>({ open: false, siswaId: "", siswaName: "" });
   const [isResetting, setIsResetting] = useState(false);
+  const [nilaiRowsPerPage, setNilaiRowsPerPage] = useState(10);
+  const [nilaiPage, setNilaiPage] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -211,6 +217,21 @@ export default function GuruNilaiDetailPage({
           scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
         )
       : 0;
+
+  const totalNilaiPages = Math.max(
+    1,
+    Math.ceil(nilai.length / nilaiRowsPerPage),
+  );
+  const paginatedNilai = nilai.slice(
+    nilaiPage * nilaiRowsPerPage,
+    nilaiPage * nilaiRowsPerPage + nilaiRowsPerPage,
+  );
+  const nilaiStartIndex =
+    nilai.length === 0 ? 0 : nilaiPage * nilaiRowsPerPage + 1;
+  const nilaiEndIndex = Math.min(
+    (nilaiPage + 1) * nilaiRowsPerPage,
+    nilai.length,
+  );
 
   const handleDownloadExcel = () => {
     if (nilai.length === 0) {
@@ -382,7 +403,7 @@ export default function GuruNilaiDetailPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {nilai.map((n, index) => {
+                    {paginatedNilai.map((n, index) => {
                       const hasScore = n.score !== null;
                       return (
                         <tr
@@ -390,7 +411,7 @@ export default function GuruNilaiDetailPage({
                           className="transition-colors duration-150 hover:bg-gray-50/80"
                         >
                           <td className="px-4 py-4 text-sm text-gray-900">
-                            {index + 1}
+                            {nilaiStartIndex + index}
                           </td>
                           <td className="px-4 py-4 text-sm font-medium text-gray-900">
                             {n.profiles?.full_name || "Unknown"}
@@ -457,6 +478,81 @@ export default function GuruNilaiDetailPage({
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="border-t border-gray-200 rounded-b-xl bg-white px-4 py-4 shadow-sm sticky bottom-0">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                    <span>Rows per page:</span>
+                    <select
+                      value={nilaiRowsPerPage}
+                      onChange={(e) => {
+                        setNilaiRowsPerPage(Number(e.target.value));
+                        setNilaiPage(0);
+                      }}
+                      className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-800 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+                    >
+                      {[5, 10, 20, 50].map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="font-semibold text-gray-700">
+                      {nilai.length === 0
+                        ? "0-0 of 0"
+                        : `${nilaiStartIndex}-${nilaiEndIndex} of ${nilai.length}`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setNilaiPage(0)}
+                      disabled={nilaiPage === 0}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Halaman pertama"
+                    >
+                      <ChevronsLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNilaiPage((prev) => Math.max(0, prev - 1))
+                      }
+                      disabled={nilaiPage === 0}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Sebelumnya"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <span className="min-w-16 px-2 text-sm font-medium text-gray-600">
+                      {nilaiPage + 1} / {totalNilaiPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNilaiPage((prev) =>
+                          Math.min(totalNilaiPages - 1, prev + 1),
+                        )
+                      }
+                      disabled={nilaiPage >= totalNilaiPages - 1}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Selanjutnya"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNilaiPage(totalNilaiPages - 1)}
+                      disabled={nilaiPage >= totalNilaiPages - 1}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Halaman terakhir"
+                    >
+                      <ChevronsRight size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
