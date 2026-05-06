@@ -201,6 +201,19 @@ export default function GuruMateriDetailPage() {
   };
 
   // SUB BAB CRUD Operations
+  const closeSubBabForm = () => {
+    setShowSubBabDialog(false);
+    setSelectedBabId(null);
+    setEditingSubBabId(null);
+    setSelectedFile(null);
+    setSubBabForm({
+      title: "",
+      description: "",
+      content_type: "text",
+      content_url: "",
+    });
+  };
+
   const openSubBabDialog = (babId: string, subBab?: SubBab) => {
     setSelectedBabId(babId);
     setSelectedFile(null);
@@ -305,16 +318,7 @@ export default function GuruMateriDetailPage() {
         toast.success("Sub-bab berhasil ditambahkan");
       }
 
-      setShowSubBabDialog(false);
-      setSubBabForm({
-        title: "",
-        description: "",
-        content_type: "text",
-        content_url: "",
-      });
-      setEditingSubBabId(null);
-      setSelectedBabId(null);
-      setSelectedFile(null);
+      closeSubBabForm();
       setIsUploading(false);
     } catch (error: any) {
       console.error("Error saving sub-bab:", error);
@@ -365,6 +369,10 @@ export default function GuruMateriDetailPage() {
         return <FileText size={16} className="text-gray-600" />;
     }
   };
+
+  const selectedBabForSubBabForm = selectedBabId
+    ? (babs.find((bab) => bab.id === selectedBabId) ?? null)
+    : null;
 
   if (loading) {
     return (
@@ -442,6 +450,203 @@ export default function GuruMateriDetailPage() {
           </div>
         </div>
       </div>
+
+      {showSubBabDialog && selectedBabId && (
+        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingSubBabId ? "Edit Sub-Bab" : "Tambah Sub-Bab Baru"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Sub-bab berisi konten pembelajaran yang detail
+              </p>
+              {selectedBabForSubBabForm && (
+                <p className="mt-2 text-sm font-medium text-green-700">
+                  Bab tujuan: {selectedBabForSubBabForm.title}
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveSubBab} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="sub-bab-title"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Judul Sub-Bab <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  id="sub-bab-title"
+                  placeholder="Contoh: Deklarasi Variabel Integer"
+                  value={subBabForm.title ?? ""}
+                  onChange={(e) =>
+                    setSubBabForm({ ...subBabForm, title: e.target.value })
+                  }
+                  required
+                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">
+                  Tipe Konten
+                </Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+                  {[
+                    { value: "text", label: "Teks", icon: FileText },
+                    { value: "file", label: "File", icon: File },
+                    { value: "link", label: "Link", icon: LinkIcon },
+                    { value: "assignment", label: "Tugas", icon: Upload },
+                  ].map(({ value, label, icon: Icon }) => {
+                    const isActive = subBabForm.content_type === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          setSubBabForm({
+                            ...subBabForm,
+                            content_type: value as any,
+                          })
+                        }
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-150 hover:scale-[1.03] ${
+                          isActive
+                            ? "bg-green-600 border-green-600 text-white"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-700"
+                        }`}
+                      >
+                        <Icon size={15} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div
+                className={
+                  subBabForm.content_type === "file" ? "space-y-1.5" : "hidden"
+                }
+              >
+                <Label
+                  htmlFor="file-upload"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Upload File
+                </Label>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      setSubBabForm({ ...subBabForm, content_url: file.name });
+                    }
+                  }}
+                  className="cursor-pointer border-gray-200"
+                />
+                {selectedFile && (
+                  <p className="text-xs text-gray-500 mt-1 break-all">
+                    File dipilih: {selectedFile.name} (
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+                {subBabForm.content_url && !selectedFile && (
+                  <p className="text-xs text-gray-500 mt-1 break-all">
+                    File saat ini: {subBabForm.content_url}
+                  </p>
+                )}
+              </div>
+
+              {subBabForm.content_type === "link" && (
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="content-url"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    URL Link
+                  </Label>
+                  <Input
+                    id="content-url"
+                    type="url"
+                    placeholder="https://example.com atau https://youtube.com/watch?v=..."
+                    value={subBabForm.content_url ?? ""}
+                    onChange={(e) =>
+                      setSubBabForm({
+                        ...subBabForm,
+                        content_url: e.target.value,
+                      })
+                    }
+                    className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="sub-description"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Deskripsi Singkat{" "}
+                  <span className="text-gray-400 font-normal">(Opsional)</span>
+                </Label>
+                <Textarea
+                  id="sub-description"
+                  placeholder="Penjelasan singkat tentang sub-bab ini..."
+                  value={subBabForm.description ?? ""}
+                  onChange={(e) =>
+                    setSubBabForm({
+                      ...subBabForm,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <Button
+                  type="submit"
+                  disabled={
+                    createSubBab.isPending ||
+                    updateSubBab.isPending ||
+                    isUploading
+                  }
+                  className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] hover:-translate-y-px transition-all duration-150 disabled:opacity-70 disabled:scale-100"
+                >
+                  {(createSubBab.isPending ||
+                    updateSubBab.isPending ||
+                    isUploading) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isUploading
+                    ? "Mengupload file..."
+                    : editingSubBabId
+                      ? "Perbarui Sub-Bab"
+                      : "Simpan Sub-Bab"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeSubBabForm}
+                  disabled={
+                    createSubBab.isPending ||
+                    updateSubBab.isPending ||
+                    isUploading
+                  }
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
+                >
+                  Batal
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
       {/* Babs List */}
       {!Array.isArray(babs) || babs.length === 0 ? (
@@ -683,201 +888,6 @@ export default function GuruMateriDetailPage() {
                 variant="outline"
                 onClick={() => setShowBabDialog(false)}
                 disabled={createBab.isPending || updateBab.isPending}
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Sub-Bab Dialog */}
-      <Dialog open={showSubBabDialog} onOpenChange={setShowSubBabDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden animate-in fade-in-0 zoom-in-95 duration-200">
-          <DialogHeader className="pb-1">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              {editingSubBabId ? "Edit Sub-Bab" : "Tambah Sub-Bab Baru"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-400">
-              Sub-bab berisi konten pembelajaran yang detail
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveSubBab} className="space-y-5 pt-1">
-            {/* Judul */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="sub-bab-title"
-                className="text-sm font-medium text-gray-700"
-              >
-                Judul Sub-Bab <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                id="sub-bab-title"
-                placeholder="Contoh: Deklarasi Variabel Integer"
-                value={subBabForm.title ?? ""}
-                onChange={(e) =>
-                  setSubBabForm({ ...subBabForm, title: e.target.value })
-                }
-                required
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
-              />
-            </div>
-
-            {/* Tipe Konten */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">
-                Tipe Konten
-              </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
-                {[
-                  { value: "text", label: "Teks", icon: FileText },
-                  { value: "file", label: "File", icon: File },
-                  { value: "link", label: "Link", icon: LinkIcon },
-                  { value: "assignment", label: "Tugas", icon: Upload },
-                ].map(({ value, label, icon: Icon }) => {
-                  const isActive = subBabForm.content_type === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() =>
-                        setSubBabForm({
-                          ...subBabForm,
-                          content_type: value as any,
-                        })
-                      }
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-150 hover:scale-[1.03] ${
-                        isActive
-                          ? "bg-green-600 border-green-600 text-white"
-                          : "bg-white border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-700"
-                      }`}
-                    >
-                      <Icon size={15} />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Konten berdasarkan tipe */}
-            {/* File upload — always mounted, visible only for "file" type */}
-            <div
-              className={
-                subBabForm.content_type === "file" ? "space-y-1.5" : "hidden"
-              }
-            >
-              <Label
-                htmlFor="file-upload"
-                className="text-sm font-medium text-gray-700"
-              >
-                Upload File
-              </Label>
-              <Input
-                id="file-upload"
-                type="file"
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setSelectedFile(file);
-                    setSubBabForm({ ...subBabForm, content_url: file.name });
-                  }
-                }}
-                className="cursor-pointer border-gray-200"
-              />
-              {selectedFile && (
-                <p className="text-xs text-gray-500 mt-1 break-all">
-                  File dipilih: {selectedFile.name} (
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-              )}
-              {subBabForm.content_url && !selectedFile && (
-                <p className="text-xs text-gray-500 mt-1 break-all">
-                  File saat ini: {subBabForm.content_url}
-                </p>
-              )}
-            </div>
-
-            {/* URL input hanya dirender saat tipe konten link */}
-            {subBabForm.content_type === "link" && (
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="content-url"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  URL Link
-                </Label>
-                <Input
-                  id="content-url"
-                  type="url"
-                  placeholder="https://example.com atau https://youtube.com/watch?v=..."
-                  value={subBabForm.content_url ?? ""}
-                  onChange={(e) =>
-                    setSubBabForm({
-                      ...subBabForm,
-                      content_url: e.target.value,
-                    })
-                  }
-                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
-                />
-              </div>
-            )}
-
-            {/* Deskripsi */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="sub-description"
-                className="text-sm font-medium text-gray-700"
-              >
-                Deskripsi Singkat{" "}
-                <span className="text-gray-400 font-normal">(Opsional)</span>
-              </Label>
-              <Textarea
-                id="sub-description"
-                placeholder="Penjelasan singkat tentang sub-bab ini..."
-                value={subBabForm.description ?? ""}
-                onChange={(e) =>
-                  setSubBabForm({ ...subBabForm, description: e.target.value })
-                }
-                rows={3}
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
-              />
-            </div>
-
-            {/* Tombol */}
-            <div className="flex gap-3 pt-1">
-              <Button
-                type="submit"
-                disabled={
-                  createSubBab.isPending ||
-                  updateSubBab.isPending ||
-                  isUploading
-                }
-                className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] hover:-translate-y-px transition-all duration-150 disabled:opacity-70 disabled:scale-100"
-              >
-                {(createSubBab.isPending ||
-                  updateSubBab.isPending ||
-                  isUploading) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {isUploading
-                  ? "Mengupload file..."
-                  : editingSubBabId
-                    ? "Perbarui Sub-Bab"
-                    : "Simpan Sub-Bab"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowSubBabDialog(false)}
-                disabled={
-                  createSubBab.isPending ||
-                  updateSubBab.isPending ||
-                  isUploading
-                }
                 className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
               >
                 Batal
