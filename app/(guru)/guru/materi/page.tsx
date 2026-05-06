@@ -361,14 +361,14 @@ export default function GuruMateriPage() {
           )}
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredMateri.map((m) => (
             <Card
               key={m.id}
-              className="overflow-hidden border border-gray-100 dark:border-gray-800 bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+              className="overflow-hidden border border-gray-100 dark:border-gray-800 bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col"
             >
               {/* Thumbnail */}
-              <div className="relative h-40 bg-gradient-to-br from-green-50 dark:from-green-900/20 to-green-100 dark:to-green-900/10 overflow-hidden">
+              <div className="relative h-28 bg-gradient-to-br from-green-50 dark:from-green-900/20 to-green-100 dark:to-green-900/10 overflow-hidden flex-shrink-0">
                 {m.thumbnail_url ? (
                   <img
                     src={m.thumbnail_url}
@@ -386,24 +386,24 @@ export default function GuruMateriPage() {
               </div>
 
               {/* Content */}
-              <div className="p-4">
-                <div className="mb-3">
+              <div className="p-3 flex flex-col flex-grow">
+                <div className="mb-2">
                   {m.mapel && (
-                    <span className="inline-block px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-900/50 rounded-full mb-2">
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-900/50 rounded-full mb-1">
                       {m.mapel.name}
                     </span>
                   )}
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
                     {m.title}
                   </h3>
                   {m.description && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                       {m.description}
                     </p>
                   )}
                 </div>
 
-                <div className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+                <div className="text-xs text-gray-400 dark:text-gray-500 mb-3 mt-auto">
                   {new Date(m.created_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "long",
@@ -412,31 +412,32 @@ export default function GuruMateriPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <Link href={`/guru/materi/${m.id}`} className="flex-1">
                     <Button
                       variant="outline"
-                      className="w-full border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-[1.02] transition-all duration-200"
+                      size="sm"
+                      className="w-full text-xs border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-[1.02] transition-all duration-200 h-8"
                     >
-                      <Eye size={14} className="mr-1.5" />
-                      Kelola Bab
+                      <Eye size={12} className="mr-1" />
+                      Kelola
                     </Button>
                   </Link>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleEdit(m)}
-                    className="border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 hover:scale-[1.02] transition-all duration-200"
+                    className="border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900/50 hover:scale-[1.02] transition-all duration-200 h-8 px-2"
                   >
-                    <Edit size={14} />
+                    <Edit size={12} />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(m.id)}
-                    className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.02] transition-all duration-200"
+                    className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.02] transition-all duration-200 h-8 px-2"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={12} />
                   </Button>
                 </div>
               </div>
