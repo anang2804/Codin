@@ -333,6 +333,213 @@ export default function GuruMateriPage() {
         </div>
       </div>
 
+      {showForm && (
+        <div className="max-w-2xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm dark:bg-card dark:border-gray-800">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {editingId ? "Edit Materi" : "Tambah Materi Baru"}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Lengkapi informasi dasar materi. Bab dan sub-bab dapat
+                ditambahkan setelah materi dibuat.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="title"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Judul Materi <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  placeholder="Contoh: Pengenalan Pemrograman Python"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  required
+                  className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="mapel"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Mata Pelajaran <span className="text-red-400">*</span>
+                  </Label>
+                  <select
+                    id="mapel"
+                    value={formData.mapel_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mapel_id: e.target.value })
+                    }
+                    className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
+                  >
+                    <option value="">Pilih Mata Pelajaran</option>
+                    {Array.isArray(filteredMapelList) &&
+                      filteredMapelList.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="kelas"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Kelas <span className="text-red-400">*</span>
+                  </Label>
+                  <select
+                    id="kelas"
+                    value={formData.kelas_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, kelas_id: e.target.value })
+                    }
+                    className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
+                  >
+                    <option value="">Pilih Kelas</option>
+                    {Array.isArray(kelasList) &&
+                      kelasList.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Deskripsi Singkat
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Ringkasan singkat tentang materi ini..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200 resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Thumbnail / Sampul
+                </Label>
+                <div className="mt-1">
+                  {formData.thumbnail_url ? (
+                    <div className="relative rounded-lg overflow-hidden animate-in fade-in-0 duration-300">
+                      <img
+                        src={formData.thumbnail_url}
+                        alt="Thumbnail"
+                        className="w-full h-44 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, thumbnail_url: "" })
+                        }
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white text-xs px-2.5 py-1 rounded-full transition-colors duration-150"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="thumbnail-upload"
+                      className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-all duration-200"
+                    >
+                      <ImageIcon
+                        className="text-gray-300 dark:text-gray-600 group-hover:text-green-500 dark:group-hover:text-green-400 mb-2 transition-colors duration-200"
+                        size={28}
+                      />
+                      <span className="text-sm text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200">
+                        {uploadingThumbnail
+                          ? "Mengunggah..."
+                          : "Klik untuk upload gambar"}
+                      </span>
+                      <span className="text-xs text-gray-300 dark:text-gray-600 mt-1">
+                        PNG, JPG maks. 5MB
+                      </span>
+                      <input
+                        id="thumbnail-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleThumbnailUpload}
+                        disabled={uploadingThumbnail}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="submit"
+                  className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
+                  disabled={uploadingThumbnail || isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <svg
+                        className="animate-spin mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                      </svg>
+                      Menyimpan...
+                    </>
+                  ) : editingId ? (
+                    "Perbarui Materi"
+                  ) : (
+                    "Simpan Materi"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={uploadingThumbnail}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:scale-[1.02] transition-all duration-150"
+                >
+                  Batal
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
       {/* Materi List */}
       {filteredMateri.length === 0 ? (
         <Card className="p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700 bg-card">
@@ -445,217 +652,6 @@ export default function GuruMateriPage() {
           ))}
         </div>
       )}
-
-      {/* Form Dialog */}
-      <Dialog open={showForm} onOpenChange={resetForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-card">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              {editingId ? "Edit Materi" : "Tambah Materi Baru"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-400 dark:text-gray-500">
-              Lengkapi informasi dasar materi. Bab dan sub-bab dapat ditambahkan
-              setelah materi dibuat.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-5 pt-1">
-            {/* Judul */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="title"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Judul Materi <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                id="title"
-                placeholder="Contoh: Pengenalan Pemrograman Python"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                required
-                className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200"
-              />
-            </div>
-
-            {/* Mapel & Kelas - side by side */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="mapel"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Mata Pelajaran <span className="text-red-400">*</span>
-                </Label>
-                <select
-                  id="mapel"
-                  value={formData.mapel_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mapel_id: e.target.value })
-                  }
-                  className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
-                >
-                  <option value="">Pilih Mata Pelajaran</option>
-                  {Array.isArray(filteredMapelList) &&
-                    filteredMapelList.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="kelas"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Kelas <span className="text-red-400">*</span>
-                </Label>
-                <select
-                  id="kelas"
-                  value={formData.kelas_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kelas_id: e.target.value })
-                  }
-                  className="h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-input px-3 py-2 text-sm text-gray-700 dark:text-foreground focus:outline-none focus:border-green-400 dark:focus:border-green-600 transition-colors duration-200"
-                >
-                  <option value="">Pilih Kelas</option>
-                  {Array.isArray(kelasList) &&
-                    kelasList.map((k) => (
-                      <option key={k.id} value={k.id}>
-                        {k.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Deskripsi */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="description"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Deskripsi Singkat
-              </Label>
-              <Textarea
-                id="description"
-                placeholder="Ringkasan singkat tentang materi ini..."
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="border-gray-200 dark:border-gray-700 focus:border-green-400 dark:focus:border-green-600 focus:ring-green-400 dark:focus:ring-green-900/40 transition-colors duration-200 resize-none"
-                rows={3}
-              />
-            </div>
-
-            {/* Thumbnail */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Thumbnail / Sampul
-              </Label>
-              <div className="mt-1">
-                {formData.thumbnail_url ? (
-                  <div className="relative rounded-lg overflow-hidden animate-in fade-in-0 duration-300">
-                    <img
-                      src={formData.thumbnail_url}
-                      alt="Thumbnail"
-                      className="w-full h-44 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, thumbnail_url: "" })
-                      }
-                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white text-xs px-2.5 py-1 rounded-full transition-colors duration-150"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                ) : (
-                  <label
-                    htmlFor="thumbnail-upload"
-                    className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-all duration-200"
-                  >
-                    <ImageIcon
-                      className="text-gray-300 dark:text-gray-600 group-hover:text-green-500 dark:group-hover:text-green-400 mb-2 transition-colors duration-200"
-                      size={28}
-                    />
-                    <span className="text-sm text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200">
-                      {uploadingThumbnail
-                        ? "Mengunggah..."
-                        : "Klik untuk upload gambar"}
-                    </span>
-                    <span className="text-xs text-gray-300 dark:text-gray-600 mt-1">
-                      PNG, JPG maks. 5MB
-                    </span>
-                    <input
-                      id="thumbnail-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleThumbnailUpload}
-                      disabled={uploadingThumbnail}
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
-                disabled={uploadingThumbnail || isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <svg
-                      className="animate-spin mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Menyimpan...
-                  </>
-                ) : editingId ? (
-                  "Perbarui Materi"
-                ) : (
-                  "Simpan Materi"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetForm}
-                disabled={uploadingThumbnail}
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:scale-[1.02] transition-all duration-150"
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
