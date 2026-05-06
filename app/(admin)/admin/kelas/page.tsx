@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Users,
   Plus,
   Edit,
   Trash2,
@@ -28,11 +27,9 @@ import {
   useUpdateKelas,
   useDeleteKelas,
 } from "@/lib/hooks/use-kelas";
-import { useGuru } from "@/lib/hooks/use-guru";
 
 export default function AdminKelasPage() {
   const { data: kelas, isLoading: loading } = useKelas();
-  const { data: guruOptions } = useGuru();
   const createKelas = useCreateKelas();
   const updateKelas = useUpdateKelas();
   const deleteKelas = useDeleteKelas();
@@ -119,16 +116,6 @@ export default function AdminKelasPage() {
     setShowForm(true);
   };
 
-  const openAddForm = () => {
-    setFormData({
-      id: "",
-      name: "",
-    });
-    setNameError("");
-    setIsEditing(false);
-    setShowForm(true);
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -143,7 +130,17 @@ export default function AdminKelasPage() {
           </p>
         </div>
         <Button
-          onClick={openAddForm}
+          onClick={() => {
+            setShowForm(!showForm);
+            if (!showForm) {
+              setFormData({
+                id: "",
+                name: "",
+              });
+              setNameError("");
+              setIsEditing(false);
+            }
+          }}
           className="bg-green-600 hover:bg-green-700 gap-2 rounded-lg px-5 py-2.5 transition hover:scale-[1.02]"
         >
           <Plus size={16} />
@@ -151,66 +148,68 @@ export default function AdminKelasPage() {
         </Button>
       </div>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-md rounded-xl border border-gray-100 shadow-md p-8">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900">
-              {isEditing ? "Edit Kelas" : "Tambah Kelas"}
-            </DialogTitle>
-            <p className="text-sm text-gray-500">
-              {isEditing
-                ? "Perbarui nama kelas yang sudah ada."
-                : "Isi nama kelas yang ingin ditambahkan."}
-            </p>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-5 mt-1" noValidate>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Nama Kelas <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="text"
-                value={formData.name}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ ...formData, name: value });
-                  if (nameError && value.trim()) {
+      {showForm && (
+        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isEditing ? "Edit Kelas" : "Tambah Kelas Baru"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {isEditing
+                  ? "Perbarui nama kelas yang sudah ada."
+                  : "Isi nama kelas yang ingin ditambahkan."}
+              </p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nama Kelas <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, name: value });
+                    if (nameError && value.trim()) {
+                      setNameError("");
+                    }
+                  }}
+                  className={`transition ${
+                    nameError
+                      ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                      : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                  }`}
+                />
+                {nameError && (
+                  <p className="mt-1 text-xs text-red-600">{nameError}</p>
+                )}
+              </div>
+              <div className="flex gap-3 pt-1">
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 px-6 rounded-lg transition"
+                >
+                  {isEditing ? "Update" : "Simpan"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setIsEditing(false);
                     setNameError("");
-                  }
-                }}
-                className={`transition ${
-                  nameError
-                    ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                    : "border-gray-200 focus:border-green-400 focus:ring-2 focus:ring-green-100"
-                }`}
-              />
-              {nameError && (
-                <p className="mt-1 text-xs text-red-600">{nameError}</p>
-              )}
-            </div>
-            <div className="flex gap-3 pt-1">
-              <Button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 px-6 rounded-lg transition"
-              >
-                {isEditing ? "Update" : "Simpan"}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setIsEditing(false);
-                  setNameError("");
-                }}
-                variant="outline"
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+                  }}
+                  variant="outline"
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition"
+                >
+                  Batal
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
       <Dialog
         open={showDeleteDialog}
