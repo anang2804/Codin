@@ -89,9 +89,11 @@ export default function AsesmenDetailPage({
     question: string;
   } | null>(null);
   const [isDeletingSoal, setIsDeletingSoal] = useState(false);
+  const [activeSoalIndex, setActiveSoalIndex] = useState(0);
   const questionTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const questionImageInputRef = useRef<HTMLInputElement | null>(null);
   const questionSelectionRef = useRef({ start: 0, end: 0 });
+  const soalCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [formData, setFormData] = useState({
     question: "",
@@ -273,6 +275,17 @@ export default function AsesmenDetailPage({
   useEffect(() => {
     fetchAsesmenData();
   }, [id]);
+
+  useEffect(() => {
+    if (soals.length === 0) {
+      setActiveSoalIndex(0);
+      return;
+    }
+
+    if (activeSoalIndex > soals.length - 1) {
+      setActiveSoalIndex(soals.length - 1);
+    }
+  }, [soals, activeSoalIndex]);
 
   const fetchAsesmenData = async () => {
     const supabase = createClient();
@@ -610,6 +623,17 @@ export default function AsesmenDetailPage({
     setFormErrors({});
     setEditingSoal(null);
     setShowForm(false);
+  };
+
+  const goToSoal = (index: number) => {
+    const soal = soals[index];
+    if (!soal) return;
+
+    setActiveSoalIndex(index);
+    const card = soalCardRefs.current[soal.id];
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const totalPoinSoal = soals.reduce(
@@ -1187,133 +1211,178 @@ export default function AsesmenDetailPage({
             </p>
           </Card>
         ) : (
-          soals.map((soal, index) => (
-            <Card
-              key={soal.id}
-              className="p-6 border border-gray-100 rounded-xl shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-                      Soal {index + 1}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-                      {soal.type === "pilihan_ganda"
-                        ? "Pilihan Ganda"
-                        : "Essay"}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
-                      {soal.points} poin
-                    </span>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-4 items-start">
+            <div className="space-y-4">
+              {soals.map((soal, index) => (
+                <div
+                  key={soal.id}
+                  ref={(el) => {
+                    soalCardRefs.current[soal.id] = el;
+                  }}
+                >
+                  <Card
+                    className={`p-6 border rounded-xl shadow-sm transition-all duration-200 ${
+                      index === activeSoalIndex
+                        ? "border-green-200 ring-2 ring-green-100"
+                        : "border-gray-100 hover:-translate-y-0.5 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                            Soal {index + 1}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                            {soal.type === "pilihan_ganda"
+                              ? "Pilihan Ganda"
+                              : "Essay"}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                            {soal.points} poin
+                          </span>
+                        </div>
 
-                  <p className="text-[15px] leading-relaxed text-gray-900 whitespace-pre-wrap">
-                    {soal.question}
-                  </p>
+                        <p className="text-[15px] leading-relaxed text-gray-900 whitespace-pre-wrap">
+                          {soal.question}
+                        </p>
 
-                  {soal.file_url && (
-                    <a
-                      href={soal.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline mt-2"
-                    >
-                      <FileText size={16} />
-                      Lihat Lampiran
-                    </a>
-                  )}
-
-                  {soal.type === "pilihan_ganda" && soal.options && (
-                    <div className="space-y-2 mt-4">
-                      {Object.entries(soal.options).map(([key, value]) => {
-                        const optionText = getOptionText(value as OptionValue);
-                        const optionImageUrl = getOptionImageUrl(
-                          value as OptionValue,
-                        );
-
-                        return (
-                          <div
-                            key={key}
-                            className={`p-3 rounded-lg border ${
-                              soal.correct_answer === key
-                                ? "bg-green-50 border-green-200"
-                                : "bg-gray-50/70 border-gray-100"
-                            }`}
+                        {soal.file_url && (
+                          <a
+                            href={soal.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline mt-2"
                           >
-                            <div className="flex items-start gap-2.5">
-                              {soal.correct_answer === key && (
-                                <CheckCircle
-                                  size={16}
-                                  className="text-green-600 shrink-0 mt-0.5"
-                                />
-                              )}
-                              <span className="font-semibold text-gray-700">
-                                {key}.
-                              </span>
-                              <span className="text-gray-700">
-                                {optionText}
-                              </span>
-                            </div>
-                            {optionImageUrl && (
-                              <div className="mt-2 ml-6 rounded-md border border-gray-200 bg-white p-1">
-                                <img
-                                  src={optionImageUrl}
-                                  alt={`Gambar opsi ${key}`}
-                                  className="h-20 w-auto object-contain rounded"
-                                />
-                              </div>
+                            <FileText size={16} />
+                            Lihat Lampiran
+                          </a>
+                        )}
+
+                        {soal.type === "pilihan_ganda" && soal.options && (
+                          <div className="space-y-2 mt-4">
+                            {Object.entries(soal.options).map(
+                              ([key, value]) => {
+                                const optionText = getOptionText(
+                                  value as OptionValue,
+                                );
+                                const optionImageUrl = getOptionImageUrl(
+                                  value as OptionValue,
+                                );
+
+                                return (
+                                  <div
+                                    key={key}
+                                    className={`p-3 rounded-lg border ${
+                                      soal.correct_answer === key
+                                        ? "bg-green-50 border-green-200"
+                                        : "bg-gray-50/70 border-gray-100"
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2.5">
+                                      {soal.correct_answer === key && (
+                                        <CheckCircle
+                                          size={16}
+                                          className="text-green-600 shrink-0 mt-0.5"
+                                        />
+                                      )}
+                                      <span className="font-semibold text-gray-700">
+                                        {key}.
+                                      </span>
+                                      <span className="text-gray-700">
+                                        {optionText}
+                                      </span>
+                                    </div>
+                                    {optionImageUrl && (
+                                      <div className="mt-2 ml-6 rounded-md border border-gray-200 bg-white p-1">
+                                        <img
+                                          src={optionImageUrl}
+                                          alt={`Gambar opsi ${key}`}
+                                          className="h-20 w-auto object-contain rounded"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              },
                             )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                        )}
+                      </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {index > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => swapSoalPosition(index, "up")}
-                      title="Pindah ke atas"
-                      className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
-                    >
-                      <ArrowUp size={15} />
-                    </Button>
-                  )}
-                  {index < soals.length - 1 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => swapSoalPosition(index, "down")}
-                      title="Pindah ke bawah"
-                      className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
-                    >
-                      <ArrowDown size={15} />
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditSoal(soal)}
-                    className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.03] transition-all duration-150"
-                  >
-                    <Edit size={15} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteSoal(soal)}
-                    className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.03] transition-all duration-150"
-                  >
-                    <Trash2 size={15} />
-                  </Button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {index > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => swapSoalPosition(index, "up")}
+                            title="Pindah ke atas"
+                            className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
+                          >
+                            <ArrowUp size={15} />
+                          </Button>
+                        )}
+                        {index < soals.length - 1 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => swapSoalPosition(index, "down")}
+                            title="Pindah ke bawah"
+                            className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-200 hover:scale-[1.03] transition-all duration-150"
+                          >
+                            <ArrowDown size={15} />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditSoal(soal)}
+                          className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.03] transition-all duration-150"
+                        >
+                          <Edit size={15} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteSoal(soal)}
+                          className="h-8 w-8 p-0 border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.03] transition-all duration-150"
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
+              ))}
+            </div>
+
+            <Card className="lg:sticky lg:top-24 border border-green-200 bg-green-50/50 p-4">
+              <p className="text-sm font-semibold text-green-900 mb-3">
+                Navigasi Soal
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {soals.map((soal, index) => {
+                  const isActive = index === activeSoalIndex;
+
+                  return (
+                    <Button
+                      key={`nav-${soal.id}`}
+                      type="button"
+                      variant="outline"
+                      onClick={() => goToSoal(index)}
+                      className={`h-10 w-10 p-0 rounded-md font-semibold text-sm transition-all duration-150 ${
+                        isActive
+                          ? "bg-green-600 text-white border-green-600 hover:bg-green-700 hover:border-green-700"
+                          : "bg-white border-green-200 text-green-900 hover:bg-green-100"
+                      }`}
+                    >
+                      {index + 1}
+                    </Button>
+                  );
+                })}
               </div>
             </Card>
-          ))
+          </div>
         )}
       </div>
 
