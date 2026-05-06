@@ -753,18 +753,18 @@ export default function AsesmenDetailPage({
       </div>
 
       {/* Form Add/Edit Soal */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden animate-in fade-in-0 zoom-in-95 duration-200">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+      {showForm && (
+        <Card className="mb-6 w-full max-w-3xl p-6 border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-gray-900">
               {editingSoal ? "Edit Soal" : "Tambah Soal Baru"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
               Buat dan atur soal kuis dengan format yang rapi.
-            </DialogDescription>
-          </DialogHeader>
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmitSoal} className="space-y-6 pt-2 min-w-0">
+          <form onSubmit={handleSubmitSoal} className="space-y-6 min-w-0">
             <section className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-900">
                 Informasi Soal
@@ -1247,8 +1247,8 @@ export default function AsesmenDetailPage({
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </Card>
+      )}
 
       {/* Soal List */}
       <div className="space-y-4">
