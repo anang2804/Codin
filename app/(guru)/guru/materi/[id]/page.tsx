@@ -451,6 +451,84 @@ export default function GuruMateriDetailPage() {
         </div>
       </div>
 
+      {showBabDialog && (
+        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingBabId ? "Edit Bab" : "Tambah Bab Baru"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Bab adalah bagian utama dari materi pembelajaran
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveBab} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="bab-title"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Judul Bab <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  id="bab-title"
+                  placeholder="Contoh: Pengenalan Variabel"
+                  value={babForm.title ?? ""}
+                  onChange={(e) =>
+                    setBabForm({ ...babForm, title: e.target.value })
+                  }
+                  required
+                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="bab-description"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Deskripsi{" "}
+                  <span className="text-gray-400 font-normal">(Opsional)</span>
+                </Label>
+                <Textarea
+                  id="bab-description"
+                  placeholder="Penjelasan singkat tentang bab ini"
+                  value={babForm.description ?? ""}
+                  onChange={(e) =>
+                    setBabForm({ ...babForm, description: e.target.value })
+                  }
+                  rows={3}
+                  className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <Button
+                  type="submit"
+                  disabled={createBab.isPending || updateBab.isPending}
+                  className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] hover:-translate-y-px transition-all duration-150 disabled:opacity-70 disabled:scale-100"
+                >
+                  {(createBab.isPending || updateBab.isPending) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {editingBabId ? "Perbarui Bab" : "Simpan Bab"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowBabDialog(false)}
+                  disabled={createBab.isPending || updateBab.isPending}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
+                >
+                  Batal
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
       {showSubBabDialog && selectedBabId && (
         <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
           <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
@@ -819,83 +897,6 @@ export default function GuruMateriDetailPage() {
           ))}
         </div>
       )}
-
-      {/* Bab Dialog */}
-      <Dialog open={showBabDialog} onOpenChange={setShowBabDialog}>
-        <DialogContent className="max-w-lg animate-in fade-in-0 zoom-in-95 duration-200">
-          <DialogHeader className="pb-1">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              {editingBabId ? "Edit Bab" : "Tambah Bab Baru"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-400">
-              Bab adalah bagian utama dari materi pembelajaran
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveBab} className="space-y-5 pt-1">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="bab-title"
-                className="text-sm font-medium text-gray-700"
-              >
-                Judul Bab <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                id="bab-title"
-                placeholder="Contoh: Pengenalan Variabel"
-                value={babForm.title ?? ""}
-                onChange={(e) =>
-                  setBabForm({ ...babForm, title: e.target.value })
-                }
-                required
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="bab-description"
-                className="text-sm font-medium text-gray-700"
-              >
-                Deskripsi{" "}
-                <span className="text-gray-400 font-normal">(Opsional)</span>
-              </Label>
-              <Textarea
-                id="bab-description"
-                placeholder="Penjelasan singkat tentang bab ini"
-                value={babForm.description ?? ""}
-                onChange={(e) =>
-                  setBabForm({ ...babForm, description: e.target.value })
-                }
-                rows={3}
-                className="border-gray-200 focus:border-green-400 focus:ring-green-400 transition-colors duration-200 resize-none"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-1">
-              <Button
-                type="submit"
-                disabled={createBab.isPending || updateBab.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:scale-100"
-              >
-                {(createBab.isPending || updateBab.isPending) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {editingBabId ? "Perbarui Bab" : "Simpan Bab"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowBabDialog(false)}
-                disabled={createBab.isPending || updateBab.isPending}
-                className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={showDeleteBabDialog}
