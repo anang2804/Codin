@@ -8,6 +8,9 @@ import {
   Search,
   Users,
   ChevronRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -60,6 +63,8 @@ export default function GuruMateriProgressPage() {
   });
   const [siswaList, setSiswaList] = useState<SiswaProgress[]>([]);
   const [detailSiswa, setDetailSiswa] = useState<SiswaProgress | null>(null);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     fetchProgress();
@@ -108,6 +113,14 @@ export default function GuruMateriProgressPage() {
       return matchTerm && matchKelas;
     });
   }, [siswaList, query, kelasFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSiswa.length / rowsPerPage));
+  const paginatedSiswa = filteredSiswa.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage,
+  );
+  const startIndex = filteredSiswa.length === 0 ? 0 : page * rowsPerPage + 1;
+  const endIndex = Math.min((page + 1) * rowsPerPage, filteredSiswa.length);
 
   if (isLoading) {
     return (
@@ -218,6 +231,7 @@ export default function GuruMateriProgressPage() {
             </p>
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead className="bg-gray-50/80 dark:bg-secondary/30 border-b border-gray-100 dark:border-gray-800">
@@ -240,7 +254,7 @@ export default function GuruMateriProgressPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-card">
-                {filteredSiswa.map((s) => (
+                {paginatedSiswa.map((s) => (
                   <tr
                     key={s.id}
                     className="hover:bg-gray-50/60 dark:hover:bg-secondary/50 transition-colors"
@@ -283,6 +297,74 @@ export default function GuruMateriProgressPage() {
               </tbody>
             </table>
           </div>
+
+          <div className="border-t border-gray-200 rounded-b-xl bg-white px-4 py-4 shadow-sm sticky bottom-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                <span>Rows per page:</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setPage(0);
+                  }}
+                  className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-800 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+                >
+                  {[5, 10, 20, 50].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+                <span className="font-semibold text-gray-700">
+                  {filteredSiswa.length === 0
+                    ? "0-0 of 0"
+                    : `${startIndex}-${endIndex} of ${filteredSiswa.length}`}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPage(0)}
+                  disabled={page === 0}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Halaman pertama"
+                >
+                  <ChevronsLeft size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Sebelumnya"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="min-w-16 px-2 text-sm font-medium text-gray-600">{page + 1} / {totalPages}</span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Selanjutnya"
+                >
+                  <ChevronRight size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage(totalPages - 1)}
+                  disabled={page >= totalPages - 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Halaman terakhir"
+                >
+                  <ChevronsRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
         )}
       </Card>
 
