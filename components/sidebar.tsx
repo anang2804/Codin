@@ -18,6 +18,7 @@ import {
   MessageCircle,
   Microscope,
   School,
+  FileText,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -86,6 +87,7 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Siswa", href: "/admin/siswa", icon: Users },
       { label: "Mata Pelajaran", href: "/admin/mapel", icon: BookOpen },
       { label: "Kelas", href: "/admin/kelas", icon: School },
+      { label: "Tambah Panduan", href: "/admin/panduan", icon: FileText },
     ],
   };
 
