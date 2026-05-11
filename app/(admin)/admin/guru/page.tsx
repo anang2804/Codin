@@ -56,6 +56,8 @@ interface Guru {
   jenis_kelamin?: string | null;
   no_telepon?: string;
   alamat?: string;
+  current_password_hash?: string | null;
+  password_updated_at?: string | null;
   kelas_diajar?: Array<{
     id: string;
     name: string;
@@ -197,15 +199,6 @@ export default function AdminGuruPage() {
       temporaryPassword?: string;
     }>
   >([]);
-  const [passwordChangedStatus, setPasswordChangedStatus] = useState<
-    Map<string, { changed: boolean; lastChange?: string }>
-  >(new Map());
-  const [userPasswords, setUserPasswords] = useState<
-    Map<string, { password: string; updatedAt: string }>
-  >(new Map());
-  const [passwordLoadingUsers, setPasswordLoadingUsers] = useState<Set<string>>(
-    new Set(),
-  );
   const [passwordRequestedUsers, setPasswordRequestedUsers] = useState<
     Set<string>
   >(new Set());
@@ -392,91 +385,10 @@ export default function AdminGuruPage() {
         },
       );
       if (res.ok) {
-        const json = await res.json();
-        const statusMap = new Map();
-        const passwordPromises = [];
-        for (const result of json.results || []) {
-          statusMap.set(result.id, {
-            changed: result.passwordChanged,
-            lastChange: result.lastPasswordChange,
-          });
-          if (result.passwordChanged) {
-            passwordPromises.push(getUserPassword(result.id));
-          }
-        }
-        setPasswordChangedStatus(statusMap);
-        await Promise.all(passwordPromises);
+        await res.json();
       }
     } catch (error) {
       console.error("Error checking password status:", error);
-    }
-  };
-
-  // Get user password
-  const getUserPassword = async (userId: string) => {
-    if (passwordLoadingUsers.has(userId)) return;
-
-    setPasswordLoadingUsers((prev) => {
-      const next = new Set(prev);
-      next.add(userId);
-      return next;
-    });
-
-    try {
-      const res = await fetch("/api/admin/get-user-password?t=" + Date.now(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-        },
-        body: JSON.stringify({ userId }),
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        let parsedError: any = null;
-        try {
-          parsedError = errorText ? JSON.parse(errorText) : null;
-        } catch {
-          parsedError = null;
-        }
-        console.error(
-          "Error response getting user password:",
-          `userId=${userId}`,
-          `status=${res.status}`,
-          `error=${parsedError?.error || errorText || "unknown"}`,
-        );
-        return;
-      }
-
-      const json = await res.json();
-      if (res.ok) {
-        if (json.password) {
-          setUserPasswords((prev) => {
-            const newMap = new Map(prev);
-            newMap.set(userId, {
-              password: json.password,
-              updatedAt: json.updatedAt,
-            });
-            return newMap;
-          });
-        }
-      }
-    } catch (error) {
-      console.error(`Error getting user password:`, error);
-    } finally {
-      setPasswordRequestedUsers((prev) => {
-        const next = new Set(prev);
-        next.add(userId);
-        return next;
-      });
-      setPasswordLoadingUsers((prev) => {
-        const next = new Set(prev);
-        next.delete(userId);
-        return next;
-      });
     }
   };
 
@@ -485,9 +397,6 @@ export default function AdminGuruPage() {
     if (guru.length > 0) {
       const allIds = guru.map((g) => g.id);
       checkPasswordStatus(allIds);
-      allIds.forEach((userId) => {
-        getUserPassword(userId);
-      });
     }
   }, [guru]);
 
@@ -1364,19 +1273,6 @@ export default function AdminGuruPage() {
     );
   };
 
-  const getGuruPasswordPreview = (guruItem: Guru) => {
-    const currentPassword =
-      userPasswords.get(guruItem.id)?.password ||
-      getTemporaryPassword({ id: guruItem.id, email: guruItem.email });
-
-    if (!currentPassword) return "-";
-    if (currentPassword.length <= 4) return currentPassword;
-
-    return `${currentPassword.slice(0, 1)}${"•".repeat(
-      Math.max(4, currentPassword.length - 4),
-    )}${currentPassword.slice(-3)}`;
-  };
-
   const totalGuruPages = Math.max(
     1,
     Math.ceil(filteredGuru.length / guruRowsPerPage),
@@ -1790,47 +1686,8 @@ export default function AdminGuruPage() {
                           </p>
                         )}
                       </div>
-                      {/* Password row — current pw left, new pw right */}
+                      {/* Password row — new password only */}
                       <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
-                        {/* Current password display */}
-                        {(() => {
-                          const currentPw = userPasswords.get(g.id)?.password;
-                          const tempPw = getTemporaryPassword({
-                            id: g.id,
-                            email: g.email,
-                          });
-                          const displayPw = currentPw || tempPw;
-                          return (
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                                Password Saat Ini
-                              </label>
-                              <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-100 bg-gray-50">
-                                <Key
-                                  size={11}
-                                  className="text-gray-400 flex-shrink-0"
-                                />
-                                {displayPw ? (
-                                  <code className="text-xs font-mono text-gray-700 flex-1 truncate">
-                                    {displayPw}
-                                  </code>
-                                ) : (
-                                  <span className="text-[11px] text-gray-400 italic flex-1">
-                                    Belum tersimpan
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => getUserPassword(g.id)}
-                                  className="text-gray-400 hover:text-green-600 transition flex-shrink-0"
-                                  title="Refresh"
-                                >
-                                  <RefreshCw size={10} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
                         {/* New password input */}
                         <div>
                           <label className="block text-[11px] font-medium text-gray-500 mb-1">
@@ -1961,24 +1818,8 @@ export default function AdminGuruPage() {
                         <span className="truncate">{g.email}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <code
-                        className={
-                          getGuruPasswordPreview(g) === "-"
-                            ? "text-xs font-mono px-2.5 py-1 rounded-md border bg-gray-50 text-gray-400 border-gray-200"
-                            : "text-xs font-mono px-2.5 py-1 rounded-md border bg-green-50 text-green-700 border-green-200"
-                        }
-                      >
-                        {getGuruPasswordPreview(g)}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() => getUserPassword(g.id)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:border-green-200 hover:bg-green-50 hover:text-green-600"
-                        title="Refresh password"
-                      >
-                        <RefreshCw size={12} />
-                      </button>
+                    <div className="text-sm text-gray-400 italic">
+                      Password disembunyikan
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {g.kelas_diajar && g.kelas_diajar.length > 0 ? (

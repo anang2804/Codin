@@ -131,7 +131,8 @@ export async function POST(req: Request) {
       .from("password_change_requests")
       .insert({
         user_id: user.id,
-        requested_password: newPassword,
+        // Keep this non-sensitive placeholder for compatibility with legacy NOT NULL schema.
+        requested_password: "[REDACTED]",
         status: "pending",
       });
 

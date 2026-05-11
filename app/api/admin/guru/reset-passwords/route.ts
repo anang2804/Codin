@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { hashPassword } from "@/lib/password-hash";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -10,7 +11,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const getAdminClient = () => {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error(
-      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for reset-passwords API"
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars for reset-passwords API",
     );
     return null;
   }
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Server credentials not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -67,16 +68,32 @@ export async function POST(req: Request) {
           .replace(/\/+=|\/+|\+/g, "A")
           .slice(0, 12);
 
-        const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-          id,
-          {
-            password: generatedPassword,
-          }
-        );
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+          password: generatedPassword,
+        });
 
         if (error) {
           console.error("updateUserById error for", id, error);
           results.push({ id, error: error.message });
+          continue;
+        }
+
+        const passwordHash = await hashPassword(generatedPassword);
+        const { error: hashError } = await supabaseAdmin
+          .from("profiles")
+          .update({
+            current_password_hash: passwordHash,
+            password_updated_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+
+        if (hashError) {
+          results.push({
+            id,
+            error:
+              hashError.message ||
+              "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
+          });
           continue;
         }
 
@@ -87,20 +104,6 @@ export async function POST(req: Request) {
           .eq("id", id)
           .maybeSingle();
         const email = (profile as any)?.email;
-
-        // Store temporary password in profiles table
-        try {
-          await supabaseAdmin
-            .from("profiles")
-            .update({
-              current_password: generatedPassword,
-              password_updated_at: new Date().toISOString(),
-            })
-            .eq("id", id);
-        } catch (e) {
-          console.error("Failed to store password in profile:", e);
-          // non-fatal
-        }
 
         results.push({ id, email, temporaryPassword: generatedPassword });
       } catch (err: any) {

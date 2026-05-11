@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { randomBytes } from "crypto";
+import { hashPassword } from "@/lib/password-hash";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -161,7 +163,7 @@ export async function POST(req: Request) {
 
     const { data: requestRow, error: requestError } = await supabaseAdmin
       .from("password_change_requests")
-      .select("id, user_id, requested_password, status")
+      .select("id, user_id, status")
       .eq("id", requestId)
       .single();
 
@@ -180,9 +182,14 @@ export async function POST(req: Request) {
     }
 
     if (action === "approve") {
+      const generatedPassword = randomBytes(9)
+        .toString("base64")
+        .replace(/\/+=|\/+|\+/g, "A")
+        .slice(0, 12);
+
       const { error: authUpdateError } =
         await supabaseAdmin.auth.admin.updateUserById(requestRow.user_id, {
-          password: requestRow.requested_password,
+          password: generatedPassword,
         });
 
       if (authUpdateError) {
@@ -195,14 +202,26 @@ export async function POST(req: Request) {
       }
 
       const now = new Date().toISOString();
+      const passwordHash = await hashPassword(generatedPassword);
 
-      await supabaseAdmin
+      const { error: hashError } = await supabaseAdmin
         .from("profiles")
         .update({
-          current_password: requestRow.requested_password,
+          current_password_hash: passwordHash,
           password_updated_at: now,
         })
         .eq("id", requestRow.user_id);
+
+      if (hashError) {
+        return NextResponse.json(
+          {
+            error:
+              hashError.message ||
+              "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
+          },
+          { status: 500 },
+        );
+      }
 
       const { error: approveError } = await supabaseAdmin
         .from("password_change_requests")
@@ -210,7 +229,12 @@ export async function POST(req: Request) {
           status: "approved",
           approved_by: auth.callerId,
           approved_at: now,
-          notes: note || null,
+          notes: [
+            note || null,
+            "Password baru dibuat sistem saat approval dan harus dibagikan admin ke user secara aman.",
+          ]
+            .filter(Boolean)
+            .join("\n"),
         })
         .eq("id", requestId);
 
@@ -223,7 +247,11 @@ export async function POST(req: Request) {
         );
       }
 
-      return NextResponse.json({ ok: true, message: "Permintaan disetujui" });
+      return NextResponse.json({
+        ok: true,
+        message: "Permintaan disetujui",
+        temporaryPassword: generatedPassword,
+      });
     }
 
     const now = new Date().toISOString();

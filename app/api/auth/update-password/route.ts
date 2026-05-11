@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { hashPassword } from "@/lib/password-hash";
 
 const SAME_PASSWORD_ERROR =
   "New password should be different from the old password.";
@@ -88,49 +89,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store password in profiles table (for admin viewing)
     const now = new Date().toISOString();
-
-    console.log("💾 Attempting to store password in profiles table:", {
-      userId: user.id,
-      passwordLength: password.length,
-      timestamp: now,
-    });
-
-    const { data: updateData, error: profileError } = await supabase
+    const passwordHash = await hashPassword(password);
+    const { error: profileHashError } = await supabase
       .from("profiles")
       .update({
-        current_password: password,
+        current_password_hash: passwordHash,
         password_updated_at: now,
       })
-      .eq("id", user.id)
-      .select();
+      .eq("id", user.id);
 
-    if (profileError) {
-      console.error("❌ Error storing password in profile:", {
-        error: profileError,
-        code: profileError.code,
-        message: profileError.message,
-        details: profileError.details,
-        hint: profileError.hint,
-      });
-
-      // Jika error karena kolom tidak ada, beri instruksi
-      if (profileError.code === "42703") {
-        console.error(
-          "⚠️ Column 'current_password' or 'password_updated_at' does not exist!",
-        );
-        console.error(
-          "⚠️ Please run migration: scripts/003_add_password_tracking.sql",
-        );
-      }
-    } else {
-      console.log("✅ Password stored in profile successfully:", {
-        userId: user.id,
-        updatedAt: now,
-        rowsUpdated: updateData?.length,
-        passwordPreview: password.substring(0, 4) + "...",
-      });
+    if (profileHashError) {
+      return NextResponse.json(
+        {
+          error:
+            profileHashError.message ||
+            "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { hashPassword } from "@/lib/password-hash";
 import { randomBytes } from "crypto";
 import prisma from "@/lib/prisma";
 
@@ -172,17 +173,31 @@ export async function POST(req: Request) {
       },
     });
 
-    // Save current_password to profiles (column not in Prisma schema, use supabaseAdmin)
+    // Store non-sensitive profile fields only.
     await supabaseAdmin
       .from("profiles")
       .update({
         nuptk: normalizedNuptk,
         jenis_kelamin: jenis_kelamin || null,
         no_telepon: normalizedPhone || null,
-        current_password: generatedPassword,
+      })
+      .eq("id", created.user.id);
+
+    const createdPasswordHash = await hashPassword(generatedPassword);
+    const { error: createdHashError } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        current_password_hash: createdPasswordHash,
         password_updated_at: new Date().toISOString(),
       })
       .eq("id", created.user.id);
+
+    if (createdHashError) {
+      throw new Error(
+        createdHashError.message ||
+          "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
+      );
+    }
 
     if (normalizedKelasIds.length > 0) {
       // Clear existing wali kelas assignments for these classes first.
@@ -377,6 +392,8 @@ export async function GET(req: Request) {
         jenis_kelamin: g.jenis_kelamin ?? null,
         no_telepon: g.no_telepon ?? null,
         alamat: g.alamat ?? null,
+        current_password_hash: g.current_password_hash ?? null,
+        password_updated_at: g.password_updated_at ?? null,
         kelas_diajar: kelasDiajar,
         total_siswa_kelas_diajar: totalSiswaKelasDiajar,
         mapel_guru: (mapelRows || [])
@@ -674,23 +691,22 @@ export async function PUT(req: Request) {
           { status: 500 },
         );
       }
-      // Save current_password to profiles
-      const { error: profilePasswordError } = await supabaseAdmin
+
+      const passwordHash = await hashPassword(password);
+      const { error: profileHashError } = await supabaseAdmin
         .from("profiles")
         .update({
-          current_password: password,
+          current_password_hash: passwordHash,
           password_updated_at: new Date().toISOString(),
         })
         .eq("id", id);
 
-      if (profilePasswordError) {
-        const msg = String(profilePasswordError.message || "");
-        console.error("profiles password save error:", profilePasswordError);
+      if (profileHashError) {
         return NextResponse.json(
           {
-            error: /current_password|password_updated_at|column/i.test(msg)
-              ? "Kolom password tracking belum ada di database production. Jalankan script 003_add_password_tracking.sql"
-              : msg || "Failed to save password tracking",
+            error:
+              profileHashError.message ||
+              "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
           },
           { status: 500 },
         );
