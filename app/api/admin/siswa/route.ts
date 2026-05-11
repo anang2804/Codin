@@ -293,7 +293,7 @@ export async function POST(req: Request) {
     const { error: createdHashError } = await supabaseAdmin
       .from("profiles")
       .update({
-        current_password_hash: createdPasswordHash,
+        password: createdPasswordHash,
         password_updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
@@ -450,7 +450,7 @@ export async function GET(req: Request) {
       jenis_kelamin: s.jenis_kelamin ?? null,
       no_telepon: s.no_telepon ?? null,
       alamat: s.alamat ?? null,
-      current_password_hash: s.current_password_hash ?? null,
+      password: s.password ?? null,
       password_updated_at: s.password_updated_at ?? null,
       created_at: s.created_at,
     }));
@@ -598,7 +598,7 @@ export async function PUT(req: Request) {
       const { error: profileHashError } = await supabaseAdmin
         .from("profiles")
         .update({
-          current_password_hash: passwordHash,
+          password: passwordHash,
           password_updated_at: new Date().toISOString(),
         })
         .eq("id", id);

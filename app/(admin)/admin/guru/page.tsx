@@ -56,7 +56,7 @@ interface Guru {
   jenis_kelamin?: string | null;
   no_telepon?: string;
   alamat?: string;
-  current_password_hash?: string | null;
+  password?: string | null;
   password_updated_at?: string | null;
   kelas_diajar?: Array<{
     id: string;
@@ -166,6 +166,7 @@ export default function AdminGuruPage() {
   const [showEditPasswordError, setShowEditPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [currentEditPasswordHash, setCurrentEditPasswordHash] = useState("");
   const [editSelectedKelasIds, setEditSelectedKelasIds] = useState<string[]>(
     [],
   );
@@ -892,8 +893,9 @@ export default function AdminGuruPage() {
 
   function startEdit(guru: Guru) {
     setEditingId(guru.id);
-    setEditForm({ ...guru });
-    setOriginalEditForm({ ...guru });
+    setCurrentEditPasswordHash(guru.password || "");
+    setEditForm({ ...guru, password: "" });
+    setOriginalEditForm({ ...guru, password: "" });
     setEditSelectedKelasIds((guru.kelas_diajar || []).map((kelas) => kelas.id));
     // Try to populate selected mapel ids from known possible fields
     const mapelList: any =
@@ -918,6 +920,7 @@ export default function AdminGuruPage() {
     setEditPhoneError("");
     setShowEditPasswordError(false);
     setEditSelectedMapelId("");
+    setCurrentEditPasswordHash("");
   }
 
   async function saveEdit() {
@@ -1069,6 +1072,7 @@ export default function AdminGuruPage() {
       setEditPhoneError("");
       setShowEditPasswordError(false);
       setShowEditPassword(false);
+      setCurrentEditPasswordHash("");
       setEditSelectedKelasIds([]);
       setEditSelectedMapelId("");
       fetchGuru();
@@ -1688,6 +1692,36 @@ export default function AdminGuruPage() {
                       </div>
                       {/* Password row — new password only */}
                       <div className="col-span-2 grid grid-cols-2 gap-x-3 pt-1 border-t border-gray-100 mt-1">
+                        {/* Current password hash */}
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                            Password
+                          </label>
+                          <div className="relative">
+                            <Input
+                              value={currentEditPasswordHash || "-"}
+                              readOnly
+                              className="h-8 text-[11px] font-mono pl-2 pr-10 bg-gray-50 border-gray-200 text-gray-700"
+                            />
+                            {currentEditPasswordHash && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  copyToClipboard(currentEditPasswordHash)
+                                }
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                                title="Salin hash"
+                              >
+                                {copied ? (
+                                  <Check size={12} />
+                                ) : (
+                                  <Copy size={12} />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
                         {/* New password input */}
                         <div>
                           <label className="block text-[11px] font-medium text-gray-500 mb-1">

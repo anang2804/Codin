@@ -60,7 +60,7 @@ interface Siswa {
   jenis_kelamin?: string;
   no_telepon?: string;
   alamat?: string;
-  current_password_hash?: string | null;
+  password?: string | null;
   password_updated_at?: string | null;
   created_at: string;
 }

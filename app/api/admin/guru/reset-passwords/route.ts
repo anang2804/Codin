@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         const { error: hashError } = await supabaseAdmin
           .from("profiles")
           .update({
-            current_password_hash: passwordHash,
+            password: passwordHash,
             password_updated_at: new Date().toISOString(),
           })
           .eq("id", id);

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const { error: profileHashError } = await supabase
       .from("profiles")
       .update({
-        current_password_hash: passwordHash,
+        password: passwordHash,
         password_updated_at: now,
       })
       .eq("id", user.id);
