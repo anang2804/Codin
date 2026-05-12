@@ -406,7 +406,7 @@ export default function SiswaAsesmenDetailPage({
 
       // Calculate final score
       const finalScore =
-        totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+        totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
 
       // Save nilai
       const { error: nilaiError } = await supabase.from("nilai").insert({
