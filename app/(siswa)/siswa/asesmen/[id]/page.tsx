@@ -301,7 +301,10 @@ export default function SiswaAsesmenDetailPage({
     if (!user) return;
 
     try {
-      let totalPoints = 0;
+      const totalPoints = soals.reduce(
+        (sum, soal) => sum + (soal.points || 0),
+        0,
+      );
       let earnedPoints = 0;
 
       // Calculate score
@@ -313,7 +316,6 @@ export default function SiswaAsesmenDetailPage({
         let pointsEarned = 0;
 
         if (soal.type === "pilihan_ganda") {
-          totalPoints += soal.points;
           isCorrect = isPilihanGandaCorrect(soal, j.answer || "");
           pointsEarned = isCorrect ? soal.points : 0;
         } else {
