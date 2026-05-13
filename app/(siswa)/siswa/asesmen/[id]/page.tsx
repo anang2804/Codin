@@ -421,7 +421,9 @@ export default function SiswaAsesmenDetailPage({
       if (nilaiError) throw nilaiError;
 
       clearQuizDraft();
-      toast.success(`Berhasil mengirim jawaban! Nilai Anda: ${finalScore}/100`);
+      toast.success(
+        `Berhasil mengirim jawaban! Nilai Anda: ${finalScore}/100 (${earnedPoints}/${totalPoints} poin)`,
+      );
       router.push("/siswa/asesmen");
     } catch (error: any) {
       console.error("Error submitting answers:", error);

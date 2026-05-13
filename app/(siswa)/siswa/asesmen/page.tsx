@@ -89,10 +89,22 @@ export default function SiswaAsesmenPage() {
           if (asesmenData) {
             const asesmenWithDetails = await Promise.all(
               asesmenData.map(async (a) => {
-                const { count } = await supabase
-                  .from("soal")
-                  .select("*", { count: "exact", head: true })
-                  .eq("asesmen_id", a.id);
+                const [{ count }, { data: soalPoints }] = await Promise.all([
+                  supabase
+                    .from("soal")
+                    .select("*", { count: "exact", head: true })
+                    .eq("asesmen_id", a.id),
+                  supabase
+                    .from("soal")
+                    .select("points")
+                    .eq("asesmen_id", a.id),
+                ]);
+
+                const totalPoints =
+                  soalPoints?.reduce(
+                    (sum, soal) => sum + (soal.points || 0),
+                    0,
+                  ) || 0;
 
                 let mapelData = null;
                 if (a.mapel_id) {
@@ -136,6 +148,7 @@ export default function SiswaAsesmenPage() {
                 return {
                   ...a,
                   soal_count: count || 0,
+                  total_points: totalPoints,
                   mapel: mapelData,
                   nilai: nilaiData,
                   is_completed: isCompleted,
@@ -381,6 +394,20 @@ export default function SiswaAsesmenPage() {
 
                 {a.is_completed && a.nilai && (
                   <div className="flex justify-between items-center pt-2 mt-2">
+                    <span className="text-muted-foreground dark:text-gray-400 font-medium text-xs">
+                      Poin didapat
+                    </span>
+                    <span className="font-bold text-green-600 dark:text-green-400 text-sm">
+                      {Math.round(
+                        ((a.nilai.score || 0) * (a.total_points || 0)) / 100,
+                      )}
+                      /{a.total_points || 0}
+                    </span>
+                  </div>
+                )}
+
+                {a.is_completed && a.nilai && (
+                  <div className="flex justify-between items-center pt-1">
                     <span className="text-muted-foreground dark:text-gray-400 font-medium text-xs">
                       Nilai
                     </span>
