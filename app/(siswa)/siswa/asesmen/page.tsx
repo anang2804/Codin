@@ -94,10 +94,7 @@ export default function SiswaAsesmenPage() {
                     .from("soal")
                     .select("*", { count: "exact", head: true })
                     .eq("asesmen_id", a.id),
-                  supabase
-                    .from("soal")
-                    .select("points")
-                    .eq("asesmen_id", a.id),
+                  supabase.from("soal").select("points").eq("asesmen_id", a.id),
                 ]);
 
                 const totalPoints =
