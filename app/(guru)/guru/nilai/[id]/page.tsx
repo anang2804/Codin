@@ -67,6 +67,15 @@ export default function GuruNilaiDetailPage({
   const [nilaiRowsPerPage, setNilaiRowsPerPage] = useState(10);
   const [nilaiPage, setNilaiPage] = useState(0);
 
+  const formatCompletedAt = (value?: string | null) => {
+    if (!value) return "-";
+    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
+    if (value.includes("T")) {
+      return value.replace("T", " ");
+    }
+    return match?.[1] || value;
+  };
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -433,9 +442,7 @@ export default function GuruNilaiDetailPage({
                             )}
                           </td>
                           <td className="px-4 py-4 text-center text-sm text-gray-600">
-                            {n.completed_at
-                              ? new Date(n.completed_at).toLocaleString("id-ID")
-                              : "-"}
+                            {formatCompletedAt(n.completed_at)}
                           </td>
                           <td className="px-4 py-4 text-center">
                             <div className="flex justify-center gap-2">
@@ -601,7 +608,7 @@ export default function GuruNilaiDetailPage({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-sm text-gray-600 border">
-                        {new Date(attempt.completed_at).toLocaleString("id-ID")}
+                        {formatCompletedAt(attempt.completed_at)}
                       </td>
                     </tr>
                   );

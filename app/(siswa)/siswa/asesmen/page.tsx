@@ -50,6 +50,12 @@ export default function SiswaAsesmenPage() {
     }).format(date);
   };
 
+  const formatCompletedAt = (value?: string | null) => {
+    if (!value) return "-";
+    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
+    return match?.[1] || value;
+  };
+
   const fetchAsesmen = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
 
@@ -410,6 +416,17 @@ export default function SiswaAsesmenPage() {
                     </span>
                     <span className="font-bold text-green-600 dark:text-green-400 text-sm">
                       {a.nilai.score}/100
+                    </span>
+                  </div>
+                )}
+
+                {a.is_completed && a.nilai?.completed_at && (
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-muted-foreground dark:text-gray-400 font-medium text-xs">
+                      Selesai pada
+                    </span>
+                    <span className="font-medium text-foreground dark:text-gray-100 text-[11px] text-right ml-2">
+                      {formatCompletedAt(a.nilai.completed_at)}
                     </span>
                   </div>
                 )}
