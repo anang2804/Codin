@@ -315,8 +315,7 @@ model Nilai {
   asesmen_id   String    @db.Uuid
   siswa_id     String    @db.Uuid
   score        Float?    @db.DoublePrecision
-  status       String?   // 'lulus', 'tidak_lulus'
-  submitted_at DateTime? @db.Timestamptz(6)
+  // Removed fields: status, submitted_at (unused)
   completed_at DateTime? @db.Timestamptz(6)
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
   
