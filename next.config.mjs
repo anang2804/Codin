@@ -12,17 +12,19 @@ const nextConfig = {
   },
   reactStrictMode: false,
   productionBrowserSourceMaps: false,
-  compress: false,
+  swcMinify: true,
+  compress: true,
   outputFileTracingExcludes: {
     "**": ["node_modules/@esbuild/**", "node_modules/esbuild/**"],
   },
   onDemandEntries: {
-    maxInactiveAge: 60 * 1000,
-    pagesBufferLength: 5,
+    maxInactiveAge: 30 * 1000,
+    pagesBufferLength: 2,
   },
   webpack: (config, { dev }) => {
     if (dev) {
       config.optimization.usedExports = false;
+      config.optimization.minimize = false;
     }
     return config;
   },
@@ -37,6 +39,7 @@ const nextConfig = {
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
     ],
+    optimizeFonts: true,
   },
 };
 

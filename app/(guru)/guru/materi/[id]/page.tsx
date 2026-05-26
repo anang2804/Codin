@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,6 +102,9 @@ export default function GuruMateriDetailPage() {
     description: "",
   });
 
+  const babFormRef = useRef<HTMLDivElement | null>(null);
+  const subBabFormRef = useRef<HTMLDivElement | null>(null);
+
   const [subBabForm, setSubBabForm] = useState({
     title: "",
     description: "",
@@ -127,6 +130,34 @@ export default function GuruMateriDetailPage() {
     }
     setExpandedBabs(newExpanded);
   };
+
+  useEffect(() => {
+    if (showBabDialog && babFormRef.current) {
+      try {
+        babFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        const input = babFormRef.current.querySelector(
+          "input, textarea, select"
+        ) as HTMLElement | null;
+        input?.focus();
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [showBabDialog]);
+
+  useEffect(() => {
+    if (showSubBabDialog && subBabFormRef.current) {
+      try {
+        subBabFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        const input = subBabFormRef.current.querySelector(
+          "input, textarea, select"
+        ) as HTMLElement | null;
+        input?.focus();
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [showSubBabDialog]);
 
   // BAB CRUD Operations
   const openBabDialog = (bab?: Bab) => {
@@ -445,7 +476,7 @@ export default function GuruMateriDetailPage() {
 
       {/* Bab Form (inline) */}
       {showBabDialog && (
-        <div className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div ref={babFormRef} className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
           <Card className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -526,181 +557,9 @@ export default function GuruMateriDetailPage() {
         </div>
       )}
 
-      {/* Babs List */}
-      {!Array.isArray(babs) || babs.length === 0 ? (
-        <Card className="p-12 text-center border border-dashed border-gray-200">
-          <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
-          <h3 className="text-base font-semibold text-gray-700 mb-1">
-            Belum ada bab
-          </h3>
-          <p className="text-sm text-gray-400 mb-5">
-            Mulai buat bab pertama untuk materi ini
-          </p>
-          <Button
-            onClick={() => openBabDialog()}
-            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150"
-          >
-            <Plus size={16} className="mr-2" />
-            Tambah Bab
-          </Button>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {babs.map((bab, index) => (
-            <Card
-              key={bab.id}
-              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-            >
-              {/* Bab Header */}
-              <div className="bg-gray-50/80 px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleBab(bab.id)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 shrink-0"
-                    >
-                      {expandedBabs.has(bab.id) ? (
-                        <ChevronDown size={18} />
-                      ) : (
-                        <ChevronRight size={18} />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-gray-900 truncate">
-                        Bab {index + 1}: {bab.title}
-                      </h3>
-                      {bab.description && (
-                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
-                          {bab.description}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {(bab.sub_babs || []).length} Sub-bab
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openSubBabDialog(bab.id)}
-                      className="border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.05] transition-all duration-150 h-8 px-2.5 text-xs"
-                    >
-                      <Plus size={14} className="mr-1" />
-                      Sub-bab
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openBabDialog(bab)}
-                      className="border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
-                    >
-                      <Edit size={15} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteBab(bab.id, bab.title)}
-                      disabled={deleteBab.isPending}
-                      className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
-                    >
-                      {deleteBab.isPending ? (
-                        <Loader2 size={15} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={15} />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sub-babs */}
-              {expandedBabs.has(bab.id) && (
-                <div className="px-5 py-4 bg-white border-t border-gray-100">
-                  {!bab.sub_babs || bab.sub_babs.length === 0 ? (
-                    <div className="text-center py-6 text-gray-400">
-                      <FileText
-                        size={32}
-                        className="mx-auto mb-2 text-gray-300"
-                      />
-                      <p className="text-sm">Belum ada sub-bab</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openSubBabDialog(bab.id)}
-                        className="mt-3 border-green-200 text-green-700 hover:bg-green-50 text-xs"
-                      >
-                        <Plus size={14} className="mr-1" />
-                        Tambah Sub-bab
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {(bab.sub_babs || []).map((subBab, subIndex: number) => (
-                        <div
-                          key={subBab.id}
-                          className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
-                        >
-                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className="text-gray-400 shrink-0">
-                              {getContentTypeIcon(subBab.content_type)}
-                            </div>
-                            <span className="text-sm font-medium text-gray-800 truncate">
-                              {subIndex + 1}. {subBab.title}
-                            </span>
-                            {subBab.duration && subBab.duration > 0 && (
-                              <span className="text-xs text-gray-400 shrink-0">
-                                {subBab.duration} mnt
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openSubBabDialog(bab.id, subBab)}
-                              className="h-7 w-7 p-0 hover:bg-blue-50 hover:scale-[1.05] transition-all duration-150"
-                            >
-                              <Edit size={14} className="text-blue-500" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                handleDeleteSubBab(
-                                  subBab.id,
-                                  bab.id,
-                                  subBab.title,
-                                )
-                              }
-                              disabled={deleteSubBab.isPending}
-                              className="h-7 w-7 p-0 hover:bg-red-50 hover:scale-[1.05] transition-all duration-150"
-                            >
-                              {deleteSubBab.isPending ? (
-                                <Loader2
-                                  size={14}
-                                  className="text-red-500 animate-spin"
-                                />
-                              ) : (
-                                <Trash2 size={14} className="text-red-400" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
-
       {/* Sub-Bab Form (inline) */}
       {showSubBabDialog && (
-        <div className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div ref={subBabFormRef} className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
           <Card className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -900,6 +759,179 @@ export default function GuruMateriDetailPage() {
           </Card>
         </div>
       )}
+
+      
+      {!Array.isArray(babs) || babs.length === 0 ? (
+        <Card className="p-12 text-center border border-dashed border-gray-200">
+          <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-base font-semibold text-gray-700 mb-1">
+            Belum ada bab
+          </h3>
+          <p className="text-sm text-gray-400 mb-5">
+            Mulai buat bab pertama untuk materi ini
+          </p>
+          <Button
+            onClick={() => openBabDialog()}
+            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150"
+          >
+            <Plus size={16} className="mr-2" />
+            Tambah Bab
+          </Button>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {babs.map((bab, index) => (
+            <Card
+              key={bab.id}
+              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+            >
+              {/* Bab Header */}
+              <div className="bg-gray-50/80 px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleBab(bab.id)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 shrink-0"
+                    >
+                      {expandedBabs.has(bab.id) ? (
+                        <ChevronDown size={18} />
+                      ) : (
+                        <ChevronRight size={18} />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
+                        Bab {index + 1}: {bab.title}
+                      </h3>
+                      {bab.description && (
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
+                          {bab.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {(bab.sub_babs || []).length} Sub-bab
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openSubBabDialog(bab.id)}
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.05] transition-all duration-150 h-8 px-2.5 text-xs"
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Sub-bab
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openBabDialog(bab)}
+                      className="border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
+                    >
+                      <Edit size={15} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteBab(bab.id, bab.title)}
+                      disabled={deleteBab.isPending}
+                      className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
+                    >
+                      {deleteBab.isPending ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={15} />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-babs */}
+              {expandedBabs.has(bab.id) && (
+                <div className="px-5 py-4 bg-white border-t border-gray-100">
+                  {!bab.sub_babs || bab.sub_babs.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400">
+                      <FileText
+                        size={32}
+                        className="mx-auto mb-2 text-gray-300"
+                      />
+                      <p className="text-sm">Belum ada sub-bab</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openSubBabDialog(bab.id)}
+                        className="mt-3 border-green-200 text-green-700 hover:bg-green-50 text-xs"
+                      >
+                        <Plus size={14} className="mr-1" />
+                        Tambah Sub-bab
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(bab.sub_babs || []).map((subBab, subIndex: number) => (
+                        <div
+                          key={subBab.id}
+                          className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                        >
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="text-gray-400 shrink-0">
+                              {getContentTypeIcon(subBab.content_type)}
+                            </div>
+                            <span className="text-sm font-medium text-gray-800 truncate">
+                              {subIndex + 1}. {subBab.title}
+                            </span>
+                            {subBab.duration && subBab.duration > 0 && (
+                              <span className="text-xs text-gray-400 shrink-0">
+                                {subBab.duration} mnt
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openSubBabDialog(bab.id, subBab)}
+                              className="h-7 w-7 p-0 hover:bg-blue-50 hover:scale-[1.05] transition-all duration-150"
+                            >
+                              <Edit size={14} className="text-blue-500" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                handleDeleteSubBab(
+                                  subBab.id,
+                                  bab.id,
+                                  subBab.title,
+                                )
+                              }
+                              disabled={deleteSubBab.isPending}
+                              className="h-7 w-7 p-0 hover:bg-red-50 hover:scale-[1.05] transition-all duration-150"
+                            >
+                              {deleteSubBab.isPending ? (
+                                <Loader2
+                                  size={14}
+                                  className="text-red-500 animate-spin"
+                                />
+                              ) : (
+                                <Trash2 size={14} className="text-red-400" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+      
 
       <Dialog
         open={showDeleteBabDialog}

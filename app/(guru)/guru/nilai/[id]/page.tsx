@@ -66,19 +66,7 @@ export default function GuruNilaiDetailPage({
   const [isResetting, setIsResetting] = useState(false);
   const [nilaiRowsPerPage, setNilaiRowsPerPage] = useState(10);
   const [nilaiPage, setNilaiPage] = useState(0);
-
-  const formatCompletedAt = (value?: string | null) => {
-    if (!value) return "-";
-    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
-    if (value.includes("T")) {
-      return value.replace("T", " ");
-    }
-    return match?.[1] || value;
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async () => {
     const supabase = createClient();
@@ -137,9 +125,9 @@ export default function GuruNilaiDetailPage({
       // For each siswa, get ALL their nilai attempts
       if (siswaData) {
         const siswaWithNilai = await Promise.all(
-          siswaData.map(async (siswa) => {
+          siswaData.map(async (siswa: any) => {
             // Get ALL nilai for this siswa (not just latest)
-            const { data: allNilaiData, error: nilaiError } = await supabase
+            const { data: allNilaiData } = await supabase
               .from("nilai")
               .select("id, score, completed_at")
               .eq("asesmen_id", id)
@@ -156,7 +144,7 @@ export default function GuruNilaiDetailPage({
               id: latestNilai?.id ?? null,
               attempt_count: attemptCount,
               all_attempts: allNilaiData || [],
-            };
+            } as NilaiData;
           }),
         );
         setNilai(siswaWithNilai);
@@ -168,6 +156,63 @@ export default function GuruNilaiDetailPage({
     } finally {
       setLoading(false);
     }
+  };
+
+  // Hook: fetch data on mount or id change
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  // Compute derived values
+  const filteredNilai = nilai.filter((n) => {
+    if (!searchQuery) return true;
+    return (n.profiles?.full_name || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase().trim());
+  });
+
+  const totalNilaiPages = Math.max(
+    1,
+    Math.ceil(filteredNilai.length / nilaiRowsPerPage),
+  );
+
+  // Hook: ensure current page is within bounds when filter/page size changes
+  useEffect(() => {
+    if (nilaiPage > totalNilaiPages - 1) setNilaiPage(0);
+  }, [totalNilaiPages, nilaiPage, nilaiRowsPerPage]);
+
+  // More derived values
+  const paginatedNilai = filteredNilai.slice(
+    nilaiPage * nilaiRowsPerPage,
+    nilaiPage * nilaiRowsPerPage + nilaiRowsPerPage,
+  );
+  const nilaiStartIndex =
+    filteredNilai.length === 0 ? 0 : nilaiPage * nilaiRowsPerPage + 1;
+  const nilaiEndIndex = Math.min(
+    (nilaiPage + 1) * nilaiRowsPerPage,
+    filteredNilai.length,
+  );
+
+  const completedCount = nilai.filter((n) => n.score !== null).length;
+  const totalSiswa = nilai.length;
+
+  const scoreValues = nilai
+    .filter((n) => n.score !== null)
+    .map((n) => n.score || 0);
+  const averageScore =
+    scoreValues.length > 0
+      ? Math.round(
+          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
+        )
+      : 0;
+
+  const formatCompletedAt = (value?: string | null) => {
+    if (!value) return "-";
+    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
+    if (value.includes("T")) {
+      return value.replace("T", " ");
+    }
+    return match?.[1] || value;
   };
 
   const handleReset = (siswaId: string, siswaName: string) => {
@@ -205,42 +250,6 @@ export default function GuruNilaiDetailPage({
       setIsResetting(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  const completedCount = nilai.filter((n) => n.score !== null).length;
-  const totalSiswa = nilai.length;
-
-  const scoreValues = nilai
-    .filter((n) => n.score !== null)
-    .map((n) => n.score || 0);
-  const averageScore =
-    scoreValues.length > 0
-      ? Math.round(
-          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
-        )
-      : 0;
-
-  const totalNilaiPages = Math.max(
-    1,
-    Math.ceil(nilai.length / nilaiRowsPerPage),
-  );
-  const paginatedNilai = nilai.slice(
-    nilaiPage * nilaiRowsPerPage,
-    nilaiPage * nilaiRowsPerPage + nilaiRowsPerPage,
-  );
-  const nilaiStartIndex =
-    nilai.length === 0 ? 0 : nilaiPage * nilaiRowsPerPage + 1;
-  const nilaiEndIndex = Math.min(
-    (nilaiPage + 1) * nilaiRowsPerPage,
-    nilai.length,
-  );
 
   const handleDownloadExcel = () => {
     if (nilai.length === 0) {
@@ -358,16 +367,31 @@ export default function GuruNilaiDetailPage({
                 Daftar Nilai Siswa
               </h2>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDownloadExcel}
-              className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
-            >
-              <Download size={14} className="mr-1.5" />
-              Download Excel
-            </Button>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setNilaiPage(0);
+                }}
+                placeholder="Cari nama siswa..."
+                className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+              />
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadExcel}
+                className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
+              >
+                <Download size={14} className="mr-1.5" />
+                Download Excel
+              </Button>
+            </div>
           </div>
+
           {nilai.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
@@ -391,100 +415,111 @@ export default function GuruNilaiDetailPage({
               )}
 
               <div className="overflow-x-auto rounded-xl border border-gray-100">
-                <table className="w-full border-collapse">
-                  <thead className="bg-gray-50/80">
-                    <tr>
-                      <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
-                        No
-                      </th>
-                      <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
-                        Nama Siswa
-                      </th>
-                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
-                        Nilai
-                      </th>
-                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
-                        Waktu Selesai
-                      </th>
-                      <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
-                        Aksi
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {paginatedNilai.map((n, index) => {
-                      const hasScore = n.score !== null;
-                      return (
-                        <tr
-                          key={`${n.siswa_id}-${index}`}
-                          className="transition-colors duration-150 hover:bg-gray-50/80"
-                        >
-                          <td className="px-4 py-4 text-sm text-gray-900">
-                            {nilaiStartIndex + index}
-                          </td>
-                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                            {n.profiles?.full_name || "Unknown"}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            {hasScore ? (
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-lg font-semibold text-gray-900">
-                                  {n.score}
-                                </span>
-                                {n.attempt_count > 1 && (
-                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                                    {n.attempt_count}x
+                {filteredNilai.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                      <FileBarChart size={20} />
+                    </div>
+                    <p className="text-base font-medium text-gray-700">
+                      Tidak ada siswa yang cocok dengan pencarian.
+                    </p>
+                  </div>
+                ) : (
+                  <table className="w-full border-collapse">
+                    <thead className="bg-gray-50/80">
+                      <tr>
+                        <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
+                          No
+                        </th>
+                        <th className="px-4 py-3.5 text-left text-sm font-semibold text-gray-700">
+                          Nama Siswa
+                        </th>
+                        <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                          Nilai
+                        </th>
+                        <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                          Waktu Selesai
+                        </th>
+                        <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {paginatedNilai.map((n, index) => {
+                        const hasScore = n.score !== null;
+                        return (
+                          <tr
+                            key={`${n.siswa_id}-${index}`}
+                            className="transition-colors duration-150 hover:bg-gray-50/80"
+                          >
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {nilaiStartIndex + index}
+                            </td>
+                            <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                              {n.profiles?.full_name || "Unknown"}
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              {hasScore ? (
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="text-lg font-semibold text-gray-900">
+                                    {n.score}
                                   </span>
+                                  {n.attempt_count > 1 && (
+                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                                      {n.attempt_count}x
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 text-center text-sm text-gray-600">
+                              {formatCompletedAt(n.completed_at)}
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              <div className="flex justify-center gap-2">
+                                {hasScore && n.attempt_count > 1 && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setHistoryDialog({
+                                        open: true,
+                                        siswaName:
+                                          n.profiles?.full_name || "Unknown",
+                                        attempts: n.all_attempts,
+                                      })
+                                    }
+                                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                  >
+                                    <History size={14} className="mr-1" />
+                                    Riwayat
+                                  </Button>
                                 )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-center text-sm text-gray-600">
-                            {formatCompletedAt(n.completed_at)}
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            <div className="flex justify-center gap-2">
-                              {hasScore && n.attempt_count > 1 && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    setHistoryDialog({
-                                      open: true,
-                                      siswaName:
-                                        n.profiles?.full_name || "Unknown",
-                                      attempts: n.all_attempts,
-                                    })
+                                    handleReset(
+                                      n.siswa_id,
+                                      n.profiles?.full_name || "Unknown",
+                                    )
                                   }
-                                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                  className="border-orange-200 text-orange-600 hover:bg-orange-50"
                                 >
-                                  <History size={14} className="mr-1" />
-                                  Riwayat
+                                  <RefreshCw size={14} className="mr-1" />
+                                  Buka Ulang
                                 </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleReset(
-                                    n.siswa_id,
-                                    n.profiles?.full_name || "Unknown",
-                                  )
-                                }
-                                className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                              >
-                                <RefreshCw size={14} className="mr-1" />
-                                Buka Ulang
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
 
               <div className="border-t border-gray-200 rounded-b-xl bg-white px-4 py-4 shadow-sm sticky bottom-0">
@@ -506,10 +541,32 @@ export default function GuruNilaiDetailPage({
                       ))}
                     </select>
                     <span className="font-semibold text-gray-700">
-                      {nilai.length === 0
+                      {filteredNilai.length === 0
                         ? "0-0 of 0"
-                        : `${nilaiStartIndex}-${nilaiEndIndex} of ${nilai.length}`}
+                        : `${nilaiStartIndex}-${nilaiEndIndex} of ${filteredNilai.length}`}
                     </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setNilaiPage(0);
+                      }}
+                      placeholder="Cari nama siswa..."
+                      className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+                    />
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDownloadExcel}
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
+                    >
+                      <Download size={14} className="mr-1.5" /> Download Excel
+                    </Button>
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -628,9 +685,7 @@ export default function GuruNilaiDetailPage({
             <DialogTitle className="text-xl font-semibold text-gray-900">
               Buka Ulang Asesmen
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
-              {`Yakin ingin membuka ulang asesmen untuk ${resetDialog.siswaName}? Nilai lama akan tetap tersimpan, siswa dapat mengerjakan ulang.`}
-            </DialogDescription>
+            <DialogDescription className="text-sm text-gray-500 leading-relaxed">{`Yakin ingin membuka ulang asesmen untuk ${resetDialog.siswaName}? Nilai lama akan tetap tersimpan, siswa dapat mengerjakan ulang.`}</DialogDescription>
           </DialogHeader>
 
           <div className="mt-6 flex justify-end gap-3">
