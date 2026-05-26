@@ -116,13 +116,20 @@ export default function SiswaMateriPage() {
     }
 
     try {
-      // Fetch materi data
-      const { data: materiData, error: materiError } = await supabase
-        .from("materi")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Fetch materi data dari API dengan akses kontrol
+      const materiResponse = await fetch("/api/siswa/materi");
+      const materiResponseData = await materiResponse.json();
 
-      if (materiError) throw materiError;
+      if (!materiResponse.ok) {
+        console.error("API Error:", materiResponseData);
+        throw new Error(
+          materiResponseData.details ||
+            materiResponseData.error ||
+            "Gagal mengambil data materi",
+        );
+      }
+
+      const materiData = materiResponseData.data || [];
 
       // Fetch all progress for this user
       const progressResponse = await fetch("/api/siswa/materi-progress");
@@ -134,42 +141,25 @@ export default function SiswaMateriPage() {
         ]),
       );
 
-      // Fetch related data separately
+      // Merge data with real progress from database
       if (materiData && materiData.length > 0) {
-        const mapelIds = [
-          ...new Set(materiData.map((m) => m.mapel_id).filter(Boolean)),
+        // Extract mapel dari hasil API (sudah di-include)
+        const mapelList = [
+          ...new Map(
+            materiData
+              .filter((m: any) => m.mapel)
+              .map((m: any) => [m.mapel.id, m.mapel]),
+          ).values(),
         ];
-        const creatorIds = [
-          ...new Set(materiData.map((m) => m.created_by).filter(Boolean)),
-        ];
 
-        // Fetch mapel data
-        const { data: mapelData } = await supabase
-          .from("mapel")
-          .select("id, name")
-          .in("id", mapelIds);
-
-        // Fetch profiles data
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", creatorIds);
-
-        // Merge data with real progress from database
-        const enrichedData = materiData.map((materi) => ({
+        const enrichedData = materiData.map((materi: any) => ({
           ...materi,
-          mapel: mapelData?.find((m) => m.id === materi.mapel_id) || null,
-          profiles:
-            profilesData?.find((p) => p.id === materi.created_by) || null,
           progress: toProgressValue(progressMap.get(materi.id)),
         }));
 
         setMateri(enrichedData);
         setFilteredMateri(enrichedData);
-
-        // Get unique mapel untuk filter
-        const uniqueMapel = mapelData || [];
-        setMapelList(uniqueMapel);
+        setMapelList(mapelList);
       } else {
         setMateri([]);
         setFilteredMateri([]);

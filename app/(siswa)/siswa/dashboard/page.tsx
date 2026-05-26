@@ -68,8 +68,14 @@ export default function SiswaDashboard() {
           kelasId = kelasData?.id || null;
         }
 
-        const [materiRes, asesmenRes] = await Promise.all([
-          supabase.from("materi").select("*", { count: "exact" }),
+        // Fetch materi yang accessible untuk siswa dengan proper filtering
+        const materiCountResponse = await fetch("/api/siswa/materi");
+        const materiCountData = await materiCountResponse.json();
+
+        const materiList = (materiCountData.data || []) as any[];
+        const materiRes = { count: materiList.length, data: materiList };
+
+        const [asesmenRes] = await Promise.all([
           kelasId
             ? supabase
                 .from("asesmen")
@@ -145,12 +151,11 @@ export default function SiswaDashboard() {
           kuisTotal: kelasId ? asesmenRes.count || 0 : 0,
         });
 
-        const { data: materiData } = await supabase
-          .from("materi")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1);
-        setRecentMateri(materiData || []);
+        // Recent materi sudah di-fetch dari API di atas, ambil yang pertama
+        const recentMateriData = (
+          materiList.length > 0 ? [materiList[0]] : []
+        ) as any[];
+        setRecentMateri(recentMateriData);
 
         const { data: asesmenData } = await supabase
           .from("asesmen")
