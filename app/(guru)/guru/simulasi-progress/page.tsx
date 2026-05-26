@@ -11,9 +11,11 @@ import {
   ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
+  Search,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +63,7 @@ export default function SimulasiProgressPage() {
   >({});
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -121,6 +124,16 @@ export default function SimulasiProgressPage() {
   ).length;
   const belumSelesai = totalSiswa - selesaiSemua;
 
+  // Filter siswa based on search query
+  const filteredSiswa = siswaList.filter((siswa) => {
+    if (!searchQuery.trim()) return true;
+    const term = searchQuery.toLowerCase();
+    return (
+      siswa.full_name.toLowerCase().includes(term) ||
+      (siswa.kelas || "").toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -166,6 +179,25 @@ export default function SimulasiProgressPage() {
         </Card>
       </div>
 
+      {/* Search Card */}
+      <Card className="border border-gray-100 dark:border-gray-800 p-4 shadow-sm">
+        <div className="relative">
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
+          <Input
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Cari nama siswa atau kelas..."
+            className="pl-9 border-gray-200 dark:border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/40"
+          />
+        </div>
+      </Card>
+
       {/* Progress Table */}
       <Card className="border border-gray-100 dark:border-gray-800 shadow-sm">
         {siswaList.length === 0 ? (
@@ -175,6 +207,18 @@ export default function SimulasiProgressPage() {
             </div>
             <p className="text-base font-medium text-gray-700 dark:text-gray-200">
               Tidak ada data siswa
+            </p>
+            <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+              Data akan muncul setelah siswa terdaftar di kelas.
+            </p>
+          </div>
+        ) : filteredSiswa.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl px-6 py-16 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600">
+              <Users size={20} />
+            </div>
+            <p className="text-base font-medium text-gray-700 dark:text-gray-200">
+              Tidak ada hasil pencarian
             </p>
             <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
               Data akan muncul setelah siswa terdaftar di kelas.
@@ -201,7 +245,7 @@ export default function SimulasiProgressPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-card">
-                  {siswaList
+                  {filteredSiswa
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((siswa) => {
                       const doneCount = siswa.simulasi.filter(
@@ -278,9 +322,9 @@ export default function SimulasiProgressPage() {
                     ))}
                   </select>
                   <span className="font-semibold text-gray-700">
-                    {siswaList.length === 0
+                    {filteredSiswa.length === 0
                       ? "0-0 of 0"
-                      : `${page * rowsPerPage + 1}-${Math.min((page + 1) * rowsPerPage, siswaList.length)} of ${siswaList.length}`}
+                      : `${page * rowsPerPage + 1}-${Math.min((page + 1) * rowsPerPage, filteredSiswa.length)} of ${filteredSiswa.length}`}
                   </span>
                 </div>
 
@@ -305,7 +349,7 @@ export default function SimulasiProgressPage() {
                   </button>
                   <span className="min-w-16 px-2 text-sm font-medium text-gray-600">
                     {page + 1} /{" "}
-                    {Math.max(1, Math.ceil(siswaList.length / rowsPerPage))}
+                    {Math.max(1, Math.ceil(filteredSiswa.length / rowsPerPage))}
                   </span>
                   <button
                     type="button"
@@ -314,7 +358,7 @@ export default function SimulasiProgressPage() {
                         Math.min(
                           Math.max(
                             1,
-                            Math.ceil(siswaList.length / rowsPerPage),
+                            Math.ceil(filteredSiswa.length / rowsPerPage),
                           ) - 1,
                           p + 1,
                         ),
@@ -322,7 +366,11 @@ export default function SimulasiProgressPage() {
                     }
                     disabled={
                       page >=
-                      Math.max(1, Math.ceil(siswaList.length / rowsPerPage)) - 1
+                      Math.max(
+                        1,
+                        Math.ceil(filteredSiswa.length / rowsPerPage),
+                      ) -
+                        1
                     }
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     title="Selanjutnya"
@@ -333,13 +381,19 @@ export default function SimulasiProgressPage() {
                     type="button"
                     onClick={() =>
                       setPage(
-                        Math.max(1, Math.ceil(siswaList.length / rowsPerPage)) -
+                        Math.max(
                           1,
+                          Math.ceil(filteredSiswa.length / rowsPerPage),
+                        ) - 1,
                       )
                     }
                     disabled={
                       page >=
-                      Math.max(1, Math.ceil(siswaList.length / rowsPerPage)) - 1
+                      Math.max(
+                        1,
+                        Math.ceil(filteredSiswa.length / rowsPerPage),
+                      ) -
+                        1
                     }
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     title="Halaman terakhir"
