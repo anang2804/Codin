@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -223,179 +222,164 @@ export default function GuruMateriProgressPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
-          Progress Materi Siswa
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Pilih materi untuk melihat daftar siswa dan progresnya.
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="border border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-secondary/50 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
-            <Users size={13} />
-            Total Siswa
-          </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
-            {summary.total_siswa}
-          </p>
-        </Card>
-
-        <Card className="border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/20 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400 dark:text-blue-400">
-            <BookOpen size={13} />
-            Total Materi
-          </div>
-          <p className="text-3xl font-semibold text-blue-700 dark:text-blue-300">
-            {totalMateri}
-          </p>
-        </Card>
-
-        <Card className="border border-green-100 dark:border-green-900/40 bg-green-50/70 dark:bg-green-900/20 p-4 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-400 dark:text-green-400">
-            <CheckCircle2 size={13} />
-            Selesai
-          </div>
-          <p className="text-3xl font-semibold text-green-700 dark:text-green-300">
-            {summary.completed_siswa}
-          </p>
-        </Card>
-      </div>
-
-      <Card className="border border-gray-100 dark:border-gray-800 p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="relative">
-            <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari nama materi"
-              className="pl-9 border-gray-200 dark:border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/40"
-            />
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={() => fetchProgress({ showRefreshState: true })}
-            disabled={isRefreshing}
-            className="border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <RefreshCw
-              size={15}
-              className={`mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {isRefreshing ? "Memuat..." : "Refresh"}
-          </Button>
-        </div>
-      </Card>
-
-      {filteredMateri.length === 0 ? (
-        <Card className="border border-gray-100 dark:border-gray-800 shadow-sm">
-          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600">
-              <BookOpen size={20} />
-            </div>
-            <p className="text-base font-medium text-gray-700 dark:text-gray-200">
-              Data tidak ditemukan
-            </p>
-            <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-              Coba ubah kata kunci pencarian materi.
+      {!selectedMateri ? (
+        <>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+              Progress Materi Siswa
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Pilih materi untuk melihat daftar siswa dan progresnya.
             </p>
           </div>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredMateri.map((materi) => (
-            <Card
-              key={materi.materi_id}
-              className="overflow-hidden border border-gray-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-4 border-b border-green-100">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-700 border border-green-100">
-                      <FileText size={12} />
-                      Materi
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                      {materi.materi_title}
-                    </h3>
-                  </div>
-                </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
+            <Card className="border border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-secondary/50 p-4 shadow-sm">
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+                <Users size={13} />
+                Total Siswa
+              </div>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+                {summary.total_siswa}
+              </p>
+            </Card>
+
+            <Card className="border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/20 p-4 shadow-sm">
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400 dark:text-blue-400">
+                <BookOpen size={13} />
+                Total Materi
+              </div>
+              <p className="text-3xl font-semibold text-blue-700 dark:text-blue-300">
+                {totalMateri}
+              </p>
+            </Card>
+          </div>
+
+          <Card className="border border-gray-100 dark:border-gray-800 p-4 shadow-sm">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+              <div className="relative">
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Cari nama materi"
+                  className="pl-9 border-gray-200 dark:border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/40"
+                />
               </div>
 
-              <div className="space-y-4 px-5 py-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl bg-gray-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-gray-400">
-                      Siswa Aktif
-                    </p>
-                    <p className="mt-1 font-semibold text-gray-900">
-                      {materi.siswa_count}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-green-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-green-500">
-                      Selesai
-                    </p>
-                    <p className="mt-1 font-semibold text-green-700">
-                      {materi.completed_count}
-                    </p>
-                  </div>
-                </div>
+              <Button
+                variant="outline"
+                onClick={() => fetchProgress({ showRefreshState: true })}
+                disabled={isRefreshing}
+                className="border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <RefreshCw
+                  size={15}
+                  className={`mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                {isRefreshing ? "Memuat..." : "Refresh"}
+              </Button>
+            </div>
+          </Card>
 
-                <div>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-700">
-                      Rata-rata progress
-                    </span>
-                    <span className="font-semibold text-gray-900">
-                      {materi.average_progress}%
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full rounded-full bg-green-500"
-                      style={{ width: `${materi.average_progress}%` }}
-                    />
-                  </div>
+          {filteredMateri.length === 0 ? (
+            <Card className="border border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600">
+                  <BookOpen size={20} />
                 </div>
-
-                <Button
-                  className={`w-full gap-2 transition-all duration-200 ${
-                    selectedMateri?.materi_id === materi.materi_id
-                      ? "bg-green-700 hover:bg-green-800"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                  onClick={() => {
-                    setSelectedMateri(
-                      selectedMateri?.materi_id === materi.materi_id
-                        ? null
-                        : materi,
-                    );
-                    setDetailQuery("");
-                    setDetailRowsPerPage(10);
-                    setDetailPage(0);
-                  }}
-                >
-                  {selectedMateri?.materi_id === materi.materi_id
-                    ? "Tutup Detail"
-                    : "Lihat Progres Siswa"}
-                  <ArrowRight size={15} />
-                </Button>
+                <p className="text-base font-medium text-gray-700 dark:text-gray-200">
+                  Data tidak ditemukan
+                </p>
+                <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+                  Coba ubah kata kunci pencarian materi.
+                </p>
               </div>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredMateri.map((materi) => (
+                <Card
+                  key={materi.materi_id}
+                  className="overflow-hidden border border-gray-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-4 border-b border-green-100">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-700 border border-green-100">
+                          <FileText size={12} />
+                          Materi
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                          {materi.materi_title}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
 
-      {selectedMateri && (
-        <div ref={detailSectionRef} className="space-y-4 scroll-mt-6">
+                  <div className="space-y-4 px-5 py-4">
+                    <div className="rounded-xl bg-gray-50 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-gray-400">
+                        Siswa Aktif
+                      </p>
+                      <p className="mt-1 font-semibold text-gray-900">
+                        {materi.siswa_count}
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-medium text-gray-700">
+                          Rata-rata progress
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          {materi.average_progress}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full rounded-full bg-green-500"
+                          style={{ width: `${materi.average_progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full gap-2 bg-green-600 hover:bg-green-700 transition-all duration-200"
+                      onClick={() => {
+                        setSelectedMateri(materi);
+                        setDetailQuery("");
+                        setDetailRowsPerPage(10);
+                        setDetailPage(0);
+                      }}
+                    >
+                      Lihat Progres Siswa
+                      <ArrowRight size={15} />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSelectedMateri(null);
+              setDetailQuery("");
+              setDetailPage(0);
+            }}
+            className="border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-secondary"
+          >
+            <ChevronLeft size={16} className="mr-2" />
+            Kembali
+          </Button>
+
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-card">
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -413,14 +397,6 @@ export default function GuruMateriProgressPage() {
                 </p>
                 <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
                   {selectedMateri.siswa_count}
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-green-50 dark:bg-green-900/20 p-3">
-                <p className="text-xs uppercase tracking-[0.12em] text-green-500 dark:text-green-400">
-                  Selesai
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-green-700 dark:text-green-300">
-                  {selectedMateri.completed_count}
                 </p>
               </div>
               <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-blue-50 dark:bg-blue-900/20 p-3">

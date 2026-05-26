@@ -14,9 +14,7 @@ import {
   Users,
   ClipboardCheck,
   FileBarChart,
-  Download,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
@@ -251,58 +249,6 @@ export default function GuruNilaiDetailPage({
     }
   };
 
-  const handleDownloadExcel = () => {
-    if (nilai.length === 0) {
-      toast.info("Belum ada data siswa yang dapat diunduh.");
-      return;
-    }
-
-    try {
-      const rows = nilai.map((n, index) => ({
-        No: index + 1,
-        "Nama Siswa": n.profiles?.full_name || "-",
-        Nilai: n.score ?? "-",
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Nilai");
-
-      const kelasName = (asesmen?.kelas?.name || "kelas").replace(/\s+/g, "_");
-      const quizName = (asesmen?.title || "kuis")
-        .toLowerCase()
-        .replace(/\s+/g, "_");
-      const fileName = `nilai_${quizName}_${kelasName}.xlsx`;
-
-      const wbout: ArrayBuffer = XLSX.write(wb, {
-        bookType: "xlsx",
-        type: "array",
-      });
-      const blob = new Blob([wbout], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-
-      // Small delay before cleanup to ensure the click has fired
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 200);
-
-      toast.success("Data nilai berhasil diunduh.");
-    } catch (err) {
-      console.error("Download error:", err);
-      toast.error("Gagal mengunduh file. Silakan coba lagi.");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -368,28 +314,16 @@ export default function GuruNilaiDetailPage({
               </h2>
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setNilaiPage(0);
-                }}
-                placeholder="Cari nama siswa..."
-                className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
-              />
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadExcel}
-                className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
-              >
-                <Download size={14} className="mr-1.5" />
-                Download Excel
-              </Button>
-            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setNilaiPage(0);
+              }}
+              placeholder="Cari nama siswa..."
+              className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+            />
           </div>
 
           {nilai.length === 0 ? (
@@ -558,15 +492,6 @@ export default function GuruNilaiDetailPage({
                       placeholder="Cari nama siswa..."
                       className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
                     />
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleDownloadExcel}
-                      className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
-                    >
-                      <Download size={14} className="mr-1.5" /> Download Excel
-                    </Button>
                   </div>
 
                   <div className="flex items-center gap-1.5">
