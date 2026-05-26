@@ -196,9 +196,7 @@ model Simulasi {
   title       String
   category    String
   description String?
-  thumbnail   String?
   url         String
-  tags        Json?
   difficulty  String             // 'easy', 'medium', 'hard'
   is_local    Boolean            @default(false)
   featured    Boolean            @default(false)

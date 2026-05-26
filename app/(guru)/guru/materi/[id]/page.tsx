@@ -83,14 +83,12 @@ export default function GuruMateriDetailPage() {
 
   const [expandedBabs, setExpandedBabs] = useState<Set<string>>(new Set());
   const [selectedBabId, setSelectedBabId] = useState<string | null>(null);
-  const [detailViewBabId, setDetailViewBabId] = useState<string | null>(null);
 
   // Dialog states
   const [showBabDialog, setShowBabDialog] = useState(false);
   const [showSubBabDialog, setShowSubBabDialog] = useState(false);
   const [showDeleteBabDialog, setShowDeleteBabDialog] = useState(false);
   const [showDeleteSubBabDialog, setShowDeleteSubBabDialog] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingBabId, setEditingBabId] = useState<string | null>(null);
   const [editingSubBabId, setEditingSubBabId] = useState<string | null>(null);
   const [deleteSubBabTarget, setDeleteSubBabTarget] =
@@ -203,19 +201,6 @@ export default function GuruMateriDetailPage() {
   };
 
   // SUB BAB CRUD Operations
-  const closeSubBabForm = () => {
-    setShowSubBabDialog(false);
-    setSelectedBabId(null);
-    setEditingSubBabId(null);
-    setSelectedFile(null);
-    setSubBabForm({
-      title: "",
-      description: "",
-      content_type: "text",
-      content_url: "",
-    });
-  };
-
   const openSubBabDialog = (babId: string, subBab?: SubBab) => {
     setSelectedBabId(babId);
     setSelectedFile(null);
@@ -320,7 +305,16 @@ export default function GuruMateriDetailPage() {
         toast.success("Sub-bab berhasil ditambahkan");
       }
 
-      closeSubBabForm();
+      setShowSubBabDialog(false);
+      setSubBabForm({
+        title: "",
+        description: "",
+        content_type: "text",
+        content_url: "",
+      });
+      setEditingSubBabId(null);
+      setSelectedBabId(null);
+      setSelectedFile(null);
       setIsUploading(false);
     } catch (error: any) {
       console.error("Error saving sub-bab:", error);
@@ -371,10 +365,6 @@ export default function GuruMateriDetailPage() {
         return <FileText size={16} className="text-gray-600" />;
     }
   };
-
-  const selectedBabForSubBabForm = selectedBabId
-    ? (babs.find((bab) => bab.id === selectedBabId) ?? null)
-    : null;
 
   if (loading) {
     return (
@@ -453,14 +443,187 @@ export default function GuruMateriDetailPage() {
         </div>
       </div>
 
+      {/* Babs List */}
+      {!Array.isArray(babs) || babs.length === 0 ? (
+        <Card className="p-12 text-center border border-dashed border-gray-200">
+          <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-base font-semibold text-gray-700 mb-1">
+            Belum ada bab
+          </h3>
+          <p className="text-sm text-gray-400 mb-5">
+            Mulai buat bab pertama untuk materi ini
+          </p>
+          <Button
+            onClick={() => openBabDialog()}
+            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150"
+          >
+            <Plus size={16} className="mr-2" />
+            Tambah Bab
+          </Button>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {babs.map((bab, index) => (
+            <Card
+              key={bab.id}
+              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+            >
+              {/* Bab Header */}
+              <div className="bg-gray-50/80 px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleBab(bab.id)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-150 shrink-0"
+                    >
+                      {expandedBabs.has(bab.id) ? (
+                        <ChevronDown size={18} />
+                      ) : (
+                        <ChevronRight size={18} />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
+                        Bab {index + 1}: {bab.title}
+                      </h3>
+                      {bab.description && (
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
+                          {bab.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {(bab.sub_babs || []).length} Sub-bab
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openSubBabDialog(bab.id)}
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:scale-[1.05] transition-all duration-150 h-8 px-2.5 text-xs"
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Sub-bab
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openBabDialog(bab)}
+                      className="border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 hover:border-blue-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
+                    >
+                      <Edit size={15} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteBab(bab.id, bab.title)}
+                      disabled={deleteBab.isPending}
+                      className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 hover:scale-[1.05] transition-all duration-150 h-8 w-8 p-0"
+                    >
+                      {deleteBab.isPending ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={15} />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-babs */}
+              {expandedBabs.has(bab.id) && (
+                <div className="px-5 py-4 bg-white border-t border-gray-100">
+                  {!bab.sub_babs || bab.sub_babs.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400">
+                      <FileText
+                        size={32}
+                        className="mx-auto mb-2 text-gray-300"
+                      />
+                      <p className="text-sm">Belum ada sub-bab</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openSubBabDialog(bab.id)}
+                        className="mt-3 border-green-200 text-green-700 hover:bg-green-50 text-xs"
+                      >
+                        <Plus size={14} className="mr-1" />
+                        Tambah Sub-bab
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(bab.sub_babs || []).map((subBab, subIndex: number) => (
+                        <div
+                          key={subBab.id}
+                          className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                        >
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="text-gray-400 shrink-0">
+                              {getContentTypeIcon(subBab.content_type)}
+                            </div>
+                            <span className="text-sm font-medium text-gray-800 truncate">
+                              {subIndex + 1}. {subBab.title}
+                            </span>
+                            {subBab.duration && subBab.duration > 0 && (
+                              <span className="text-xs text-gray-400 shrink-0">
+                                {subBab.duration} mnt
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openSubBabDialog(bab.id, subBab)}
+                              className="h-7 w-7 p-0 hover:bg-blue-50 hover:scale-[1.05] transition-all duration-150"
+                            >
+                              <Edit size={14} className="text-blue-500" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                handleDeleteSubBab(
+                                  subBab.id,
+                                  bab.id,
+                                  subBab.title,
+                                )
+                              }
+                              disabled={deleteSubBab.isPending}
+                              className="h-7 w-7 p-0 hover:bg-red-50 hover:scale-[1.05] transition-all duration-150"
+                            >
+                              {deleteSubBab.isPending ? (
+                                <Loader2
+                                  size={14}
+                                  className="text-red-500 animate-spin"
+                                />
+                              ) : (
+                                <Trash2 size={14} className="text-red-400" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Bab Form (inline) */}
       {showBabDialog && (
-        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
-          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div className="mb-6">
+        <div className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-5">
               <h2 className="text-lg font-semibold text-gray-900">
                 {editingBabId ? "Edit Bab" : "Tambah Bab Baru"}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-400 mt-1">
                 Bab adalah bagian utama dari materi pembelajaran
               </p>
             </div>
@@ -509,7 +672,7 @@ export default function GuruMateriDetailPage() {
                 <Button
                   type="submit"
                   disabled={createBab.isPending || updateBab.isPending}
-                  className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] hover:-translate-y-px transition-all duration-150 disabled:opacity-70 disabled:scale-100"
+                  className="flex-1 bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 disabled:opacity-70 disabled:scale-100"
                 >
                   {(createBab.isPending || updateBab.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -519,7 +682,11 @@ export default function GuruMateriDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowBabDialog(false)}
+                  onClick={() => {
+                    setShowBabDialog(false);
+                    setEditingBabId(null);
+                    setBabForm({ title: "", description: "" });
+                  }}
                   disabled={createBab.isPending || updateBab.isPending}
                   className="border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-150"
                 >
@@ -531,21 +698,17 @@ export default function GuruMateriDetailPage() {
         </div>
       )}
 
-      {showSubBabDialog && selectedBabId && (
-        <div className="max-w-3xl mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
-          <Card className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div className="mb-6">
+      {/* Sub-Bab Form (inline) */}
+      {showSubBabDialog && (
+        <div className="max-w-3xl mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Card className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="mb-5">
               <h2 className="text-lg font-semibold text-gray-900">
                 {editingSubBabId ? "Edit Sub-Bab" : "Tambah Sub-Bab Baru"}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-400 mt-1">
                 Sub-bab berisi konten pembelajaran yang detail
               </p>
-              {selectedBabForSubBabForm && (
-                <p className="mt-2 text-sm font-medium text-green-700">
-                  Bab tujuan: {selectedBabForSubBabForm.title}
-                </p>
-              )}
             </div>
 
             <form onSubmit={handleSaveSubBab} className="space-y-5">
@@ -712,7 +875,17 @@ export default function GuruMateriDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={closeSubBabForm}
+                  onClick={() => {
+                    setShowSubBabDialog(false);
+                    setEditingSubBabId(null);
+                    setSubBabForm({
+                      title: "",
+                      description: "",
+                      content_type: "text",
+                      content_url: "",
+                    });
+                    setSelectedFile(null);
+                  }}
                   disabled={
                     createSubBab.isPending ||
                     updateSubBab.isPending ||
@@ -727,282 +900,6 @@ export default function GuruMateriDetailPage() {
           </Card>
         </div>
       )}
-
-      {/* Babs List - Card View */}
-      {!Array.isArray(babs) || babs.length === 0 ? (
-        <Card className="p-12 text-center border border-dashed border-gray-200">
-          <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
-          <h3 className="text-base font-semibold text-gray-700 mb-1">
-            Belum ada bab
-          </h3>
-          <p className="text-sm text-gray-400 mb-5">
-            Mulai buat bab pertama untuk materi ini
-          </p>
-          <Button
-            onClick={() => openBabDialog()}
-            className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] transition-all duration-150"
-          >
-            <Plus size={16} className="mr-2" />
-            Tambah Bab
-          </Button>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {babs.map((bab, index) => (
-            <Card
-              key={bab.id}
-              className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col"
-            >
-              {/* Card Header */}
-              <div className="bg-gradient-to-r from-green-50 to-green-100/50 px-5 py-4 border-b border-green-100">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Bab {index + 1}
-                    </h3>
-                    <p className="text-sm font-medium text-gray-700 mt-1 truncate">
-                      {bab.title}
-                    </p>
-                    {bab.description && (
-                      <p className="text-xs text-gray-500 mt-2 line-clamp-2">
-                        {bab.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="px-5 py-4 flex-1">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} className="text-green-600" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {(bab.sub_babs || []).length} Sub-bab
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sub-babs Preview */}
-                {bab.sub_babs && bab.sub_babs.length > 0 && (
-                  <div className="space-y-2 mb-4">
-                    {bab.sub_babs.slice(0, 2).map((subBab, idx) => (
-                      <div
-                        key={subBab.id}
-                        className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded text-xs"
-                      >
-                        <div className="text-gray-400 shrink-0">
-                          {getContentTypeIcon(subBab.content_type)}
-                        </div>
-                        <span className="text-gray-700 truncate">
-                          {idx + 1}. {subBab.title}
-                        </span>
-                      </div>
-                    ))}
-                    {bab.sub_babs.length > 2 && (
-                      <p className="text-xs text-gray-500 px-2.5 py-1.5">
-                        +{bab.sub_babs.length - 2} sub-bab lainnya
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Card Footer - Actions */}
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 space-y-2">
-                <Button
-                  onClick={() => {
-                    setDetailViewBabId(bab.id);
-                    setShowDetailModal(true);
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white hover:scale-[1.02] transition-all duration-150 h-9 text-sm"
-                >
-                  <Eye size={16} className="mr-2" />
-                  Lihat Detail
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openSubBabDialog(bab.id)}
-                    className="flex-1 border-green-200 text-green-700 hover:bg-green-50 text-xs h-8"
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Tambah Sub-bab
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openBabDialog(bab)}
-                    className="border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-blue-600 hover:border-blue-200 h-8 w-8 p-0"
-                  >
-                    <Edit size={14} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteBab(bab.id, bab.title)}
-                    disabled={deleteBab.isPending}
-                    className="border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 h-8 w-8 p-0"
-                  >
-                    {deleteBab.isPending ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Trash2 size={14} />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border border-gray-100 p-0 shadow-xl">
-          {detailViewBabId && babs.find((b) => b.id === detailViewBabId) && (
-            <>
-              <DialogHeader className="sticky top-0 z-10 bg-gradient-to-r from-green-50 to-green-100/50 px-6 py-4 border-b border-green-100">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <DialogTitle className="text-xl font-semibold text-gray-900">
-                      {babs.find((b) => b.id === detailViewBabId)?.title}
-                    </DialogTitle>
-                    {babs.find((b) => b.id === detailViewBabId)
-                      ?.description && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        {
-                          babs.find((b) => b.id === detailViewBabId)
-                            ?.description
-                        }
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="px-6 py-4">
-                {!babs.find((b) => b.id === detailViewBabId)?.sub_babs ||
-                babs.find((b) => b.id === detailViewBabId)?.sub_babs?.length ===
-                  0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <FileText
-                      size={40}
-                      className="mx-auto mb-3 text-gray-300"
-                    />
-                    <p className="text-sm font-medium">Belum ada sub-bab</p>
-                    <Button
-                      size="sm"
-                      className="mt-4 bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        setShowDetailModal(false);
-                        openSubBabDialog(detailViewBabId);
-                      }}
-                    >
-                      <Plus size={14} className="mr-1" />
-                      Tambah Sub-bab
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {(
-                      babs.find((b) => b.id === detailViewBabId)?.sub_babs || []
-                    ).map((subBab, subIndex) => (
-                      <Card
-                        key={subBab.id}
-                        className="p-4 border border-gray-200 hover:border-green-300 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className="mt-0.5 shrink-0">
-                              {getContentTypeIcon(subBab.content_type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900">
-                                {subIndex + 1}. {subBab.title}
-                              </h4>
-                              {subBab.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {subBab.description}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-2">
-                                <span className="inline-block px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded">
-                                  {subBab.content_type === "video"
-                                    ? "Link"
-                                    : subBab.content_type
-                                        .charAt(0)
-                                        .toUpperCase() +
-                                      subBab.content_type.slice(1)}
-                                </span>
-                                {subBab.duration && subBab.duration > 0 && (
-                                  <span className="text-xs text-gray-500">
-                                    {subBab.duration} menit
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setShowDetailModal(false);
-                                openSubBabDialog(detailViewBabId, subBab);
-                              }}
-                              className="h-8 w-8 p-0 hover:bg-blue-50"
-                            >
-                              <Edit size={14} className="text-blue-500" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                handleDeleteSubBab(
-                                  subBab.id,
-                                  detailViewBabId,
-                                  subBab.title,
-                                )
-                              }
-                              disabled={deleteSubBab.isPending}
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              {deleteSubBab.isPending ? (
-                                <Loader2
-                                  size={14}
-                                  className="text-red-500 animate-spin"
-                                />
-                              ) : (
-                                <Trash2 size={14} className="text-red-400" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add Sub-bab button in detail view */}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    openSubBabDialog(detailViewBabId);
-                  }}
-                  className="w-full mt-4 border-green-200 text-green-700 hover:bg-green-50"
-                >
-                  <Plus size={14} className="mr-2" />
-                  Tambah Sub-bab
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={showDeleteBabDialog}
