@@ -12,21 +12,57 @@ import {
   Play,
   RotateCcw,
   Terminal,
+  GripHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 const SIMULASI_SLUG = "struktur-kontrol-lampu-tidur-dasar";
 
-type CommandChoice = "if" | "else";
+type CodeBlock = {
+  id: string;
+  content: string;
+  category: "condition" | "statement" | "closing";
+};
 
-const CHOICES: CommandChoice[] = ["if", "else"];
+const AVAILABLE_BLOCKS: CodeBlock[] = [
+  {
+    id: "if-block",
+    content: "if (sensorCahaya < batasGelap) {",
+    category: "condition",
+  },
+  {
+    id: "print-nyala-stmt",
+    content: '    console.log("Lampu Tidur Nyala");',
+    category: "statement",
+  },
+  {
+    id: "close-else-block",
+    content: "} else {",
+    category: "closing",
+  },
+  {
+    id: "print-mati-stmt",
+    content: '    console.log("Lampu Tidur Mati");',
+    category: "statement",
+  },
+  {
+    id: "close-brace",
+    content: "}",
+    category: "closing",
+  },
+];
 
 export default function StrukturKontrolLampuTidurDasarPage() {
-  const [selectedCommand, setSelectedCommand] = useState<CommandChoice | null>(
+  // Initialize with 5 empty slots for the required blocks
+  const [placedBlocks, setPlacedBlocks] = useState<(CodeBlock | null)[]>([
     null,
-  );
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    null,
+    null,
+    null,
+    null,
+  ]);
+  const [draggedBlock, setDraggedBlock] = useState<CodeBlock | null>(null);
   const [activeLine, setActiveLine] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
@@ -49,13 +85,10 @@ export default function StrukturKontrolLampuTidurDasarPage() {
   const batasGelap = 30;
 
   const codeLines = [
-    `int sensorCahaya = ${sensorCahaya};`,
-    `int batasGelap = ${batasGelap};`,
+    `let sensorCahaya = ${sensorCahaya};`,
+    `let batasGelap = ${batasGelap};`,
     "",
-    null,
-    '    System.out.println("Lampu Tidur Nyala ");',
-    "}",
-  ] as const;
+  ];
 
   useEffect(() => {
     let isActive = true;
@@ -114,39 +147,73 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
-    setIsSelectorOpen(false);
-    setSelectedCommand(null);
     setLampuNyala(false);
     setLampuRusak(false);
+    setPlacedBlocks([null, null, null, null, null]);
     setFeedback("Sistem siap menjalankan simulasi.");
   };
 
   const executeStep = (index: number) => {
-    if (index >= codeLines.length) {
-      setIsRunning(false);
-      setActiveLine(3);
-      setShowSuccessCard(true);
-      setFeedback(
-        "Berhasil! Semua langkah struktur kontrol sudah sesuai.\n\nKarena sensorCahaya (20) < batasGelap (30), blok kondisi dijalankan dan lampu tidur menyala.",
-      );
-      return;
-    }
+    const totalLines = 3 + placedBlocks.length; // 3 + 5 = 8
 
-    setActiveLine(index);
-
-    if (index === 3) {
-      if (!selectedCommand) {
+    if (index >= totalLines) {
+      // Check if user placed all required blocks
+      if (
+        placedBlocks[0]?.id === "if-block" &&
+        placedBlocks[1]?.id === "print-nyala-stmt" &&
+        placedBlocks[2]?.id === "close-else-block" &&
+        placedBlocks[3]?.id === "print-mati-stmt" &&
+        placedBlocks[4]?.id === "close-brace"
+      ) {
         setIsRunning(false);
-        setErrorLine(index);
+        setActiveLine(-1);
+        setShowSuccessCard(true);
         setFeedback(
-          "Baris 4 belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca kebutuhan tipe data atau operasi pada baris tersebut, lalu pilih token yang paling sesuai.",
+          "Berhasil! Struktur kontrol if-else sudah lengkap dan benar!\n\nKarena sensorCahaya (20) < batasGelap (30), blok if dijalankan dan lampu tidur menyala.",
+        );
+        return;
+      } else {
+        setIsRunning(false);
+        setActiveLine(3);
+        setShowSuccessCard(false);
+        setFeedback(
+          "Simulasi selesai, tetapi struktur kontrol belum lengkap atau tidak tepat.\n\nPastikan semua blok ditambahkan dalam urutan yang benar: if → print nyala → } else { → print mati → }",
         );
         return;
       }
+    }
 
-      if (selectedCommand !== "if") {
+    // Check first 3 lines (variable declarations)
+    if (index < 3) {
+      setActiveLine(index);
+      setFeedback("Baris " + (index + 1) + " diproses: Deklarasi variabel.");
+      timerRef.current = setTimeout(() => executeStep(index + 1), 700);
+      return;
+    }
+
+    // Check placed blocks starting from line 3
+    const blockIndex = index - 3;
+
+    if (blockIndex >= placedBlocks.length) {
+      // Should not reach here since totalLines is calculated correctly
+      return;
+    }
+
+    const block = placedBlocks[blockIndex];
+
+    // Skip null blocks (empty slots)
+    if (block === null) {
+      timerRef.current = setTimeout(() => executeStep(index + 1), 850);
+      return;
+    }
+
+    setActiveLine(3 + blockIndex);
+
+    if (blockIndex === 0) {
+      // First block should be if condition
+      if (block.id !== "if-block") {
         setIsRunning(false);
-        setErrorLine(index);
+        setErrorLine(3 + blockIndex);
         setFeedback(
           "Baris 4 belum tepat.\n\nToken pada baris ini belum sesuai konteks proses.\n\nPetunjuk: baca ulang tujuan barisnya, lalu pilih token yang perannya paling tepat.",
         );
@@ -154,22 +221,65 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         setLampuRusak(true);
         return;
       }
-
       setLampuRusak(false);
       setFeedback(
         "Baris 4 benar.\n\nKeyword sudah tepat, sistem masuk ke blok kondisi.",
       );
-      timerRef.current = setTimeout(() => executeStep(index + 1), 850);
-      return;
-    }
-
-    if (index === 4) {
+    } else if (blockIndex === 1) {
+      // Second block should be the print nyala statement
+      if (block.id !== "print-nyala-stmt") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Output statement belum tepat. Harus mencetak 'Lampu Tidur Nyala'.",
+        );
+        setLampuRusak(true);
+        return;
+      }
       setLampuNyala(true);
       setLampuRusak(false);
       setFeedback('Baris 5 benar.\n\nOutput dieksekusi: "Lampu Tidur Nyala".');
+    } else if (blockIndex === 2) {
+      // Third block should be closing else block
+      if (block.id !== "close-else-block") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback("Baris 6 belum tepat. Seharusnya } else {");
+        return;
+      }
+      setFeedback(
+        "Baris 6 benar.\n\nBlok if ditutup dan blok else dibuka dengan benar.",
+      );
+    } else if (blockIndex === 3) {
+      // Fourth block should be print mati statement
+      if (block.id !== "print-mati-stmt") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Output statement untuk else belum tepat. Harus mencetak 'Lampu Tidur Mati'.",
+        );
+        setLampuRusak(true);
+        return;
+      }
+      setLampuNyala(false);
+      setLampuRusak(false);
+      setFeedback(
+        'Baris 7 benar.\n\nOutput else dieksekusi: "Lampu Tidur Mati".',
+      );
+    } else if (blockIndex === 4) {
+      // Fifth block should be closing brace
+      if (block.id !== "close-brace") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback("Penutup blok else belum tepat.");
+        return;
+      }
+      setFeedback(
+        "Baris 8 benar.\n\nBlok else ditutup dengan benar. Struktur kontrol lengkap!",
+      );
     }
 
-    timerRef.current = setTimeout(() => executeStep(index + 1), 700);
+    timerRef.current = setTimeout(() => executeStep(index + 1), 850);
   };
 
   const startRunning = () => {
@@ -186,7 +296,138 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     timerRef.current = setTimeout(() => executeStep(0), 250);
   };
 
+  const handleDragStart = (block: CodeBlock) => {
+    setDraggedBlock(block);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDropOnEditor = (e: React.DragEvent, slotIndex?: number) => {
+    e.preventDefault();
+    if (!draggedBlock) return;
+    if (isRunning) {
+      toast.error("Tidak bisa menambah blok saat simulasi berjalan!");
+      return;
+    }
+
+    if (slotIndex !== undefined && slotIndex < placedBlocks.length) {
+      // Replace the slot
+      const newBlocks = [...placedBlocks];
+      newBlocks[slotIndex] = draggedBlock;
+      setPlacedBlocks(newBlocks);
+      setFeedback("Blok ditambahkan.");
+    }
+    setDraggedBlock(null);
+  };
+
+  const removeBlock = (index: number) => {
+    const newBlocks = [...placedBlocks];
+    newBlocks[index] = null;
+    setPlacedBlocks(newBlocks);
+    setFeedback("Blok dihapus.");
+  };
+
   const lampuVisualNyala = lampuNyala && !lampuRusak;
+
+  // Syntax highlighting component with proper token parsing
+  const SyntaxHighlight = ({ code }: { code: string }) => {
+    if (!code) return <>{code}</>;
+
+    const tokens: Array<{ text: string; type: string }> = [];
+    let remaining = code;
+
+    while (remaining.length > 0) {
+      let matched = false;
+
+      // Keywords
+      const keywordMatch = remaining.match(
+        /^(if|else|for|while|switch|case|return|new|class|public|private|static|final|System)\b/,
+      );
+      if (keywordMatch) {
+        tokens.push({ text: keywordMatch[0], type: "keyword" });
+        remaining = remaining.slice(keywordMatch[0].length);
+        matched = true;
+      }
+
+      // Types
+      if (!matched) {
+        const typeMatch = remaining.match(
+          /^(int|String|boolean|void|double|float|char|long|short)\b/,
+        );
+        if (typeMatch) {
+          tokens.push({ text: typeMatch[0], type: "type" });
+          remaining = remaining.slice(typeMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Numbers
+      if (!matched) {
+        const numMatch = remaining.match(/^\d+/);
+        if (numMatch) {
+          tokens.push({ text: numMatch[0], type: "number" });
+          remaining = remaining.slice(numMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Strings
+      if (!matched) {
+        const strMatch = remaining.match(/^"[^"]*"/);
+        if (strMatch) {
+          tokens.push({ text: strMatch[0], type: "string" });
+          remaining = remaining.slice(strMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Constants
+      if (!matched) {
+        const constMatch = remaining.match(/^(true|false|null)\b/);
+        if (constMatch) {
+          tokens.push({ text: constMatch[0], type: "constant" });
+          remaining = remaining.slice(constMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Regular character
+      if (!matched) {
+        tokens.push({ text: remaining[0], type: "default" });
+        remaining = remaining.slice(1);
+      }
+    }
+
+    const getColor = (type: string) => {
+      switch (type) {
+        case "keyword":
+          return "text-purple-500";
+        case "type":
+          return "text-blue-500";
+        case "number":
+          return "text-orange-500";
+        case "string":
+          return "text-green-600";
+        case "constant":
+          return "text-amber-600";
+        default:
+          return "";
+      }
+    };
+
+    return (
+      <>
+        {tokens.map((token, idx) => (
+          <span key={idx} className={getColor(token.type)}>
+            {token.text}
+          </span>
+        ))}
+      </>
+    );
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-lime-50 via-emerald-50 to-amber-50 text-foreground">
@@ -248,56 +489,31 @@ export default function StrukturKontrolLampuTidurDasarPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Deskripsi Perintah
+              Blok Tersedia
             </h2>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedCommand ?? "default"}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
-            >
-              <h3 className="mb-2 text-xs font-black uppercase tracking-tight text-foreground">
-                {selectedCommand
-                  ? selectedCommand.toUpperCase()
-                  : "SIAP MENULIS"}
-              </h3>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {selectedCommand === "if"
-                  ? "Mengecek apakah suatu kondisi bernilai True (benar)."
-                  : selectedCommand === "else"
-                    ? "sebagai cadangan yang dijalankan jika semua kondisi if dan elif tidak terpenuhi."
-                    : "Lengkapi token pada baris kondisi. Pilih if atau else."}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          <div
-            className={`rounded-2xl border p-3 transition-all ${
-              errorLine !== -1
-                ? "border-rose-200 bg-rose-50"
-                : "border-border bg-card"
-            }`}
-          >
-            <p
-              className={`text-[10px] font-black uppercase tracking-widest ${
-                errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
-              }`}
-            >
-              CATATAN PROSES
-            </p>
-            <p
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
-                errorLine !== -1
-                  ? "bg-rose-100/70 text-rose-700"
-                  : "bg-muted text-foreground"
-              }`}
-            >
-              {feedback}
-            </p>
+          <div className="flex flex-col gap-2">
+            {AVAILABLE_BLOCKS.map((block) => (
+              <motion.div
+                key={block.id}
+                draggable
+                onDragStart={() => handleDragStart(block)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group cursor-move rounded-xl border border-emerald-200 bg-emerald-50 p-3 transition-all hover:border-emerald-400 hover:bg-emerald-100 active:bg-emerald-200"
+              >
+                <div className="flex items-start gap-2">
+                  <GripHorizontal
+                    size={14}
+                    className="mt-1 text-emerald-600/50 group-hover:text-emerald-600"
+                  />
+                  <div className="flex-1 font-mono text-[11px] text-slate-900 break-words">
+                    <SyntaxHighlight code={block.content} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
@@ -329,12 +545,38 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  💡 Ayo bantu lengkapi struktur kontrol di bawah ini agar lampu
-                  menyala tepat ketika suasana mulai redup.
+                  💡 Ayo bantu lengkapi struktur kontrol di bawah ini dengan
+                  drag & drop blok kode agar lampu menyala tepat ketika suasana
+                  mulai redup.
                 </p>
               </div>
             </div>
           </section>
+
+          <div
+            className={`mx-6 mb-4 rounded-2xl border p-3 transition-all ${
+              errorLine !== -1
+                ? "border-rose-200 bg-rose-50"
+                : "border-border bg-card"
+            }`}
+          >
+            <p
+              className={`text-[10px] font-black uppercase tracking-widest ${
+                errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
+              }`}
+            >
+              CATATAN PROSES
+            </p>
+            <p
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
+                errorLine !== -1
+                  ? "bg-rose-100/70 text-rose-700"
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              {feedback}
+            </p>
+          </div>
 
           <AnimatePresence>
             {showSuccessCard && (
@@ -342,14 +584,14 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                 initial={{ opacity: 0, y: -8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                className="absolute left-6 right-6 top-[96px] z-20 px-0 pb-0"
+                className="absolute left-6 right-6 top-[180px] z-20 px-0 pb-0"
               >
                 <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
                   <h3 className="text-sm font-black tracking-tight text-emerald-700">
                     Berhasil! Struktur kontrol sudah tepat
                   </h3>
                   <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Token kondisi yang kamu pilih sudah tepat. Kondisi bernilai
+                    Blok kode yang kamu susun sudah tepat. Kondisi bernilai
                     true, sehingga output "Lampu Tidur Nyala" dijalankan.
                   </p>
                 </div>
@@ -371,7 +613,7 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                     }`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    Algortima dan Pemrograman
+                    Algortima dan Pemrograman (Drag & Drop)
                   </span>
                 </div>
               </div>
@@ -393,10 +635,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
-                  <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
+                  <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
+                    {/* Static lines */}
                     {codeLines.map((line, i) => (
                       <div
-                        key={i}
+                        key={`static-${i}`}
                         className="relative flex h-[26px] items-center"
                       >
                         {activeLine === i && (
@@ -409,60 +652,66 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                             }`}
                           />
                         )}
-
-                        {line === null ? (
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <button
-                              type="button"
-                              disabled={isRunning}
-                              onClick={() => {
-                                setIsSelectorOpen(true);
-                                setActiveLine(i);
-                              }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${
-                                selectedCommand
-                                  ? "text-slate-900 hover:bg-emerald-50"
-                                  : "italic text-slate-300 hover:bg-slate-100"
-                              } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                            >
-                              {selectedCommand ?? "_____"}
-                            </button>
-                            <span>{" (sensorCahaya < batasGelap) {"}</span>
-                          </div>
-                        ) : (
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            {line}
-                          </div>
-                        )}
+                        <div className="relative z-10 font-bold text-slate-900">
+                          <SyntaxHighlight code={line} />
+                        </div>
                       </div>
                     ))}
-                  </div>
 
-                  {isSelectorOpen && !isRunning && (
-                    <div className="absolute bottom-4 left-5 right-5 z-30 rounded-xl border border-emerald-200 bg-card px-3 py-2 shadow-lg">
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                        PILIH TOKEN BARIS 4
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {CHOICES.map((choice) => (
-                          <button
-                            key={choice}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCommand(choice);
-                              setIsSelectorOpen(false);
-                              setErrorLine(-1);
-                              setShowSuccessCard(false);
-                              setActiveLine(3);
-                            }}
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-700 hover:bg-emerald-100"
+                    {/* Placed blocks or drop zone */}
+                    {placedBlocks.length === 0 ? (
+                      <div
+                        onDragOver={handleDragOver}
+                        onDrop={handleDropOnEditor}
+                        className="relative mt-1 min-h-[26px] border-2 border-dashed border-emerald-300 rounded-lg p-2 text-center text-[11px] text-emerald-600 transition-all hover:border-emerald-500 hover:bg-emerald-50"
+                      >
+                        ↓ Letakkan blok kode di sini
+                      </div>
+                    ) : (
+                      <div className="relative mt-1 flex flex-col gap-1">
+                        {placedBlocks.map((block, idx) => (
+                          <div
+                            key={`placed-${idx}`}
+                            className="relative flex h-[26px] items-center group"
                           >
-                            {choice}
-                          </button>
+                            {activeLine === 3 + idx && (
+                              <motion.div
+                                layoutId="lineHighlightLampuTidur"
+                                className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                                  isRunning
+                                    ? "border-emerald-500 bg-emerald-50"
+                                    : "border-emerald-200 bg-emerald-50/30"
+                                }`}
+                              />
+                            )}
+                            {block === null ? (
+                              <div
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDropOnEditor(e, idx)}
+                                className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                              >
+                                ↓ Drop di sini
+                              </div>
+                            ) : (
+                              <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                                <span>
+                                  <SyntaxHighlight code={block.content} />
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeBlock(idx)}
+                                  disabled={isRunning}
+                                  className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </section>
