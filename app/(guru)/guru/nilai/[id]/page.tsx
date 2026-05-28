@@ -14,7 +14,9 @@ import {
   Users,
   ClipboardCheck,
   FileBarChart,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
@@ -65,6 +67,19 @@ export default function GuruNilaiDetailPage({
   const [nilaiRowsPerPage, setNilaiRowsPerPage] = useState(10);
   const [nilaiPage, setNilaiPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const formatCompletedAt = (value?: string | null) => {
+    if (!value) return "-";
+    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
+    if (value.includes("T")) {
+      return value.replace("T", " ");
+    }
+    return match?.[1] || value;
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
 
   const fetchData = async () => {
     const supabase = createClient();
@@ -156,63 +171,6 @@ export default function GuruNilaiDetailPage({
     }
   };
 
-  // Hook: fetch data on mount or id change
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  // Compute derived values
-  const filteredNilai = nilai.filter((n) => {
-    if (!searchQuery) return true;
-    return (n.profiles?.full_name || "")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase().trim());
-  });
-
-  const totalNilaiPages = Math.max(
-    1,
-    Math.ceil(filteredNilai.length / nilaiRowsPerPage),
-  );
-
-  // Hook: ensure current page is within bounds when filter/page size changes
-  useEffect(() => {
-    if (nilaiPage > totalNilaiPages - 1) setNilaiPage(0);
-  }, [totalNilaiPages, nilaiPage, nilaiRowsPerPage]);
-
-  // More derived values
-  const paginatedNilai = filteredNilai.slice(
-    nilaiPage * nilaiRowsPerPage,
-    nilaiPage * nilaiRowsPerPage + nilaiRowsPerPage,
-  );
-  const nilaiStartIndex =
-    filteredNilai.length === 0 ? 0 : nilaiPage * nilaiRowsPerPage + 1;
-  const nilaiEndIndex = Math.min(
-    (nilaiPage + 1) * nilaiRowsPerPage,
-    filteredNilai.length,
-  );
-
-  const completedCount = nilai.filter((n) => n.score !== null).length;
-  const totalSiswa = nilai.length;
-
-  const scoreValues = nilai
-    .filter((n) => n.score !== null)
-    .map((n) => n.score || 0);
-  const averageScore =
-    scoreValues.length > 0
-      ? Math.round(
-          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
-        )
-      : 0;
-
-  const formatCompletedAt = (value?: string | null) => {
-    if (!value) return "-";
-    const match = value.match(/\b(\d{2}:\d{2}:\d{2})\b/);
-    if (value.includes("T")) {
-      return value.replace("T", " ");
-    }
-    return match?.[1] || value;
-  };
-
   const handleReset = (siswaId: string, siswaName: string) => {
     setResetDialog({ open: true, siswaId, siswaName });
   };
@@ -246,6 +204,106 @@ export default function GuruNilaiDetailPage({
       toast.error(`Gagal membuka ulang: ${error.message}`);
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const completedCount = nilai.filter((n) => n.score !== null).length;
+  const totalSiswa = nilai.length;
+
+  const scoreValues = nilai
+    .filter((n) => n.score !== null)
+    .map((n) => n.score || 0);
+  const averageScore =
+    scoreValues.length > 0
+      ? Math.round(
+          scoreValues.reduce((sum, s) => sum + s, 0) / scoreValues.length,
+        )
+      : 0;
+
+  const filteredNilai = nilai.filter((n) => {
+    if (!searchQuery) return true;
+    return (n.profiles?.full_name || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase().trim());
+  });
+
+  const totalNilaiPages = Math.max(
+    1,
+    Math.ceil(filteredNilai.length / nilaiRowsPerPage),
+  );
+  // ensure current page is within bounds when filter/page size changes
+  useEffect(() => {
+    if (nilaiPage > totalNilaiPages - 1) setNilaiPage(0);
+  }, [totalNilaiPages]);
+
+  const paginatedNilai = filteredNilai.slice(
+    nilaiPage * nilaiRowsPerPage,
+    nilaiPage * nilaiRowsPerPage + nilaiRowsPerPage,
+  );
+  const nilaiStartIndex =
+    filteredNilai.length === 0 ? 0 : nilaiPage * nilaiRowsPerPage + 1;
+  const nilaiEndIndex = Math.min(
+    (nilaiPage + 1) * nilaiRowsPerPage,
+    filteredNilai.length,
+  );
+
+  const handleDownloadExcel = () => {
+    if (nilai.length === 0) {
+      toast.info("Belum ada data siswa yang dapat diunduh.");
+      return;
+    }
+
+    try {
+      const rows = nilai.map((n, index) => ({
+        No: index + 1,
+        "Nama Siswa": n.profiles?.full_name || "-",
+        Nilai: n.score ?? "-",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Nilai");
+
+      const kelasName = (asesmen?.kelas?.name || "kelas").replace(/\s+/g, "_");
+      const quizName = (asesmen?.title || "kuis")
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+      const fileName = `nilai_${quizName}_${kelasName}.xlsx`;
+
+      const wbout: ArrayBuffer = XLSX.write(wb, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+
+      // Small delay before cleanup to ensure the click has fired
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 200);
+
+      toast.success("Data nilai berhasil diunduh.");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Gagal mengunduh file. Silakan coba lagi.");
     }
   };
 
@@ -314,16 +372,28 @@ export default function GuruNilaiDetailPage({
               </h2>
             </div>
 
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setNilaiPage(0);
-              }}
-              placeholder="Cari nama siswa..."
-              className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setNilaiPage(0);
+                }}
+                placeholder="Cari nama siswa..."
+                className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
+              />
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadExcel}
+                className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
+              >
+                <Download size={14} className="mr-1.5" />
+                Download Excel
+              </Button>
+            </div>
           </div>
 
           {nilai.length === 0 ? (
@@ -492,6 +562,15 @@ export default function GuruNilaiDetailPage({
                       placeholder="Cari nama siswa..."
                       className="h-9 w-56 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-100"
                     />
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDownloadExcel}
+                      className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-colors duration-150"
+                    >
+                      <Download size={14} className="mr-1.5" /> Download Excel
+                    </Button>
                   </div>
 
                   <div className="flex items-center gap-1.5">

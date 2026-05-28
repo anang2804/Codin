@@ -7,35 +7,60 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  Droplets,
-  Lightbulb,
+  Droplet,
   Play,
   RotateCcw,
   Terminal,
+  GripHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 const SIMULASI_SLUG = "struktur-kontrol-pengisian-galon-air-dasar";
 
-type CommandChoice = "for" | "while" | "do-while";
-
-const CHOICES: CommandChoice[] = ["for", "while", "do-while"];
-
-const DESCRIPTION_BY_CHOICE: Record<CommandChoice, string> = {
-  for: "untuk perulangan dengan jumlah iterasi yang biasanya sudah ditentukan.",
-  while: "untuk melakukan perulangan selama kondisi bernilai benar (true).",
-  "do-while":
-    "untuk melakukan perulangan yang dijalankan minimal satu kali sebelum pengecekan kondisi.",
+type CodeBlock = {
+  id: string;
+  content: string;
+  category: "statement" | "condition" | "closing";
 };
 
-const KAPASITAS_MAKS = 5;
+const AVAILABLE_BLOCKS: CodeBlock[] = [
+  {
+    id: "while-condition",
+    content: "while (literSekarang < kapasitasMaks) {",
+    category: "condition",
+  },
+  {
+    id: "water-fill",
+    content: "    console.log(`Mengisi... ${literSekarang} Liter`);",
+    category: "statement",
+  },
+  {
+    id: "water-increment",
+    content: "    literSekarang++;",
+    category: "statement",
+  },
+  {
+    id: "while-close",
+    content: "}",
+    category: "closing",
+  },
+  {
+    id: "water-complete",
+    content: 'console.log("Galon Penuh!");',
+    category: "statement",
+  },
+];
 
 export default function StrukturKontrolPengisianGalonAirDasarPage() {
-  const [selectedCommand, setSelectedCommand] = useState<CommandChoice | null>(
+  const [placedBlocks, setPlacedBlocks] = useState<(CodeBlock | null)[]>([
     null,
-  );
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    null,
+    null,
+    null,
+    null,
+  ]);
+  const [draggedBlock, setDraggedBlock] = useState<CodeBlock | null>(null);
   const [activeLine, setActiveLine] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
@@ -46,25 +71,17 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     isRunning,
     isSuccess: showSuccessCard,
   });
+
   const [feedback, setFeedback] = useState("Sistem siap menjalankan simulasi.");
   const [hasTried, setHasTried] = useState(false);
   const [isSavingCompletion, setIsSavingCompletion] = useState(false);
-  const [literSekarang, setLiterSekarang] = useState(0);
-  const [isFilling, setIsFilling] = useState(false);
-  const [fillError, setFillError] = useState(false);
+  const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
+  const [waterLevel, setWaterLevel] = useState(0);
+  const [visibleIterations, setVisibleIterations] = useState<number[]>([]);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const codeLines = [
-    null,
-    '        printf("Mengisi... %d Liter\\n", literSekarang);',
-    "        literSekarang++;",
-    "    }",
-    "",
-    '    printf("Galon Penuh!\\n");',
-    "    return 0;",
-    "}",
-  ] as const;
+  const codeLines = [`let literSekarang = 0;`, `let kapasitasMaks = 5;`, ""];
 
   useEffect(() => {
     let isActive = true;
@@ -117,78 +134,146 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     }
   };
 
-  const resetVisualState = () => {
-    setLiterSekarang(0);
-    setIsFilling(false);
-    setFillError(false);
-  };
-
   const resetSim = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setIsRunning(false);
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
-    setIsSelectorOpen(false);
-    setSelectedCommand(null);
-    resetVisualState();
+    setConsoleOutput([]);
+    setWaterLevel(0);
+    setVisibleIterations([]);
+    setPlacedBlocks([null, null, null, null, null]);
     setFeedback("Sistem siap menjalankan simulasi.");
   };
 
-  const runFilling = (liter: number) => {
-    if (liter > KAPASITAS_MAKS) {
-      setIsFilling(false);
-      setIsRunning(false);
-      setActiveLine(5);
-      setShowSuccessCard(true);
-      setFeedback(
-        "Berhasil! Semua langkah struktur kontrol sudah sesuai.\n\nGalon berhasil diisi bertahap dari 0 hingga 5 liter dan proses ditutup dengan status penuh.",
-      );
+  const executeStep = (index: number) => {
+    const totalLines = 3 + placedBlocks.length;
+
+    if (index >= totalLines) {
+      const correctSolution =
+        placedBlocks[0]?.id === "while-condition" &&
+        placedBlocks[1]?.id === "water-fill" &&
+        placedBlocks[2]?.id === "water-increment" &&
+        placedBlocks[3]?.id === "while-close" &&
+        placedBlocks[4]?.id === "water-complete";
+
+      if (correctSolution) {
+        setIsRunning(false);
+        setActiveLine(-1);
+        setShowSuccessCard(true);
+        setFeedback(
+          "Berhasil! Struktur while-loop sudah lengkap dan benar!\n\nGalon terisi penuh dalam 5 iterasi (0-4 Liter).",
+        );
+        return;
+      } else {
+        setIsRunning(false);
+        setActiveLine(3);
+        setShowSuccessCard(false);
+        setFeedback(
+          "Simulasi selesai, tetapi struktur while-loop belum lengkap atau tidak tepat.\n\nPastikan urutan: while → fill → increment → close → complete",
+        );
+        return;
+      }
+    }
+
+    // Check first 3 lines (variable declarations)
+    if (index < 3) {
+      setActiveLine(index);
+      setFeedback("Baris " + (index + 1) + " diproses: Deklarasi variabel.");
+      timerRef.current = setTimeout(() => executeStep(index + 1), 700);
       return;
     }
 
-    setActiveLine(1);
-    setLiterSekarang(liter);
-    setFeedback(
-      `Baris 2 berjalan.\n\nMengisi air ke galon: ${liter} liter.\n\nSistem melanjutkan perulangan sampai kapasitas maksimum tercapai.`,
-    );
+    // Check placed blocks starting from line 3
+    const blockIndex = index - 3;
 
-    timerRef.current = setTimeout(() => {
-      setActiveLine(2);
-      timerRef.current = setTimeout(() => runFilling(liter + 1), 420);
-    }, 380);
-  };
-
-  const executeStep = () => {
-    setActiveLine(0);
-
-    if (!selectedCommand) {
-      setIsRunning(false);
-      setErrorLine(0);
-      setFillError(true);
-      setFeedback(
-        "Baris 5 belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca kebutuhan tipe data atau operasi pada baris tersebut, lalu pilih token yang paling sesuai.",
-      );
+    if (blockIndex >= placedBlocks.length) {
       return;
     }
 
-    if (selectedCommand !== "while") {
-      setIsRunning(false);
-      setErrorLine(0);
-      setFillError(true);
-      setFeedback(
-        "Baris 5 belum tepat.\n\nToken pada baris ini belum sesuai konteks proses.\n\nPetunjuk: baca ulang tujuan barisnya, lalu pilih token yang perannya paling tepat.",
-      );
+    const block = placedBlocks[blockIndex];
+
+    // Skip null blocks
+    if (block === null) {
+      timerRef.current = setTimeout(() => executeStep(index + 1), 850);
       return;
     }
 
-    setErrorLine(-1);
-    setFillError(false);
-    setIsFilling(true);
-    setFeedback(
-      "Baris 5 benar.\n\nKeyword sudah tepat, sistem memulai proses perulangan pengisian galon.",
-    );
-    timerRef.current = setTimeout(() => runFilling(1), 650);
+    setActiveLine(3 + blockIndex);
+
+    if (blockIndex === 0) {
+      // While condition
+      if (block.id !== "while-condition") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Baris 4 belum tepat.\n\nSeharusnya while-condition statement.",
+        );
+        return;
+      }
+      setFeedback("Baris 4 benar.\n\nLoop dimulai: saat literSekarang < 5.");
+    } else if (blockIndex === 1) {
+      // Water fill statement
+      if (block.id !== "water-fill") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Baris 5 belum tepat.\n\nSeharusnya console.log mengisi air.",
+        );
+        return;
+      }
+
+      // Execute loop 5 times
+      const iterations: number[] = [];
+      const messages: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        iterations.push(i);
+        messages.push(`Mengisi... ${i} Liter`);
+      }
+      const updatedOutput = [...consoleOutput, ...messages];
+      setConsoleOutput(updatedOutput);
+      setWaterLevel(5);
+      setVisibleIterations(iterations);
+      setFeedback(
+        "Baris 5 benar.\n\nLoop body dieksekusi 5 kali:\n- Mengisi... 0 Liter\n- Mengisi... 1 Liter\n- Mengisi... 2 Liter\n- Mengisi... 3 Liter\n- Mengisi... 4 Liter",
+      );
+    } else if (blockIndex === 2) {
+      // Water increment
+      if (block.id !== "water-increment") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Baris 6 belum tepat.\n\nSeharusnya literSekarang++ untuk increment.",
+        );
+        return;
+      }
+      setFeedback(
+        "Baris 6 benar.\n\nVariabel literSekarang ditambah 1 setiap iterasi.",
+      );
+    } else if (blockIndex === 3) {
+      // While close
+      if (block.id !== "while-close") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback("Baris 7 belum tepat.\n\nSeharusnya } untuk menutup loop.");
+        return;
+      }
+      setFeedback("Baris 7 benar.\n\nLoop ditutup dengan baik.");
+    } else if (blockIndex === 4) {
+      // Water complete
+      if (block.id !== "water-complete") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setFeedback(
+          "Baris 8 belum tepat.\n\nSeharusnya console.log pesan galon penuh.",
+        );
+        return;
+      }
+      setFeedback('Baris 8 benar.\n\nOutput: "Galon Penuh!"');
+    }
+
+    timerRef.current = setTimeout(() => executeStep(index + 1), 850);
   };
 
   const startRunning = () => {
@@ -197,11 +282,143 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
-    resetVisualState();
+    setConsoleOutput([]);
+    setWaterLevel(0);
+    setVisibleIterations([]);
     setFeedback(
-      "Memulai simulasi struktur kontrol...\n\nSistem membaca baris perintah dari atas ke bawah.",
+      "Memulai simulasi struktur kontrol while-loop...\n\nSistem membaca baris perintah dari atas ke bawah.",
     );
-    timerRef.current = setTimeout(executeStep, 250);
+    timerRef.current = setTimeout(() => executeStep(0), 250);
+  };
+
+  const handleDragStart = (block: CodeBlock) => {
+    setDraggedBlock(block);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDropOnEditor = (e: React.DragEvent, slotIndex?: number) => {
+    e.preventDefault();
+    if (!draggedBlock) return;
+    if (isRunning) {
+      toast.error("Tidak bisa menambah blok saat simulasi berjalan!");
+      return;
+    }
+
+    if (slotIndex !== undefined && slotIndex < placedBlocks.length) {
+      const newBlocks = [...placedBlocks];
+      newBlocks[slotIndex] = draggedBlock;
+      setPlacedBlocks(newBlocks);
+      setFeedback("Blok ditambahkan.");
+    }
+    setDraggedBlock(null);
+  };
+
+  const removeBlock = (index: number) => {
+    const newBlocks = [...placedBlocks];
+    newBlocks[index] = null;
+    setPlacedBlocks(newBlocks);
+    setFeedback("Blok dihapus.");
+  };
+
+  // Syntax highlighting component with proper token parsing
+  const SyntaxHighlight = ({ code }: { code: string }) => {
+    if (!code) return <>{code}</>;
+
+    const tokens: Array<{ text: string; type: string }> = [];
+    let remaining = code;
+
+    while (remaining.length > 0) {
+      let matched = false;
+
+      // Keywords
+      const keywordMatch = remaining.match(
+        /^(if|else|for|while|switch|case|return|new|class|public|private|static|final|System)\b/,
+      );
+      if (keywordMatch) {
+        tokens.push({ text: keywordMatch[0], type: "keyword" });
+        remaining = remaining.slice(keywordMatch[0].length);
+        matched = true;
+      }
+
+      // Types
+      if (!matched) {
+        const typeMatch = remaining.match(
+          /^(int|String|boolean|void|double|float|char|long|short)\b/,
+        );
+        if (typeMatch) {
+          tokens.push({ text: typeMatch[0], type: "type" });
+          remaining = remaining.slice(typeMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Numbers
+      if (!matched) {
+        const numMatch = remaining.match(/^\d+/);
+        if (numMatch) {
+          tokens.push({ text: numMatch[0], type: "number" });
+          remaining = remaining.slice(numMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Strings
+      if (!matched) {
+        const strMatch = remaining.match(/^"[^"]*"/);
+        if (strMatch) {
+          tokens.push({ text: strMatch[0], type: "string" });
+          remaining = remaining.slice(strMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Constants
+      if (!matched) {
+        const constMatch = remaining.match(/^(true|false|null)\b/);
+        if (constMatch) {
+          tokens.push({ text: constMatch[0], type: "constant" });
+          remaining = remaining.slice(constMatch[0].length);
+          matched = true;
+        }
+      }
+
+      // Regular character
+      if (!matched) {
+        tokens.push({ text: remaining[0], type: "default" });
+        remaining = remaining.slice(1);
+      }
+    }
+
+    const getColor = (type: string) => {
+      switch (type) {
+        case "keyword":
+          return "text-purple-500";
+        case "type":
+          return "text-blue-500";
+        case "number":
+          return "text-orange-500";
+        case "string":
+          return "text-green-600";
+        case "constant":
+          return "text-amber-600";
+        default:
+          return "";
+      }
+    };
+
+    return (
+      <>
+        {tokens.map((token, idx) => (
+          <span key={idx} className={getColor(token.type)}>
+            {token.text}
+          </span>
+        ))}
+      </>
+    );
   };
 
   return (
@@ -218,43 +435,44 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           </button>
           <div className="h-6 w-px bg-border" />
           <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2 text-white shadow-lg shadow-emerald-200/60">
-            <Terminal size={20} />
+            <Droplet size={20} />
           </div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-black uppercase italic leading-none tracking-tighter">
               Pengisian Galon Air
             </h1>
-            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-              Level Dasar
+            <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-emerald-600">
+              DASAR
             </span>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             onClick={resetSim}
             className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-xs font-bold transition-all duration-200 hover:bg-emerald-50"
+            disabled={isRunning}
           >
             <RotateCcw size={14} /> Reset
           </button>
-
           <button
-            onClick={markAsTried}
-            disabled={hasTried || isSavingCompletion || !showSuccessCard}
+            onClick={startRunning}
+            disabled={isRunning}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-all duration-200 hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
+          >
+            <Play size={14} /> Jalankan
+          </button>
+          <button
+            onClick={() => {
+              markAsTried();
+            }}
+            disabled={isSavingCompletion}
             className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
               hasTried
                 ? "border-2 border-emerald-300 bg-emerald-100 text-emerald-800"
                 : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
             }`}
           >
-            <CheckCircle2 size={14} /> {hasTried ? "Selesai" : "Tandai Selesai"}
-          </button>
-
-          <button
-            onClick={startRunning}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-all duration-200 hover:from-green-600 hover:to-emerald-600"
-          >
-            <Play size={14} fill="white" /> Jalankan
+            <CheckCircle2 size={14} /> {hasTried ? "Selesai" : "Selesaikan"}
           </button>
         </div>
       </header>
@@ -264,33 +482,72 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Deskripsi Perintah
+              Blok Kode Tersedia
             </h2>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedCommand ?? "default"}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
-            >
-              <h3 className="mb-2 text-xs font-black uppercase tracking-tight text-foreground">
-                {selectedCommand
-                  ? selectedCommand.toUpperCase()
-                  : "SIAP MENULIS"}
-              </h3>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {selectedCommand
-                  ? DESCRIPTION_BY_CHOICE[selectedCommand]
-                  : "Pilih keyword yang tepat untuk perulangan pengisian galon air."}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          <div className="flex flex-col gap-2">
+            {AVAILABLE_BLOCKS.map((block) => (
+              <motion.div
+                key={block.id}
+                draggable
+                onDragStart={() => handleDragStart(block)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group cursor-move rounded-xl border border-emerald-200 bg-emerald-50 p-3 transition-all hover:border-emerald-400 hover:bg-emerald-100 active:bg-emerald-200"
+              >
+                <div className="flex items-start gap-2">
+                  <GripHorizontal
+                    size={14}
+                    className="mt-1 text-emerald-600/50 group-hover:text-emerald-600"
+                  />
+                  <div className="flex-1 font-mono text-[11px] text-slate-900 break-words">
+                    <SyntaxHighlight code={block.content} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
+            <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase text-emerald-700">
+              <span>Status Fokus</span>
+              <Activity size={10} />
+            </div>
+            <p className="text-[10px] font-bold italic leading-tight text-muted-foreground">
+              {activeLine !== -1
+                ? `Menganalisis baris ke-${activeLine + 1}`
+                : "Editor siap digunakan"}
+            </p>
+          </div>
+        </aside>
+
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-transparent">
+          <section className="px-6 pb-2 pt-4">
+            <div className="flex items-start gap-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 shadow-sm">
+              <div className="rounded-xl bg-background p-2 text-primary shadow-sm">
+                <Droplet size={20} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                    Misi
+                  </span>
+                  <h2 className="text-[15px] font-black uppercase tracking-tight text-foreground">
+                    Pengisian Galon Air Otomatis
+                  </h2>
+                </div>
+                <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
+                  💧 Ayo bantu lengkapi struktur while-loop di bawah ini dengan
+                  drag & drop blok kode agar galon dapat terisi penuh secara
+                  otomatis.
+                </p>
+              </div>
+            </div>
+          </section>
 
           <div
-            className={`rounded-2xl border p-3 transition-all ${
+            className={`mx-6 mb-4 rounded-2xl border p-3 transition-all ${
               errorLine !== -1
                 ? "border-rose-200 bg-rose-50"
                 : "border-border bg-card"
@@ -314,63 +571,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
             </p>
           </div>
 
-          <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
-            <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase text-emerald-700">
-              <span>Status Fokus</span>
-              <Activity size={10} />
-            </div>
-            <p className="text-[10px] font-bold italic leading-tight text-muted-foreground">
-              {activeLine !== -1
-                ? `Menganalisis baris ke-${activeLine + 5}`
-                : "Editor siap digunakan"}
-            </p>
-          </div>
-        </aside>
-
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-transparent">
-          <section className="px-6 pb-2 pt-4">
-            <div className="flex items-start gap-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 shadow-sm">
-              <div className="rounded-xl bg-background p-2 text-primary shadow-sm">
-                <Lightbulb size={20} className="animate-pulse" />
-              </div>
-              <div className="flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
-                    Misi
-                  </span>
-                  <h2 className="text-[15px] font-black uppercase tracking-tight text-foreground">
-                    Perulangan Pengisian Galon
-                  </h2>
-                </div>
-                <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Ayo bantu sistem dispenser ini mengisi galon selama airnya
-                  belum mencapai 5 liter!
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <AnimatePresence>
-            {showSuccessCard && (
-              <motion.section
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                className="absolute left-6 right-6 top-[96px] z-20 px-0 pb-0"
-              >
-                <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-sm">
-                  <h3 className="text-sm font-black tracking-tight text-emerald-700">
-                    Berhasil! Struktur kontrol sudah tepat
-                  </h3>
-                  <p className="mt-1 text-[12px] font-medium leading-relaxed text-muted-foreground">
-                    Perulangan berjalan sampai 5 liter dan proses pengisian
-                    ditutup dengan status galon penuh.
-                  </p>
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
-
           <div className="flex flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
@@ -385,18 +585,18 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                     }`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    Algortima dan Pemrograman
+                    Algortima dan Pemrograman (Drag & Drop)
                   </span>
                 </div>
               </div>
 
-              <div className="relative flex flex-1 overflow-hidden font-mono text-[11px] leading-[24px]">
+              <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
                 <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
-                  {Array.from({ length: 12 }).map((_, i) => (
+                  {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
                       className={`h-[26px] transition-all ${
-                        activeLine !== -1 && i === activeLine + 4
+                        activeLine === i
                           ? "scale-110 pr-1 font-black text-emerald-700"
                           : ""
                       }`}
@@ -407,107 +607,71 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
-                  <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
-                    <div className="relative flex h-[26px] items-center">
-                      <span className="relative z-10 whitespace-pre font-bold text-slate-900">
-                        {"int main() {"}
-                      </span>
-                    </div>
-                    <div className="relative flex h-[26px] items-center">
-                      <span className="relative z-10 whitespace-pre font-bold text-slate-900">
-                        int literSekarang = 0;
-                      </span>
-                    </div>
-                    <div className="relative flex h-[26px] items-center">
-                      <span className="relative z-10 whitespace-pre font-bold text-slate-900">
-                        int kapasitasMaks = 5;
-                      </span>
-                    </div>
-                    <div className="relative flex h-[26px] items-center" />
-
-                    {codeLines.map((line, i) => {
-                      const lineIndex = i + 3;
-
-                      return (
-                        <div
-                          key={i}
-                          className="relative flex h-[26px] items-center"
-                        >
-                          {activeLine === i && (
-                            <motion.div
-                              layoutId="lineHighlightGalonAir"
-                              className={`absolute inset-0 -mx-5 -my-1 z-0 border-l-4 ${
-                                isRunning
-                                  ? "border-emerald-500 bg-emerald-50"
-                                  : "border-emerald-200 bg-emerald-50/30"
-                              }`}
-                            />
-                          )}
-
-                          {line === null ? (
-                            <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                              <button
-                                type="button"
-                                disabled={isRunning}
-                                onClick={() => {
-                                  setIsSelectorOpen(true);
-                                  setActiveLine(0);
-                                }}
-                                className={`rounded px-1.5 py-0.5 transition-all ${
-                                  selectedCommand
-                                    ? "text-slate-900 hover:bg-emerald-50"
-                                    : "italic text-slate-300 hover:bg-slate-100"
-                                } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                              >
-                                {selectedCommand ?? "_____"}
-                              </button>
-                              <span>
-                                {" (literSekarang < kapasitasMaks) {"}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                              {line}
-                            </div>
-                          )}
-
-                          {activeLine === lineIndex && (
-                            <motion.div
-                              layoutId="lineHighlightGalonAirExtra"
-                              className="pointer-events-none absolute inset-0"
-                            />
-                          )}
+                  <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
+                    {/* Static code lines */}
+                    {codeLines.map((line, i) => (
+                      <div
+                        key={`static-${i}`}
+                        className="relative flex h-[26px] items-center"
+                      >
+                        {activeLine === i && (
+                          <motion.div
+                            layoutId="lineHighlightGalonAir"
+                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                              isRunning
+                                ? "border-emerald-500 bg-emerald-50"
+                                : "border-emerald-200 bg-emerald-50/30"
+                            }`}
+                          />
+                        )}
+                        <div className="relative z-10 font-bold text-slate-900">
+                          <SyntaxHighlight code={line} />
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {isSelectorOpen && !isRunning && (
-                    <div className="absolute bottom-4 left-5 right-5 z-30 rounded-xl border border-emerald-200 bg-card px-3 py-2 shadow-lg">
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                        PILIH TOKEN BARIS 5
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {CHOICES.map((choice) => (
-                          <button
-                            key={choice}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCommand(choice);
-                              setIsSelectorOpen(false);
-                              setErrorLine(-1);
-                              setShowSuccessCard(false);
-                              setActiveLine(0);
-                              setFillError(false);
-                            }}
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-700 hover:bg-emerald-100"
-                          >
-                            {choice}
-                          </button>
-                        ))}
                       </div>
-                    </div>
-                  )}
+                    ))}
+
+                    {/* Draggable blocks */}
+                    {placedBlocks.map((block, idx) => (
+                      <div
+                        key={`placed-${idx}`}
+                        className="relative flex h-[26px] items-center group"
+                      >
+                        {activeLine === 3 + idx && (
+                          <motion.div
+                            layoutId="lineHighlightGalonAir"
+                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                              isRunning
+                                ? "border-emerald-500 bg-emerald-50"
+                                : "border-emerald-200 bg-emerald-50/30"
+                            }`}
+                          />
+                        )}
+                        {block === null ? (
+                          <div
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDropOnEditor(e, idx)}
+                            className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                          >
+                            ↓ Drop di sini
+                          </div>
+                        ) : (
+                          <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                            <span>
+                              <SyntaxHighlight code={block.content} />
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeBlock(idx)}
+                              disabled={isRunning}
+                              className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
@@ -515,8 +679,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
             <aside className="relative flex w-[380px] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-800 bg-[#020617] shadow-2xl">
               <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 p-1.5 text-cyan-300">
-                    <Droplets size={14} />
+                  <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-1.5 text-emerald-400">
+                    <Activity size={14} />
                   </div>
                   <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-300">
                     VISUAL PENGISIAN GALON
@@ -524,102 +688,102 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                 </div>
                 <span
                   className={`rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
-                    isFilling
-                      ? "bg-cyan-500 text-white"
-                      : fillError
+                    isRunning
+                      ? "bg-emerald-500 text-white"
+                      : errorLine !== -1
                         ? "bg-rose-500 text-white"
                         : "bg-slate-700 text-slate-300"
                   }`}
                 >
-                  {isFilling ? "FILLING" : fillError ? "FAILED" : "IDLE"}
+                  {isRunning ? "RUNNING" : errorLine !== -1 ? "ERROR" : "IDLE"}
                 </span>
               </div>
 
               <div className="relative flex flex-1 flex-col overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(56,189,248,.22),#020617_58%)]" />
-                <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(148,163,184,.16)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.16)_1px,transparent_1px)] [background-size:26px_26px]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,#1e293b_0%,#020617_62%)]" />
+                <div className="absolute inset-0 opacity-15 [background-image:linear-gradient(to_right,rgba(148,163,184,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.2)_1px,transparent_1px)] [background-size:28px_28px]" />
 
                 <div className="relative z-10 flex flex-1 flex-col gap-4 p-5 text-slate-100">
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">
-                        Tangki Galon
+                  {/* Water Gallon Visualization */}
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <p className="text-xs font-bold text-slate-300">
+                      Kapasitas: 5L
+                    </p>
+
+                    {/* Galon Container */}
+                    <motion.div className="relative w-24 h-40 rounded-b-3xl rounded-t-lg border-2 border-emerald-400/60 bg-slate-900/60 overflow-hidden shadow-2xl">
+                      {/* Water Level Fill */}
+                      <motion.div
+                        className="absolute bottom-0 w-full bg-gradient-to-t from-emerald-500 to-emerald-300 transition-all duration-500"
+                        style={{
+                          height: `${(waterLevel / 5) * 100}%`,
+                        }}
+                        animate={{
+                          height: `${(waterLevel / 5) * 100}%`,
+                        }}
+                        transition={{ duration: 0.6 }}
+                      />
+
+                      {/* Water Level Markers */}
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className="absolute left-0 right-0 border-t border-emerald-400/30 text-[8px] text-emerald-300 px-1"
+                          style={{
+                            top: `${100 - (level / 5) * 100}%`,
+                          }}
+                        >
+                          {level}L
+                        </div>
+                      ))}
+
+                      {/* Shine Effect */}
+                      {waterLevel > 0 && (
+                        <motion.div
+                          className="absolute top-0 left-2 w-1 bg-white/20 rounded-full opacity-60"
+                          style={{ height: `${(waterLevel / 5) * 100}%` }}
+                          animate={{ opacity: [0.3, 0.8, 0.3] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      )}
+                    </motion.div>
+
+                    {/* Water Level Display */}
+                    <motion.div className="text-center">
+                      <p className="text-sm font-black text-emerald-400">
+                        {waterLevel.toFixed(1)}L / 5L
                       </p>
-                      <span className="rounded-full border border-cyan-400/40 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-bold text-cyan-200">
-                        {literSekarang}/{KAPASITAS_MAKS} Liter
-                      </span>
-                    </div>
-
-                    <div className="relative mt-3 flex h-64 items-end justify-center overflow-hidden rounded-xl border border-slate-700 bg-slate-900/70 p-4">
-                      <div className="absolute top-4 flex items-center gap-2 text-[10px] font-bold text-cyan-200">
-                        <Droplets size={12} />
-                        <span>
-                          {isFilling ? "Air Mengalir" : "Siap Mengisi"}
-                        </span>
-                      </div>
-
-                      {fillError && (
-                        <motion.div
-                          className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_50%_30%,rgba(248,113,113,.2),rgba(248,113,113,0)_58%)]"
-                          animate={{ opacity: [0.16, 0.38, 0.2, 0.42, 0.14] }}
-                          transition={{ duration: 0.6, repeat: Infinity }}
-                        />
+                      {waterLevel >= 5 && (
+                        <motion.p
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="text-xs font-bold text-emerald-300 mt-2"
+                        >
+                          ✨ Galon Penuh!
+                        </motion.p>
                       )}
-
-                      {isFilling && (
-                        <motion.div
-                          className="absolute left-1/2 top-[56px] z-10 h-[118px] w-1.5 -translate-x-1/2 rounded-full bg-cyan-300"
-                          animate={{
-                            opacity: [0.45, 1, 0.55],
-                            scaleY: [0.92, 1.08, 0.92],
-                          }}
-                          transition={{
-                            duration: 0.5,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                        />
-                      )}
-
-                      <div className="relative h-[250px] w-[150px]">
-                        <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-14 w-40 -translate-x-1/2">
-                          <div className="absolute left-3 top-1.5 h-5 w-8 rounded-full border border-slate-200/70 bg-gradient-to-br from-slate-100 to-slate-300 shadow-[0_3px_8px_rgba(0,0,0,.22)]" />
-                          <div className="absolute left-8 top-3.5 h-2.5 w-20 rounded-full border border-slate-200/75 bg-gradient-to-b from-slate-100 to-slate-300" />
-                          <div className="absolute left-[88px] top-5 h-8 w-3.5 rounded-b-lg rounded-t-sm border border-slate-200/75 bg-gradient-to-b from-slate-100 to-slate-300" />
-                          <div className="absolute left-[82px] top-[34px] h-2.5 w-[16px] rounded-b-md border border-slate-200/75 bg-gradient-to-b from-slate-100 to-slate-300" />
-                          <div className="absolute left-5 top-0 h-[2px] w-5 rotate-12 rounded-full bg-slate-50/90" />
-                          <div className="absolute left-5 top-[5px] h-[2px] w-5 -rotate-12 rounded-full bg-slate-50/90" />
-                        </div>
-
-                        <div className="absolute left-1/2 top-[76px] h-5 w-8 -translate-x-1/2 rounded-t-[10px] rounded-b-[6px] border border-cyan-200/55 bg-sky-900/70" />
-                        <div className="absolute left-1/2 top-[80px] h-7 w-12 -translate-x-1/2 rounded-t-[14px] rounded-b-[10px] border border-cyan-200/55 bg-sky-900/60" />
-
-                        <div className="absolute inset-x-0 top-[84px] bottom-0 overflow-hidden rounded-t-[52px] rounded-b-[34px] border-2 border-cyan-200/60 bg-sky-950/55">
-                          <motion.div
-                            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cyan-600 via-sky-500 to-cyan-300"
-                            animate={{
-                              height: `${(literSekarang / KAPASITAS_MAKS) * 100}%`,
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 120,
-                              damping: 20,
-                            }}
-                          />
-
-                          <div className="absolute inset-x-0 top-[14%] h-px border-t border-cyan-200/30" />
-                          <div className="absolute inset-x-0 top-[29%] h-px border-t border-cyan-200/28" />
-                          <div className="absolute inset-x-0 top-[44%] h-px border-t border-cyan-200/26" />
-                          <div className="absolute inset-x-0 top-[59%] h-px border-t border-cyan-200/24" />
-                          <div className="absolute inset-x-0 top-[74%] h-px border-t border-cyan-200/22" />
-
-                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,.22)_0,rgba(255,255,255,0)_36%,rgba(255,255,255,.16)_68%,rgba(255,255,255,0)_100%)]" />
-                        </div>
-
-                        <div className="absolute bottom-0 left-1/2 h-2.5 w-[106px] -translate-x-1/2 rounded-full bg-black/35 blur-md" />
-                      </div>
-                    </div>
+                    </motion.div>
                   </div>
+
+                  {/* Iterations Counter */}
+                  {visibleIterations.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex gap-1 flex-wrap justify-center"
+                    >
+                      {visibleIterations.map((iter) => (
+                        <motion.div
+                          key={iter}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="rounded-full bg-emerald-500/30 border border-emerald-400 px-2 py-1 text-[9px] font-bold text-emerald-300"
+                        >
+                          Iter {iter}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </aside>
