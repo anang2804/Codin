@@ -442,7 +442,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               Pengisian Galon Air
             </h1>
             <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-emerald-600">
-              DASAR
+              while Loop
             </span>
           </div>
         </div>
@@ -608,7 +608,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
 
                 <div className="relative flex-1 overflow-hidden bg-card">
                   <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
-                    {/* Static code lines */}
+                    {/* Static lines */}
                     {codeLines.map((line, i) => (
                       <div
                         key={`static-${i}`}
@@ -630,47 +630,49 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                       </div>
                     ))}
 
-                    {/* Draggable blocks */}
-                    {placedBlocks.map((block, idx) => (
-                      <div
-                        key={`placed-${idx}`}
-                        className="relative flex h-[26px] items-center group"
-                      >
-                        {activeLine === 3 + idx && (
-                          <motion.div
-                            layoutId="lineHighlightGalonAir"
-                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
-                              isRunning
-                                ? "border-emerald-500 bg-emerald-50"
-                                : "border-emerald-200 bg-emerald-50/30"
-                            }`}
-                          />
-                        )}
-                        {block === null ? (
-                          <div
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDropOnEditor(e, idx)}
-                            className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
-                          >
-                            ↓ Drop di sini
-                          </div>
-                        ) : (
-                          <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
-                            <span>
-                              <SyntaxHighlight code={block.content} />
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => removeBlock(idx)}
-                              disabled={isRunning}
-                              className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                    {/* Placed blocks or drop zone */}
+                    <div className="relative mt-1 flex flex-col gap-1">
+                      {placedBlocks.map((block, idx) => (
+                        <div
+                          key={`placed-${idx}`}
+                          className="relative flex h-[26px] items-center group"
+                        >
+                          {activeLine === 3 + idx && (
+                            <motion.div
+                              layoutId="lineHighlightGalonAir"
+                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                                isRunning
+                                  ? "border-emerald-500 bg-emerald-50"
+                                  : "border-emerald-200 bg-emerald-50/30"
+                              }`}
+                            />
+                          )}
+                          {block === null ? (
+                            <div
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDropOnEditor(e, idx)}
+                              className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
                             >
-                              Hapus
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                              ↓ Drop di sini
+                            </div>
+                          ) : (
+                            <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                              <span>
+                                <SyntaxHighlight code={block.content} />
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeBlock(idx)}
+                                disabled={isRunning}
+                                className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -705,194 +707,61 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
 
                 <div className="relative z-10 flex flex-1 flex-col gap-4 p-5 text-slate-100">
                   {/* Water Gallon Visualization */}
-                  <div className="relative flex flex-col items-center gap-3 w-full">
+                  <div className="flex flex-col items-center gap-3 w-full">
                     <p className="text-xs font-bold text-slate-300">
                       Kapasitas: 5L
                     </p>
 
-                    {/* Error Glow Effect */}
-                    {errorLine !== -1 && (
-                      <motion.div
-                        animate={{
-                          boxShadow: [
-                            "0 0 20px rgba(239, 68, 68, 0.5)",
-                            "0 0 40px rgba(239, 68, 68, 0.8)",
-                            "0 0 20px rgba(239, 68, 68, 0.5)",
-                          ],
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="absolute top-20 w-32 h-32 rounded-full bg-red-500/0 pointer-events-none"
-                      />
-                    )}
-
                     {/* Galon Container */}
-                    <motion.div
-                      animate={
-                        errorLine !== -1
-                          ? {
-                              rotate: [0, -2, 2, -2, 0],
-                              borderColor: [
-                                "rgb(107, 114, 128)",
-                                "rgb(239, 68, 68)",
-                                "rgb(239, 68, 68)",
-                              ],
-                            }
-                          : {
-                              rotate: 0,
-                              borderColor: "rgba(52, 211, 153, 0.6)",
-                            }
-                      }
-                      transition={{
-                        duration: errorLine !== -1 ? 0.5 : 0.3,
-                        repeat: errorLine !== -1 ? Infinity : 0,
-                      }}
-                      className={`relative w-24 h-40 rounded-b-3xl rounded-t-lg border-2 bg-slate-900/60 overflow-visible shadow-2xl ${
-                        errorLine !== -1
-                          ? "border-red-500 shadow-red-500/50"
-                          : "border-emerald-400/60"
-                      }`}
-                    >
+                    <motion.div className="relative w-24 h-40 rounded-b-3xl rounded-t-lg border-2 border-emerald-400/60 bg-slate-900/60 overflow-hidden shadow-2xl">
                       {/* Water Level Fill */}
                       <motion.div
-                        className={`absolute bottom-0 w-full transition-all duration-500 ${
-                          errorLine !== -1
-                            ? "bg-gradient-to-t from-red-500 to-red-400"
-                            : "bg-gradient-to-t from-emerald-500 to-emerald-300"
-                        }`}
+                        className="absolute bottom-0 w-full bg-gradient-to-t from-emerald-500 to-emerald-300 transition-all duration-500"
+                        style={{
+                          height: `${(waterLevel / 5) * 100}%`,
+                        }}
                         animate={{
-                          height:
-                            errorLine !== -1
-                              ? "0%"
-                              : `${(waterLevel / 5) * 100}%`,
+                          height: `${(waterLevel / 5) * 100}%`,
                         }}
                         transition={{ duration: 0.6 }}
                       />
 
-                      {/* Crack Effect SVG */}
-                      {errorLine !== -1 && (
-                        <svg
-                          className="absolute inset-0 w-full h-full pointer-events-none"
-                          viewBox="0 0 100 160"
-                          preserveAspectRatio="none"
+                      {/* Water Level Markers */}
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className="absolute left-0 right-0 border-t border-emerald-400/30 text-[8px] text-emerald-300 px-1"
+                          style={{
+                            top: `${100 - (level / 5) * 100}%`,
+                          }}
                         >
-                          <motion.path
-                            d="M 50 20 Q 45 40 50 60 Q 55 80 50 100"
-                            stroke="rgba(239, 68, 68, 0.8)"
-                            strokeWidth="1.5"
-                            fill="none"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.8 }}
-                          />
-                          <motion.path
-                            d="M 50 40 L 70 70 L 50 100"
-                            stroke="rgba(239, 68, 68, 0.6)"
-                            strokeWidth="1"
-                            fill="none"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                          />
-                          <motion.path
-                            d="M 50 60 L 30 90 L 50 130"
-                            stroke="rgba(239, 68, 68, 0.6)"
-                            strokeWidth="1"
-                            fill="none"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.8, delay: 0.4 }}
-                          />
-                        </svg>
+                          {level}L
+                        </div>
+                      ))}
+
+                      {/* Shine Effect */}
+                      {waterLevel > 0 && (
+                        <motion.div
+                          className="absolute top-0 left-2 w-1 bg-white/20 rounded-full opacity-60"
+                          style={{ height: `${(waterLevel / 5) * 100}%` }}
+                          animate={{ opacity: [0.3, 0.8, 0.3] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
                       )}
-
-                      {/* Water Splash Particles */}
-                      {errorLine !== -1 &&
-                        [0, 1, 2, 3, 4].map((i) => (
-                          <motion.div
-                            key={`splash-${i}`}
-                            className="absolute w-1 h-1 bg-emerald-400 rounded-full"
-                            initial={{
-                              x: 48 + (Math.random() - 0.5) * 20,
-                              y: 80,
-                              opacity: 1,
-                            }}
-                            animate={{
-                              x: 48 + (Math.random() - 0.5) * 60,
-                              y: 200,
-                              opacity: 0,
-                            }}
-                            transition={{
-                              duration: 1.2,
-                              delay: i * 0.1,
-                              ease: "easeOut",
-                            }}
-                          />
-                        ))}
                     </motion.div>
-
-                    {/* Water Level Markers */}
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <div
-                        key={level}
-                        className="absolute left-0 right-0 border-t border-emerald-400/30 text-[8px] text-emerald-300 px-1"
-                        style={{
-                          top: `${100 - (level / 5) * 100}%`,
-                        }}
-                      >
-                        {level}L
-                      </div>
-                    ))}
-
-                    {/* Shine Effect */}
-                    {waterLevel > 0 && (
-                      <motion.div
-                        className="absolute top-0 left-2 w-1 bg-white/20 rounded-full opacity-60"
-                        style={{ height: `${(waterLevel / 5) * 100}%` }}
-                        animate={{ opacity: [0.3, 0.8, 0.3] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    )}
-
-                    {/* Puddle Effect */}
-                    {errorLine !== -1 && (
-                      <motion.div
-                        className="relative w-24 h-2 rounded-full bg-gradient-to-r from-emerald-500/30 to-transparent blur-sm mt-1"
-                        animate={{
-                          opacity: [0, 0.8, 0.8],
-                          scaleX: [0.5, 1.2, 1],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          ease: "easeOut",
-                        }}
-                      />
-                    )}
 
                     {/* Water Level Display */}
                     <motion.div className="text-center">
-                      <p
-                        className={`text-sm font-black ${
-                          errorLine !== -1 ? "text-red-400" : "text-emerald-400"
-                        }`}
-                      >
+                      <p className="text-sm font-black text-emerald-400">
                         {waterLevel.toFixed(1)}L / 5L
                       </p>
-                      {waterLevel >= 5 && errorLine === -1 && (
+                      {waterLevel >= 5 && (
                         <motion.p
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="text-xs font-bold text-emerald-300 mt-2"
                         >
                           ✨ Galon Penuh!
-                        </motion.p>
-                      )}
-                      {errorLine !== -1 && (
-                        <motion.p
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="text-xs font-bold text-red-400 mt-2"
-                        >
-                          ❌ Ada Kesalahan
                         </motion.p>
                       )}
                     </motion.div>

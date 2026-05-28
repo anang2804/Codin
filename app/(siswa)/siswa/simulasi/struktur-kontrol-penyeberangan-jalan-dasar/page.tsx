@@ -11,33 +11,50 @@ import {
   Play,
   RotateCcw,
   Terminal,
+  GripHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 const SIMULASI_SLUG = "struktur-kontrol-penyeberangan-jalan-dasar";
 
-type CommandChoice = "do" | "while" | "for" | "do-while";
-
-type SelectorTarget = "do" | "while" | null;
-
-const OPTIONS_DO: CommandChoice[] = ["do", "while", "for"];
-const OPTIONS_WHILE: CommandChoice[] = ["while", "do-while", "for"];
-
-const DESCRIPTION_BY_CHOICE: Record<CommandChoice, string> = {
-  do: "untuk menjalankan blok kode terlebih dahulu, lalu memeriksa kondisi perulangannya.",
-  while: "untuk melakukan perulangan selama kondisi bernilai benar (true).",
-  for: "untuk perulangan dengan jumlah iterasi yang biasanya sudah ditentukan.",
-  "do-while":
-    "bentuk penulisan gabungan yang mencerminkan pola do diikuti while.",
+type CodeBlock = {
+  id: string;
+  content: string;
+  category: "opening" | "statement" | "closing";
 };
 
+const AVAILABLE_BLOCKS: CodeBlock[] = [
+  {
+    id: "do-open",
+    content: "do {",
+    category: "opening",
+  },
+  {
+    id: "console-log",
+    content: '    console.log("Lampu masih merah");',
+    category: "statement",
+  },
+  {
+    id: "set-lamp",
+    content: '    warnaLampu = "Hijau";',
+    category: "statement",
+  },
+  {
+    id: "while-close",
+    content: '} while (warnaLampu == "Merah");',
+    category: "closing",
+  },
+];
+
 export default function StrukturKontrolPenyeberanganJalanDasarPage() {
-  const [selectedDo, setSelectedDo] = useState<CommandChoice | null>(null);
-  const [selectedWhile, setSelectedWhile] = useState<CommandChoice | null>(
+  const [placedBlocks, setPlacedBlocks] = useState<(CodeBlock | null)[]>([
     null,
-  );
-  const [selectorTarget, setSelectorTarget] = useState<SelectorTarget>(null);
+    null,
+    null,
+    null,
+  ]);
+  const [draggedBlock, setDraggedBlock] = useState<CodeBlock | null>(null);
 
   const [activeLine, setActiveLine] = useState(-1);
   const [isRunning, setIsRunning] = useState(false);
@@ -59,14 +76,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const codeLines = [
-    null,
-    '    System.out.println("Melihat lampu... Masih Merah 🛑");',
-    '    warnaLampu = "Hijau";',
-    null,
-    "",
-    'System.out.println("Silakan Menyeberang! 🏃‍♂️");',
-  ] as const;
+  const codeLines = ['let warnaLampu = "Merah";', ""];
 
   useEffect(() => {
     let isActive = true;
@@ -131,98 +141,163 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
     setActiveLine(-1);
     setErrorLine(-1);
     setShowSuccessCard(false);
-    setSelectorTarget(null);
-    setSelectedDo(null);
-    setSelectedWhile(null);
-    resetVisualState();
+    setPlacedBlocks([null, null, null, null]);
     setFeedback("Sistem siap menjalankan simulasi.");
+    resetVisualState();
   };
 
-  const executeStep = () => {
-    setActiveLine(0);
+  const handleDragStart = (block: CodeBlock) => {
+    setDraggedBlock(block);
+  };
 
-    if (!selectedDo) {
-      setIsRunning(false);
-      setErrorLine(0);
-      setCrossError(true);
-      setFeedback(
-        "Baris 3 belum lengkap.\n\nLengkapi terlebih dahulu token pada baris ini sebelum melanjutkan simulasi.\n\nPetunjuk: baca tujuan perulangan, lalu pilih token yang paling sesuai.",
-      );
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDropOnEditor = (e: React.DragEvent, slotIndex?: number) => {
+    e.preventDefault();
+    if (!draggedBlock) return;
+    if (isRunning) {
+      toast.error("Tidak bisa menambah blok saat simulasi berjalan!");
       return;
     }
 
-    if (selectedDo !== "do") {
-      setIsRunning(false);
-      setErrorLine(0);
-      setCrossError(true);
-      setFeedback(
-        "Baris 3 belum tepat.\n\nToken pada baris ini belum sesuai konteks proses.\n\nPetunjuk: blok ini harus tetap dijalankan dulu sebelum pengecekan kondisi.",
-      );
-      return;
+    if (slotIndex !== undefined && slotIndex < placedBlocks.length) {
+      const newBlocks = [...placedBlocks];
+      newBlocks[slotIndex] = draggedBlock;
+      setPlacedBlocks(newBlocks);
+      setFeedback("Blok ditambahkan.");
     }
+    setDraggedBlock(null);
+  };
 
-    if (!selectedWhile) {
-      setIsRunning(false);
-      setErrorLine(3);
-      setCrossError(true);
-      setFeedback(
-        "Baris 6 belum lengkap.\n\nLengkapi token penutup perulangan sebelum simulasi dilanjutkan.",
-      );
-      return;
-    }
+  const removeBlock = (index: number) => {
+    const newBlocks = [...placedBlocks];
+    newBlocks[index] = null;
+    setPlacedBlocks(newBlocks);
+    setFeedback("Blok dihapus.");
+  };
 
-    if (selectedWhile !== "while") {
-      setIsRunning(false);
-      setErrorLine(3);
-      setCrossError(true);
-      setFeedback(
-        "Baris 6 belum tepat.\n\nToken penutup perulangan belum sesuai.\n\nPetunjuk: do perlu ditutup oleh kondisi perulangan yang tepat.",
-      );
-      return;
-    }
+  const executeStep = (index: number) => {
+    const totalLines = 2 + placedBlocks.length; // 2 + 4 = 6
 
-    setErrorLine(-1);
-    setCrossError(false);
-
-    setFeedback(
-      "Baris 3 dan 6 benar.\n\nSistem mengeksekusi blok do, lalu memeriksa while sampai lampu berubah hijau.",
-    );
-
-    timerRef.current = setTimeout(() => {
-      setActiveLine(1);
-      setFeedback('Baris 4 berjalan.\n\nSistem membaca status: "Masih Merah".');
-
-      timerRef.current = setTimeout(() => {
-        setActiveLine(2);
-        setLampColor("Hijau");
+    if (index >= totalLines) {
+      // Check if all blocks are placed correctly
+      if (
+        placedBlocks[0]?.id === "do-open" &&
+        placedBlocks[1]?.id === "console-log" &&
+        placedBlocks[2]?.id === "set-lamp" &&
+        placedBlocks[3]?.id === "while-close"
+      ) {
+        setIsRunning(false);
+        setActiveLine(-1);
+        setShowSuccessCard(true);
         setFeedback(
-          "Baris 5 berjalan.\n\nSetelah menunggu, lampu berubah menjadi Hijau.",
+          "Berhasil! Struktur kontrol do-while sudah lengkap dan benar!\n\nSistem menunggu lampu merah, lalu mengubah ke hijau, dan akhirnya pejalan kaki bisa menyeberang.",
         );
+        return;
+      } else {
+        setIsRunning(false);
+        setActiveLine(2);
+        setErrorLine(2);
+        setCrossError(true);
+        setShowSuccessCard(false);
+        setFeedback(
+          "Simulasi selesai, tetapi struktur kontrol belum lengkap atau tidak tepat.\n\nPastikan semua blok ditambahkan dalam urutan yang benar: do { → console.log → assignment → } while.",
+        );
+        return;
+      }
+    }
 
-        timerRef.current = setTimeout(() => {
-          setActiveLine(3);
-          setFeedback(
-            "Baris 6 memeriksa kondisi while.\n\nKarena lampu sudah Hijau, perulangan berhenti.",
-          );
+    // Check first 2 lines (variable declarations)
+    if (index < 2) {
+      setActiveLine(index);
+      setFeedback("Baris " + (index + 1) + " diproses: Deklarasi variabel.");
+      timerRef.current = setTimeout(() => executeStep(index + 1), 700);
+      return;
+    }
 
-          timerRef.current = setTimeout(() => {
-            setActiveLine(5);
-            setIsCrossing(true);
-            setFeedback(
-              "Baris 8 berjalan.\n\nLampu hijau aktif dan pejalan kaki mulai menyeberang.",
-            );
+    // Check placed blocks starting from line 2
+    const blockIndex = index - 2;
 
-            timerRef.current = setTimeout(() => {
-              setIsRunning(false);
-              setShowSuccessCard(true);
-              setFeedback(
-                "Berhasil! Semua langkah struktur kontrol sudah sesuai.\n\nSistem menunggu saat lampu merah, lalu mengizinkan menyeberang saat lampu hijau.",
-              );
-            }, 1000);
-          }, 650);
-        }, 700);
-      }, 700);
-    }, 450);
+    if (blockIndex >= placedBlocks.length) {
+      return;
+    }
+
+    const block = placedBlocks[blockIndex];
+
+    // Skip null blocks
+    if (block === null) {
+      setErrorLine(2 + blockIndex);
+      setCrossError(true);
+      setIsRunning(false);
+      setFeedback(
+        "Blok pada posisi " +
+          (blockIndex + 1) +
+          " belum ditempatkan.\n\nLengkapi struktur kontrol dengan drag & drop blok yang tepat.",
+      );
+      return;
+    }
+
+    setActiveLine(2 + blockIndex);
+
+    if (blockIndex === 0) {
+      if (block.id !== "do-open") {
+        setIsRunning(false);
+        setErrorLine(2 + blockIndex);
+        setCrossError(true);
+        setFeedback(
+          "Baris 3 belum tepat.\n\nBlok pembuka perulangan belum sesuai.\n\nPetunjuk: Gunakan blok 'do {' untuk memulai perulangan.",
+        );
+        return;
+      }
+      setFeedback(
+        "Baris 3 benar.\n\nKeyword 'do' dijalankan, sistem memasuki blok perulangan.",
+      );
+    } else if (blockIndex === 1) {
+      if (block.id !== "console-log") {
+        setIsRunning(false);
+        setErrorLine(2 + blockIndex);
+        setCrossError(true);
+        setFeedback(
+          "Baris 4 belum tepat.\n\nStatement console.log belum sesuai.\n\nPetunjuk: Gunakan blok yang menampilkan status lampu masih merah.",
+        );
+        return;
+      }
+      setFeedback(
+        'Baris 4 benar.\n\nOutput dieksekusi: "Lampu masih merah".\n\nSistem membaca status lampu.',
+      );
+    } else if (blockIndex === 2) {
+      if (block.id !== "set-lamp") {
+        setIsRunning(false);
+        setErrorLine(2 + blockIndex);
+        setCrossError(true);
+        setFeedback(
+          "Baris 5 belum tepat.\n\nAssignment statement belum sesuai.\n\nPetunjuk: Gunakan blok yang mengubah warna lampu menjadi hijau.",
+        );
+        return;
+      }
+      setLampColor("Hijau");
+      setFeedback(
+        'Baris 5 benar.\n\nVariabel diperbarui: warnaLampu = "Hijau".\n\nLampu berubah menjadi hijau.',
+      );
+    } else if (blockIndex === 3) {
+      if (block.id !== "while-close") {
+        setIsRunning(false);
+        setErrorLine(2 + blockIndex);
+        setCrossError(true);
+        setFeedback(
+          "Baris 6 belum tepat.\n\nBlok penutup perulangan belum sesuai.\n\nPetunjuk: Gunakan blok '} while' untuk menutup kondisi perulangan.",
+        );
+        return;
+      }
+      setFeedback(
+        'Baris 6 benar.\n\nKondisi while diperiksa: warnaLampu == "Merah" ?\n\nKarena lampu sudah hijau, perulangan berhenti.',
+      );
+    }
+
+    timerRef.current = setTimeout(() => executeStep(index + 1), 700);
   };
 
   const startRunning = () => {
@@ -235,22 +310,11 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
     setFeedback(
       "Memulai simulasi struktur kontrol...\n\nSistem membaca baris perintah dari atas ke bawah.",
     );
-    timerRef.current = setTimeout(executeStep, 250);
+    timerRef.current = setTimeout(() => executeStep(0), 250);
   };
-
-  const selectedDescription =
-    selectorTarget === "do"
-      ? selectedDo
-        ? DESCRIPTION_BY_CHOICE[selectedDo]
-        : "Pilih token pembuka perulangan do...while."
-      : selectorTarget === "while"
-        ? selectedWhile
-          ? DESCRIPTION_BY_CHOICE[selectedWhile]
-          : "Pilih token penutup kondisi perulangan."
-        : selectedDo
-          ? DESCRIPTION_BY_CHOICE[selectedDo]
-          : "Pilih token yang tepat untuk melengkapi struktur kontrol do...while.";
-
+  const SyntaxHighlight = ({ code }: { code: string }) => {
+    return <span className="font-mono text-slate-900">{code}</span>;
+  };
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-lime-50 via-emerald-50 to-amber-50 text-foreground">
       <header className="z-40 flex shrink-0 items-center justify-between border-b border-emerald-100/80 bg-white/90 px-6 py-3 shadow-sm backdrop-blur">
@@ -311,32 +375,32 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-emerald-600/70" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Deskripsi Perintah
+              Blok Tersedia
             </h2>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${selectedDo ?? "none"}-${selectedWhile ?? "none"}-${selectorTarget ?? "idle"}`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
-            >
-              <h3 className="mb-2 text-xs font-black uppercase tracking-tight text-foreground">
-                {selectorTarget === "while"
-                  ? "WHILE"
-                  : selectorTarget === "do"
-                    ? "DO"
-                    : selectedDo
-                      ? selectedDo.toUpperCase()
-                      : "SIAP MENULIS"}
-              </h3>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {selectedDescription}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          <div className="flex flex-col gap-2">
+            {AVAILABLE_BLOCKS.map((block) => (
+              <motion.div
+                key={block.id}
+                draggable
+                onDragStart={() => handleDragStart(block)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group cursor-move rounded-xl border border-emerald-200 bg-emerald-50 p-3 transition-all hover:border-emerald-400 hover:bg-emerald-100 active:bg-emerald-200"
+              >
+                <div className="flex items-start gap-2">
+                  <GripHorizontal
+                    size={14}
+                    className="mt-1 text-emerald-600/50 group-hover:text-emerald-600"
+                  />
+                  <div className="flex-1 font-mono text-[11px] text-slate-900 break-words">
+                    <SyntaxHighlight code={block.content} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
 
           <div
             className={`rounded-2xl border p-3 transition-all ${
@@ -370,7 +434,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
             </div>
             <p className="text-[10px] font-bold italic leading-tight text-muted-foreground">
               {activeLine !== -1
-                ? `Menganalisis baris ke-${activeLine + 3}`
+                ? `Menganalisis baris ke-${activeLine + 1}`
                 : "Editor siap digunakan"}
             </p>
           </div>
@@ -392,8 +456,9 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
                   </h2>
                 </div>
                 <p className="max-w-4xl text-[11px] font-medium leading-relaxed text-muted-foreground">
-                  Ayo bantu pejalan kaki menunggu lampu merah sampai berubah
-                  hijau, lalu lanjut menyeberang dengan aman!
+                  💡 Ayo bantu lengkapi struktur kontrol di bawah ini dengan
+                  drag & drop blok kode agar pejalan kaki bisa menyeberang
+                  dengan aman ketika lampu berubah hijau.
                 </p>
               </div>
             </div>
@@ -434,18 +499,18 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
                     }`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
-                    Algortima dan Pemrograman
+                    Algortima dan Pemrograman (Drag & Drop)
                   </span>
                 </div>
               </div>
 
-              <div className="relative flex flex-1 overflow-hidden font-mono text-[11px] leading-[24px]">
+              <div className="relative flex flex-1 overflow-hidden font-mono text-[13px] leading-[26px]">
                 <div className="w-12 shrink-0 select-none overflow-hidden border-r border-border bg-muted/30 pt-5 pr-4 text-right text-muted-foreground">
-                  {Array.from({ length: 11 }).map((_, i) => (
+                  {Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
                       className={`h-[26px] transition-all ${
-                        activeLine !== -1 && i === activeLine + 2
+                        activeLine === i
                           ? "scale-110 pr-1 font-black text-emerald-700"
                           : ""
                       }`}
@@ -456,113 +521,73 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden bg-card">
-                  <div className="absolute inset-0 z-10 overflow-hidden whitespace-pre p-5 pt-5">
-                    <div className="relative flex h-[26px] items-center">
-                      <span className="relative z-10 whitespace-pre font-bold text-slate-900">
-                        String warnaLampu = "Merah";
-                      </span>
-                    </div>
-
-                    <div className="relative flex h-[26px] items-center" />
-
+                  <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
+                    {/* Static lines */}
                     {codeLines.map((line, i) => (
                       <div
-                        key={i}
+                        key={`static-${i}`}
                         className="relative flex h-[26px] items-center"
                       >
                         {activeLine === i && (
                           <motion.div
                             layoutId="lineHighlightPenyeberangan"
-                            className={`absolute inset-0 -mx-5 -my-1 z-0 border-l-4 ${
+                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
                               isRunning
                                 ? "border-emerald-500 bg-emerald-50"
                                 : "border-emerald-200 bg-emerald-50/30"
                             }`}
                           />
                         )}
-
-                        {i === 0 ? (
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <button
-                              type="button"
-                              disabled={isRunning}
-                              onClick={() => {
-                                setSelectorTarget("do");
-                                setActiveLine(0);
-                              }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${
-                                selectedDo
-                                  ? "text-slate-900 hover:bg-emerald-50"
-                                  : "italic text-slate-300 hover:bg-slate-100"
-                              } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                            >
-                              {selectedDo ?? "_____"}
-                            </button>
-                            <span>{" {"}</span>
-                          </div>
-                        ) : i === 3 ? (
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            <span>{"} "}</span>
-                            <button
-                              type="button"
-                              disabled={isRunning}
-                              onClick={() => {
-                                setSelectorTarget("while");
-                                setActiveLine(3);
-                              }}
-                              className={`rounded px-1.5 py-0.5 transition-all ${
-                                selectedWhile
-                                  ? "text-slate-900 hover:bg-emerald-50"
-                                  : "italic text-slate-300 hover:bg-slate-100"
-                              } ${isRunning ? "cursor-not-allowed" : "cursor-pointer"}`}
-                            >
-                              {selectedWhile ?? "_____"}
-                            </button>
-                            <span>{' (warnaLampu == "Merah");'}</span>
-                          </div>
-                        ) : (
-                          <div className="relative z-10 whitespace-pre font-bold text-slate-900">
-                            {line}
-                          </div>
-                        )}
+                        <div className="relative z-10 font-bold text-slate-900">
+                          <SyntaxHighlight code={line} />
+                        </div>
                       </div>
                     ))}
-                  </div>
 
-                  {selectorTarget && !isRunning && (
-                    <div className="absolute bottom-4 left-5 right-5 z-30 rounded-xl border border-emerald-200 bg-card px-3 py-2 shadow-lg">
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                        {selectorTarget === "do"
-                          ? "PILIH TOKEN BARIS 3"
-                          : "PILIH TOKEN BARIS 6"}
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(selectorTarget === "do"
-                          ? OPTIONS_DO
-                          : OPTIONS_WHILE
-                        ).map((choice) => (
-                          <button
-                            key={choice}
-                            type="button"
-                            onClick={() => {
-                              if (selectorTarget === "do") {
-                                setSelectedDo(choice);
-                              } else {
-                                setSelectedWhile(choice);
-                              }
-                              setSelectorTarget(null);
-                              setErrorLine(-1);
-                              setShowSuccessCard(false);
-                              setCrossError(false);
-                            }}
-                            className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-700 hover:bg-emerald-100"
-                          >
-                            {choice}
-                          </button>
-                        ))}
-                      </div>
+                    {/* Placed blocks or drop zone */}
+                    <div className="relative mt-1 flex flex-col gap-1">
+                      {placedBlocks.map((block, idx) => (
+                        <div
+                          key={`placed-${idx}`}
+                          className="relative flex h-[26px] items-center group"
+                        >
+                          {activeLine === 2 + idx && (
+                            <motion.div
+                              layoutId="lineHighlightPenyeberangan"
+                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
+                                isRunning
+                                  ? "border-emerald-500 bg-emerald-50"
+                                  : "border-emerald-200 bg-emerald-50/30"
+                              }`}
+                            />
+                          )}
+                          {block === null ? (
+                            <div
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDropOnEditor(e, idx)}
+                              className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                            >
+                              ↓ Drop di sini
+                            </div>
+                          ) : (
+                            <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                              <span>
+                                <SyntaxHighlight code={block.content} />
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeBlock(idx)}
+                                disabled={isRunning}
+                                className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </section>
