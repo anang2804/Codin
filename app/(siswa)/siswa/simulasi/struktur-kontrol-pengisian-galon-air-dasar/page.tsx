@@ -509,6 +509,31 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
             ))}
           </div>
 
+          <div
+            className={`rounded-2xl border p-3 transition-all ${
+              errorLine !== -1
+                ? "border-rose-200 bg-rose-50"
+                : "border-border bg-card"
+            }`}
+          >
+            <p
+              className={`text-[10px] font-black uppercase tracking-widest ${
+                errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
+              }`}
+            >
+              CATATAN PROSES
+            </p>
+            <p
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
+                errorLine !== -1
+                  ? "bg-rose-100/70 text-rose-700"
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              {feedback}
+            </p>
+          </div>
+
           <div className="mt-auto rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-4">
             <div className="mb-2 flex items-center justify-between text-[9px] font-black uppercase text-emerald-700">
               <span>Status Fokus</span>
@@ -545,31 +570,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               </div>
             </div>
           </section>
-
-          <div
-            className={`mx-6 mb-4 rounded-2xl border p-3 transition-all ${
-              errorLine !== -1
-                ? "border-rose-200 bg-rose-50"
-                : "border-border bg-card"
-            }`}
-          >
-            <p
-              className={`text-[10px] font-black uppercase tracking-widest ${
-                errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
-              }`}
-            >
-              CATATAN PROSES
-            </p>
-            <p
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
-                errorLine !== -1
-                  ? "bg-rose-100/70 text-rose-700"
-                  : "bg-muted text-foreground"
-              }`}
-            >
-              {feedback}
-            </p>
-          </div>
 
           <div className="flex flex-1 gap-5 overflow-x-hidden overflow-y-auto px-6 pb-6">
             <section className="relative flex min-w-[500px] flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
