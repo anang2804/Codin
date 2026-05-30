@@ -391,9 +391,7 @@ export default function StrukturKontrolPemilahSampahMenengahPage() {
         );
         return;
       }
-      setFeedback(
-        "✓ Baris 7 benar.\n\nCetak pesan untuk benda NON-ORGANIK.",
-      );
+      setFeedback("✓ Baris 7 benar.\n\nCetak pesan untuk benda NON-ORGANIK.");
     } else if (blockIndex === 5) {
       if (block.id !== "close-brace") {
         setIsRunning(false);
@@ -870,10 +868,12 @@ export default function StrukturKontrolPemilahSampahMenengahPage() {
                 <div className="relative z-10 flex flex-1 flex-col gap-3 p-6 text-slate-100">
                   {/* Sorting Arena */}
                   <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-5">
-                    <div className="flex h-80 flex-col items-center justify-start overflow-hidden rounded-xl border-2 bg-gradient-to-b from-slate-800/50 to-slate-900/70 p-4 relative"
+                    <div
+                      className="flex h-80 flex-col items-center justify-start overflow-hidden rounded-xl border-2 bg-gradient-to-b from-slate-800/50 to-slate-900/70 p-4 relative"
                       style={{
                         borderColor: errorLine !== -1 ? "#ef4444" : "#475569",
-                      }}>
+                      }}
+                    >
                       {/* Conveyor belt effect */}
                       <div className="absolute inset-0 opacity-10 [background-image:repeating-linear-gradient(90deg,transparent,transparent_10px,rgba(52,211,153,.2)_10px,rgba(52,211,153,.2)_20px)]" />
 
@@ -887,10 +887,12 @@ export default function StrukturKontrolPemilahSampahMenengahPage() {
                       )}
 
                       {/* Status text */}
-                      <div className="absolute top-3 left-0 right-0 text-center text-[10px] font-bold z-20"
+                      <div
+                        className="absolute top-3 left-0 right-0 text-center text-[10px] font-bold z-20"
                         style={{
                           color: errorLine !== -1 ? "#ef4444" : "#06b6d4",
-                        }}>
+                        }}
+                      >
                         {errorLine !== -1
                           ? "❌ ERROR - Cek urutan blok kode!"
                           : isRunning
