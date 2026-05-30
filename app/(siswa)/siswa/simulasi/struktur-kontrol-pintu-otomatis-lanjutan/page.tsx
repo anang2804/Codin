@@ -157,6 +157,7 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
   const [bukaSensorCount, setBukaSensorCount] = useState(0);
   const [tutupSensorCount, setTutupSensorCount] = useState(0);
   const [processedSensors, setProcessedSensors] = useState<number[]>([]);
+  const [isErrorAnimating, setIsErrorAnimating] = useState(false);
 
   useSimulasiAttemptRecorder({
     simulasiSlug: SIMULASI_SLUG,
@@ -198,6 +199,7 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
     setBukaSensorCount(0);
     setTutupSensorCount(0);
     setProcessedSensors([]);
+    setIsErrorAnimating(false);
   };
 
   const processSensor = (sensorIdx: number) => {
@@ -321,8 +323,19 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
     } else if (blockIndex === 2) {
       isValid = block.id === "console-log-dekat";
       expectedDesc = "console.log untuk Orang Dekat";
-      if (isValid)
+      if (isValid) {
         setFeedback("✓ Baris " + lineNum + " benar: cetak Orang Dekat.");
+        // Trigger door animation
+        setTimeout(() => {
+          setCurrentSensorIndex(0);
+          setDoorAction("buka");
+          setDoorOpen(true);
+          setBukaSensorCount((c) => c + 1);
+        }, 300);
+        setTimeout(() => {
+          setDoorAction(null);
+        }, 1100);
+      }
     } else if (blockIndex === 3) {
       isValid = block.id === "increment-total";
       expectedDesc = "totalAksi++";
@@ -336,8 +349,19 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
     } else if (blockIndex === 5) {
       isValid = block.id === "console-log-kosong";
       expectedDesc = "console.log untuk Area Kosong";
-      if (isValid)
+      if (isValid) {
         setFeedback("✓ Baris " + lineNum + " benar: cetak Area Kosong.");
+        // Trigger door animation
+        setTimeout(() => {
+          setCurrentSensorIndex(1);
+          setDoorAction("tutup");
+          setDoorOpen(false);
+          setTutupSensorCount((c) => c + 1);
+        }, 300);
+        setTimeout(() => {
+          setDoorAction(null);
+        }, 1100);
+      }
     } else if (blockIndex === 6) {
       isValid = block.id === "close-brace";
       expectedDesc = "} untuk menutup if/else";
@@ -358,13 +382,18 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
     if (!isValid) {
       setIsRunning(false);
       setErrorLine(2 + blockIndex);
+      setDoorAction(null);
+      setIsErrorAnimating(true);
+      setTimeout(() => setIsErrorAnimating(false), 800);
       setFeedback(
         `Baris ${lineNum} salah! Ditemukan: "${block.content}"\n\nSeharusnya: ${expectedDesc}`,
       );
       return;
     }
 
-    timerRef.current = setTimeout(() => executeStep(index + 1), 850);
+    // Longer delay for console-log blocks to show door animation
+    const delayTime = blockIndex === 2 || blockIndex === 5 ? 1200 : 850;
+    timerRef.current = setTimeout(() => executeStep(index + 1), delayTime);
   };
 
   const startRunning = () => {
@@ -753,7 +782,36 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
                         <div className="w-40 h-2 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 rounded-t-lg shadow-lg" />
 
                         {/* Door Container */}
-                        <div className="relative w-40 h-48 bg-gradient-to-b from-slate-700 to-slate-800 border-2 border-slate-700 flex items-center justify-center overflow-hidden shadow-2xl">
+                        <motion.div
+                          className="relative w-40 h-48 bg-gradient-to-b from-slate-700 to-slate-800 border-2 flex items-center justify-center overflow-hidden shadow-2xl"
+                          style={{
+                            borderColor: isErrorAnimating
+                              ? "#ef4444"
+                              : "#374151",
+                          }}
+                          animate={
+                            isErrorAnimating
+                              ? {
+                                  x: [0, -8, 8, -8, 8, 0],
+                                  boxShadow: isErrorAnimating
+                                    ? "0 0 20px 3px rgba(239, 68, 68, 0.6)"
+                                    : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                                }
+                              : {}
+                          }
+                          transition={{ duration: 0.6 }}
+                        >
+                          {/* Error overlay flash */}
+                          {isErrorAnimating && (
+                            <motion.div
+                              className="absolute inset-0 bg-red-500/40"
+                              animate={{
+                                opacity: [0.4, 0.8, 0.4, 0.8, 0.3, 0],
+                              }}
+                              transition={{ duration: 0.6 }}
+                            />
+                          )}
+
                           {/* Doorway background */}
                           <div className="absolute inset-0 bg-black/40" />
 
@@ -792,18 +850,51 @@ export default function StrukturKontrolPintuOtomatisLanjutanPage() {
                           {/* Sensor indicator light */}
                           <motion.div
                             className="absolute top-6 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full border border-slate-500 z-10"
-                            animate={{
-                              boxShadow: doorOpen
-                                ? "0 0 12px 2px #22c55e, inset 0 0 4px #16a34a"
-                                : "0 0 12px 2px #ef4444, inset 0 0 4px #991b1b",
-                              backgroundColor: doorOpen ? "#22c55e" : "#ef4444",
-                            }}
-                            transition={{ duration: 0.3 }}
+                            animate={
+                              isErrorAnimating
+                                ? {
+                                    boxShadow: [
+                                      "0 0 20px 4px #ef4444, inset 0 0 8px #7f1d1d",
+                                      "0 0 8px 2px #ef4444, inset 0 0 2px #3f0d0d",
+                                      "0 0 20px 4px #ef4444, inset 0 0 8px #7f1d1d",
+                                    ],
+                                    backgroundColor: [
+                                      "#dc2626",
+                                      "#b91c1c",
+                                      "#dc2626",
+                                    ],
+                                  }
+                                : {
+                                    boxShadow: doorOpen
+                                      ? "0 0 12px 2px #22c55e, inset 0 0 4px #16a34a"
+                                      : "0 0 12px 2px #ef4444, inset 0 0 4px #991b1b",
+                                    backgroundColor: doorOpen
+                                      ? "#22c55e"
+                                      : "#ef4444",
+                                  }
+                            }
+                            transition={
+                              isErrorAnimating
+                                ? { duration: 0.6, repeat: 0 }
+                                : { duration: 0.3 }
+                            }
                           />
-                        </div>
+                        </motion.div>
 
                         {/* Frame Bottom */}
                         <div className="w-40 h-2 bg-gradient-to-r from-slate-600 via-slate-500 to-slate-600 rounded-b-lg shadow-lg" />
+
+                        {/* Error Warning Alert */}
+                        {isErrorAnimating && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-red-500 text-white text-[9px] font-bold rounded-md whitespace-nowrap"
+                          >
+                            ⚠️ AKSES DITOLAK
+                          </motion.div>
+                        )}
                       </div>
 
                       {/* Action text */}
