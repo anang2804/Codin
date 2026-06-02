@@ -319,7 +319,7 @@ export default function SiswaMateriDetailPage() {
   async function fetchMateri() {
     try {
       console.log("Fetching materi with id:", params.id);
-      
+
       const { data, error } = await supabase
         .from("materi")
         .select("*")
@@ -367,7 +367,7 @@ export default function SiswaMateriDetailPage() {
         message: err?.message,
         code: err?.code,
       });
-      
+
       if (err?.code === "PGRST116") {
         toast.error("Materi tidak ditemukan atau Anda tidak memiliki akses");
       } else if (err?.message?.includes("permission")) {
