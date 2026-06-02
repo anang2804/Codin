@@ -318,15 +318,26 @@ export default function SiswaMateriDetailPage() {
 
   async function fetchMateri() {
     try {
+      console.log("Fetching materi with id:", params.id);
+      
       const { data, error } = await supabase
         .from("materi")
         .select("*")
         .eq("id", params.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error fetching materi:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
 
       if (data) {
+        console.log("Materi data fetched:", data);
         // Fetch mapel separately
         const { data: mapelData } = await supabase
           .from("mapel")
@@ -346,10 +357,24 @@ export default function SiswaMateriDetailPage() {
           mapel: mapelData || undefined,
           profiles: profileData || undefined,
         });
+      } else {
+        console.error("No materi data returned");
+        toast.error("Materi tidak ditemukan");
       }
-    } catch (err) {
-      console.error("Error fetching materi:", err);
-      toast.error("Gagal memuat materi");
+    } catch (err: any) {
+      console.error("Error fetching materi:", {
+        error: err,
+        message: err?.message,
+        code: err?.code,
+      });
+      
+      if (err?.code === "PGRST116") {
+        toast.error("Materi tidak ditemukan atau Anda tidak memiliki akses");
+      } else if (err?.message?.includes("permission")) {
+        toast.error("Anda tidak memiliki akses ke materi ini");
+      } else {
+        toast.error("Gagal memuat materi");
+      }
     } finally {
       setLoading(false);
     }

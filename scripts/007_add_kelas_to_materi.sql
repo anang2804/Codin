@@ -1,19 +1,9 @@
--- Add kelas field to materi table for filtering by class
--- This allows materi to be assigned to specific classes
-
-ALTER TABLE public.materi 
-ADD COLUMN IF NOT EXISTS kelas TEXT[];
-
--- Create index for better performance on kelas queries
-CREATE INDEX IF NOT EXISTS idx_materi_kelas ON public.materi USING GIN(kelas);
-
--- Comment on the column
-COMMENT ON COLUMN public.materi.kelas IS 'Array of class names that can access this materi. NULL or empty means all classes can access.';
-
--- Update RLS policy for siswa to filter by kelas
+-- Fix RLS policy untuk siswa menggunakan kelas_id dan kelas.name
 DROP POLICY IF EXISTS "Siswa can view all materi" ON public.materi;
+DROP POLICY IF EXISTS "Siswa can view materi for their class" ON public.materi;
+DROP POLICY IF EXISTS "Siswa can view materi" ON public.materi;
 
-CREATE POLICY "Siswa can view materi for their class"
+CREATE POLICY "Siswa can view materi"
   ON public.materi
   FOR SELECT
   USING (
@@ -22,11 +12,15 @@ CREATE POLICY "Siswa can view materi for their class"
       WHERE id = auth.uid() 
         AND role = 'siswa'
         AND (
-          -- If kelas is NULL or empty array, show to all students
-          materi.kelas IS NULL 
-          OR array_length(materi.kelas, 1) IS NULL
-          -- If kelas is specified, check if student's kelas is in the array
-          OR profiles.kelas = ANY(materi.kelas)
+          -- Jika kelas_id NULL, semua siswa bisa akses
+          materi.kelas_id IS NULL
+          -- Atau kelas siswa sama dengan nama kelas di materi
+          OR (
+            materi.kelas_id IS NOT NULL
+            AND profiles.kelas = (
+              SELECT name FROM public.kelas WHERE id = materi.kelas_id LIMIT 1
+            )
+          )
         )
     )
   );
