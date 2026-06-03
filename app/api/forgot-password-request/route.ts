@@ -118,8 +118,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      message:
-        "Permintaan Anda telah dikirim. Admin akan menghubungi Anda melalui email dalam 1×24 jam kerja.",
+      message: "Permintaan Anda telah dikirim.",
     });
   } catch (err: any) {
     console.error("Error submitting forgot password request:", err);
