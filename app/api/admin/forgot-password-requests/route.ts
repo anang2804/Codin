@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Server credentials not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -78,13 +78,11 @@ export async function GET(req: Request) {
     if (requestError) {
       return NextResponse.json(
         { error: requestError.message || "Failed to fetch requests" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    const userIds = (requests || [])
-      .map((r: any) => r.user_id)
-      .filter(Boolean);
+    const userIds = (requests || []).map((r: any) => r.user_id).filter(Boolean);
     let profileRows: any[] = [];
 
     if (userIds.length > 0) {
@@ -96,39 +94,36 @@ export async function GET(req: Request) {
       if (profileError) {
         return NextResponse.json(
           { error: profileError.message || "Failed to fetch user profiles" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
       profileRows = profiles || [];
     }
 
-    const profileMap = new Map(
-      profileRows.map((p: any) => [String(p.id), p])
-    );
-    const mappedWithRole = (requests || [])
-      .map((item: any) => {
-        const profile = profileMap.get(String(item.user_id));
-        return profile
-          ? {
-              id: item.id,
-              user_id: item.user_id,
-              status: item.status,
-              requested_at: item.requested_at,
-              name: profile?.full_name || "User",
-              email: profile?.email || item.email || "-",
-              role: profile?.role || null,
-            }
-          : {
-              id: item.id,
-              user_id: item.user_id,
-              status: item.status,
-              requested_at: item.requested_at,
-              name: "User tidak ditemukan",
-              email: item.email || "-",
-              role: null,
-            };
-      });
+    const profileMap = new Map(profileRows.map((p: any) => [String(p.id), p]));
+    const mappedWithRole = (requests || []).map((item: any) => {
+      const profile = profileMap.get(String(item.user_id));
+      return profile
+        ? {
+            id: item.id,
+            user_id: item.user_id,
+            status: item.status,
+            requested_at: item.requested_at,
+            name: profile?.full_name || "User",
+            email: profile?.email || item.email || "-",
+            role: profile?.role || null,
+          }
+        : {
+            id: item.id,
+            user_id: item.user_id,
+            status: item.status,
+            requested_at: item.requested_at,
+            name: "User tidak ditemukan",
+            email: item.email || "-",
+            role: null,
+          };
+    });
 
     // If role param is given, filter by role
     const finalList = roleParam
@@ -140,7 +135,7 @@ export async function GET(req: Request) {
     console.error("Error fetching forgot password requests:", err);
     return NextResponse.json(
       { error: err?.message || "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -156,7 +151,7 @@ export async function POST(req: Request) {
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Server credentials not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -169,7 +164,7 @@ export async function POST(req: Request) {
     if (!requestId || !["approve", "reject"].includes(action)) {
       return NextResponse.json(
         { error: "requestId dan action valid wajib diisi" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -182,14 +177,14 @@ export async function POST(req: Request) {
     if (requestError || !requestRow) {
       return NextResponse.json(
         { error: "Permintaan tidak ditemukan" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (requestRow.status !== "pending") {
       return NextResponse.json(
         { error: "Permintaan sudah diproses sebelumnya" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -200,7 +195,7 @@ export async function POST(req: Request) {
             error:
               "User tidak ditemukan. Email mungkin tidak terdaftar di sistem.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -217,7 +212,7 @@ export async function POST(req: Request) {
       if (passwordToSet.length < 8) {
         return NextResponse.json(
           { error: "Password minimal 8 karakter" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -229,10 +224,9 @@ export async function POST(req: Request) {
       if (authUpdateError) {
         return NextResponse.json(
           {
-            error:
-              authUpdateError.message || "Gagal memperbarui password auth",
+            error: authUpdateError.message || "Gagal memperbarui password auth",
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -254,7 +248,7 @@ export async function POST(req: Request) {
               hashError.message ||
               "Failed to save hashed password metadata. Jalankan scripts/044_add_current_password_hash.sql",
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -276,10 +270,9 @@ export async function POST(req: Request) {
       if (approveError) {
         return NextResponse.json(
           {
-            error:
-              approveError.message || "Gagal menyimpan status persetujuan",
+            error: approveError.message || "Gagal menyimpan status persetujuan",
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -304,7 +297,7 @@ export async function POST(req: Request) {
     if (rejectError) {
       return NextResponse.json(
         { error: rejectError.message || "Gagal menolak permintaan" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -313,7 +306,7 @@ export async function POST(req: Request) {
     console.error("Error processing forgot password request:", err);
     return NextResponse.json(
       { error: err?.message || "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

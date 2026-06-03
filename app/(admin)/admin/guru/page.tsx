@@ -113,8 +113,10 @@ export default function AdminGuruPage() {
   >([]);
   const [loadingForgotPasswordRequests, setLoadingForgotPasswordRequests] =
     useState(false);
-  const [processingForgotPasswordRequestId, setProcessingForgotPasswordRequestId] =
-    useState<string | null>(null);
+  const [
+    processingForgotPasswordRequestId,
+    setProcessingForgotPasswordRequestId,
+  ] = useState<string | null>(null);
   const [approvingPasswordInput, setApprovingPasswordInput] = useState<{
     requestId: string;
     newPassword: string;
@@ -2839,18 +2841,20 @@ export default function AdminGuruPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="change-password" className="w-full flex flex-col flex-1">
+          <Tabs
+            defaultValue="change-password"
+            className="w-full flex flex-col flex-1"
+          >
             <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-              <TabsTrigger value="change-password">
-                Ganti Password
-              </TabsTrigger>
-              <TabsTrigger value="forgot-password">
-                Lupa Sandi
-              </TabsTrigger>
+              <TabsTrigger value="change-password">Ganti Password</TabsTrigger>
+              <TabsTrigger value="forgot-password">Lupa Sandi</TabsTrigger>
             </TabsList>
 
             {/* Tab 1: Change Password Requests */}
-            <TabsContent value="change-password" className="space-y-3 flex-1 flex flex-col overflow-hidden">
+            <TabsContent
+              value="change-password"
+              className="space-y-3 flex-1 flex flex-col overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                 {loadingPasswordRequests ? (
                   <p className="text-sm text-gray-500 py-8 text-center">
@@ -2877,9 +2881,7 @@ export default function AdminGuruPage() {
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
                             Diajukan:{" "}
-                            {new Date(req.requested_at).toLocaleString(
-                              "id-ID",
-                            )}
+                            {new Date(req.requested_at).toLocaleString("id-ID")}
                           </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
@@ -2927,7 +2929,10 @@ export default function AdminGuruPage() {
             </TabsContent>
 
             {/* Tab 2: Forgot Password Requests */}
-            <TabsContent value="forgot-password" className="space-y-3 flex-1 flex flex-col overflow-hidden">
+            <TabsContent
+              value="forgot-password"
+              className="space-y-3 flex-1 flex flex-col overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                 {loadingForgotPasswordRequests ? (
                   <p className="text-sm text-gray-500 py-8 text-center">

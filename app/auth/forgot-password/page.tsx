@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
       }
 
       setSuccessMessage(
-        "Permintaan Anda telah dikirim. Admin akan menghubungi Anda melalui email dalam 1×24 jam kerja."
+        "Permintaan Anda telah dikirim. Admin akan menghubungi Anda melalui email dalam 1×24 jam kerja.",
       );
       setEmail("");
     } catch (err: any) {

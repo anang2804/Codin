@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     if (!email) {
       return NextResponse.json(
         { error: "Email tidak boleh kosong" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Format email tidak valid" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: "Server credentials not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       console.error("Error fetching profile:", profileError);
       return NextResponse.json(
         { error: "Gagal memproses permintaan" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       console.error("Error checking existing requests:", existingError);
       return NextResponse.json(
         { error: "Gagal memproses permintaan" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
           error:
             "Anda sudah memiliki permintaan lupa sandi yang menunggu konfirmasi admin. Silakan tunggu atau hubungi admin langsung.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
       console.error("Error creating forgot password request:", insertError);
       return NextResponse.json(
         { error: insertError.message || "Gagal membuat permintaan" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
     console.error("Error submitting forgot password request:", err);
     return NextResponse.json(
       { error: err?.message || "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
