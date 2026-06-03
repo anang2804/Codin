@@ -1,0 +1,259 @@
+"use client";
+
+import type React from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
+
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Validate email
+    if (!email.trim()) {
+      setError("Email tidak boleh kosong");
+      return;
+    }
+
+    if (!validateEmail(email.trim())) {
+      setError("Format email tidak valid");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/forgot-password-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Gagal mengirim permintaan");
+        return;
+      }
+
+      setSuccessMessage(
+        "Permintaan Anda telah dikirim. Admin akan menghubungi Anda melalui email dalam 1×24 jam kerja."
+      );
+      setEmail("");
+    } catch (err: any) {
+      setError(err?.message || "Terjadi kesalahan. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background text-foreground">
+      <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes floatIllus {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-14px); }
+        }
+        .anim-left   { animation: fadeIn 0.8s ease both; }
+        .anim-right  { animation: fadeSlideUp 0.7s ease 0.18s both; }
+        .illus-float { animation: floatIllus 6s ease-in-out infinite; }
+      `}</style>
+
+      {/* ── Left panel ── */}
+      <div className="anim-left flex flex-col items-center justify-center w-full lg:w-1/2 min-h-[38vh] lg:min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 dark:from-emerald-950/40 dark:to-emerald-900/25 px-8 lg:px-16 py-10 lg:py-0">
+        {/* Blur circles */}
+        <div className="pointer-events-none absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full bg-green-200 dark:bg-emerald-700/30 blur-3xl opacity-40" />
+        <div className="pointer-events-none absolute bottom-[-80px] right-[-60px] w-80 h-80 rounded-full bg-emerald-200 dark:bg-emerald-600/20 blur-3xl opacity-35" />
+        <div className="pointer-events-none absolute top-1/2 right-[-40px] w-48 h-48 rounded-full bg-teal-100 dark:bg-teal-600/20 blur-3xl opacity-50" />
+        {/* Dot pattern */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(16,185,129,0.22) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        {/* Abstract rings */}
+        <div className="pointer-events-none absolute top-10 right-10 w-28 h-28 rounded-full border-[3px] border-emerald-300/40" />
+        <div className="pointer-events-none absolute bottom-16 left-10 w-16 h-16 rounded-full border-[2px] border-green-300/40" />
+        <div className="pointer-events-none absolute top-1/3 left-8 w-10 h-10 rounded-full border-[2px] border-teal-300/30" />
+
+        {/* Illustration */}
+        <div className="illus-float relative z-10 flex items-center justify-center w-full max-w-[220px] lg:max-w-[380px]">
+          <img
+            src="/logo login nobg.png"
+            alt="CODIN Platform Illustration"
+            className="w-full h-auto object-contain"
+            style={{
+              filter:
+                "drop-shadow(0 24px 48px rgba(16,185,129,0.2)) drop-shadow(0 6px 16px rgba(0,0,0,0.08))",
+            }}
+            draggable={false}
+          />
+        </div>
+
+        {/* Text */}
+        <div className="relative z-10 mt-8 text-center max-w-xs hidden lg:block">
+          <h2 className="text-xl font-bold text-foreground mb-2 leading-snug">
+            Lupa Password?
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tim admin kami siap membantu Anda memulihkan akses ke akun CODIN
+            Anda.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right panel — form ── */}
+      <div className="anim-right relative flex flex-col items-center justify-center w-full lg:w-1/2 flex-1 lg:min-h-screen px-6 py-10 lg:py-12 bg-background">
+        <Link
+          href="/auth/login"
+          className="absolute left-6 top-6 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:border-green-200 hover:bg-green-50 hover:text-green-700 dark:hover:bg-emerald-500/10"
+        >
+          <ArrowLeft size={14} />
+          Kembali
+        </Link>
+
+        <div className="w-full max-w-[420px]">
+          {/* Card */}
+          <div className="bg-card border border-border rounded-2xl px-8 py-10 shadow-sm">
+            {/* Logo inside card */}
+            <div className="flex items-center justify-center mb-7">
+              <img
+                src="/logo codin.png"
+                alt="Codin Logo"
+                className="h-14 w-auto"
+              />
+            </div>
+
+            <div className="mb-7 text-center">
+              <h1 className="text-2xl font-extrabold text-foreground mb-1">
+                Lupa Sandi?
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Masukkan email akun Anda. Permintaan akan diteruskan ke admin
+                untuk diproses.
+              </p>
+            </div>
+
+            {successMessage ? (
+              <div className="space-y-5">
+                <div className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-lg px-4 py-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 flex-shrink-0 mt-1.5" />
+                  <p className="text-sm text-emerald-700 dark:text-emerald-200 leading-relaxed">
+                    {successMessage}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <Link
+                    href="/auth/login"
+                    className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors inline-flex items-center gap-1"
+                  >
+                    <ArrowLeft size={14} />
+                    Kembali ke halaman login
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="nama@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 rounded-lg border-border bg-background focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 px-4 text-sm"
+                    suppressHydrationWarning
+                  />
+                </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  suppressHydrationWarning
+                  className="w-full py-3 mt-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                      Memproses...
+                    </span>
+                  ) : (
+                    "Kirim Permintaan"
+                  )}
+                </button>
+
+                <div className="text-center pt-2">
+                  <Link
+                    href="/auth/login"
+                    className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors inline-flex items-center gap-1"
+                  >
+                    <ArrowLeft size={14} />
+                    Kembali ke halaman login
+                  </Link>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -38,6 +38,7 @@ import {
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import {
   Dialog,
@@ -46,6 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 interface Guru {
@@ -106,6 +108,17 @@ export default function AdminGuruPage() {
   const [loadingPasswordRequests, setLoadingPasswordRequests] = useState(false);
   const [processingPasswordRequestId, setProcessingPasswordRequestId] =
     useState<string | null>(null);
+  const [forgotPasswordRequests, setForgotPasswordRequests] = useState<
+    PasswordChangeRequest[]
+  >([]);
+  const [loadingForgotPasswordRequests, setLoadingForgotPasswordRequests] =
+    useState(false);
+  const [processingForgotPasswordRequestId, setProcessingForgotPasswordRequestId] =
+    useState<string | null>(null);
+  const [approvingPasswordInput, setApprovingPasswordInput] = useState<{
+    requestId: string;
+    newPassword: string;
+  } | null>(null);
   const [guruRowsPerPage, setGuruRowsPerPage] = useState(10);
   const [guruPage, setGuruPage] = useState(0);
 
@@ -521,6 +534,69 @@ export default function AdminGuruPage() {
       toast.error(error?.message || "Gagal memproses permintaan");
     } finally {
       setProcessingPasswordRequestId(null);
+    }
+  };
+
+  const fetchForgotPasswordRequests = async () => {
+    setLoadingForgotPasswordRequests(true);
+    try {
+      const response = await fetch(
+        `/api/admin/forgot-password-requests?t=${Date.now()}&role=guru`,
+        {
+          cache: "no-store",
+        },
+      );
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          json.error || "Failed to fetch forgot password requests",
+        );
+      }
+      setForgotPasswordRequests(Array.isArray(json.data) ? json.data : []);
+    } catch (error) {
+      console.error("Error fetching forgot password requests:", error);
+      setForgotPasswordRequests([]);
+    } finally {
+      setLoadingForgotPasswordRequests(false);
+    }
+  };
+
+  const processForgotPasswordRequest = async (
+    requestId: string,
+    action: "approve" | "reject",
+    newPassword?: string,
+  ) => {
+    setProcessingForgotPasswordRequestId(requestId);
+    try {
+      const response = await fetch("/api/admin/forgot-password-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action, newPassword }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || "Gagal memproses permintaan");
+      }
+
+      if (action === "approve" && json.temporaryPassword) {
+        toast.success(
+          `Permintaan lupa sandi disetujui. Password baru: ${json.temporaryPassword}`,
+        );
+      } else {
+        toast.success(
+          action === "approve"
+            ? "Permintaan lupa sandi disetujui"
+            : "Permintaan lupa sandi ditolak",
+        );
+      }
+
+      setApprovingPasswordInput(null);
+      await Promise.all([fetchForgotPasswordRequests(), fetchGuru()]);
+    } catch (error: any) {
+      console.error("Error processing forgot password request:", error);
+      toast.error(error?.message || "Gagal memproses permintaan");
+    } finally {
+      setProcessingForgotPasswordRequestId(null);
     }
   };
 
@@ -1308,6 +1384,7 @@ export default function AdminGuruPage() {
             onClick={() => {
               setShowPasswordRequestsModal(true);
               fetchPasswordChangeRequests();
+              fetchForgotPasswordRequests();
             }}
             className="bg-slate-600 hover:bg-slate-700 rounded-lg px-5 py-2.5 transition hover:scale-[1.02] relative"
           >
@@ -1315,11 +1392,14 @@ export default function AdminGuruPage() {
               <Lock size={16} className="mr-2" />
               <span>Permintaan Ganti Password</span>
             </div>
-            {passwordChangeRequests.length > 0 && (
+            {(passwordChangeRequests.length > 0 ||
+              forgotPasswordRequests.length > 0) && (
               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-red-600 text-white text-[10px] font-semibold">
-                {passwordChangeRequests.length > 99
+                {passwordChangeRequests.length + forgotPasswordRequests.length >
+                99
                   ? "99+"
-                  : passwordChangeRequests.length}
+                  : passwordChangeRequests.length +
+                    forgotPasswordRequests.length}
               </span>
             )}
           </Button>
@@ -2743,12 +2823,12 @@ export default function AdminGuruPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Password Change Requests Modal */}
+      {/* Password Change & Forgot Password Requests Modal */}
       <Dialog
         open={showPasswordRequestsModal}
         onOpenChange={setShowPasswordRequestsModal}
       >
-        <DialogContent className="max-w-2xl rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+        <DialogContent className="max-w-2xl max-h-[min(90vh,700px)] rounded-xl border border-gray-100 p-7 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200 flex flex-col">
           <DialogHeader className="space-y-3">
             <DialogTitle className="text-xl font-semibold text-gray-900">
               Permintaan Ganti Password Guru
@@ -2759,75 +2839,252 @@ export default function AdminGuruPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-6 max-h-96 overflow-y-auto space-y-3">
-            {loadingPasswordRequests ? (
-              <p className="text-sm text-gray-500 py-8 text-center">
-                Memuat permintaan...
-              </p>
-            ) : passwordChangeRequests.length === 0 ? (
-              <p className="text-sm text-gray-500 py-8 text-center">
-                Tidak ada permintaan ganti password yang menunggu konfirmasi.
-              </p>
-            ) : (
-              passwordChangeRequests.map((req) => (
-                <div
-                  key={req.id}
-                  className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {req.name}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {req.email}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Diajukan:{" "}
-                        {new Date(req.requested_at).toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          processPasswordChangeRequest(req.id, "approve")
-                        }
-                        disabled={processingPasswordRequestId === req.id}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle2 size={14} className="mr-1.5" />
-                        Setujui
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          processPasswordChangeRequest(req.id, "reject")
-                        }
-                        disabled={processingPasswordRequestId === req.id}
-                        className="border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <XIcon size={14} className="mr-1.5" />
-                        Tolak
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <Tabs defaultValue="change-password" className="w-full flex flex-col flex-1">
+            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+              <TabsTrigger value="change-password">
+                Ganti Password
+              </TabsTrigger>
+              <TabsTrigger value="forgot-password">
+                Lupa Sandi
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="mt-6 flex justify-between items-center border-t border-gray-100 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchPasswordChangeRequests}
-              className="border-gray-200"
-            >
-              <RefreshCw size={14} className="mr-1.5" />
-              Muat Ulang
-            </Button>
+            {/* Tab 1: Change Password Requests */}
+            <TabsContent value="change-password" className="space-y-3 flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {loadingPasswordRequests ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">
+                    Memuat permintaan...
+                  </p>
+                ) : passwordChangeRequests.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">
+                    Tidak ada permintaan ganti password yang menunggu
+                    konfirmasi.
+                  </p>
+                ) : (
+                  passwordChangeRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {req.name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {req.email}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Diajukan:{" "}
+                            {new Date(req.requested_at).toLocaleString(
+                              "id-ID",
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              processPasswordChangeRequest(req.id, "approve")
+                            }
+                            disabled={processingPasswordRequestId === req.id}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle2 size={14} className="mr-1.5" />
+                            Setujui
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              processPasswordChangeRequest(req.id, "reject")
+                            }
+                            disabled={processingPasswordRequestId === req.id}
+                            className="border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            <XIcon size={14} className="mr-1.5" />
+                            Tolak
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="flex justify-between items-center border-t border-gray-100 pt-4 mt-4 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchPasswordChangeRequests}
+                  className="border-gray-200"
+                >
+                  <RefreshCw size={14} className="mr-1.5" />
+                  Muat Ulang
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Tab 2: Forgot Password Requests */}
+            <TabsContent value="forgot-password" className="space-y-3 flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {loadingForgotPasswordRequests ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">
+                    Memuat permintaan...
+                  </p>
+                ) : forgotPasswordRequests.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">
+                    Tidak ada permintaan lupa sandi yang menunggu konfirmasi.
+                  </p>
+                ) : (
+                  forgotPasswordRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
+                    >
+                      {approvingPasswordInput?.requestId === req.id ? (
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {req.name}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {req.email}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Diajukan:{" "}
+                                {new Date(req.requested_at).toLocaleString(
+                                  "id-ID",
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 bg-white p-3 rounded-lg border border-gray-200">
+                            <Label className="text-sm font-medium">
+                              Password Baru
+                            </Label>
+                            <Input
+                              type="text"
+                              placeholder="Masukkan password baru atau kosongkan untuk auto-generate"
+                              value={approvingPasswordInput.newPassword}
+                              onChange={(e) =>
+                                setApprovingPasswordInput({
+                                  requestId: req.id,
+                                  newPassword: e.target.value,
+                                })
+                              }
+                              className="h-10 text-sm"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Minimal 8 karakter, atau biarkan kosong untuk
+                              generate otomatis.
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setApprovingPasswordInput(null)}
+                              className="border-gray-200"
+                              disabled={
+                                processingForgotPasswordRequestId === req.id
+                              }
+                            >
+                              Batal
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                processForgotPasswordRequest(
+                                  req.id,
+                                  "approve",
+                                  approvingPasswordInput.newPassword,
+                                )
+                              }
+                              disabled={
+                                processingForgotPasswordRequestId === req.id
+                              }
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 size={14} className="mr-1.5" />
+                              Simpan Password
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {req.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {req.email}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Diajukan:{" "}
+                              {new Date(req.requested_at).toLocaleString(
+                                "id-ID",
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                setApprovingPasswordInput({
+                                  requestId: req.id,
+                                  newPassword: "",
+                                })
+                              }
+                              disabled={
+                                processingForgotPasswordRequestId === req.id
+                              }
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 size={14} className="mr-1.5" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                processForgotPasswordRequest(req.id, "reject")
+                              }
+                              disabled={
+                                processingForgotPasswordRequestId === req.id
+                              }
+                              className="border-red-200 text-red-600 hover:bg-red-50"
+                            >
+                              <XIcon size={14} className="mr-1.5" />
+                              Tolak
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="flex justify-between items-center border-t border-gray-100 pt-4 mt-4 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchForgotPasswordRequests}
+                  className="border-gray-200"
+                >
+                  <RefreshCw size={14} className="mr-1.5" />
+                  Muat Ulang
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-6 flex justify-end">
             <Button
               variant="outline"
               onClick={() => setShowPasswordRequestsModal(false)}

@@ -221,6 +221,15 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <div className="text-right">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+                >
+                  Lupa sandi?
+                </Link>
+              </div>
+
               {error && (
                 <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
