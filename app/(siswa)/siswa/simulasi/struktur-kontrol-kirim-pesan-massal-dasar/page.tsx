@@ -147,13 +147,41 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
     setFeedback("Sistem siap menjalankan simulasi.");
   };
 
+  // Helper: find the first problematic slot index (null or wrong block)
+  // Returns the EDITOR line index (3 + blockIndex) of the first bad slot,
+  // or -1 if everything is correct.
+  const findFirstBadLine = (blocks: (CodeBlock | null)[]): number => {
+    const isFullSolution = blocks[0]?.id === "start-log";
+
+    if (isFullSolution) {
+      const expected = [
+        "start-log",
+        "for-loop",
+        "loop-body",
+        "loop-close",
+        "end-log",
+      ];
+      for (let i = 0; i < expected.length; i++) {
+        if (blocks[i] === null || blocks[i]?.id !== expected[i]) {
+          return 3 + i;
+        }
+      }
+    } else {
+      // Simplified or mixed: check if first filled block defines the path
+      const expected = ["for-loop", "loop-body", "loop-close", "end-log"];
+      for (let i = 0; i < expected.length; i++) {
+        if (blocks[i] === null || blocks[i]?.id !== expected[i]) {
+          return 3 + i;
+        }
+      }
+    }
+    return -1;
+  };
+
   const executeStep = (index: number) => {
     const totalLines = 3 + placedBlocks.length;
 
     if (index >= totalLines) {
-      // Accept two valid solutions:
-      // 1. Full solution: start-log → for-loop → loop-body → loop-close → end-log
-      // 2. Simplified solution: for-loop → loop-body → loop-close → end-log (without start-log)
       const fullSolution =
         placedBlocks[0]?.id === "start-log" &&
         placedBlocks[1]?.id === "for-loop" &&
@@ -178,10 +206,13 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
         return;
       } else {
         setIsRunning(false);
-        setActiveLine(3);
+        // Point to the first bad slot, not hardcoded line 4
+        const badLine = findFirstBadLine(placedBlocks);
+        setActiveLine(badLine);
+        setErrorLine(badLine);
         setShowSuccessCard(false);
         setFeedback(
-          "Simulasi selesai, tetapi struktur for-loop belum lengkap atau tidak tepat.\n\nPastikan semua blok ditambahkan dalam urutan yang benar: for loop → loop body → close brace → end log",
+          "Simulasi selesai, namun struktur loop belum sempurna.\n\nCoba perhatikan urutan blok-blok yang sudah kamu susun. Apakah setiap bagian loop sudah berada di posisi yang tepat?",
         );
         return;
       }
@@ -218,12 +249,11 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
     if (isFullSolution) {
       // Full solution: start-log → for-loop → loop-body → loop-close → end-log
       if (blockIndex === 0) {
-        // Start log
         if (block.id !== "start-log") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 4 belum tepat.\n\nSeharusnya console.log untuk memulai pengiriman pesan.",
+            "Baris 4 perlu diperiksa kembali.\n\nCoba pikirkan: apa yang sebaiknya dilakukan program sebelum loop dimulai?",
           );
           return;
         }
@@ -231,25 +261,24 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
         setConsoleOutput(newOutput);
         setFeedback("Baris 4 benar.\n\nOutput: Mulai pengiriman...");
       } else if (blockIndex === 1) {
-        // For loop
         if (block.id !== "for-loop") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
-          setFeedback("Baris 5 belum tepat.\n\nSeharusnya for-loop statement.");
+          setFeedback(
+            "Baris 5 perlu diperiksa kembali.\n\nPerhatikan: bagian mana dari struktur loop yang seharusnya ditulis pertama kali?",
+          );
           return;
         }
         setFeedback("Baris 5 benar.\n\nLoop dimulai: i dari 1 hingga 3.");
       } else if (blockIndex === 2) {
-        // Loop body
         if (block.id !== "loop-body") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 6 belum tepat.\n\nBody loop harus mencetak pesan dengan template literal.",
+            "Baris 6 perlu diperiksa kembali.\n\nCoba pikirkan: apa yang harus dilakukan program di dalam loop setiap kali iterasi berjalan?",
           );
           return;
         }
-        // Execute loop 3 times
         const messages: string[] = [];
         for (let i = 1; i <= 3; i++) {
           messages.push(`Mengirim pesan ke-${i}`);
@@ -262,23 +291,21 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
           "Baris 6 benar.\n\nLoop body dieksekusi 3 kali:\n- Mengirim pesan ke-1\n- Mengirim pesan ke-2\n- Mengirim pesan ke-3",
         );
       } else if (blockIndex === 3) {
-        // Loop close
         if (block.id !== "loop-close") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 7 belum tepat.\n\nSeharusnya } untuk menutup loop.",
+            "Baris 7 perlu diperiksa kembali.\n\nSetiap blok kode yang dibuka dengan '{' harus diakhiri dengan sesuatu. Kira-kira apa itu?",
           );
           return;
         }
         setFeedback("Baris 7 benar.\n\nLoop ditutup dengan baik.");
       } else if (blockIndex === 4) {
-        // End log
         if (block.id !== "end-log") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 8 belum tepat.\n\nSeharusnya console.log untuk pesan akhir.",
+            "Baris 8 perlu diperiksa kembali.\n\nSetelah semua pengiriman selesai, apa yang sebaiknya ditampilkan program kepada pengguna?",
           );
           return;
         }
@@ -287,25 +314,24 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
     } else {
       // Simplified solution: for-loop → loop-body → loop-close → end-log
       if (blockIndex === 0) {
-        // For loop
         if (block.id !== "for-loop") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
-          setFeedback("Baris 4 belum tepat.\n\nSeharusnya for-loop statement.");
+          setFeedback(
+            "Baris 4 perlu diperiksa kembali.\n\nPerhatikan: bagian mana dari struktur loop yang seharusnya ditulis pertama kali?",
+          );
           return;
         }
         setFeedback("Baris 4 benar.\n\nLoop dimulai: i dari 1 hingga 3.");
       } else if (blockIndex === 1) {
-        // Loop body
         if (block.id !== "loop-body") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 5 belum tepat.\n\nBody loop harus mencetak pesan dengan template literal.",
+            "Baris 5 perlu diperiksa kembali.\n\nCoba pikirkan: apa yang harus dilakukan program di dalam loop setiap kali iterasi berjalan?",
           );
           return;
         }
-        // Execute loop 3 times
         const messages: string[] = [];
         for (let i = 1; i <= 3; i++) {
           messages.push(`Mengirim pesan ke-${i}`);
@@ -318,23 +344,21 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
           "Baris 5 benar.\n\nLoop body dieksekusi 3 kali:\n- Mengirim pesan ke-1\n- Mengirim pesan ke-2\n- Mengirim pesan ke-3",
         );
       } else if (blockIndex === 2) {
-        // Loop close
         if (block.id !== "loop-close") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 6 belum tepat.\n\nSeharusnya } untuk menutup loop.",
+            "Baris 6 perlu diperiksa kembali.\n\nSetiap blok kode yang dibuka dengan '{' harus diakhiri dengan sesuatu. Kira-kira apa itu?",
           );
           return;
         }
         setFeedback("Baris 6 benar.\n\nLoop ditutup dengan baik.");
       } else if (blockIndex === 3) {
-        // End log
         if (block.id !== "end-log") {
           setIsRunning(false);
           setErrorLine(3 + blockIndex);
           setFeedback(
-            "Baris 7 belum tepat.\n\nSeharusnya console.log untuk pesan akhir.",
+            "Baris 7 perlu diperiksa kembali.\n\nSetelah semua pengiriman selesai, apa yang sebaiknya ditampilkan program kepada pengguna?",
           );
           return;
         }
@@ -381,7 +405,9 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
       const newBlocks = [...placedBlocks];
       newBlocks[slotIndex] = draggedBlock;
       setPlacedBlocks(newBlocks);
-      setFeedback("Blok ditambahkan.");
+      setFeedback(
+        "Blok ditambahkan. Coba jalankan simulasi untuk memeriksa hasilnya!",
+      );
     }
     setDraggedBlock(null);
   };
@@ -390,7 +416,7 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
     const newBlocks = [...placedBlocks];
     newBlocks[index] = null;
     setPlacedBlocks(newBlocks);
-    setFeedback("Blok dihapus.");
+    setFeedback("Blok dihapus. Slot kosong siap diisi kembali.");
   };
 
   const SyntaxHighlight = ({ code }: { code: string }) => {
@@ -679,7 +705,9 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
                       className={`h-[26px] transition-all ${
                         activeLine === i
                           ? "scale-110 pr-1 font-black text-emerald-700"
-                          : ""
+                          : errorLine === i
+                            ? "scale-110 pr-1 font-black text-red-600"
+                            : ""
                       }`}
                     >
                       {i + 1}
@@ -729,9 +757,11 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
                               <motion.div
                                 layoutId="lineHighlightKirimPesan"
                                 className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
-                                  isRunning
-                                    ? "border-emerald-500 bg-emerald-50"
-                                    : "border-emerald-200 bg-emerald-50/30"
+                                  errorLine === 3 + idx
+                                    ? "border-red-500 bg-red-50"
+                                    : isRunning
+                                      ? "border-emerald-500 bg-emerald-50"
+                                      : "border-emerald-200 bg-emerald-50/30"
                                 }`}
                               />
                             )}
@@ -739,12 +769,22 @@ export default function StrukturKontrolKirimPesanMassalDasarPage() {
                               <div
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDropOnEditor(e, idx)}
-                                className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                                className={`relative z-10 w-full flex-1 h-[26px] border-2 border-dashed rounded text-center text-[10px] flex items-center justify-center transition-all ${
+                                  errorLine === 3 + idx
+                                    ? "border-red-400 bg-red-50 text-red-500"
+                                    : "border-emerald-200 text-emerald-500 hover:border-emerald-400 hover:bg-emerald-50"
+                                }`}
                               >
-                                ↓ Drop di sini
+                                {errorLine === 3 + idx
+                                  ? "⚠ Slot ini perlu diisi"
+                                  : "↓ Drop di sini"}
                               </div>
                             ) : (
-                              <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                              <div
+                                className={`relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between ${
+                                  errorLine === 3 + idx ? "text-red-700" : ""
+                                }`}
+                              >
                                 <span>
                                   <SyntaxHighlight code={block.content} />
                                 </span>
