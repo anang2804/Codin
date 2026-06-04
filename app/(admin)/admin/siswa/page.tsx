@@ -659,8 +659,8 @@ export default function AdminSiswaPage() {
 
   function startEdit(siswa: Siswa) {
     setEditingId(siswa.id);
-    setEditForm({ ...siswa });
-    setOriginalEditForm({ ...siswa });
+    setEditForm({ ...siswa, password: siswa.password || "" });
+    setOriginalEditForm({ ...siswa, password: siswa.password || "" });
     setEditValidationErrors({});
     setEditPhoneError("");
     setShowEditPasswordError(false);
@@ -695,7 +695,6 @@ export default function AdminSiswaPage() {
       { key: "kelas", label: "Kelas" },
       { key: "tanggal_lahir", label: "Tanggal lahir" },
       { key: "jenis_kelamin", label: "Jenis kelamin" },
-      { key: "no_telepon", label: "No. Telepon" },
       { key: "alamat", label: "Alamat" },
     ];
 
@@ -719,7 +718,11 @@ export default function AdminSiswaPage() {
       return;
     }
 
-    if (!PHONE_NUMBER_REGEX.test(normalizedEditData.no_telepon)) {
+    // Validasi format angka hanya jika no_telepon diisi
+    if (
+      normalizedEditData.no_telepon &&
+      !PHONE_NUMBER_REGEX.test(normalizedEditData.no_telepon)
+    ) {
       setEditValidationErrors((prev) => ({ ...prev, no_telepon: true }));
       setEditPhoneError("No. Telepon hanya boleh berisi angka.");
       toast.error("No. Telepon hanya boleh berisi angka");
@@ -1722,7 +1725,10 @@ export default function AdminSiswaPage() {
                         {/* No. Telepon */}
                         <div>
                           <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                            No. Telepon
+                            No. Telepon{" "}
+                            <span className="text-gray-400 font-normal">
+                              (opsional)
+                            </span>
                           </label>
                           <div className="relative">
                             <Phone
@@ -1760,7 +1766,7 @@ export default function AdminSiswaPage() {
                           {(editValidationErrors.no_telepon ||
                             !!editPhoneError) && (
                             <p className="mt-1 text-[11px] text-red-600">
-                              {editPhoneError || "No. Telepon wajib diisi."}
+                              {editPhoneError}
                             </p>
                           )}
                         </div>
