@@ -248,7 +248,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
         setErrorLine(2 + blockIndex);
         setCrossError(true);
         setFeedback(
-          "Baris 3 belum tepat.\n\nBlok pembuka perulangan belum sesuai.\n\nPetunjuk: Gunakan blok 'do {' untuk memulai perulangan.",
+          "Baris 3 belum tepat.\n\nBlok pembuka perulangan belum sesuai.\n\nCoba pikirkan: blok apa yang biasanya membuka sebuah perulangan?",
         );
         return;
       }
@@ -261,7 +261,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
         setErrorLine(2 + blockIndex);
         setCrossError(true);
         setFeedback(
-          "Baris 4 belum tepat.\n\nStatement console.log belum sesuai.\n\nPetunjuk: Gunakan blok yang menampilkan status lampu masih merah.",
+          "Baris 4 belum tepat.\n\nStatement console.log belum sesuai.\n\nPerhatikan misi: apa yang perlu ditampilkan selama lampu masih merah?",
         );
         return;
       }
@@ -274,7 +274,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
         setErrorLine(2 + blockIndex);
         setCrossError(true);
         setFeedback(
-          "Baris 5 belum tepat.\n\nAssignment statement belum sesuai.\n\nPetunjuk: Gunakan blok yang mengubah warna lampu menjadi hijau.",
+          "Baris 5 belum tepat.\n\nAssignment statement belum sesuai.\n\nAgar pejalan kaki bisa menyeberang, apa yang perlu berubah pada lampu?",
         );
         return;
       }
@@ -288,7 +288,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
         setErrorLine(2 + blockIndex);
         setCrossError(true);
         setFeedback(
-          "Baris 6 belum tepat.\n\nBlok penutup perulangan belum sesuai.\n\nPetunjuk: Gunakan blok '} while' untuk menutup kondisi perulangan.",
+          "Baris 6 belum tepat.\n\nBlok penutup perulangan belum sesuai.\n\nPerulangan perlu ditutup dengan kondisi. Blok mana yang melakukan itu?",
         );
         return;
       }
@@ -551,7 +551,12 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
                           key={`placed-${idx}`}
                           className="relative flex h-[26px] items-center group"
                         >
-                          {activeLine === 2 + idx && (
+                          {errorLine === 2 + idx ? (
+                            <motion.div
+                              layoutId="lineHighlightPenyeberangan"
+                              className="absolute inset-0 -mx-5 -my-1 border-l-4 border-rose-500 bg-rose-50 z-0"
+                            />
+                          ) : activeLine === 2 + idx ? (
                             <motion.div
                               layoutId="lineHighlightPenyeberangan"
                               className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
@@ -560,7 +565,7 @@ export default function StrukturKontrolPenyeberanganJalanDasarPage() {
                                   : "border-emerald-200 bg-emerald-50/30"
                               }`}
                             />
-                          )}
+                          ) : null}
                           {block === null ? (
                             <div
                               onDragOver={handleDragOver}
