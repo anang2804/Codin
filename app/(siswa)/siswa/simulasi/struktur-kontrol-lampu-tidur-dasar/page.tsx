@@ -54,7 +54,6 @@ const AVAILABLE_BLOCKS: CodeBlock[] = [
 ];
 
 export default function StrukturKontrolLampuTidurDasarPage() {
-  // Initialize with 5 empty slots for the required blocks
   const [placedBlocks, setPlacedBlocks] = useState<(CodeBlock | null)[]>([
     null,
     null,
@@ -153,11 +152,28 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     setFeedback("Sistem siap menjalankan simulasi.");
   };
 
+  // Helper: find the editor line index (3 + blockIndex) of the first
+  // slot that is empty or holds the wrong block. Returns -1 if all correct.
+  const findFirstBadLine = (blocks: (CodeBlock | null)[]): number => {
+    const expected = [
+      "if-block",
+      "print-nyala-stmt",
+      "close-else-block",
+      "print-mati-stmt",
+      "close-brace",
+    ];
+    for (let i = 0; i < expected.length; i++) {
+      if (blocks[i] === null || blocks[i]?.id !== expected[i]) {
+        return 3 + i;
+      }
+    }
+    return -1;
+  };
+
   const executeStep = (index: number) => {
-    const totalLines = 3 + placedBlocks.length; // 3 + 5 = 8
+    const totalLines = 3 + placedBlocks.length;
 
     if (index >= totalLines) {
-      // Check if user placed all required blocks
       if (
         placedBlocks[0]?.id === "if-block" &&
         placedBlocks[1]?.id === "print-nyala-stmt" &&
@@ -174,10 +190,13 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         return;
       } else {
         setIsRunning(false);
-        setActiveLine(3);
+        // Point to the first bad slot, not hardcoded line 4
+        const badLine = findFirstBadLine(placedBlocks);
+        setActiveLine(badLine);
+        setErrorLine(badLine);
         setShowSuccessCard(false);
         setFeedback(
-          "Simulasi selesai, tetapi struktur kontrol belum lengkap atau tidak tepat.\n\nPastikan semua blok ditambahkan dalam urutan yang benar: if → print nyala → } else { → print mati → }",
+          "Simulasi selesai, namun ada yang belum tepat.\n\nCoba baca ulang setiap baris dari atas ke bawah. Di baris mana kira-kira programnya mulai bingung?",
         );
         return;
       }
@@ -195,13 +214,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     const blockIndex = index - 3;
 
     if (blockIndex >= placedBlocks.length) {
-      // Should not reach here since totalLines is calculated correctly
       return;
     }
 
     const block = placedBlocks[blockIndex];
 
-    // Skip null blocks (empty slots)
     if (block === null) {
       timerRef.current = setTimeout(() => executeStep(index + 1), 850);
       return;
@@ -210,12 +227,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     setActiveLine(3 + blockIndex);
 
     if (blockIndex === 0) {
-      // First block should be if condition
       if (block.id !== "if-block") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
         setFeedback(
-          "Baris 4 belum tepat.\n\nToken pada baris ini belum sesuai konteks proses.\n\nPetunjuk: baca ulang tujuan barisnya, lalu pilih token yang perannya paling tepat.",
+          "Baris 4 masih belum tepat.\n\nProgram perlu mengecek kondisi cahaya sebelum memutuskan apa yang harus dilakukan. Struktur apa yang biasa digunakan untuk memeriksa sebuah kondisi?",
         );
         setLampuNyala(false);
         setLampuRusak(true);
@@ -223,40 +239,41 @@ export default function StrukturKontrolLampuTidurDasarPage() {
       }
       setLampuRusak(false);
       setFeedback(
-        "Baris 4 benar.\n\nKeyword sudah tepat, sistem masuk ke blok kondisi.",
+        "Baris 4 benar.\n\nSistem masuk ke blok kondisi dan siap memeriksa nilai sensor.",
       );
     } else if (blockIndex === 1) {
-      // Second block should be the print nyala statement
       if (block.id !== "print-nyala-stmt") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
         setFeedback(
-          "Output statement belum tepat. Harus mencetak 'Lampu Tidur Nyala'.",
+          "Baris 5 masih belum tepat.\n\nKondisi sudah terpenuhi — ruangan gelap. Apa yang seharusnya terjadi pada lampu tidur di situasi seperti ini?",
         );
         setLampuRusak(true);
         return;
       }
       setLampuNyala(true);
       setLampuRusak(false);
-      setFeedback('Baris 5 benar.\n\nOutput dieksekusi: "Lampu Tidur Nyala".');
+      setFeedback(
+        "Baris 5 benar.\n\nKondisi terpenuhi dan output berhasil dieksekusi.",
+      );
     } else if (blockIndex === 2) {
-      // Third block should be closing else block
       if (block.id !== "close-else-block") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
-        setFeedback("Baris 6 belum tepat. Seharusnya } else {");
+        setFeedback(
+          "Baris 6 masih belum tepat.\n\nBlok pertama sudah selesai. Bagaimana cara program menangani situasi ketika kondisinya tidak terpenuhi — ruangan masih terang?",
+        );
         return;
       }
       setFeedback(
-        "Baris 6 benar.\n\nBlok if ditutup dan blok else dibuka dengan benar.",
+        "Baris 6 benar.\n\nBlok if ditutup dan program siap menangani kondisi sebaliknya.",
       );
     } else if (blockIndex === 3) {
-      // Fourth block should be print mati statement
       if (block.id !== "print-mati-stmt") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
         setFeedback(
-          "Output statement untuk else belum tepat. Harus mencetak 'Lampu Tidur Mati'.",
+          "Baris 7 masih belum tepat.\n\nKita sudah masuk ke blok alternatif — ruangan masih cukup terang. Apa yang seharusnya terjadi pada lampu tidur dalam kondisi ini?",
         );
         setLampuRusak(true);
         return;
@@ -264,14 +281,15 @@ export default function StrukturKontrolLampuTidurDasarPage() {
       setLampuNyala(false);
       setLampuRusak(false);
       setFeedback(
-        'Baris 7 benar.\n\nOutput else dieksekusi: "Lampu Tidur Mati".',
+        "Baris 7 benar.\n\nBlok else dieksekusi dengan output yang tepat.",
       );
     } else if (blockIndex === 4) {
-      // Fifth block should be closing brace
       if (block.id !== "close-brace") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
-        setFeedback("Penutup blok else belum tepat.");
+        setFeedback(
+          "Baris 8 masih belum tepat.\n\nBlok alternatif sudah berisi perintahnya. Apa yang perlu ditambahkan agar blok ini dinyatakan selesai?",
+        );
         return;
       }
       setFeedback(
@@ -314,11 +332,12 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     }
 
     if (slotIndex !== undefined && slotIndex < placedBlocks.length) {
-      // Replace the slot
       const newBlocks = [...placedBlocks];
       newBlocks[slotIndex] = draggedBlock;
       setPlacedBlocks(newBlocks);
-      setFeedback("Blok ditambahkan.");
+      setFeedback(
+        "Blok ditambahkan. Coba jalankan simulasi untuk memeriksa hasilnya!",
+      );
     }
     setDraggedBlock(null);
   };
@@ -327,12 +346,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     const newBlocks = [...placedBlocks];
     newBlocks[index] = null;
     setPlacedBlocks(newBlocks);
-    setFeedback("Blok dihapus.");
+    setFeedback("Blok dihapus. Slot kosong siap diisi kembali.");
   };
 
   const lampuVisualNyala = lampuNyala && !lampuRusak;
 
-  // Syntax highlighting component with proper token parsing
   const SyntaxHighlight = ({ code }: { code: string }) => {
     if (!code) return <>{code}</>;
 
@@ -342,7 +360,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
     while (remaining.length > 0) {
       let matched = false;
 
-      // Keywords
       const keywordMatch = remaining.match(
         /^(if|else|for|while|switch|case|return|new|class|public|private|static|final|System)\b/,
       );
@@ -352,7 +369,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         matched = true;
       }
 
-      // Types
       if (!matched) {
         const typeMatch = remaining.match(
           /^(int|String|boolean|void|double|float|char|long|short)\b/,
@@ -364,7 +380,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         }
       }
 
-      // Numbers
       if (!matched) {
         const numMatch = remaining.match(/^\d+/);
         if (numMatch) {
@@ -374,7 +389,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         }
       }
 
-      // Strings
       if (!matched) {
         const strMatch = remaining.match(/^"[^"]*"/);
         if (strMatch) {
@@ -384,7 +398,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         }
       }
 
-      // Constants
       if (!matched) {
         const constMatch = remaining.match(/^(true|false|null)\b/);
         if (constMatch) {
@@ -394,7 +407,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
         }
       }
 
-      // Regular character
       if (!matched) {
         tokens.push({ text: remaining[0], type: "default" });
         remaining = remaining.slice(1);
@@ -624,9 +636,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                     <div
                       key={i}
                       className={`h-[26px] transition-all ${
-                        activeLine === i
+                        activeLine === i && errorLine !== i
                           ? "scale-110 pr-1 font-black text-emerald-700"
-                          : ""
+                          : errorLine === i
+                            ? "scale-110 pr-1 font-black text-red-600"
+                            : ""
                       }`}
                     >
                       {i + 1}
@@ -636,7 +650,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
 
                 <div className="relative flex-1 overflow-hidden bg-card">
                   <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
-                    {/* Static lines */}
                     {codeLines.map((line, i) => (
                       <div
                         key={`static-${i}`}
@@ -658,7 +671,6 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                       </div>
                     ))}
 
-                    {/* Placed blocks or drop zone */}
                     {placedBlocks.length === 0 ? (
                       <div
                         onDragOver={handleDragOver}
@@ -678,9 +690,11 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                               <motion.div
                                 layoutId="lineHighlightLampuTidur"
                                 className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
-                                  isRunning
-                                    ? "border-emerald-500 bg-emerald-50"
-                                    : "border-emerald-200 bg-emerald-50/30"
+                                  errorLine === 3 + idx
+                                    ? "border-red-500 bg-red-50"
+                                    : isRunning
+                                      ? "border-emerald-500 bg-emerald-50"
+                                      : "border-emerald-200 bg-emerald-50/30"
                                 }`}
                               />
                             )}
@@ -688,12 +702,24 @@ export default function StrukturKontrolLampuTidurDasarPage() {
                               <div
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDropOnEditor(e, idx)}
-                                className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                                className={`relative z-10 w-full flex-1 h-[26px] border-2 border-dashed rounded text-center text-[10px] flex items-center justify-center transition-all ${
+                                  errorLine === 3 + idx
+                                    ? "border-red-400 bg-red-50 text-red-500"
+                                    : "border-emerald-200 text-emerald-500 hover:border-emerald-400 hover:bg-emerald-50"
+                                }`}
                               >
-                                ↓ Drop di sini
+                                {errorLine === 3 + idx
+                                  ? "⚠ Slot ini perlu diisi"
+                                  : "↓ Drop di sini"}
                               </div>
                             ) : (
-                              <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                              <div
+                                className={`relative z-10 flex-1 font-bold flex items-center justify-between ${
+                                  errorLine === 3 + idx
+                                    ? "text-red-700"
+                                    : "text-slate-900"
+                                }`}
+                              >
                                 <span>
                                   <SyntaxHighlight code={block.content} />
                                 </span>

@@ -10,10 +10,9 @@ import {
   Droplet,
   Play,
   RotateCcw,
-  Terminal,
   GripHorizontal,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const SIMULASI_SLUG = "struktur-kontrol-pengisian-galon-air-dasar";
@@ -40,17 +39,31 @@ const AVAILABLE_BLOCKS: CodeBlock[] = [
     content: "    literSekarang++;",
     category: "statement",
   },
-  {
-    id: "while-close",
-    content: "}",
-    category: "closing",
-  },
+  { id: "while-close", content: "}", category: "closing" },
   {
     id: "water-complete",
     content: 'console.log("Galon Penuh!");',
     category: "statement",
   },
 ];
+
+// Berapa liter air yang muncul saat setiap baris dieksekusi dengan benar
+const WATER_PER_BLOCK: Record<number, number> = {
+  0: 0, // while-condition: galon masih kosong
+  1: 2.5, // water-fill: separuh terisi (menandai loop berjalan)
+  2: 3.5, // water-increment: naik sedikit
+  3: 4, // while-close: hampir penuh
+  4: 5, // water-complete: penuh!
+};
+
+// Level air saat error di setiap baris (galon bocor / tidak normal)
+const WATER_ERROR_LEVEL: Record<number, number> = {
+  0: 0,
+  1: 1,
+  2: 2,
+  3: 3,
+  4: 4,
+};
 
 export default function StrukturKontrolPengisianGalonAirDasarPage() {
   const [placedBlocks, setPlacedBlocks] = useState<(CodeBlock | null)[]>([
@@ -65,6 +78,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [errorLine, setErrorLine] = useState(-1);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [isErrorState, setIsErrorState] = useState(false);
 
   useSimulasiAttemptRecorder({
     simulasiSlug: SIMULASI_SLUG,
@@ -80,12 +94,10 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
   const [visibleIterations, setVisibleIterations] = useState<number[]>([]);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const codeLines = [`let literSekarang = 0;`, `let kapasitasMaks = 5;`, ""];
 
   useEffect(() => {
     let isActive = true;
-
     const fetchCompletionStatus = async () => {
       try {
         const response = await fetch(
@@ -99,9 +111,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
         console.error("Error checking simulation completion:", error);
       }
     };
-
     fetchCompletionStatus();
-
     return () => {
       isActive = false;
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -118,9 +128,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
         body: JSON.stringify({ simulasi_slug: SIMULASI_SLUG }),
       });
       const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.error || "Gagal menyimpan progress simulasi");
-      }
       setHasTried(true);
       toast.success("Simulasi ditandai selesai");
     } catch (error: unknown) {
@@ -143,6 +152,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     setConsoleOutput([]);
     setWaterLevel(0);
     setVisibleIterations([]);
+    setIsErrorState(false);
     setPlacedBlocks([null, null, null, null, null]);
     setFeedback("Sistem siap menjalankan simulasi.");
   };
@@ -162,6 +172,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
         setIsRunning(false);
         setActiveLine(-1);
         setShowSuccessCard(true);
+        setIsErrorState(false);
+        setWaterLevel(5);
         setFeedback(
           "Berhasil! Struktur while-loop sudah lengkap dan benar!\n\nGalon terisi penuh dalam 5 iterasi (0-4 Liter).",
         );
@@ -171,13 +183,12 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
         setActiveLine(3);
         setShowSuccessCard(false);
         setFeedback(
-          "Simulasi selesai, tetapi struktur while-loop belum lengkap atau tidak tepat.\n\nPastikan urutan: while → fill → increment → close → complete",
+          "Simulasi selesai, tetapi struktur while-loop belum lengkap atau tidak tepat.\n\nPeriksa kembali urutan setiap blok dari atas ke bawah.",
         );
         return;
       }
     }
 
-    // Check first 3 lines (variable declarations)
     if (index < 3) {
       setActiveLine(index);
       setFeedback("Baris " + (index + 1) + " diproses: Deklarasi variabel.");
@@ -185,91 +196,110 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
       return;
     }
 
-    // Check placed blocks starting from line 3
     const blockIndex = index - 3;
-
-    if (blockIndex >= placedBlocks.length) {
-      return;
-    }
+    if (blockIndex >= placedBlocks.length) return;
 
     const block = placedBlocks[blockIndex];
 
-    // Skip null blocks
     if (block === null) {
-      timerRef.current = setTimeout(() => executeStep(index + 1), 850);
+      setErrorLine(3 + blockIndex);
+      setActiveLine(3 + blockIndex);
+      setIsRunning(false);
+      setIsErrorState(true);
+      // Tampilkan visual galon dengan level error sesuai posisi baris
+      setWaterLevel(WATER_ERROR_LEVEL[blockIndex] ?? 0);
+      setFeedback(
+        "Baris " +
+          (blockIndex + 4) +
+          " masih kosong.\n\nCoba pikirkan, apa yang seharusnya terjadi di tahap ini dalam proses pengisian galon?",
+      );
       return;
     }
 
     setActiveLine(3 + blockIndex);
 
     if (blockIndex === 0) {
-      // While condition
       if (block.id !== "while-condition") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
+        setIsErrorState(true);
+        setWaterLevel(WATER_ERROR_LEVEL[0]);
         setFeedback(
-          "Baris 4 belum tepat.\n\nSeharusnya while-condition statement.",
+          "Baris 4 belum tepat.\n\nUntuk mengisi galon secara otomatis sampai penuh, struktur apa yang memeriksa kondisi sebelum setiap pengisian?",
         );
         return;
       }
+      // Baris benar — tampilkan level air yang sesuai
+      setWaterLevel(WATER_PER_BLOCK[0]);
+      setIsErrorState(false);
       setFeedback("Baris 4 benar.\n\nLoop dimulai: saat literSekarang < 5.");
     } else if (blockIndex === 1) {
-      // Water fill statement
       if (block.id !== "water-fill") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
+        setIsErrorState(true);
+        setWaterLevel(WATER_ERROR_LEVEL[1]);
         setFeedback(
-          "Baris 5 belum tepat.\n\nSeharusnya console.log mengisi air.",
+          "Baris 5 belum tepat.\n\nDi dalam loop, apa yang perlu ditampilkan setiap kali air ditambahkan ke galon?",
         );
         return;
       }
-
-      // Execute loop 5 times
       const iterations: number[] = [];
       const messages: string[] = [];
       for (let i = 0; i < 5; i++) {
         iterations.push(i);
         messages.push(`Mengisi... ${i} Liter`);
       }
-      const updatedOutput = [...consoleOutput, ...messages];
-      setConsoleOutput(updatedOutput);
-      setWaterLevel(5);
+      setConsoleOutput([...consoleOutput, ...messages]);
+      setWaterLevel(WATER_PER_BLOCK[1]);
       setVisibleIterations(iterations);
+      setIsErrorState(false);
       setFeedback(
         "Baris 5 benar.\n\nLoop body dieksekusi 5 kali:\n- Mengisi... 0 Liter\n- Mengisi... 1 Liter\n- Mengisi... 2 Liter\n- Mengisi... 3 Liter\n- Mengisi... 4 Liter",
       );
     } else if (blockIndex === 2) {
-      // Water increment
       if (block.id !== "water-increment") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
+        setIsErrorState(true);
+        setWaterLevel(WATER_ERROR_LEVEL[2]);
         setFeedback(
-          "Baris 6 belum tepat.\n\nSeharusnya literSekarang++ untuk increment.",
+          "Baris 6 belum tepat.\n\nAgar galon tidak terus diisi tanpa henti, apa yang perlu berubah setiap kali pengisian terjadi?",
         );
         return;
       }
+      setWaterLevel(WATER_PER_BLOCK[2]);
+      setIsErrorState(false);
       setFeedback(
         "Baris 6 benar.\n\nVariabel literSekarang ditambah 1 setiap iterasi.",
       );
     } else if (blockIndex === 3) {
-      // While close
       if (block.id !== "while-close") {
         setIsRunning(false);
         setErrorLine(3 + blockIndex);
-        setFeedback("Baris 7 belum tepat.\n\nSeharusnya } untuk menutup loop.");
-        return;
-      }
-      setFeedback("Baris 7 benar.\n\nLoop ditutup dengan baik.");
-    } else if (blockIndex === 4) {
-      // Water complete
-      if (block.id !== "water-complete") {
-        setIsRunning(false);
-        setErrorLine(3 + blockIndex);
+        setIsErrorState(true);
+        setWaterLevel(WATER_ERROR_LEVEL[3]);
         setFeedback(
-          "Baris 8 belum tepat.\n\nSeharusnya console.log pesan galon penuh.",
+          "Baris 7 belum tepat.\n\nSetiap blok yang dibuka harus ditutup. Blok mana yang mengakhiri perulangan?",
         );
         return;
       }
+      setWaterLevel(WATER_PER_BLOCK[3]);
+      setIsErrorState(false);
+      setFeedback("Baris 7 benar.\n\nLoop ditutup dengan baik.");
+    } else if (blockIndex === 4) {
+      if (block.id !== "water-complete") {
+        setIsRunning(false);
+        setErrorLine(3 + blockIndex);
+        setIsErrorState(true);
+        setWaterLevel(WATER_ERROR_LEVEL[4]);
+        setFeedback(
+          "Baris 8 belum tepat.\n\nSetelah galon penuh, apa yang perlu ditampilkan sebagai tanda pengisian selesai?",
+        );
+        return;
+      }
+      setWaterLevel(WATER_PER_BLOCK[4]);
+      setIsErrorState(false);
       setFeedback('Baris 8 benar.\n\nOutput: "Galon Penuh!"');
     }
 
@@ -285,16 +315,14 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     setConsoleOutput([]);
     setWaterLevel(0);
     setVisibleIterations([]);
+    setIsErrorState(false);
     setFeedback(
       "Memulai simulasi struktur kontrol while-loop...\n\nSistem membaca baris perintah dari atas ke bawah.",
     );
     timerRef.current = setTimeout(() => executeStep(0), 250);
   };
 
-  const handleDragStart = (block: CodeBlock) => {
-    setDraggedBlock(block);
-  };
-
+  const handleDragStart = (block: CodeBlock) => setDraggedBlock(block);
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
@@ -307,7 +335,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
       toast.error("Tidak bisa menambah blok saat simulasi berjalan!");
       return;
     }
-
     if (slotIndex !== undefined && slotIndex < placedBlocks.length) {
       const newBlocks = [...placedBlocks];
       newBlocks[slotIndex] = draggedBlock;
@@ -324,17 +351,12 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
     setFeedback("Blok dihapus.");
   };
 
-  // Syntax highlighting component with proper token parsing
   const SyntaxHighlight = ({ code }: { code: string }) => {
     if (!code) return <>{code}</>;
-
     const tokens: Array<{ text: string; type: string }> = [];
     let remaining = code;
-
     while (remaining.length > 0) {
       let matched = false;
-
-      // Keywords
       const keywordMatch = remaining.match(
         /^(if|else|for|while|switch|case|return|new|class|public|private|static|final|System)\b/,
       );
@@ -343,8 +365,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
         remaining = remaining.slice(keywordMatch[0].length);
         matched = true;
       }
-
-      // Types
       if (!matched) {
         const typeMatch = remaining.match(
           /^(int|String|boolean|void|double|float|char|long|short)\b/,
@@ -355,8 +375,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           matched = true;
         }
       }
-
-      // Numbers
       if (!matched) {
         const numMatch = remaining.match(/^\d+/);
         if (numMatch) {
@@ -365,8 +383,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           matched = true;
         }
       }
-
-      // Strings
       if (!matched) {
         const strMatch = remaining.match(/^"[^"]*"/);
         if (strMatch) {
@@ -375,8 +391,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           matched = true;
         }
       }
-
-      // Constants
       if (!matched) {
         const constMatch = remaining.match(/^(true|false|null)\b/);
         if (constMatch) {
@@ -385,14 +399,11 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           matched = true;
         }
       }
-
-      // Regular character
       if (!matched) {
         tokens.push({ text: remaining[0], type: "default" });
         remaining = remaining.slice(1);
       }
     }
-
     const getColor = (type: string) => {
       switch (type) {
         case "keyword":
@@ -409,7 +420,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           return "";
       }
     };
-
     return (
       <>
         {tokens.map((token, idx) => (
@@ -420,6 +430,18 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
       </>
     );
   };
+
+  // Warna galon: merah saat error, hijau saat normal
+  const galonBorderColor = isErrorState
+    ? "border-rose-400/80"
+    : "border-emerald-400/60";
+  const waterGradient = isErrorState
+    ? "bg-gradient-to-t from-rose-600 to-rose-400"
+    : "bg-gradient-to-t from-emerald-500 to-emerald-300";
+  const markerColor = isErrorState
+    ? "border-rose-400/30 text-rose-300"
+    : "border-emerald-400/30 text-emerald-300";
+  const levelTextColor = isErrorState ? "text-rose-400" : "text-emerald-400";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-lime-50 via-emerald-50 to-amber-50 text-foreground">
@@ -442,15 +464,15 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               Pengisian Galon Air
             </h1>
             <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase italic tracking-widest text-emerald-600">
-              while Loop
+              Dasar
             </span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={resetSim}
-            className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-xs font-bold transition-all duration-200 hover:bg-emerald-50"
             disabled={isRunning}
+            className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-xs font-bold transition-all duration-200 hover:bg-emerald-50"
           >
             <RotateCcw size={14} /> Reset
           </button>
@@ -462,15 +484,9 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
             <Play size={14} /> Jalankan
           </button>
           <button
-            onClick={() => {
-              markAsTried();
-            }}
+            onClick={markAsTried}
             disabled={isSavingCompletion}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${
-              hasTried
-                ? "border-2 border-emerald-300 bg-emerald-100 text-emerald-800"
-                : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-50 ${hasTried ? "border-2 border-emerald-300 bg-emerald-100 text-emerald-800" : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`}
           >
             <CheckCircle2 size={14} /> {hasTried ? "Selesai" : "Selesaikan"}
           </button>
@@ -485,7 +501,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               Blok Kode Tersedia
             </h2>
           </div>
-
           <div className="flex flex-col gap-2">
             {AVAILABLE_BLOCKS.map((block) => (
               <motion.div
@@ -510,25 +525,15 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
           </div>
 
           <div
-            className={`rounded-2xl border p-3 transition-all ${
-              errorLine !== -1
-                ? "border-rose-200 bg-rose-50"
-                : "border-border bg-card"
-            }`}
+            className={`rounded-2xl border p-3 transition-all ${errorLine !== -1 ? "border-rose-200 bg-rose-50" : "border-border bg-card"}`}
           >
             <p
-              className={`text-[10px] font-black uppercase tracking-widest ${
-                errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"
-              }`}
+              className={`text-[10px] font-black uppercase tracking-widest ${errorLine !== -1 ? "text-rose-600" : "text-muted-foreground"}`}
             >
               CATATAN PROSES
             </p>
             <p
-              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${
-                errorLine !== -1
-                  ? "bg-rose-100/70 text-rose-700"
-                  : "bg-muted text-foreground"
-              }`}
+              className={`mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${errorLine !== -1 ? "bg-rose-100/70 text-rose-700" : "bg-muted text-foreground"}`}
             >
               {feedback}
             </p>
@@ -540,9 +545,11 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               <Activity size={10} />
             </div>
             <p className="text-[10px] font-bold italic leading-tight text-muted-foreground">
-              {activeLine !== -1
-                ? `Menganalisis baris ke-${activeLine + 1}`
-                : "Editor siap digunakan"}
+              {errorLine !== -1
+                ? `Perhatikan baris ke-${errorLine + 1}`
+                : activeLine !== -1
+                  ? `Menganalisis baris ke-${activeLine + 1}`
+                  : "Editor siap digunakan"}
             </p>
           </div>
         </aside>
@@ -576,13 +583,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`h-2 w-2 rounded-full ${
-                      isRunning
-                        ? "animate-pulse bg-emerald-500"
-                        : errorLine !== -1
-                          ? "bg-red-500"
-                          : "bg-emerald-500"
-                    }`}
+                    className={`h-2 w-2 rounded-full ${isRunning ? "animate-pulse bg-emerald-500" : errorLine !== -1 ? "bg-red-500" : "bg-emerald-500"}`}
                   />
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-muted-foreground">
                     Algortima dan Pemrograman (Drag & Drop)
@@ -595,11 +596,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
-                      className={`h-[26px] transition-all ${
-                        activeLine === i
-                          ? "scale-110 pr-1 font-black text-emerald-700"
-                          : ""
-                      }`}
+                      className={`h-[26px] transition-all ${errorLine === i ? "scale-110 pr-1 font-black text-rose-600" : activeLine === i ? "scale-110 pr-1 font-black text-emerald-700" : ""}`}
                     >
                       {i + 1}
                     </div>
@@ -608,7 +605,6 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
 
                 <div className="relative flex-1 overflow-hidden bg-card">
                   <div className="absolute inset-0 z-10 overflow-y-auto whitespace-pre p-5 pt-5">
-                    {/* Static lines */}
                     {codeLines.map((line, i) => (
                       <div
                         key={`static-${i}`}
@@ -617,11 +613,7 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                         {activeLine === i && (
                           <motion.div
                             layoutId="lineHighlightGalonAir"
-                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
-                              isRunning
-                                ? "border-emerald-500 bg-emerald-50"
-                                : "border-emerald-200 bg-emerald-50/30"
-                            }`}
+                            className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${isRunning ? "border-emerald-500 bg-emerald-50" : "border-emerald-200 bg-emerald-50/30"}`}
                           />
                         )}
                         <div className="relative z-10 font-bold text-slate-900">
@@ -630,48 +622,55 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                       </div>
                     ))}
 
-                    {/* Placed blocks or drop zone */}
                     <div className="relative mt-1 flex flex-col gap-1">
-                      {placedBlocks.map((block, idx) => (
-                        <div
-                          key={`placed-${idx}`}
-                          className="relative flex h-[26px] items-center group"
-                        >
-                          {activeLine === 3 + idx && (
-                            <motion.div
-                              layoutId="lineHighlightGalonAir"
-                              className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${
-                                isRunning
-                                  ? "border-emerald-500 bg-emerald-50"
-                                  : "border-emerald-200 bg-emerald-50/30"
-                              }`}
-                            />
-                          )}
-                          {block === null ? (
-                            <div
-                              onDragOver={handleDragOver}
-                              onDrop={(e) => handleDropOnEditor(e, idx)}
-                              className="relative z-10 w-full flex-1 h-[26px] border-2 border-dashed border-emerald-200 rounded text-center text-[10px] text-emerald-500 flex items-center justify-center hover:border-emerald-400 hover:bg-emerald-50 transition-all"
-                            >
-                              ↓ Drop di sini
-                            </div>
-                          ) : (
-                            <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
-                              <span>
-                                <SyntaxHighlight code={block.content} />
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => removeBlock(idx)}
-                                disabled={isRunning}
-                                className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                      {placedBlocks.map((block, idx) => {
+                        const lineIndex = 3 + idx;
+                        const isError = errorLine === lineIndex;
+                        const isActive = activeLine === lineIndex && !isError;
+                        return (
+                          <div
+                            key={`placed-${idx}`}
+                            className="relative flex h-[26px] items-center group"
+                          >
+                            {isError && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="absolute inset-0 -mx-5 -my-1 border-l-4 border-rose-500 bg-rose-50 z-0"
+                              />
+                            )}
+                            {isActive && (
+                              <motion.div
+                                layoutId="lineHighlightGalonAir"
+                                className={`absolute inset-0 -mx-5 -my-1 border-l-4 z-0 ${isRunning ? "border-emerald-500 bg-emerald-50" : "border-emerald-200 bg-emerald-50/30"}`}
+                              />
+                            )}
+                            {block === null ? (
+                              <div
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDropOnEditor(e, idx)}
+                                className={`relative z-10 w-full flex-1 h-[26px] border-2 border-dashed rounded text-center text-[10px] flex items-center justify-center transition-all ${isError ? "border-rose-400 bg-rose-50/50 text-rose-400" : "border-emerald-200 text-emerald-500 hover:border-emerald-400 hover:bg-emerald-50"}`}
                               >
-                                Hapus
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                ↓ Drop di sini
+                              </div>
+                            ) : (
+                              <div className="relative z-10 flex-1 font-bold text-slate-900 flex items-center justify-between">
+                                <span>
+                                  <SyntaxHighlight code={block.content} />
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeBlock(idx)}
+                                  disabled={isRunning}
+                                  className="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-600 hover:bg-red-200 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -689,15 +688,9 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                   </h2>
                 </div>
                 <span
-                  className={`rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
-                    isRunning
-                      ? "bg-emerald-500 text-white"
-                      : errorLine !== -1
-                        ? "bg-rose-500 text-white"
-                        : "bg-slate-700 text-slate-300"
-                  }`}
+                  className={`rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${isRunning ? "bg-emerald-500 text-white" : isErrorState ? "bg-rose-500 text-white" : "bg-slate-700 text-slate-300"}`}
                 >
-                  {isRunning ? "RUNNING" : errorLine !== -1 ? "ERROR" : "IDLE"}
+                  {isRunning ? "RUNNING" : isErrorState ? "ERROR" : "IDLE"}
                 </span>
               </div>
 
@@ -706,41 +699,53 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                 <div className="absolute inset-0 opacity-15 [background-image:linear-gradient(to_right,rgba(148,163,184,.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.2)_1px,transparent_1px)] [background-size:28px_28px]" />
 
                 <div className="relative z-10 flex flex-1 flex-col gap-4 p-5 text-slate-100">
-                  {/* Water Gallon Visualization */}
                   <div className="flex flex-col items-center gap-3 w-full">
                     <p className="text-xs font-bold text-slate-300">
                       Kapasitas: 5L
                     </p>
 
-                    {/* Galon Container */}
-                    <motion.div className="relative w-24 h-40 rounded-b-3xl rounded-t-lg border-2 border-emerald-400/60 bg-slate-900/60 overflow-hidden shadow-2xl">
-                      {/* Water Level Fill */}
+                    {/* Galon */}
+                    <motion.div
+                      className={`relative w-24 h-40 rounded-b-3xl rounded-t-lg border-2 ${galonBorderColor} bg-slate-900/60 overflow-hidden shadow-2xl transition-colors duration-500`}
+                    >
+                      {/* Error flicker overlay */}
+                      {isErrorState && (
+                        <motion.div
+                          className="absolute inset-0 z-10 bg-rose-500/10"
+                          animate={{ opacity: [0, 0.4, 0, 0.3, 0] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                        />
+                      )}
+
+                      {/* Air */}
                       <motion.div
-                        className="absolute bottom-0 w-full bg-gradient-to-t from-emerald-500 to-emerald-300 transition-all duration-500"
-                        style={{
-                          height: `${(waterLevel / 5) * 100}%`,
-                        }}
-                        animate={{
-                          height: `${(waterLevel / 5) * 100}%`,
-                        }}
-                        transition={{ duration: 0.6 }}
+                        className={`absolute bottom-0 w-full transition-colors duration-500 ${waterGradient}`}
+                        animate={{ height: `${(waterLevel / 5) * 100}%` }}
+                        transition={{ duration: 0.7, ease: "easeInOut" }}
                       />
 
-                      {/* Water Level Markers */}
+                      {/* Gelembung air saat error (bocor effect) */}
+                      {isErrorState && waterLevel > 0 && (
+                        <motion.div
+                          className="absolute bottom-0 left-0 right-0 h-2 bg-rose-400/40"
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                        />
+                      )}
+
+                      {/* Marker level */}
                       {[1, 2, 3, 4, 5].map((level) => (
                         <div
                           key={level}
-                          className="absolute left-0 right-0 border-t border-emerald-400/30 text-[8px] text-emerald-300 px-1"
-                          style={{
-                            top: `${100 - (level / 5) * 100}%`,
-                          }}
+                          className={`absolute left-0 right-0 border-t ${markerColor} text-[8px] px-1`}
+                          style={{ top: `${100 - (level / 5) * 100}%` }}
                         >
                           {level}L
                         </div>
                       ))}
 
-                      {/* Shine Effect */}
-                      {waterLevel > 0 && (
+                      {/* Shine */}
+                      {waterLevel > 0 && !isErrorState && (
                         <motion.div
                           className="absolute top-0 left-2 w-1 bg-white/20 rounded-full opacity-60"
                           style={{ height: `${(waterLevel / 5) * 100}%` }}
@@ -750,12 +755,23 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                       )}
                     </motion.div>
 
-                    {/* Water Level Display */}
+                    {/* Label level */}
                     <motion.div className="text-center">
-                      <p className="text-sm font-black text-emerald-400">
+                      <p
+                        className={`text-sm font-black transition-colors duration-500 ${levelTextColor}`}
+                      >
                         {waterLevel.toFixed(1)}L / 5L
                       </p>
-                      {waterLevel >= 5 && (
+                      {isErrorState && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-[10px] font-bold text-rose-400 mt-1"
+                        >
+                          ⚠ Pengisian terhenti!
+                        </motion.p>
+                      )}
+                      {waterLevel >= 5 && !isErrorState && (
                         <motion.p
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -767,8 +783,8 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                     </motion.div>
                   </div>
 
-                  {/* Iterations Counter */}
-                  {visibleIterations.length > 0 && (
+                  {/* Iterasi badges */}
+                  {visibleIterations.length > 0 && !isErrorState && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -785,6 +801,23 @@ export default function StrukturKontrolPengisianGalonAirDasarPage() {
                         </motion.div>
                       ))}
                     </motion.div>
+                  )}
+
+                  {/* Console output */}
+                  {consoleOutput.length > 0 && (
+                    <div className="space-y-1 max-h-24 overflow-y-auto">
+                      {consoleOutput.map((output, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="font-mono text-[10px] text-green-400 border-l-2 border-green-400/30 pl-2 py-0.5"
+                        >
+                          &gt; {output}
+                        </motion.div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
